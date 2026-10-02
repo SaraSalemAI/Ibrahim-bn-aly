@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CFO Lens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"><svg viewBox="0 0 14 14"><path d="M2 12V7M5.5 12V4M9 12V8M12.5 12V2" stroke="var(--accent-ink)" stroke-width="2" stroke-linecap="round"/></svg></span>
+      <h1 data-t="appName">CFO Lens</h1>
+      <span class="tagline" data-t="tagline">Financial statement analysis</span>
+    </div>
+    <button class="btn ghost" id="btn-theme" type="button" aria-label="Theme">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg>
+    </button>
+    <button class="btn" id="btn-lang" type="button" data-t="lang">العربية</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="intake">
+    <div class="drop" id="drop">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="6" y="3" width="22" height="28" rx="3" fill="none" stroke="var(--accent)" stroke-width="1.8"/><path d="M11 22h12M11 17h12M11 12h7" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <div class="drop-text">
+        <strong data-t="drop">Drop financial statements here</strong>
+        <span class="muted small" data-t="dropHint"></span>
+      </div>
+      <label class="btn primary" for="file-input"><span data-t="browse">Choose files</span></label>
+      <input id="file-input" type="file" multiple accept=".xlsx,.xls,.xlsm,.ods,.csv,.tsv,.txt,.pdf" hidden>
+    </div>
+    <div class="notice" id="sample-notice"><span class="tag" data-t="exampleTag">Example</span><span data-t="sampleNotice"></span></div>
+    <div class="files" id="files"></div>
+    <div class="errors" id="errors"></div>
+  </section>
+
+  <nav class="tabs" role="tablist" id="tabs">
+    <button class="tab" role="tab" data-tab="overview" aria-selected="true">Overview</button>
+    <button class="tab" role="tab" data-tab="ratios">Ratios</button>
+    <button class="tab" role="tab" data-tab="vertical">Vertical</button>
+    <button class="tab" role="tab" data-tab="horizontal">Horizontal</button>
+    <button class="tab" role="tab" data-tab="flags">Red flags</button>
+    <button class="tab" role="tab" data-tab="review">Data review</button>
+    <button class="tab" role="tab" data-tab="report">Report</button>
+  </nav>
+
+  <main>
+    <section class="panel" id="p-overview" role="tabpanel">
+      <div class="card hero" id="hero"></div>
+      <div class="kpis" id="kpis"></div>
+      <div class="grid-2">
+        <div class="card"><h3 data-t="chart.revenueProfit">Revenue and profit</h3><div class="chart-box"><canvas id="c-revenue" role="img" aria-label="Revenue and net income by year"></canvas></div></div>
+        <div class="card"><h3 data-t="chart.margins">Margins</h3><div class="chart-box"><canvas id="c-margins" role="img" aria-label="Margins by year"></canvas></div></div>
+        <div class="card"><h3 data-t="chart.structure">Balance-sheet structure</h3><div class="chart-box"><canvas id="c-structure" role="img" aria-label="Funding structure by year"></canvas></div></div>
+        <div class="card"><h3 data-t="chart.cash">Cash flow</h3><div class="chart-box"><canvas id="c-cash" role="img" aria-label="Cash flow by year"></canvas></div></div>
+      </div>
+      <div class="card" id="top-flags"></div>
+    </section>
+    <section class="panel" id="p-ratios" role="tabpanel" hidden></section>
+    <section class="panel" id="p-vertical" role="tabpanel" hidden></section>
+    <section class="panel" id="p-horizontal" role="tabpanel" hidden></section>
+    <section class="panel" id="p-flags" role="tabpanel" hidden></section>
+    <section class="panel" id="p-review" role="tabpanel" hidden></section>
+    <section class="panel" id="p-report" role="tabpanel" hidden></section>
+  </main>
+</div>
+<div class="loading" id="loading" hidden><span data-t="reading">Reading files…</span></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="js/catalog.js"></script>
+<script src="js/parsers.js"></script>
+<script src="js/mapper.js"></script>
+<script src="js/analysis.js"></script>
+<script src="js/i18n.js"></script>
+<script src="js/insights.js"></script>
+<script src="js/sample.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/report.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
