@@ -110,11 +110,11 @@ let WF2=Object.assign({title:'',what:'',features:'',result:'',link:'',prompt:'',
 const WALL_MAX=10;
 async function wallInit(){if(WALL.state!=='init')return;WALL.state='loading';
 try{const use=window.claude&&window.claude.use;WALL.db=use?await use('db'):null;WALL.user=use?await use('user'):null}catch(e){WALL.db=null}
-if(!WALL.db){WALL.state='off';if(location.hash.startsWith('#showcase'))render();return}
+if(!WALL.db){WALL.state='off';if(wallVisible())render();return}
 try{WALL.me=WALL.user?await WALL.user.id():null;WALL.owner=WALL.user?await WALL.user.isOwner():false;WALL.can=WALL.user?await WALL.user.can('data.write'):null}catch(e){}
 WALL.unsub=WALL.db.collection('wall').onSnapshot(async snap=>{WALL.docs=snap.docs.filter(d=>d.exists).map(d=>({id:d.id,...d.data()}));const first=WALL.state!=='ready';WALL.state='ready';
 const ids=WALL.docs.map(d=>d.id).filter(id=>!(id in WALL.names));if(ids.length&&WALL.user){try{const ps=await WALL.user.profiles(ids);ids.forEach(id=>WALL.names[id]=(ps[id]&&ps[id].name)||'')}catch(e){}}
-if(location.hash.startsWith('#showcase')){if(first)render();else wallPaint()}},e=>{WALL.state='error';WALL.err=e&&e.code||'';if(location.hash.startsWith('#showcase'))render()})}
+if(wallVisible()){if(first)render();else wallPaint()}},e=>{WALL.state='error';WALL.err=e&&e.code||'';if(wallVisible())render()})}
 function wallPosts(){const all=[];WALL.docs.forEach(d=>(d.posts||[]).forEach(p=>all.push(Object.assign({uid:d.id},p))));
 const likes={};WALL.docs.forEach(d=>(d.likes||[]).forEach(k=>likes[k]=(likes[k]||0)+1));all.forEach(p=>p.likes=likes[p.uid+':'+p.id]||0);return all.sort((a,b)=>String(b.at).localeCompare(String(a.at)))}
 const myDoc=()=>WALL.docs.find(d=>d.id===WALL.me)||{posts:[],likes:[]};
