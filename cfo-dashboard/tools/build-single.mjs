@@ -26,7 +26,9 @@ const LIBS = {
   'pdf.worker.min.js': 'pdfjs-dist/build/pdf.worker.min.js',
   'chart.umd.min.js': 'chart.js/dist/chart.umd.js',
 };
-const inlineScript = code => `<script>\n${code.replace(/<\/script/gi, '<\\/script')}\n</script>`;
+// U+FFFD only occurs inside library string tables (SheetJS codepages); the \uFFFD escape keeps the same value
+// while keeping the HTML free of replacement characters, which some hosts reject as corrupted text.
+const inlineScript = code => `<script>\n${code.replace(/<\/script/gi, '<\\/script').replace(/\uFFFD/g, '\\uFFFD')}\n</script>`;
 
 let html = readFileSync(`${root}/index.html`, 'utf8');
 if (!flag('--cdn')) {
