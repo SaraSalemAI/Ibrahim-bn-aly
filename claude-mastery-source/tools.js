@@ -7,7 +7,7 @@ const PATHQ=[
 {k:"time",q:T("Time per week?","وقتك في الأسبوع؟"),o:[["2",T("~2 hours","~ساعتين")],["5",T("~5 hours","~5 ساعات")],["10",T("10+ hours","10 ساعات أو أكتر")]]}];
 let PA=ST.pathAns||{};
 function buildPath(a){const L0=['1.1','1.3','1.4','1.6','2.2','2.4'];let core=[...L0];const add=x=>x.forEach(i=>{if(!core.includes(i))core.push(i)});
-const byGoal={write:['3.2','2.5','3.1','4.1'],analyse:['5.1','2.1','3.1','4.3'],automate:['6.1','6.2','4.2','4.3','5.4'],build:['3.1','7.1','7.2','7.3','4.3'],lead:['1.7','9.1','9.2','9.3','9.4','8.1']};
+const byGoal={write:['3.2','2.5','3.1','4.1'],analyse:['5.1','2.1','3.1','4.3'],automate:['6.1','6.2','4.2','4.3','5.4'],build:['3.1','7.1','7.2','7.3','4.3'],lead:['1.7','9.1','9.2','9.3','9.4','1.10']};
 const byRole={finance:['5.1','5.2','4.2'],banking:['4.1','5.1','9.1'],leader:['1.7','3.2','9.4'],hr:['3.2','4.1','9.3'],sales:['4.3','5.3','3.3'],creator:['3.3','2.5','3.1'],academic:['2.1','4.1','9.3'],builder:['7.1','7.2','7.3','4.3']};
 add(byGoal[a.goal]||[]);add(byRole[a.role]||[]);if(a.level==='beg')add(['1.2','1.5','2.1','2.3']);if(a.level!=='beg')core=core.filter(i=>!['1.1'].includes(i)||a.level==='int');add(['9.2']);
 const all=DAYS.flatMap(d=>d.units.map(u=>u.id));core=core.filter(i=>all.includes(i));
