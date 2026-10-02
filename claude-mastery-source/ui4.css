@@ -107,3 +107,8 @@ abbr.gl{text-decoration:underline dotted var(--gold);text-underline-offset:3px;c
 /* round 10: field courses */
 .fcourse{margin-top:22px;padding-top:6px;border-top:2px solid var(--gold)}.fcourse .fdag{margin:8px 0}.fcourse .fdi{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--goldsoft);font-size:14px;font-weight:700}
 .fcqq{margin:10px 0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}.fcqq .chips{margin-top:6px}.chip.ok{background:var(--greensoft);border-color:var(--green)}.chip.no{background:var(--redsoft);border-color:var(--red)}
+/* round 11: use-case template */
+.cxchip{display:inline-block;margin-inline-start:8px;padding:1px 8px;border-radius:999px;background:var(--greensoft);color:var(--ink);font-size:11.5px}
+.cxtpl{margin:10px 0 4px}.cxlab{font-size:12px;color:var(--gold);font-weight:700;margin-bottom:6px}.cxprob{padding:10px 12px;border-radius:10px;background:var(--panel2)}.cxprob p,.cxba p,.cxfoot p{margin:4px 0}
+.cxba{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:8px}.cxb,.cxa{padding:10px 12px;border-radius:10px;border:1px solid var(--line)}.cxb{background:var(--redsoft)}.cxa{background:var(--greensoft)}.cxt{font-weight:700;margin:2px 0}
+.cxnote{font-size:11.5px;margin:4px 0 0}.cxfoot{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--goldsoft)}.cxfoot ul{margin:4px 0;padding-inline-start:18px}
