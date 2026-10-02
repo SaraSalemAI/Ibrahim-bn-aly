@@ -27,3 +27,10 @@
 .commbanner{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;background:var(--panel);border:1px solid var(--gold);border-radius:12px;padding:12px 16px;margin:6px 0 14px}.commbanner b{display:block}.commbanner span{font-size:13.5px;color:var(--ink3)}
 .invlist{display:flex;flex-direction:column;gap:6px}.invrow{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 12px}.invrow.on{border-color:var(--green)}.invrow.on span{text-decoration:line-through;color:var(--ink3)}.invrow label{display:flex;gap:8px;align-items:center;flex:1;cursor:pointer}
 a.tbtn,a.btn-gold{text-decoration:none;display:inline-flex;align-items:center}
+.rxweak{background:var(--redsoft);border-radius:12px;padding:12px 16px;margin:8px 0}.rxweak p{margin:4px 0 0;font-size:16px}
+.rxissues{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:6px;margin-bottom:10px}.rxissues .opt{border:1px solid var(--line);background:var(--panel)}.opt.missed{background:var(--goldsoft);color:var(--gold)}
+.rxrow{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:14px;align-items:start}.rxrow textarea{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;margin:0}.rxscore{text-align:center;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px}.rxscore .ok{color:var(--green)}
+@media(max-width:640px){.rxrow{grid-template-columns:1fr}}
+.elmbox{background:var(--goldsoft);border-inline-start:4px solid var(--gold);border-radius:10px;padding:12px 16px;margin:12px 0}
+.wallgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}.wallcard{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}.wallcard h3{margin:0}.wallcard p{margin:0;font-size:14px}.wallres{color:var(--green)}.wallcard .chips{margin:0}.wallcard summary{cursor:pointer;color:var(--gold);font-weight:600}
+.ptable td{font-size:13px}
