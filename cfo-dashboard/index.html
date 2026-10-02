@@ -26,14 +26,14 @@
 
 <div class="wrap">
   <section class="intake">
-    <div class="drop" id="drop">
+    <div class="drop" id="drop" role="button" tabindex="0" aria-describedby="drop-hint">
       <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="6" y="3" width="22" height="28" rx="3" fill="none" stroke="var(--accent)" stroke-width="1.8"/><path d="M11 22h12M11 17h12M11 12h7" stroke="var(--muted)" stroke-width="1.8" stroke-linecap="round"/></svg>
       <div class="drop-text">
         <strong data-t="drop">Drop financial statements here</strong>
-        <span class="muted small" data-t="dropHint"></span>
+        <span class="muted small" id="drop-hint" data-t="dropHint"></span>
       </div>
       <label class="btn primary" for="file-input"><span data-t="browse">Choose files</span></label>
-      <input id="file-input" type="file" multiple accept=".xlsx,.xls,.xlsm,.ods,.csv,.tsv,.txt,.pdf" hidden>
+      <input id="file-input" type="file" multiple accept=".xlsx,.xls,.xlsm,.ods,.csv,.tsv,.txt,.pdf" class="visually-hidden" tabindex="-1">
     </div>
     <div class="notice" id="sample-notice"><span class="tag" data-t="exampleTag">Example</span><span data-t="sampleNotice"></span></div>
     <div class="files" id="files"></div>
@@ -75,6 +75,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="js/catalog.js"></script>
 <script src="js/parsers.js"></script>

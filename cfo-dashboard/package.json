@@ -1,0 +1,15 @@
+{
+  "name": "cfo-lens",
+  "private": true,
+  "description": "Financial statement analysis dashboard (browser-only).",
+  "scripts": {
+    "test": "node --test tests/analysis.test.mjs",
+    "build": "node tools/build-single.mjs"
+  },
+  "devDependencies": {
+    "chart.js": "4.4.1",
+    "papaparse": "5.4.1",
+    "pdfjs-dist": "3.11.174",
+    "xlsx": "0.18.5"
+  }
+}

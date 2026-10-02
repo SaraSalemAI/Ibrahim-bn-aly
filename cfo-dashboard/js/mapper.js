@@ -8,8 +8,11 @@
  * }
  */
 (function (CFO) {
+  // Calendar years sort numerically; relative headers ("Prior year" < "Current year") sort after them in time order.
+  const RELATIVE = { 'Prior year': 99998, 'Current year': 99999 };
+  const periodRank = p => RELATIVE[p] ?? parseInt(p, 10);
   const periodSort = (a, b) => {
-    const ya = parseInt(a, 10), yb = parseInt(b, 10);
+    const ya = periodRank(a), yb = periodRank(b);
     return (isNaN(ya) || isNaN(yb) || ya === yb) ? String(a).localeCompare(String(b)) : ya - yb;
   };
 

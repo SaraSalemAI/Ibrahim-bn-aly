@@ -10,43 +10,65 @@
   const SUBTOTALS = new Set(['gross_profit', 'operating_income', 'pretax_income', 'net_income', 'current_assets', 'total_assets', 'current_liabilities', 'total_liabilities', 'equity', 'cfo', 'cfi', 'cff']);
 
   const state = {
-    tables: [], files: [], overrides: {}, errors: [], isSample: true,
+    tables: [], files: [], overrides: {}, errors: [], notes: [], isSample: true,
     lang: store.get('lang') === 'ar' ? 'ar' : 'en',
     tab: TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview',
     hMode: 'pct', A: null, F: [],
   };
 
-  if (globalThis.pdfjsLib) globalThis.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  // pdf.js runs on the main thread when its worker script is loaded as a plain script (globalThis.pdfjsWorker),
+  // which avoids web-worker restrictions in sandboxed frames. Otherwise fall back to the CDN worker.
+  if (globalThis.pdfjsLib && !globalThis.pdfjsWorker) globalThis.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
   /* ---------- intake ---------- */
+  let busy = false;
   async function addFiles(fileList) {
-    const files = [...fileList];
-    if (!files.length) return;
+    const files = [...(fileList || [])].filter(f => f && f.name);
+    if (!files.length || busy) return;
+    busy = true;
     $('loading').hidden = false;
-    if (state.isSample) { state.tables = []; state.files = []; state.overrides = {}; state.isSample = false; }
-    state.errors = [];
     const L = () => CFO.UI[state.lang];
-    for (const f of files) {
-      try {
-        const tables = await CFO.parseFile(f);
-        if (!tables.length) { state.errors.push(() => L().errNoLines(f.name)); continue; }
-        tables.forEach(t => { t.file = f.name; });
-        state.tables.push(...tables);
-        if (!state.files.includes(f.name)) state.files.push(f.name);
-      } catch (e) {
-        const ext = /^unsupported:(.*)$/.exec(e.message);
-        state.errors.push(ext ? () => L().errUnsupported(ext[1]) : () => L().errRead(f.name));
-        console.error(e);
+    const wasSample = state.isSample;
+    const kept = wasSample ? { tables: [], files: [] } : { tables: state.tables, files: state.files };
+    const added = [];
+    state.errors = []; state.notes = [];
+    try {
+      for (const f of files) {
+        try {
+          const tables = await CFO.parseFile(f);
+          const lines = tables.reduce((n, t) => n + t.lines.length, 0);
+          if (!lines) { state.errors.push(() => L().errNoLines(f.name)); continue; }
+          tables.forEach(t => { t.file = f.name; });
+          const matched = tables.reduce((n, t) => n + t.lines.filter(l => CFO.matchLabel(l.label)).length, 0);
+          state.notes.push(matched ? () => L().readOk(f.name, tables.length, lines, matched) : () => L().readNoMatch(f.name));
+          added.push({ name: f.name, tables, matched });
+        } catch (e) {
+          const ext = /^unsupported:(.*)$/.exec(e && e.message);
+          state.errors.push(ext ? () => L().errUnsupported(ext[1]) : () => `${L().errRead(f.name)} (${(e && e.message) || e})`);
+          console.error(e);
+        }
       }
+      if (added.length) {
+        // Dropping a file with the same name again replaces its earlier version.
+        const names = new Set(added.map(a => a.name));
+        state.tables = [...kept.tables.filter(t => !names.has(t.file)), ...added.flatMap(a => a.tables)];
+        state.files = [...kept.files.filter(n => !names.has(n)), ...added.map(a => a.name)];
+        state.overrides = {}; state.isSample = false;
+        if (!added.some(a => a.matched)) state.tab = 'review';
+      } else if (wasSample) {
+        state.notes.push(() => L().keptExample);
+      }
+    } finally {
+      busy = false;
+      $('loading').hidden = true;
+      render();
     }
-    $('loading').hidden = true;
-    render();
   }
 
   function loadSample() {
     state.tables = CFO.sampleTables().map(t => ({ ...t, file: t.source }));
     state.files = state.tables.map(t => t.file);
-    state.overrides = {}; state.errors = []; state.isSample = true;
+    state.overrides = {}; state.isSample = true;
   }
 
   function removeFile(name) {
@@ -241,7 +263,8 @@
     $('files').innerHTML = state.isSample ? '' : `<span class="muted small">${L.filesLoaded}:</span>` +
       state.files.map(f => `<span class="chip" title="${esc(f)}">${esc(f)} <button type="button" class="btn ghost" style="padding:0 4px;border:0" data-remove="${esc(f)}" aria-label="Remove ${esc(f)}">×</button></span>`).join('') +
       ` <button class="btn ghost small" type="button" id="btn-sample">${L.loadSample}</button>`;
-    $('errors').innerHTML = state.errors.map(e => `<div class="error">${esc(e())}</div>`).join('');
+    $('errors').innerHTML = state.errors.map(e => `<div class="error" role="alert">${esc(e())}</div>`).join('') +
+      state.notes.map(n => `<div class="note" role="status">${esc(n())}</div>`).join('');
   }
 
   const PANELS = { overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, review: renderReview, report: renderReport };
@@ -268,7 +291,7 @@
     const g = e.target.closest('[data-go]'); if (g) return setTab(g.dataset.go);
     const h = e.target.closest('[data-hmode]'); if (h) { state.hMode = h.dataset.hmode; return renderHorizontal(); }
     const r = e.target.closest('[data-remove]'); if (r) return removeFile(r.dataset.remove);
-    if (e.target.closest('#btn-sample')) { loadSample(); return render(); }
+    if (e.target.closest('#btn-sample')) { loadSample(); state.errors = []; state.notes = []; return render(); }
     if (e.target.closest('#x-xlsx')) return CFO.exportXLSX(state.A, state.F, state.lang);
     if (e.target.closest('#x-html')) return CFO.exportHTML(state.A, state.F, state.lang);
     if (e.target.closest('#x-md')) {
@@ -292,14 +315,36 @@
   const theme = store.get('theme'); if (theme === 'dark' || theme === 'light') document.documentElement.dataset.theme = theme;
   matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { if (state.tab === 'overview') CFO.drawCharts(state.A, state.lang); });
 
-  // Drop anywhere on the page.
+  // File intake: drop (on the card or anywhere), click / keyboard on the card, or paste copied files.
+  const hasFiles = e => [...(e.dataTransfer?.types || [])].includes('Files');
   let depth = 0;
-  window.addEventListener('dragenter', e => { if ([...(e.dataTransfer?.types || [])].includes('Files')) { depth++; document.body.classList.add('dragging'); } });
-  window.addEventListener('dragleave', () => { if (--depth <= 0) { depth = 0; document.body.classList.remove('dragging'); } });
-  window.addEventListener('dragover', e => e.preventDefault());
-  window.addEventListener('drop', e => { e.preventDefault(); depth = 0; document.body.classList.remove('dragging'); if (e.dataTransfer?.files?.length) addFiles(e.dataTransfer.files); });
+  const onDragOver = e => { if (!hasFiles(e)) return; e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; };
+  for (const target of [document, $('drop')]) {
+    target.addEventListener('dragover', onDragOver);
+    target.addEventListener('dragenter', e => { if (!hasFiles(e)) return; e.preventDefault(); if (target === document) { depth++; document.body.classList.add('dragging'); } });
+  }
+  document.addEventListener('dragleave', () => { if (--depth <= 0) { depth = 0; document.body.classList.remove('dragging'); } });
+  document.addEventListener('drop', e => {
+    if (!hasFiles(e) && !e.dataTransfer?.files?.length) return;
+    e.preventDefault(); depth = 0; document.body.classList.remove('dragging');
+    addFiles(e.dataTransfer.files);
+  });
+  $('drop').addEventListener('click', e => { if (!e.target.closest('label, input')) $('file-input').click(); });
+  $('drop').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file-input').click(); } });
+  document.addEventListener('paste', e => {
+    const files = [...(e.clipboardData?.files || [])];
+    if (files.length) { e.preventDefault(); addFiles(files); }
+  });
+
+  // Never fail silently: unexpected errors and missing libraries are shown on the page.
+  const showUnexpected = msg => { state.errors.push(() => T().unexpected(msg)); $('loading').hidden = true; busy = false; renderChrome(); };
+  window.addEventListener('error', e => { if (e.message) showUnexpected(e.message); });
+  window.addEventListener('unhandledrejection', e => showUnexpected((e.reason && e.reason.message) || String(e.reason)));
+  const missing = [['SheetJS (Excel)', 'XLSX'], ['PapaParse (CSV)', 'Papa'], ['pdf.js (PDF)', 'pdfjsLib'], ['Chart.js (charts)', 'Chart']]
+    .filter(([, g]) => !globalThis[g]).map(([n]) => n);
 
   loadSample();
+  if (missing.length) state.errors.push(() => T().libMissing(missing.join(', ')));
   render();
   CFO.state = state; CFO.addFiles = addFiles;
 })(globalThis.CFO = globalThis.CFO || {});

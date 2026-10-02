@@ -27,6 +27,7 @@
   /** Period found in a header cell: "2024", "FY2024", "31/12/2024", "2024-12-31", Arabic digits. */
   function parsePeriod(cell) {
     if (cell == null || cell === '') return null;
+    if (cell instanceof Date) return isNaN(cell) ? null : String(cell.getUTCFullYear());   // Excel date-formatted header
     if (typeof cell === 'number') return cell >= 1900 && cell <= 2100 && Number.isInteger(cell) ? String(cell) : null;
     const s = latinDigits(cell);
     const m = s.match(/(?:^|[^\d])((?:19|20)\d{2})(?!\d)/);
@@ -34,6 +35,15 @@
     // Quarter / half-year labels keep their qualifier so they do not collide with the full year.
     const q = s.match(/\b(Q[1-4]|H[12])\b/i);
     return q ? `${m[1]} ${q[1].toUpperCase()}` : m[1];
+  }
+
+  /** "Current year" / "Prior year" style headers -> a sortable label (see CFO.periodRank). */
+  function relativePeriod(cell) {
+    if (typeof cell !== 'string') return null;
+    const n = CFO.normalize ? CFO.normalize(cell) : cell.toLowerCase();
+    if (/\b(current|this)\b.*\b(year|period)\b|\bcy\b|الحالي|الحاليه|الجاري|الجاريه/.test(n)) return 'Current year';
+    if (/\b(prior|previous|last|comparative)\b.*\b(year|period)\b|\bpy\b|السابق|السابقه|المقارن|المقارنه/.test(n)) return 'Prior year';
+    return null;
   }
 
   /** Rows (array of arrays) -> { periods, lines }. */
@@ -45,6 +55,14 @@
       // A header row holds periods and little else numeric (a data row may contain a year-like value).
       const nums = (rows[r] || []).filter(c => parseNumber(c) != null).length;
       if (cols.length >= 1 && cols.length >= nums - 1 && cols.length > headerCols.length) { headerIdx = r; headerCols = cols; }
+    }
+    if (headerIdx < 0) {
+      // Headers without years: "Current year / Prior year", "السنة الحالية / السنة السابقة".
+      for (let r = 0; r < Math.min(rows.length, 40) && headerIdx < 0; r++) {
+        const cols = [];
+        (rows[r] || []).forEach((c, i) => { const p = relativePeriod(c); if (p) cols.push({ i, p }); });
+        if (cols.length >= 2) { headerIdx = r; headerCols = cols; }
+      }
     }
     if (headerIdx < 0) {
       // No period header: treat every numeric column as an unnamed period.
@@ -75,7 +93,7 @@
   }
 
   async function parseExcel(file) {
-    const wb = globalThis.XLSX.read(await file.arrayBuffer(), { type: 'array' });
+    const wb = globalThis.XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
     return wb.SheetNames.map(name => {
       const rows = globalThis.XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: true, defval: '' });
       return { source: wb.SheetNames.length > 1 ? `${file.name} › ${name}` : file.name, ...rowsToLines(rows) };
@@ -153,6 +171,7 @@
   CFO.parseNumber = parseNumber;
   CFO.parsePeriod = parsePeriod;
   CFO.rowsToLines = rowsToLines;
+  CFO.relativePeriod = relativePeriod;
   CFO.pdfRowsToLines = pdfRowsToLines;
   CFO.parseFile = parseFile;
 })(globalThis.CFO = globalThis.CFO || {});

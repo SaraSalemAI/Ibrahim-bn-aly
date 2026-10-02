@@ -15,7 +15,13 @@ No data leaves your computer: there is no server and no upload.
 
 ## Use it
 
-Open `index.html` in a browser (double-click works), or the single-file build `dist/cfo-lens.html`. It opens with a fictional example company; drop your own files to replace it.
+Open the single-file build `dist/cfo-lens.html` in a browser (double-click works, also offline: the libraries are bundled inside), or `index.html` (loads the libraries from cdnjs). It opens with a fictional example company; add your own files to replace it in any of three ways:
+
+- drag them onto the page,
+- click the drop card (or **Choose files**),
+- copy the files in your file manager and paste them into the page (Ctrl+V / ⌘V).
+
+After reading, a line under the drop card says what was found in each file (tables, lines, how many matched standard items). If a file cannot be used, a red message says why and the example stays on screen.
 
 **Several files at once** are merged: e.g. income statement + balance sheet + cash flow as separate files, or one file per year. If two files disagree on the same item and year, the first is kept and the conflict is listed under *Data review*.
 
@@ -29,7 +35,7 @@ One row per line item, one column per year:
 | Cost of sales | (35,960) | (39,650) |
 | … | | |
 
-- Year headers can be `2024`, `FY2024`, `31/12/2024`, `٢٠٢٤`. Columns may be newest-first.
+- Year headers can be `2024`, `FY2024`, `31/12/2024`, `٢٠٢٤`, `2024م`, a date-formatted Excel cell, or `Current year / Prior year` (`السنة الحالية / السنة السابقة`). Columns may be newest-first, and labels may sit left or right of the numbers.
 - Numbers can use thousands separators, parentheses or a minus for negatives, Arabic-Indic digits, currency labels. A "Note / إيضاح" column is ignored.
 - Each sheet of an Excel workbook is read separately. PDFs must contain real text (exported from accounting software), not a scan.
 - Labels are matched in English and Arabic (≈300 synonyms in `js/catalog.js`). Anything unmatched still appears in vertical/horizontal analysis, and you can map it by hand in **Data review**; the whole analysis updates immediately.
@@ -62,16 +68,18 @@ js/app.js             UI state and rendering
 sample/               example input files
 tests/                node tests
 tools/build-single.mjs  bundle into dist/cfo-lens.html
+package.json          pinned library versions for the build
 ```
 
 ## Develop
 
 ```
 node --test cfo-dashboard/tests/analysis.test.mjs   # unit tests (no install needed)
-node cfo-dashboard/tools/build-single.mjs          # single-file build
+npm install --prefix cfo-dashboard                  # once: fetch the pinned libraries
+node cfo-dashboard/tools/build-single.mjs          # single-file build with libraries inlined
 ```
 
-Libraries (pinned, loaded from cdnjs): SheetJS 0.18.5, PapaParse 5.4.1, pdf.js 3.11.174, Chart.js 4.4.1. Opening the page offline shows a reading error for files until the libraries can load.
+Libraries (pinned): SheetJS 0.18.5, PapaParse 5.4.1, pdf.js 3.11.174, Chart.js 4.4.1. `index.html` loads them from cdnjs; `dist/cfo-lens.html` has them inlined. pdf.js runs on the page's main thread (its worker script is loaded as a normal script), so it also works where web workers are blocked. If a library fails to load, the page names it in a red banner.
 
 ## Limits
 

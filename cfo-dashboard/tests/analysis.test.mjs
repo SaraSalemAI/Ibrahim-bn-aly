@@ -119,3 +119,30 @@ test('conflicting values across files are reported', () => {
   assert.equal(d.data['2024'].revenue, 100);
   assert.ok(d.issues.some(i => i.type === 'conflict'));
 });
+
+test('Excel date-formatted year headers', () => {
+  const t = CFO.rowsToLines([['Item', new Date(Date.UTC(2023, 11, 31)), new Date(Date.UTC(2024, 11, 31))], ['Revenue', 100, 120]]);
+  assert.deepEqual(t.periods, ['2023', '2024']);
+  assert.deepEqual(t.lines[0].values, { 2023: 100, 2024: 120 });
+});
+
+test('"Current year / Prior year" headers without a year', () => {
+  for (const head of [['', 'Current year', 'Prior year'], ['البند', 'السنة الحالية', 'السنة السابقة']]) {
+    const t = { source: 'x', ...CFO.rowsToLines([head, ['Revenue', 120, 100], ['Net income', 12, 9]]) };
+    const d = CFO.buildDataset([t]);
+    assert.deepEqual(d.periods, ['Prior year', 'Current year']);
+    assert.equal(d.data['Current year'].revenue, 120);
+    const A = CFO.analyze(d);
+    close(A.horizontal.find(r => r.key === 'revenue').yoy['Current year'].pct, 0.2);
+  }
+});
+
+test('Arabic sheet with labels to the right and numbers stored as text', () => {
+  const t = CFO.rowsToLines([['٢٠٢٤', '٢٠٢٣', 'البند'], ['١٢٠', '١٠٠', 'الإيرادات'], ['(٣٠)', '(٢٥)', 'تكلفة المبيعات'], ['1,200', '1,000', 'إجمالي الأصول']]);
+  assert.deepEqual(t.periods, ['2024', '2023']);
+  assert.equal(t.lines[0].label, 'الإيرادات');
+  assert.deepEqual(t.lines[1].values, { 2024: -30, 2023: -25 });
+  const d = CFO.buildDataset([{ source: 'ar', ...t }]);
+  assert.equal(d.data['2024'].cogs, 30);
+  assert.equal(d.data['2023'].total_assets, 1000);
+});

@@ -3,7 +3,12 @@
   const UI = {
     en: {
       appName: 'CFO Lens', tagline: 'Financial statement analysis',
-      drop: 'Drop financial statements here', dropHint: 'Excel, CSV or PDF · several files at once (income statement, balance sheet, cash flow, other years)',
+      drop: 'Drop financial statements here', dropHint: 'Excel, CSV or PDF · several files at once. Drag them here, click to choose, or copy the files and paste (Ctrl+V / ⌘V).',
+      readOk: (name, sheets, lines, matched) => `Read ${name}: ${sheets} ${sheets === 1 ? 'table' : 'tables'}, ${lines} lines, ${matched} matched to standard items.`,
+      readNoMatch: name => `${name}: lines were read but none matched a standard item. Open Data review and map them by hand.`,
+      libMissing: libs => `These libraries did not load, so some files cannot be read: ${libs}. Check your internet connection and reload.`,
+      unexpected: msg => `Something went wrong: ${msg}. Reload the page; if it happens again, try a CSV or Excel export of the statements.`,
+      keptExample: 'None of the files could be used, so the example data is still shown.',
       browse: 'Choose files', exampleTag: 'Example', vs: 'vs', pts: 'pts', sampleNotice: 'Example data (fictional company, EGP thousands). Drop your own files to replace it.',
       loadSample: 'Reload example', clear: 'Clear', filesLoaded: 'Files', reading: 'Reading files…',
       tabs: { overview: 'Overview', ratios: 'Ratios', vertical: 'Vertical', horizontal: 'Horizontal', flags: 'Red flags', review: 'Data review', report: 'Report' },
@@ -57,7 +62,12 @@
     },
     ar: {
       appName: 'عدسة المدير المالي', tagline: 'تحليل القوائم المالية',
-      drop: 'أسقط القوائم المالية هنا', dropHint: 'Excel أو CSV أو PDF · عدة ملفات معاً (قائمة الدخل، الميزانية، التدفقات النقدية، سنوات أخرى)',
+      drop: 'أسقط القوائم المالية هنا', dropHint: 'Excel أو CSV أو PDF · عدة ملفات معاً. اسحبها هنا، أو اضغط للاختيار، أو انسخ الملفات والصقها (Ctrl+V / ⌘V).',
+      readOk: (name, sheets, lines, matched) => `تمت قراءة ${name}: ${sheets} جدول، ${lines} بند، ${matched} مربوط ببنود قياسية.`,
+      readNoMatch: name => `${name}: قُرئت البنود لكن لم يُربط أي منها ببند قياسي. افتح مراجعة البيانات واربطها يدوياً.`,
+      libMissing: libs => `لم تُحمّل هذه المكتبات لذا قد تتعذر قراءة بعض الملفات: ${libs}. تحقق من الاتصال بالإنترنت وأعد تحميل الصفحة.`,
+      unexpected: msg => `حدث خطأ: ${msg}. أعد تحميل الصفحة؛ وإن تكرر جرّب تصدير القوائم إلى CSV أو Excel.`,
+      keptExample: 'تعذر استخدام أي من الملفات، لذا ما زالت البيانات التجريبية معروضة.',
       browse: 'اختر الملفات', exampleTag: 'مثال', vs: 'مقابل', pts: 'نقطة', sampleNotice: 'بيانات تجريبية (شركة افتراضية، بالألف جنيه). أسقط ملفاتك لاستبدالها.',
       loadSample: 'إعادة البيانات التجريبية', clear: 'مسح', filesLoaded: 'الملفات', reading: 'جارٍ قراءة الملفات…',
       tabs: { overview: 'نظرة عامة', ratios: 'النسب المالية', vertical: 'التحليل الرأسي', horizontal: 'التحليل الأفقي', flags: 'إشارات الخطر', review: 'مراجعة البيانات', report: 'التقرير' },
