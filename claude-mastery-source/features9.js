@@ -121,7 +121,7 @@ async function cheatDownload(n,btn){const old=btn.textContent;btn.disabled=true;
 {const _mb=modExportBar;modExportBar=function(n){return _mb(n).replace(/<\/div>$/,`<button class="tbtn" data-cheat="${n}">📄 ${L(UX17.cheat)}</button></div>`)}}
 
 document.addEventListener('click',e=>{const g=s=>e.target.closest(s);let x;
-if(x=g('[data-fdtab]')){FDTAB=x.dataset.fdtab;if(location.hash.slice(1)!=='findept')location.hash='findept';else render();return}
+if(x=g('[data-fdtab]')){FDTAB=x.dataset.fdtab;render();return}
 if(x=g('[data-simi]')){SIM.i=+x.dataset.simi;simCheckWin();saveSIM();render();return}
 if(x=g('[data-sim]')){const a=x.dataset.sim;if(a==='run'&&!SIM.busy)simRun();else if(a==='reset'){SIM={i:0,out:['','','','',''],chk:{},busy:false};saveSIM();render()}else if(a==='dl'){const ar=LANG==='ar';const md=`# ${L(SIMCO.name)} — ${ar?'ملف إقفال سبتمبر 2026':'September 2026 month-end pack'}\n\n${L(SIMCO.about)}\n\n`+SIMSTEPS.map((s,k)=>{const a=fdFind(s.a)[1];return `## ${k+1}. ${L(a.n)}\n\n${L(s.t)}\n\n${SIM.out[k].trim()||(ar?'_لسه_':'_not yet_')}\n`}).join('\n')+`\n---\nClaude Mastery · ${ar?'محاكاة نهاية الشهر':'Month-end simulation'}\n`;saveFile('Sahel-Trading-month-end-pack.md',md).then(ok=>{if(ok)x.textContent='✓'})}return}
 if(x=g('[data-hck]')){HC={k:x.dataset.hck,s:0};render();return}

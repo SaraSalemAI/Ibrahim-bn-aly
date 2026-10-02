@@ -2,6 +2,7 @@
 // 8 → 1 (1.10, 1.11) · 14 → 5 (5.5–5.8) · 15 → 9 (9.7, 9.8; 15.3 into 9.4, 15.4 into 9.6) · 16 → 8 · 12 & 13 → field courses (audit, banking) + use-case library
 const IDMAP={'8.1':'1.10','8.2':'1.11','14.1':'5.5','14.2':'5.6','14.3':'5.7','14.4':'5.8','15.1':'9.7','15.2':'9.8','15.3':'9.4','15.4':'9.6','16.1':'8.1','16.2':'8.2','16.3':'8.3','16.4':'8.4'};
 const FIELDMODS={};
+const IDMAP2={'11.1':'8.5','11.2':'8.6','11.3':'8.7','11.4':'8.8'};
 (function(){const D=n=>DAYS.find(d=>d.n===n);const d1=D(1),d5=D(5),d8=D(8),d9=D(9),d12=D(12),d13=D(13),d14=D(14),d15=D(15),d16=D(16);if(!d16)return;
 [FEAT,CEO].forEach(M=>{const snap=Object.assign({},M);Object.entries(IDMAP).forEach(([o,n])=>{if(snap[o]!==undefined&&!['15.3','15.4'].includes(o))M[n]=snap[o]});Object.keys(IDMAP).forEach(o=>{if(!Object.values(IDMAP).includes(o))delete M[o]})});
 const mv=(u,id)=>{u.id=id;return u};
@@ -10,6 +11,8 @@ d14.units.forEach(u=>d5.units.push(mv(u,IDMAP[u.id])));
 const merge=(into,u)=>{const t=into;['en','ar'].forEach(l=>{t.body[l]+=`<hr><h3>${l==='en'?'Going further':'تعمّق أكتر'}: ${u.t[l]}</h3>`+u.body[l]});t.prompts=(t.prompts||[]).concat(u.prompts||[]);t.cases=(t.cases||[]).concat(u.cases||[]);if(u.tips)['en','ar'].forEach(l=>{t.tips=t.tips||T([],[]);t.tips[l]=(t.tips[l]||[]).concat(u.tips[l]||[])});t.dur=String((+t.dur||0)+Math.round((+u.dur||0)/2))};
 d15.units.forEach(u=>{const id=IDMAP[u.id];const ex=d9.units.find(x=>x.id===id);if(ex)merge(ex,u);else d9.units.push(mv(u,id))});
 d16.n=8;d16.units.forEach(u=>mv(u,IDMAP[u.id]));
+// round 12: Module 11 (family business & SMEs) merges into Module 8 as 8.5–8.8
+const d11=D(11);if(d11){[FEAT,CEO].forEach(M=>Object.entries(IDMAP2).forEach(([o,n])=>{if(M[o]!==undefined){M[n]=M[o];delete M[o]}}));d11.units.forEach(u=>d16.units.push(mv(u,IDMAP2[u.id])));d16.t=T('Leading AI change in teams & SMEs','قيادة التغيير بالـ AI في الفرق والشركات الصغيرة');d16.sub=T('Make the case, run a pilot, bring the team along — and run a small or family business with Claude.','اقنع الإدارة، شغّل pilot، خد الفريق معاك — وادير شركة صغيرة أو عائلية بـ Claude.');QUIZ[16]=(QUIZ[16]||[]).concat(QUIZ[11]||[]);delete QUIZ[11];for(let i=PROJECTS.length-1;i>=0;i--)if(PROJECTS[i].n===11)PROJECTS.splice(i,1);DAYS.splice(DAYS.indexOf(d11),1)}
 const q8=QUIZ[8]||[];QUIZ[1]=(QUIZ[1]||[]).concat(q8);QUIZ[5]=(QUIZ[5]||[]).concat(QUIZ[14]||[]);QUIZ[9]=(QUIZ[9]||[]).concat(QUIZ[15]||[]);QUIZ[8]=QUIZ[16]||[];
 FIELDMODS.audit={m:d12,quiz:QUIZ[12]||[],proj:PROJECTS.find(p=>p.n===12)};FIELDMODS.banking={m:d13,quiz:QUIZ[13]||[],proj:PROJECTS.find(p=>p.n===13)};
 [12,13,14,15,16].forEach(n=>delete QUIZ[n]);

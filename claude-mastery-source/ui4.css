@@ -112,3 +112,7 @@ abbr.gl{text-decoration:underline dotted var(--gold);text-underline-offset:3px;c
 .cxtpl{margin:10px 0 4px}.cxlab{font-size:12px;color:var(--gold);font-weight:700;margin-bottom:6px}.cxprob{padding:10px 12px;border-radius:10px;background:var(--panel2)}.cxprob p,.cxba p,.cxfoot p{margin:4px 0}
 .cxba{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:8px}.cxb,.cxa{padding:10px 12px;border-radius:10px;border:1px solid var(--line)}.cxb{background:var(--redsoft)}.cxa{background:var(--greensoft)}.cxt{font-weight:700;margin:2px 0}
 .cxnote{font-size:11.5px;margin:4px 0 0}.cxfoot{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--goldsoft)}.cxfoot ul{margin:4px 0;padding-inline-start:18px}
+/* round 12: assistant */
+.aspanel.big{width:min(760px,calc(100vw - 32px));height:min(86vh,900px)}.aspanel.big .asmsgs{max-height:none;flex:1}
+.asmode{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px;background:var(--goldsoft);margin-bottom:6px}
+.asacts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.asbtns{display:inline-flex;gap:4px}.assrc{margin-top:8px;font-size:12.5px;line-height:1.7;border-top:1px dashed var(--line);padding-top:6px}.assrc a{white-space:normal}
