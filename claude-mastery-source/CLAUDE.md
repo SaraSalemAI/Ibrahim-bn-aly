@@ -14,6 +14,8 @@ Bilingual (Arabic/English) Claude training platform by Dr. Sara Salem. Output is
 - packs2.js: Prompt packs tab inside Lab & Studio (basket, 📦 on prompt cards, filtered/starter exports, JSON/MD/PDF, import preview + dedupe, quality scores).
 - community2.js: References page (Anthropic community + official sources), #community hub (checklist, MENA spotlight, share your work), lesson 8.2 + quiz question. COMMUNITY data is in mcpsec.js.
 - features3.js: #rescue (prompt rescue game), "Explain like my manager" on lessons (sample), pack test with Claude + Skill-folder export in the packs tab, offline course pack on #export, #showcase wall (db collection `wall`, one doc per user id).
+- curr4.js: Module 10 (Claude for Arabic content, 10.1–10.4 + QUIZ[10]), 1.9 Prompt failures clinic, 9.5 Claude for audit & compliance, extra quiz questions. Embedded PDFs predate these lessons.
+- features4.js: #spot (spot the hallucination: 5 fixed rounds + Claude-generated rounds), #remix (adapt a lab prompt to another industry).
 - Helpers: `T(en,ar)`, `MPen/MPar` (six-block master prompt), `CM(...)` (case with master prompt).
 
 ## Rules
