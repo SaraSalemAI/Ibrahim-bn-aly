@@ -1,5 +1,5 @@
 // Big files (curriculum PDFs, master prompt books) are artifact assets; the slide deck stays embedded (pptx.js) because .pptx is not an allowed asset type, not embedded — keeps the page small. URLs filled after upload.
-const ASSET={pdf_ar:'/_blob/e640abf6716dbd97a7ce9fb1759791f2',pdf_en:'/_blob/86d623207f2779bd1f86fc6f988e40c9',mp_ar:'/_blob/456d7f8ad8b9809544a5e6de333b4afc',mp_en:'/_blob/da245c2337ca78b49de5fb678014894e'};
+const ASSET={pdf_ar:'/_blob/b6e2a3be76b399b152f6a53f39277c2f',pdf_en:'/_blob/05cffeebe2bc5727c116c336d063d340',mp_ar:'/_blob/e703f69f5c564c5e13f96c86ea1cfcf8',mp_en:'/_blob/74675dc22c08a55b9b401539ed01576a'};
 async function assetBlob(k){if(k==='pptx'&&typeof PPTX_B64!=='undefined')return b64blob(PPTX_B64,'application/vnd.openxmlformats-officedocument.presentationml.presentation');const u=ASSET[k];if(!u)return null;try{const r=await fetch(u);if(!r.ok)throw new Error(r.status);return await r.blob()}catch(e){return null}}
 async function assetSave(k,name){const b=await assetBlob(k);if(b)return saveFile(name,b);if(ASSET[k]){window.open(ASSET[k],'_blank','noopener');return true}throw new Error('asset_missing')}
 // English editions of the books (assets) next to the Arabic ones
