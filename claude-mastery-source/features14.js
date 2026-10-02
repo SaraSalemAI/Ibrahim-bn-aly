@@ -1,5 +1,6 @@
 // ---------- Round 15: agent playground / team designer / cost estimator, automation hub tabs, Module 3 artifact & design studio, failure gallery, Module 6 build-alongs, Studio cleanup ----------
 const UX21={play:T('Playground','الملعب'),team:T('Team designer','مصمم الفريق'),cost:T('Cost & time','التكلفة والوقت'),design:T('Designer','المصمم'),find:T('Automation finder','مكتشف الأتمتة'),recipes:T('Recipes','وصفات'),matrix:T('Approval matrix','مصفوفة الموافقات'),risk:T('Risk register','سجل المخاطر'),fix:T('Fix & re-enhance','صلّح وحسّن'),saved:T('My saved prompts','برومبتاتي المحفوظة'),fails:T('Failure gallery','معرض الأخطاء'),ba:T('Build-along projects','مشروعات ابني معانا'),m3:T('Artifact & design studio','استوديو الـ Artifacts والتصميم')};
+UX6.wf=T('Automation hub & workflows','مركز الأتمتة وسير العمل');
 const nowISO=()=>new Date().toISOString().slice(0,10);
 const ntf=(id,t)=>{const e=document.getElementById(id);if(e)e.textContent=t};
 
