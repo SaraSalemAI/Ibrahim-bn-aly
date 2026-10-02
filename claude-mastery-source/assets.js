@@ -1,0 +1,6 @@
+// Big files (curriculum PDFs, master prompt books, slide deck) are artifact assets, not embedded — keeps the page small. URLs filled after upload.
+const ASSET={pdf_ar:'',pdf_en:'',mp_ar:'',mp_en:'',pptx:''};
+async function assetBlob(k){const u=ASSET[k];if(!u)return null;try{const r=await fetch(u);if(!r.ok)throw new Error(r.status);return await r.blob()}catch(e){return null}}
+async function assetSave(k,name){const b=await assetBlob(k);if(b)return saveFile(name,b);if(ASSET[k]){window.open(ASSET[k],'_blank','noopener');return true}throw new Error('asset_missing')}
+// English editions of the books (assets) next to the Arabic ones
+setTimeout(function(){const i=EXPORTS.findIndex(e=>e[0]==='pdf_ar');if(i>=0)EXPORTS.splice(i+1,0,['pdf_en','📘',T('Full curriculum — PDF (English)','المنهج الكامل — PDF (إنجليزي)'),T('All modules, lessons, steps, master prompts, deep dives, A–Z case, libraries, glossary.','كل الموديولات والدروس والخطوات والبرومبتات الماستر.')]);const j=EXPORTS.findIndex(e=>e[0]==='mp_ar');if(j>=0)EXPORTS.splice(j+1,0,['mp_en','📗',T('Master prompt book — PDF (English)','كتاب البرومبتات الماستر — PDF (إنجليزي)'),T('Every master prompt in English, ready to print.','كل البرومبتات الماستر بالإنجليزي جاهزة للطباعة.')])},0);
