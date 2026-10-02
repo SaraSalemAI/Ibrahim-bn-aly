@@ -21,11 +21,13 @@ Bilingual (Arabic/English) Claude training platform by Dr. Sara Salem. Output is
 - fields1.js / fields2.js: FIELDLIB — 23 fields × daily/weekly/monthly/yearly master prompts + example outputs. fieldsview.js: #fields, #tracks (+ track certificate PNG), recipe-card PDF, #projects + project card on each module page (graded with sample). e2e.js: #e2e five end-to-end company cases.
 - e2e2.js: 3 more company cases (finance, supply chain, business strategy). fgloss.js: FGLOSS 20 EN–AR terms per field. chains.js: CHAINS one 3-step prompt chain per field.
 - features6.js: #prog = progress + achievement card + ROI tabs (#card #roi redirect); quiz page gets a 🔎 spot tab (#spot redirects); lesson page = sticky module TOC + lesson progress + reading bar; ⏱ Lesson in 60 seconds overlay; 🩺 Fix my real prompt Studio tab (sample); industry editions + glossary marks + chain on #fields; field booklet PDF (html2canvas foreignObjectRendering + jsPDF, page-sliced — foreignObject is required for correct Arabic shaping).
+- e2e3.js / e2e4.js: company cases for the 17 remaining fields (E2E now covers all 23 fields + supply chain + business). dayinlife.js: DIL six-moment working day per field.
+- features7.js: 6 more industry editions; day-in-the-life on #fields/#tracks; routes fields/<k>, tracks/<k>, e2e/<k>; 🕸 skills radar on #prog; 📓 module workbook PDF (modExportBar); home "Today" panel; wider search with type filters; #news = verified NEWS array (checked date) + owner-added items in db `news`; My work platform banner.
 - Helpers: `T(en,ar)`, `MPen/MPar` (six-block master prompt), `CM(...)` (case with master prompt).
 
 ## Rules
 - ALWAYS keep every string bilingual via `T(en, ar)`; Arabic in Egyptian dialect for explanations.
 - ALWAYS keep the page under 16,000,000 bytes (embedded PDFs are the big part; the image gallery was removed).
-- NEVER use browser APIs not allowed on published pages; runtime capabilities used: `downloads`, `sample`, `user` (profile), `db` (rules: `wall` read view / write owner, `wall/{self}` write interact; `alerts` read owner / write owner, `alerts/{self}` read+write interact) — restate all of them on any publish that passes `capabilities`.
+- NEVER use browser APIs not allowed on published pages; runtime capabilities used: `downloads`, `sample`, `user` (profile), `db` (rules: `wall` read view / write owner, `wall/{self}` write interact; `alerts` read owner / write owner, `alerts/{self}` read+write interact; `news` read view / write owner) — restate all of them on any publish that passes `capabilities`.
 - NEVER invent Claude features; date-sensitive facts are "as of Sept 2026".
 - Test every route in both languages and both themes before publishing.
