@@ -23,6 +23,7 @@ Bilingual (Arabic/English) Claude training platform by Dr. Sara Salem. Output is
 - features6.js: #prog = progress + achievement card + ROI tabs (#card #roi redirect); quiz page gets a 🔎 spot tab (#spot redirects); lesson page = sticky module TOC + lesson progress + reading bar; ⏱ Lesson in 60 seconds overlay; 🩺 Fix my real prompt Studio tab (sample); industry editions + glossary marks + chain on #fields; field booklet PDF (html2canvas foreignObjectRendering + jsPDF, page-sliced — foreignObject is required for correct Arabic shaping).
 - e2e3.js / e2e4.js: company cases for the 17 remaining fields (E2E now covers all 23 fields + supply chain + business). dayinlife.js: DIL six-moment working day per field.
 - features7.js: 6 more industry editions; day-in-the-life on #fields/#tracks; routes fields/<k>, tracks/<k>, e2e/<k>; 🕸 skills radar on #prog; 📓 module workbook PDF (modExportBar); home "Today" panel; wider search with type filters; #news = verified NEWS array (checked date) + owner-added items in db `news`; My work platform banner.
+- safe.js (first in build): the published page runs in a sandboxed srcdoc iframe (origin 'null'), so `history.replaceState(null,'','#x')` throws and `<a href="#x">` navigates away (blank page). safe.js patches replaceState to use an absolute URL and routes hash links through `go()`. render() wraps renderInner() in an error boundary. Test in a sandboxed srcdoc iframe (tsand.py pattern), not only file://.
 - Helpers: `T(en,ar)`, `MPen/MPar` (six-block master prompt), `CM(...)` (case with master prompt).
 
 ## Rules

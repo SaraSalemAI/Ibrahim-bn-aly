@@ -1,0 +1,3 @@
+// Viewer-safety: the published page runs in a sandboxed srcdoc iframe (origin 'null'), where a relative URL like '#lab' resolves against the host page and history.replaceState throws.
+(function(){const H=history,rs=H.replaceState.bind(H);H.replaceState=function(s,t,u){try{rs(s,t,u)}catch(e){try{if(typeof u==='string'&&u[0]==='#')rs(s,t,location.href.split('#')[0]+u)}catch(e2){}}};
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('a[href^="#"]');if(!a||e.defaultPrevented||e.ctrlKey||e.metaKey)return;const h=a.getAttribute('href').slice(1);if(!h)return;e.preventDefault();if(typeof go==='function')go(h);else location.hash=h},false)})();
