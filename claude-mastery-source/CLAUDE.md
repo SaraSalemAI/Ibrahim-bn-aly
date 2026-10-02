@@ -19,6 +19,8 @@ Bilingual (Arabic/English) Claude training platform by Dr. Sara Salem. Output is
 - features5.js: merged pages — Studio tabs (🛟 rescue game, 🎚 remix), #path + feature picker tabs, #sim (agent loop + case simulator + showcase wall tabs), #gallery = references + community hub + email alerts (db `alerts/{uid}`), "Check the output" checklist under every master prompt. Old routes (#rescue #remix #pick #csim #showcase #community #wb) redirect.
 - curr5.js: 4.4 one job six tools, 9.6 Egypt & GCC regulations pack, Module 11 family business & SMEs + QUIZ[11], PROJECTS (one per module). `ENR()` enriches master prompts (market in role, language/currency, assumptions).
 - fields1.js / fields2.js: FIELDLIB — 23 fields × daily/weekly/monthly/yearly master prompts + example outputs. fieldsview.js: #fields, #tracks (+ track certificate PNG), recipe-card PDF, #projects + project card on each module page (graded with sample). e2e.js: #e2e five end-to-end company cases.
+- e2e2.js: 3 more company cases (finance, supply chain, business strategy). fgloss.js: FGLOSS 20 EN–AR terms per field. chains.js: CHAINS one 3-step prompt chain per field.
+- features6.js: #prog = progress + achievement card + ROI tabs (#card #roi redirect); quiz page gets a 🔎 spot tab (#spot redirects); lesson page = sticky module TOC + lesson progress + reading bar; ⏱ Lesson in 60 seconds overlay; 🩺 Fix my real prompt Studio tab (sample); industry editions + glossary marks + chain on #fields; field booklet PDF (html2canvas foreignObjectRendering + jsPDF, page-sliced — foreignObject is required for correct Arabic shaping).
 - Helpers: `T(en,ar)`, `MPen/MPar` (six-block master prompt), `CM(...)` (case with master prompt).
 
 ## Rules
