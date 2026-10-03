@@ -148,7 +148,7 @@ function saveAC(){const {busy,...r}=AC;ST.ac=r;saveST()}
 // ---------- Claude Finance Department: 10 functions · 50 agents · 50 skills ----------
 let FDS={f:'fpa',q:'',open:''};
 const fdList=s=>String(s||'').split('|').map(x=>x.trim()).filter(Boolean);
-const fdSkill=k=>{for(const f of FD){const s=f.skills.find(x=>x.k===k);if(s)return s}return null};
+let fdSkill=k=>{for(const f of FD){const s=f.skills.find(x=>x.k===k);if(s)return s}return null};
 const FDCOMMON={en:['Use only the data provided. If a number is missing, ask or write [MISSING] — never invent figures.','Show calculations and label every assumption and estimate.','You draft and recommend. A named person approves before anything is posted, paid, sent or filed.','Keep personal and confidential data inside approved tools; anonymise where you can.'],
 ar:['استخدم البيانات المقدّمة بس. لو رقم ناقص اسأل أو اكتب [MISSING] — ممنوع تأليف أرقام.','وضّح الحسابات وعلّم على كل افتراض وتقدير.','إنت بتكتب مسودة وتوصية. شخص محدد بالاسم بيوافق قبل أي ترحيل أو دفع أو إرسال أو تقديم.','خلّي البيانات الشخصية والسرية جوه الأدوات المعتمدة، وشيل الأسماء لما تقدر.']};
 function fdPrompt(a,f,lang){const x=k=>a[k][lang]||a[k].en;const sk=fdSkill(a.sk);const li=s=>fdList(s).map(i=>'- '+i).join('\n');const en=lang==='en';
