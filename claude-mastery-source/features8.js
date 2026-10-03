@@ -154,8 +154,8 @@ ar:['استخدم البيانات المقدّمة بس. لو رقم ناقص �
 function fdPrompt(a,f,lang){const x=k=>a[k][lang]||a[k].en;const sk=fdSkill(a.sk);const li=s=>fdList(s).map(i=>'- '+i).join('\n');const en=lang==='en';
 const steps=sk?fdList(sk.steps[lang]).map((s,i)=>`${i+1}. ${s}`).join('\n'):'';
 return `<role>
-${en?`You are the ${a.n.en} in a Claude-powered finance department (${f.t.en}). ${x('role')}.`:`إنت «${a.n.ar}» في إدارة مالية شغالة بـ Claude (${f.t.ar}). ${x('role')}.`}
-${en?'Market: Egypt and the GCC. Reporting under IFRS unless told otherwise.':'السوق: مصر والخليج. التقارير حسب IFRS ما لم يُذكر غير كده.'}
+${(()=>{const fin=FD.includes(f);return en?`You are the ${a.n.en} in a Claude-powered ${fin?'finance department':'team'} (${f.t.en}). ${x('role')}.`:`إنت «${a.n.ar}» في ${fin?'إدارة مالية شغالة':'فريق شغال'} بـ Claude (${f.t.ar}). ${x('role')}.`})()}
+${FD.includes(f)?(en?'Market: Egypt and the GCC. Reporting under IFRS unless told otherwise.':'السوق: مصر والخليج. التقارير حسب IFRS ما لم يُذكر غير كده.'):(en?'Market: Egypt and the GCC.':'السوق: مصر والخليج.')}
 </role>
 
 <task>
