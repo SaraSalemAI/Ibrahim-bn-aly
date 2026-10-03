@@ -211,3 +211,12 @@ textarea#md-out { width: 100%; min-height: 140px; font: 0.8rem/1.4 var(--font-nu
 /* Bullets drawn as text so they follow the writing direction in the page and in the PDF export. */
 .ai-text li { position: relative; padding-inline-start: 18px; }
 .ai-text li::before { content: '•'; position: absolute; inset-inline-start: 4px; color: var(--accent); }
+
+/* Paste box, missing-items notice, diagnostics */
+.paste-box { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 8px 14px; }
+.paste-box summary { cursor: pointer; font-weight: 600; }
+.paste-box textarea, #diag-out { width: 100%; min-height: 110px; font: 0.8rem/1.4 var(--font-num); border: 1px solid var(--line); border-radius: 6px; padding: 8px; background: var(--sunk); color: var(--ink); margin: 6px 0; }
+#diag-out { min-height: 220px; }
+#diag summary { cursor: pointer; }
+.missing-card { border-inline-start: 4px solid var(--warn); }
+.missing-card p { margin: 6px 0 10px; }

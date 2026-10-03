@@ -82,3 +82,11 @@ test('PDF: Arabic wrapped labels are joined and Arabic footers skipped', { skip:
   assert.deepEqual(t.lines, [{ label: 'الممتلكات و المعدات', values: { 2024: 100, 2023: 90 } }]);
   assert.equal(CFO.sniffDelimiter('a;b;c\n1;2;3,5'), ';');
 });
+
+test('cells pasted from Excel (tab-separated text) are read like a file', { skip: !ready }, () => {
+  const text = '\t2023\t2024\r\nRevenue\t58,000\t61,000\r\nNet income\t3,937\t1,488\r\nTotal assets\t58,700\t65,800\r\nTotal equity\t29,200\t27,800\r\n';
+  const ds = CFO.buildDataset(CFO.csvTables(new TextEncoder().encode(text), 'Pasted table 1'));
+  assert.deepEqual(ds.periods, ['2023', '2024']);
+  assert.equal(ds.data['2024'].revenue, 61000);
+  assert.equal(ds.data['2024'].equity, 27800);
+});

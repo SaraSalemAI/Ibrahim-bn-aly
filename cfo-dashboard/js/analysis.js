@@ -202,7 +202,8 @@
       (byGroup[def.group] = byGroup[def.group] || []).push(P[s]);
     }
     const groups = Object.fromEntries(Object.entries(byGroup).map(([g, a]) => [g, a.reduce((x, y) => x + y, 0) / a.length]));
-    const score = w ? Math.round(sum / w) : null;
+    // A score built on one or two areas (e.g. only an income statement) would mislead: require three.
+    const score = w && Object.keys(byGroup).length >= 3 ? Math.round(sum / w) : null;
     const grade = score == null ? null : score >= 80 ? 'A' : score >= 65 ? 'B' : score >= 50 ? 'C' : score >= 35 ? 'D' : 'E';
     return { score, grade, groups };
   }

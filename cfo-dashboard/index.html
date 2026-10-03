@@ -36,6 +36,12 @@
       <label class="btn primary" for="file-input"><span data-t="browse">Choose files</span></label>
       <input id="file-input" type="file" multiple accept=".xlsx,.xls,.xlsm,.ods,.csv,.tsv,.txt,.pdf" class="visually-hidden" tabindex="-1">
     </div>
+    <details class="paste-box" id="paste-box">
+      <summary data-t="pasteTitle">Paste from Excel</summary>
+      <p class="muted small" data-t="pasteHint"></p>
+      <textarea id="paste-in" rows="4" aria-label="Paste from Excel"></textarea>
+      <div class="actions"><button class="btn primary" type="button" data-paste="go" data-t="pasteGo">Analyse pasted table</button></div>
+    </details>
     <div class="notice" id="sample-notice"><span class="tag" data-t="exampleTag">Example</span><span data-t="sampleNotice"></span></div>
     <div class="files" id="files"></div>
     <div class="errors" id="errors"></div>
@@ -54,6 +60,7 @@
 
   <main>
     <section class="panel" id="p-overview" role="tabpanel">
+      <div class="card missing-card" id="missing-card" role="status" hidden></div>
       <div class="card hero" id="hero"></div>
       <div class="kpis" id="kpis"></div>
       <div class="grid-2">

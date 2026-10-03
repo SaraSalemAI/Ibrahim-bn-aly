@@ -17,6 +17,7 @@
     sector: CFO.SECTORS[store.get('sector')] ? store.get('sector') : 'general',
     drivers: null, fcYears: 3, S: null,            // forecast: drivers (null = from history), scenarios
     ai: { text: '', busy: false, err: '', ctl: null }, aiOn: false,
+    diagNumbers: false, diagOpen: false,
   };
   CFO.setSector(state.sector);
   // Anything that changes the data starts the forecast and the commentary afresh.
@@ -28,11 +29,19 @@
   // which avoids web-worker restrictions in sandboxed frames. Otherwise fall back to the CDN worker.
   if (globalThis.pdfjsLib && !globalThis.pdfjsWorker) globalThis.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
+  CFO.BUILD = '2026-10-03.6';
+
   /* ---------- intake ---------- */
-  let busy = false;
+  // What happened to each attempt, for the diagnostics box (Data review) the user can copy to support.
+  const diag = { events: { drop: 0, chooser: 0, pasteFiles: 0, pasteTable: 0 }, files: [], errors: [] };
+  const withTimeout = (promise, ms, what) => Promise.race([promise,
+    new Promise((_, rej) => setTimeout(() => rej(new Error(`timeout:${what}`)), ms))]);
+  let busy = false, queued = [];
   async function addFiles(fileList) {
     const files = [...(fileList || [])].filter(f => f && f.name);
-    if (!files.length || busy) return;
+    if (!files.length) return;
+    // Files arriving while others are read wait their turn instead of being ignored.
+    if (busy) { queued.push(...files); return; }
     busy = true;
     $('loading').hidden = false;
     const L = () => CFO.UI[state.lang];
@@ -42,17 +51,25 @@
     state.errors = []; state.notes = [];
     try {
       for (const f of files) {
+        const info = { name: f.name, size: f.size, type: f.type || '?', started: Date.now() };
+        diag.files.push(info);
         try {
-          const tables = await CFO.parseFile(f);
+          // A reader that never finishes must not freeze the page: give up after 60 s.
+          const tables = await withTimeout(f.tables ? Promise.resolve(f.tables) : CFO.parseFile(f), 60000, f.name);
           const lines = tables.reduce((n, t) => n + t.lines.length, 0);
-          if (!lines) { state.errors.push(() => L().errNoLines(f.name)); continue; }
+          info.ms = Date.now() - info.started;
+          info.tables = tables.map(t => ({ source: t.source, periods: t.periods, lines: t.lines.length, labels: t.lines.map(l => l.label), values: t.lines.map(l => l.values) }));
+          if (!lines) { info.result = 'no lines with year columns'; state.errors.push(() => L().errNoLines(f.name)); continue; }
           tables.forEach(t => { t.file = f.name; });
           const matched = tables.reduce((n, t) => n + t.lines.filter(l => CFO.matchLabel(l.label)).length, 0);
+          info.result = `${lines} lines, ${matched} matched`;
           state.notes.push(matched ? () => L().readOk(f.name, tables.length, lines, matched) : () => L().readNoMatch(f.name));
           added.push({ name: f.name, tables, matched });
         } catch (e) {
-          const ext = /^unsupported:(.*)$/.exec(e && e.message);
-          state.errors.push(ext ? () => L().errUnsupported(ext[1]) : () => `${L().errRead(f.name)} (${(e && e.message) || e})`);
+          const msg = (e && e.message) || String(e);
+          info.result = 'error: ' + msg; info.ms = Date.now() - info.started;
+          const ext = /^unsupported:(.*)$/.exec(msg);
+          state.errors.push(ext ? () => L().errUnsupported(ext[1]) : /^timeout:/.test(msg) ? () => L().errTimeout(f.name) : () => `${L().errRead(f.name)} (${msg})`);
           console.error(e);
         }
       }
@@ -62,15 +79,62 @@
         state.tables = [...kept.tables.filter(t => !names.has(t.file)), ...added.flatMap(a => a.tables)];
         state.files = [...kept.files.filter(n => !names.has(n)), ...added.map(a => a.name)];
         state.overrides = {}; state.isSample = false; dataChanged();
-        if (!added.some(a => a.matched)) state.tab = 'review';
+        if (!added.some(a => a.matched)) { state.tab = 'review'; state.diagOpen = true; }
       } else if (wasSample) {
         state.notes.push(() => L().keptExample);
+        state.diagOpen = true;
       }
     } finally {
       busy = false;
       $('loading').hidden = true;
       render();
+      if (queued.length) { const next = queued; queued = []; addFiles(next); }
     }
+  }
+
+  /** Cells copied from Excel (or any table) and pasted as text: read like a tab-separated file. */
+  function addPastedTable(text) {
+    if (!text || !text.trim()) return;
+    diag.events.pasteTable++;
+    const n = state.files.filter(f => /^Pasted table/.test(f)).length + 1;
+    const name = `Pasted table ${n}`;
+    const tables = CFO.csvTables(new TextEncoder().encode(text), name);
+    addFiles([{ name, size: text.length, type: 'text/plain (pasted)', tables }]);
+  }
+
+  /** Plain-text report of what the page saw, for the user to paste into a support chat. */
+  const KEY_ITEMS = ['revenue', 'cogs', 'net_income', 'total_assets', 'current_assets', 'current_liabilities', 'total_liabilities', 'equity', 'cash', 'receivables', 'inventory', 'payables', 'cfo'];
+  function diagnosticsText(withNumbers) {
+    const ds = state.A?.ds, last = ds?.periods[ds.periods.length - 1], d = last ? ds.data[last] : {};
+    const libs = [['SheetJS', 'XLSX'], ['PapaParse', 'Papa'], ['pdf.js', 'pdfjsLib'], ['pdf.js worker', 'pdfjsWorker'], ['Chart.js', 'Chart'], ['jsPDF', 'jspdf'], ['html2canvas', 'html2canvas'], ['docx', 'docx']];
+    const out = [
+      `CFO Lens diagnostics · build ${CFO.BUILD} · ${new Date().toISOString()}`,
+      `Browser: ${navigator.userAgent}`,
+      `claude.ai viewer: ${globalThis.claude?.use ? 'yes' : 'no'} · language ${state.lang} · sector ${state.sector} · tab ${state.tab}`,
+      `Libraries: ${libs.map(([n, g]) => `${n} ${globalThis[g] ? 'ok' : 'MISSING'}`).join(', ')}`,
+      `Events: drop ${diag.events.drop}, choose ${diag.events.chooser}, paste files ${diag.events.pasteFiles}, paste table ${diag.events.pasteTable}`,
+      `Showing: ${state.isSample ? 'example data' : state.files.join(', ')}`,
+      `Periods: ${ds ? ds.periods.join(', ') : '-'}`,
+      `Found in ${last || '-'}: ${KEY_ITEMS.filter(k => d[k] != null).join(', ') || 'none'}`,
+      `Missing in ${last || '-'}: ${KEY_ITEMS.filter(k => d[k] == null).join(', ') || 'none'}`,
+      `Ratios available: ${ds ? CFO.RATIOS.filter(r => state.A.ratios[r.id][last]?.value != null).length : 0} of ${CFO.RATIOS.length}`,
+      `Data checks: ${ds ? ds.issues.map(i => i.type + (i.period ? ' ' + i.period : '') + (i.key ? ' ' + i.key : '')).join('; ') || 'ok' : '-'}`,
+      '', 'Files:',
+    ];
+    if (!diag.files.length) out.push('  (no file received by the page yet)');
+    for (const f of diag.files) {
+      out.push(`- ${f.name} (${f.size} bytes, ${f.type}): ${f.result || 'still reading'}${f.ms != null ? `, ${f.ms} ms` : ''}`);
+      for (const t of f.tables || []) {
+        out.push(`  table "${t.source}": years [${t.periods.join(', ')}], ${t.lines} lines`);
+        t.labels.slice(0, 40).forEach((l, i) => {
+          const key = CFO.matchLabel(l);
+          out.push(`    ${l}${key ? ` -> ${key}` : ' -> (not matched)'}${withNumbers ? ` ${JSON.stringify(t.values[i])}` : ''}`);
+        });
+        if (t.labels.length > 40) out.push(`    ... ${t.labels.length - 40} more`);
+      }
+    }
+    out.push('', `Errors: ${diag.errors.length ? diag.errors.slice(-8).join(' | ') : 'none'}`);
+    return out.join('\n');
   }
 
   function loadSample() {
@@ -144,6 +208,11 @@
     const top = F.slice(0, 3);
     $('top-flags').innerHTML = `<div class="section-head"><h3>${L.flagsTitle}</h3><button class="btn" type="button" data-go="flags">${F.length} →</button></div>
       <div class="list" style="margin-top:10px">${top.length ? top.map(flagCard).join('') : `<p class="muted">${L.noFlags}</p>`}</div>`;
+    // Ratios that cannot be computed are explained instead of showing silent dashes.
+    const missingIssues = A.ds.issues.filter(i => i.type === 'missing');
+    $('missing-card').hidden = state.isSample || !missingIssues.length;
+    $('missing-card').innerHTML = missingIssues.length ? `<h3>${esc(L.missingTitle)}</h3><p>${esc(L.missingBody(missingIssues.map(i => CFO.itemName(i.key, lang)).join(lang === 'ar' ? '، ' : ', ')))}</p>
+      <div class="actions"><button class="btn primary" type="button" data-go="review">${esc(L.openReview)}</button></div>` : '';
     $('ai-overview').innerHTML = aiPanel();
     $('ai-overview').hidden = !state.aiOn;
     requestAnimationFrame(() => CFO.drawCharts(A, lang));
@@ -237,7 +306,13 @@
     const n = k => CFO.itemName(k, lang);
     const opts = key => `<option value="">${L.ignore}</option>` + ['IS', 'BS', 'CF'].map(st => `<optgroup label="${L.st[st]}">${CFO.ITEMS.filter(i => i.st === st).map(i => `<option value="${i.key}"${i.key === key ? ' selected' : ''}>${esc(n(i.key))}</option>`).join('')}</optgroup>`).join('');
     const issues = ds.issues.map(i => `<li>${esc(L.issue[i.type](i, n))}</li>`).join('');
-    $('p-review').innerHTML = `<div class="card"><h3>${L.issues}</h3>${issues ? `<ul class="issues" style="margin-top:8px">${issues}</ul>` : `<p class="muted">${L.noIssues}</p>`}</div>
+    const D = L.diag;
+    const diagCard = `<details class="card" id="diag" ${state.diagOpen ? 'open' : ''}><summary><h3 style="display:inline">${esc(D.title)}</h3></summary>
+      <p class="muted small">${esc(D.hint)}</p>
+      <div class="actions"><label class="small"><input type="checkbox" id="diag-num" ${state.diagNumbers ? 'checked' : ''}> ${esc(D.withNumbers)}</label>
+        <button class="btn primary" type="button" data-diag="copy">${esc(D.copy)}</button><span class="muted small" id="diag-msg" role="status"></span></div>
+      <textarea id="diag-out" readonly aria-label="${esc(D.title)}">${esc(diagnosticsText(state.diagNumbers))}</textarea></details>`;
+    $('p-review').innerHTML = diagCard + `<div class="card"><h3>${L.issues}</h3>${issues ? `<ul class="issues" style="margin-top:8px">${issues}</ul>` : `<p class="muted">${L.noIssues}</p>`}</div>
       <div><h2>${L.reviewTitle}</h2><p class="muted small">${L.reviewHint}</p></div>
       <div class="table-wrap"><table><thead><tr><th>${L.source}</th><th>${L.rawLabel}</th><th>${L.mappedTo}</th>${P.map(p => `<th class="n">${p}</th>`).join('')}</tr></thead>
       <tbody>${ds.lines.map(l => `<tr class="${l.key && !l.used ? 'not-used' : ''}"><td class="small muted">${esc(l.source)}</td><td>${esc(l.label)}</td>
@@ -363,6 +438,7 @@
     });
     TABS.forEach(t => { $('p-' + t).hidden = t !== state.tab; });
     $('sample-notice').hidden = !state.isSample;
+    $('paste-in').placeholder = L.pastePlaceholder;
     $('sector').innerHTML = Object.keys(CFO.SECTORS).map(k => `<option value="${k}"${k === state.sector ? ' selected' : ''}>${esc(CFO.sectorName(k, state.lang))}</option>`).join('');
     $('sector').setAttribute('aria-label', L.sector);
     $('files').innerHTML = state.isSample ? '' : `<span class="muted small">${L.filesLoaded}:</span>` +
@@ -419,6 +495,13 @@
       return;
     }
     if (e.target.closest('[data-fc="reset"]')) { state.drivers = null; return render(); }
+    if (e.target.closest('[data-paste="go"]')) { addPastedTable($('paste-in').value); $('paste-in').value = ''; return; }
+    if (e.target.closest('[data-diag="copy"]')) {
+      const text = diagnosticsText(state.diagNumbers), msg = $('diag-msg');
+      const fail = () => { msg.textContent = T().copyFail; $('diag-out').select(); };
+      try { navigator.clipboard.writeText(text).then(() => { msg.textContent = T().copied; }, fail); } catch (err) { fail(); }
+      return;
+    }
     if (e.target.closest('[data-ai="ask"]')) return runAi('');
     if (e.target.closest('[data-ai="stop"]')) { state.ai.ctl?.abort(); return; }
     if (e.target.closest('#x-md')) {
@@ -445,7 +528,8 @@
       if (isFinite(v)) { state.drivers = { ...state.drivers, [k]: CFO.clampDriver(k, unit === '%' ? v / 100 : v) }; render(); }
     }
     if (e.target.id === 'fc-years') { state.fcYears = +e.target.value; render(); }
-    if (e.target.id === 'file-input') { addFiles(e.target.files); e.target.value = ''; }
+    if (e.target.id === 'diag-num') { state.diagNumbers = e.target.checked; state.diagOpen = true; renderReview(); }
+    if (e.target.id === 'file-input') { diag.events.chooser++; addFiles(e.target.files); e.target.value = ''; }
   });
   $('btn-lang').addEventListener('click', () => { state.lang = state.lang === 'en' ? 'ar' : 'en'; store.set('lang', state.lang); render(); });
   $('btn-theme').addEventListener('click', () => {
@@ -470,19 +554,24 @@
   document.addEventListener('drop', e => {
     if (!hasFiles(e) && !e.dataTransfer?.files?.length) return;
     e.preventDefault(); depth = 0; document.body.classList.remove('dragging');
+    diag.events.drop++;
     addFiles(e.dataTransfer.files);
   });
-  $('drop').addEventListener('click', e => { if (!e.target.closest('label, input')) $('file-input').click(); });
+  $('drop').addEventListener('click', e => { if (!e.target.closest('label, input, textarea, button, details')) $('file-input').click(); });
   $('drop').addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file-input').click(); } });
   document.addEventListener('paste', e => {
     const files = [...(e.clipboardData?.files || [])];
-    if (files.length) { e.preventDefault(); addFiles(files); }
+    if (files.length) { e.preventDefault(); diag.events.pasteFiles++; addFiles(files); return; }
+    // Text pasted outside an input (cells copied from Excel) is read as a table.
+    const text = e.clipboardData?.getData('text/plain');
+    if (text && !e.target.closest('input, textarea') && /\t/.test(text)) { e.preventDefault(); addPastedTable(text); }
   });
 
   // Never fail silently: unexpected errors and missing libraries are shown on the page.
-  const showUnexpected = msg => { state.errors.push(() => T().unexpected(msg)); $('loading').hidden = true; busy = false; renderChrome(); };
-  window.addEventListener('error', e => { if (e.message) showUnexpected(e.message); });
-  window.addEventListener('unhandledrejection', e => showUnexpected((e.reason && e.reason.message) || String(e.reason)));
+  const showUnexpected = msg => { diag.errors.push(msg); };
+  const showUnexpectedBanner = msg => { state.errors.push(() => T().unexpected(msg)); $('loading').hidden = true; busy = false; renderChrome(); };
+  window.addEventListener('error', e => { if (e.message) { showUnexpected(e.message); showUnexpectedBanner(e.message); } });
+  window.addEventListener('unhandledrejection', e => { const m = (e.reason && e.reason.message) || String(e.reason); showUnexpected(m); showUnexpectedBanner(m); });
   const missing = [['SheetJS (Excel)', 'XLSX'], ['PapaParse (CSV)', 'Papa'], ['pdf.js (PDF)', 'pdfjsLib'], ['Chart.js (charts)', 'Chart'], ['jsPDF (PDF report)', 'jspdf'], ['html2canvas (PDF report)', 'html2canvas'], ['docx (Word report)', 'docx']]
     .filter(([, g]) => !globalThis[g]).map(([n]) => n);
 
@@ -491,5 +580,5 @@
   loadSample();
   if (missing.length) state.errors.push(() => T().libMissing(missing.join(', ')));
   render();
-  CFO.state = state; CFO.addFiles = addFiles;
+  CFO.state = state; CFO.addFiles = addFiles; CFO.diagnosticsText = diagnosticsText; CFO.addPastedTable = addPastedTable;
 })(globalThis.CFO = globalThis.CFO || {});

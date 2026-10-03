@@ -23,6 +23,9 @@ Open the single-file build `dist/cfo-lens.html` in a browser (double-click works
 - drag them onto the page,
 - click the drop card (or **Choose files**),
 - copy the files in your file manager and paste them into the page (Ctrl+V / ⌘V).
+- or **paste cells from Excel**: select the statement (labels + year columns, with the year row), copy, and paste into the "Paste from Excel" box (or anywhere on the page). This works even where file access is blocked.
+
+If something does not work, open **Data review → Diagnostics** and press **Copy diagnostics**: it lists the browser, the libraries, what the page received and which lines it recognised (labels only unless you tick "Include figures"). When key items are missing, the Overview names them, and the health score is shown only when at least three areas can be rated.
 
 After reading, a line under the drop card says what was found in each file (tables, lines, how many matched standard items). If a file cannot be used, a red message says why and the example stays on screen.
 
