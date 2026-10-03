@@ -121,13 +121,13 @@
   function matchLabel(label) {
     const n = normalize(label);
     if (!n) return null;
-    let best = null, bestScore = 0;
+    let best = null, bestScore = 0, bestSyn = '';
     for (const { it, syn } of NORM_SYN) {
       for (const s of syn) {
         let score = 0;
         if (n === s) score = 1000 + s.length;
         else if (s.length >= 4 && (' ' + n + ' ').includes(' ' + s + ' ')) score = s.length;
-        if (score > bestScore) { bestScore = score; best = it.key; }
+        if (score > bestScore) { bestScore = score; best = it.key; bestSyn = s; }
       }
     }
     // "Total liabilities and equity" is a check total, not an item.
@@ -135,8 +135,10 @@
     // A partial match on a line describing a movement or a sub-line ("change in inventory",
     // "deferred revenue", "cash at beginning of year") is not the item itself.
     if (best && bestScore < 1000) {
+      // Only the words outside the matched synonym count: "trade and other receivables net" is still receivables.
+      const rest = (' ' + n + ' ').replace(' ' + bestSyn + ' ', ' ');
       const notTheItem = /\b(change|changes|increase|decrease|movement|gain|loss on|proceeds|repayment|deferred|unearned|other|beginning|opening|per share|ratio)\b|التغير|الزياده|النقص|متحصلات|سداد|مؤجل|مقدما|اخري|اول المده|اول الفتره|اول العام|للسهم/;
-      if (notTheItem.test(n)) return null;
+      if (notTheItem.test(rest)) return null;
     }
     return best;
   }

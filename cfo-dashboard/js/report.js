@@ -45,17 +45,27 @@
     return lines.join('\n');
   }
 
-  function download(name, blob) {
+  /** Save a generated file. Inside the claude.ai viewer the page cannot download by itself, so the
+   * viewer's own save prompt is used (the `downloads` capability); elsewhere a normal browser download.
+   * Resolves 'saved' | 'declined' | 'unavailable'. */
+  async function download(name, blob) {
+    const dl = globalThis.claude?.use ? await globalThis.claude.use('downloads').catch(() => null) : null;
+    if (dl) {
+      try { await dl.save({ filename: name, data: blob }); return 'saved'; }
+      catch (e) { return e && (e.code === 'declined' || e.code === 'rate_limited') ? 'declined' : 'unavailable'; }
+    }
+    if (globalThis.claude?.use) return 'unavailable';      // in the viewer without the capability, a link would do nothing
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = name;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    return 'saved';
   }
 
   function exportHTML(A, F, lang) {
     const styles = [...document.styleSheets].map(s => { try { return [...s.cssRules].map(r => r.cssText).join('\n'); } catch (e) { return ''; } }).join('\n');
     const doc = `<!doctype html><html lang="${lang}" dir="${lang === 'ar' ? 'rtl' : 'ltr'}" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${CFO.UI[lang].reportTitle}</title><style>${styles}</style></head><body><main class="wrap"><article class="report">${reportHTML(A, F, lang)}</article></main></body></html>`;
-    download(`cfo-report-${A.latest || 'analysis'}-${lang}.html`, new Blob([doc], { type: 'text/html' }));
+    return download(`cfo-report-${A.latest || 'analysis'}-${lang}.html`, new Blob([doc], { type: 'text/html' }));
   }
 
   function exportXLSX(A, F, lang) {
@@ -72,7 +82,8 @@
       ...A.horizontal.map(r => [L.st[r.st], label(r), ...P.map(p => r.yoy[p]?.pct ?? ''), ...P.map(p => r.idx[p] ?? ''), r.cagr ?? ''])]);
     add('Red flags', [[lang === 'ar' ? 'الخطورة' : 'Severity', L.flagsTitle, L.evidence, L.action], ...F.map(f => [L.sev[f.sev], f.title[lang], f.ev(lang), f.rec[lang]])]);
     add('Mapping', [[L.source, L.rawLabel, L.mappedTo, ...P], ...ds.lines.map(l => [l.source, l.label, l.key ? CFO.itemName(l.key, lang) : '', ...P.map(p => l.values[p] ?? '')])]);
-    X.writeFile(wb, `cfo-analysis-${A.latest || ''}.xlsx`);
+    const bytes = X.write(wb, { type: 'array', bookType: 'xlsx' });
+    return download(`cfo-analysis-${A.latest || 'report'}.xlsx`, new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
   }
 
   CFO.reportHTML = reportHTML;

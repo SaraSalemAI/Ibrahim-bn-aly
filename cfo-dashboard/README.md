@@ -8,7 +8,7 @@ Drop one or more financial statements (Excel, CSV or PDF) into the page and get,
 - **Horizontal (trend) analysis** — year-over-year change in amount and %, index vs the first year (=100), and CAGR.
 - **Red flags** (16 rules) with the evidence numbers and a recommended action, plus a list of strengths.
 - **Financial health score** (0–100, grade A–E) and an executive summary.
-- **Reports**: Excel workbook (Summary, Data, Ratios, Vertical, Horizontal, Red flags, Mapping), a printable HTML report (print to PDF from your browser), and a Markdown summary to paste into email or chat.
+- **Reports** (on the claude.ai link the viewer asks before saving a file): Excel workbook (Summary, Data, Ratios, Vertical, Horizontal, Red flags, Mapping), a printable HTML report (print to PDF from your browser), and a Markdown summary to paste into email or chat.
 - **English / Arabic** (full right-to-left layout), light / dark theme, works on phones.
 
 No data leaves your computer: there is no server and no upload.
@@ -36,11 +36,14 @@ One row per line item, one column per year:
 | … | | |
 
 - Year headers can be `2024`, `FY2024`, `31/12/2024`, `٢٠٢٤`, `2024م`, a date-formatted Excel cell, or `Current year / Prior year` (`السنة الحالية / السنة السابقة`). Columns may be newest-first, and labels may sit left or right of the numbers.
-- Numbers can use thousands separators, parentheses or a minus for negatives, Arabic-Indic digits, currency labels. A "Note / إيضاح" column is ignored.
+- Numbers can use thousands separators (`1,234`, `1.234,56`, `1 234`), parentheses or a minus for negatives, Arabic-Indic digits, currency labels. A "Note / إيضاح" column is ignored.
+- Title blocks, units rows and several statements stacked in one sheet are fine: each statement's own year header is used.
+- CSV files may use commas, semicolons or tabs, and be saved as UTF-8, UTF-16 ("Unicode text") or Windows-1256 (Excel on Arabic Windows).
+- PDFs: the year columns carry over to continuation pages, labels wrapped over two lines are joined, and prose and page footers are skipped.
 - Each sheet of an Excel workbook is read separately. PDFs must contain real text (exported from accounting software), not a scan.
 - Labels are matched in English and Arabic (≈300 synonyms in `js/catalog.js`). Anything unmatched still appears in vertical/horizontal analysis, and you can map it by hand in **Data review**; the whole analysis updates immediately.
 
-Examples in `sample/`: three English CSVs, a 3-sheet Excel workbook, an Arabic CSV, and a PDF.
+Examples in `sample/`: three English CSVs, a 3-sheet Excel workbook, an Arabic CSV, and a PDF. Harder real-world layouts used by the tests are in `tests/fixtures/`.
 
 ## How the numbers are computed
 
@@ -76,6 +79,7 @@ package.json          pinned library versions for the build
 ```
 node --test cfo-dashboard/tests/analysis.test.mjs   # unit tests (no install needed)
 npm install --prefix cfo-dashboard                  # once: fetch the pinned libraries
+npm test --prefix cfo-dashboard                     # unit tests + real-world fixtures (tests/fixtures/)
 node cfo-dashboard/tools/build-single.mjs          # single-file build with libraries inlined
 ```
 

@@ -292,8 +292,13 @@
     const h = e.target.closest('[data-hmode]'); if (h) { state.hMode = h.dataset.hmode; return renderHorizontal(); }
     const r = e.target.closest('[data-remove]'); if (r) return removeFile(r.dataset.remove);
     if (e.target.closest('#btn-sample')) { loadSample(); state.errors = []; state.notes = []; return render(); }
-    if (e.target.closest('#x-xlsx')) return CFO.exportXLSX(state.A, state.F, state.lang);
-    if (e.target.closest('#x-html')) return CFO.exportHTML(state.A, state.F, state.lang);
+    const x = e.target.closest('#x-xlsx, #x-html');
+    if (x) {
+      const run = x.id === 'x-xlsx' ? CFO.exportXLSX : CFO.exportHTML;
+      Promise.resolve().then(() => run(state.A, state.F, state.lang)).then(status => { $('copy-msg').textContent = T().saveStatus[status] || ''; },
+        err => { $('copy-msg').textContent = T().unexpected((err && err.message) || err); });
+      return;
+    }
     if (e.target.closest('#x-md')) {
       const text = CFO.reportMarkdown(state.A, state.F, state.lang), msg = $('copy-msg');
       const fail = () => { msg.textContent = T().copyFail; $('md-out').select(); };

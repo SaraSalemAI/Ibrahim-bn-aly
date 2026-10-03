@@ -3,7 +3,7 @@
   "private": true,
   "description": "Financial statement analysis dashboard (browser-only).",
   "scripts": {
-    "test": "node --test tests/analysis.test.mjs",
+    "test": "node --test tests/analysis.test.mjs tests/fixtures.test.mjs",
     "build": "node tools/build-single.mjs"
   },
   "devDependencies": {
