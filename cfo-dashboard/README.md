@@ -6,9 +6,12 @@ Drop one or more financial statements (Excel, CSV or PDF) into the page and get,
 - **DuPont breakdown** of return on equity.
 - **Vertical (common-size) analysis** — every line as % of revenue (income statement, cash flow) or % of total assets (balance sheet).
 - **Horizontal (trend) analysis** — year-over-year change in amount and %, index vs the first year (=100), and CAGR.
-- **Red flags** (16 rules) with the evidence numbers and a recommended action, plus a list of strengths.
+- **Sector benchmarks**: pick the sector (general, trading & retail, manufacturing, services & technology, construction & real estate, food & beverage, healthcare). Ratings and red flags use that sector's limits, and the Ratios tab shows a typical sector value beside each ratio. The values are indicative rules of thumb, not published statistics; banks and insurers are not covered.
+- **Red flags** (17 rules) with the evidence numbers and a recommended action, plus a list of strengths.
+- **Forecast & scenarios**: 1–3 projected years from editable drivers (growth, margins, opex, depreciation, collection / stock / supplier days, capex, interest, tax, payout, new borrowing), defaulting to the company's own history. Base, upside and downside run side by side through the same ratios and red flags. The projected balance sheet balances with cash as the balancing item; a shortfall is shown as funding required.
+- **CFO commentary by Claude** (on the claude.ai link): a board-style commentary in Arabic or English, or an answer to your own question, written from the computed figures only (the files themselves are not sent). It asks for your permission the first time and is marked as machine-generated in the report.
 - **Financial health score** (0–100, grade A–E) and an executive summary.
-- **Reports** (on the claude.ai link the viewer asks before saving a file): Excel workbook (Summary, Data, Ratios, Vertical, Horizontal, Red flags, Mapping), a printable HTML report (print to PDF from your browser), and a Markdown summary to paste into email or chat.
+- **Reports** (on the claude.ai link the viewer asks before saving a file): **PDF** (drawn from the on-screen report, so Arabic looks exactly as on screen; text is not selectable), **Word** (.docx, editable, right-to-left for Arabic), **Excel** workbook (Summary, Data, Ratios, Vertical, Horizontal, Red flags, Forecast, Claude, Mapping), HTML, and a Markdown summary to paste into email or chat.
 - **English / Arabic** (full right-to-left layout), light / dark theme, works on phones.
 
 No data leaves your computer: there is no server and no upload.
@@ -63,10 +66,13 @@ js/catalog.js         standard line items + EN/AR synonyms, label matching
 js/parsers.js         Excel (SheetJS), CSV (PapaParse), PDF (pdf.js) readers
 js/mapper.js          merge files, derive subtotals, data checks
 js/analysis.js        ratios, DuPont, Altman, vertical, horizontal, health score
+js/benchmarks.js      sector limits and typical values
+js/forecast.js        driver-based forecast and scenarios
+js/ai.js              Claude commentary (claude.ai viewer only)
 js/i18n.js            UI text, ratio names and meanings (EN/AR), formatting
 js/insights.js        red-flag rules, strengths, executive summary
 js/charts.js          Chart.js charts and KPI sparklines
-js/report.js          report, Excel / HTML / Markdown exports
+js/report.js          report model and PDF / Word / Excel / HTML / Markdown exports
 js/app.js             UI state and rendering
 sample/               example input files
 tests/                node tests
@@ -83,7 +89,7 @@ npm test --prefix cfo-dashboard                     # unit tests + real-world fi
 node cfo-dashboard/tools/build-single.mjs          # single-file build with libraries inlined
 ```
 
-Libraries (pinned): SheetJS 0.18.5, PapaParse 5.4.1, pdf.js 3.11.174, Chart.js 4.4.1. `index.html` loads them from cdnjs; `dist/cfo-lens.html` has them inlined. pdf.js runs on the page's main thread (its worker script is loaded as a normal script), so it also works where web workers are blocked. If a library fails to load, the page names it in a red banner.
+Libraries (pinned): SheetJS 0.18.5, PapaParse 5.4.1, pdf.js 3.11.174, Chart.js 4.4.1, html2canvas 1.4.1, jsPDF 2.5.1, docx 8.5.0. `index.html` loads them from cdnjs / jsDelivr; `dist/cfo-lens.html` has them inlined. pdf.js runs on the page's main thread (its worker script is loaded as a normal script), so it also works where web workers are blocked. If a library fails to load, the page names it in a red banner.
 
 ## Limits
 

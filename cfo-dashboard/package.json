@@ -3,11 +3,14 @@
   "private": true,
   "description": "Financial statement analysis dashboard (browser-only).",
   "scripts": {
-    "test": "node --test tests/analysis.test.mjs tests/fixtures.test.mjs",
+    "test": "node --test tests/analysis.test.mjs tests/fixtures.test.mjs tests/forecast.test.mjs",
     "build": "node tools/build-single.mjs"
   },
   "devDependencies": {
     "chart.js": "4.4.1",
+    "docx": "8.5.0",
+    "html2canvas": "1.4.1",
+    "jspdf": "2.5.1",
     "papaparse": "5.4.1",
     "pdfjs-dist": "3.11.174",
     "xlsx": "0.18.5"

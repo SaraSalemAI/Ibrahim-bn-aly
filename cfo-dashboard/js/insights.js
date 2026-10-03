@@ -3,6 +3,8 @@
  */
 (function (CFO) {
   const pct = (v, l) => CFO.fmtPct(v, l), x = (v, l) => CFO.fmtVal('x', v, l), num = (v, l) => CFO.fmtNum(v, 0, l);
+  // Limits of the selected sector (js/benchmarks.js); rules compare against these, not fixed numbers.
+  const B = id => CFO.bench ? CFO.bench(id) : CFO.RATIO[id];
 
   function growth(ds, key, i) {
     const p = ds.periods[i], q = ds.periods[i - 1];
@@ -14,31 +16,32 @@
   /* Each rule: (ctx) => flag | null. ctx = { ds, R(id, i), d(i), i (latest index), g(key, i) } */
   const RULES = [
     ctx => {
-      const cr = ctx.R('current_ratio'), qr = ctx.R('quick_ratio');
-      if (cr != null && cr < 1) return {
+      const cr = ctx.R('current_ratio'), qr = ctx.R('quick_ratio'), bc = B('current_ratio').bad, bq = B('quick_ratio').bad;
+      if (cr != null && cr < bc) return {
         id: 'liquidity', sev: 'high',
         title: { en: 'Short-term liquidity squeeze', ar: 'ضغط على السيولة قصيرة الأجل' },
-        ev: l => (l === 'en' ? `Current ratio ${x(cr, l)} (below 1.0)` : `نسبة التداول ${x(cr, l)} (أقل من 1.0)`) + (qr != null ? (l === 'en' ? `; quick ratio ${x(qr, l)}` : `؛ النسبة السريعة ${x(qr, l)}`) : ''),
+        ev: l => (l === 'en' ? `Current ratio ${x(cr, l)} (below ${x(bc, l)})` : `نسبة التداول ${x(cr, l)} (أقل من ${x(bc, l)})`) + (qr != null ? (l === 'en' ? `; quick ratio ${x(qr, l)}` : `؛ النسبة السريعة ${x(qr, l)}`) : ''),
         rec: { en: 'Build a 13-week cash forecast, negotiate longer supplier terms, and refinance short-term borrowings into long-term facilities.', ar: 'أعدّ توقعاً نقدياً لمدة 13 أسبوعاً، وتفاوض على آجال أطول مع الموردين، وأعد تمويل القروض قصيرة الأجل بتسهيلات طويلة الأجل.' } };
-      if (qr != null && qr < 0.7) return {
+      if (qr != null && qr < bq) return {
         id: 'liquidity', sev: 'med',
         title: { en: 'Liquidity depends on selling inventory', ar: 'السيولة تعتمد على بيع المخزون' },
-        ev: l => (l === 'en' ? `Quick ratio ${x(qr, l)} (below 0.7); current ratio ${x(cr, l)}` : `النسبة السريعة ${x(qr, l)} (أقل من 0.7)؛ نسبة التداول ${x(cr, l)}`),
+        ev: l => (l === 'en' ? `Quick ratio ${x(qr, l)} (below ${x(bq, l)}); current ratio ${x(cr, l)}` : `النسبة السريعة ${x(qr, l)} (أقل من ${x(bq, l)})؛ نسبة التداول ${x(cr, l)}`),
         rec: { en: 'Reduce slow-moving stock and speed up collections so bills can be paid without relying on inventory sales.', ar: 'خفّض المخزون بطيء الحركة وسرّع التحصيل لسداد الالتزامات دون الاعتماد على بيع المخزون.' } };
       return null;
     },
     ctx => {
-      const ic = ctx.R('interest_coverage');
-      if (ic == null || ic >= 3) return null;
-      return { id: 'interest', sev: ic < 1.5 ? 'high' : 'med',
+      const ic = ctx.R('interest_coverage'), b = B('interest_coverage');
+      if (ic == null || ic >= b.good) return null;
+      return { id: 'interest', sev: ic < b.bad ? 'high' : 'med',
         title: { en: 'Thin cover for interest payments', ar: 'تغطية ضعيفة لمدفوعات الفوائد' },
-        ev: l => (l === 'en' ? `Interest coverage ${x(ic, l)} (comfort level ≥ 3.0); interest expense ${num(ctx.d().interest, l)}` : `تغطية الفوائد ${x(ic, l)} (المستوى المريح ≥ 3.0)؛ مصروف الفوائد ${num(ctx.d().interest, l)}`),
+        ev: l => (l === 'en' ? `Interest coverage ${x(ic, l)} (comfort level ≥ ${x(b.good, l)}); interest expense ${num(ctx.d().interest, l)}` : `تغطية الفوائد ${x(ic, l)} (المستوى المريح ≥ ${x(b.good, l)})؛ مصروف الفوائد ${num(ctx.d().interest, l)}`),
         rec: { en: 'Stop adding debt, repay or reprice the most expensive facilities, and check covenant headroom with lenders.', ar: 'أوقف الاقتراض الجديد، وسدد أو أعد تسعير أغلى التسهيلات، وراجع هامش التعهدات مع البنوك.' } };
     },
     ctx => {
-      const de = ctx.R('debt_to_equity'), nd = ctx.R('net_debt_to_ebitda');
-      if ((de == null || de <= 2) && (nd == null || nd <= 3)) return null;
-      return { id: 'leverage', sev: (de > 2 || nd > 4) ? 'high' : 'med',
+      const de = ctx.R('debt_to_equity'), nd = ctx.R('net_debt_to_ebitda'), bd = B('debt_to_equity'), bn = B('net_debt_to_ebitda');
+      const ndWatch = (bn.good + bn.bad) / 2;
+      if ((de == null || de <= bd.bad) && (nd == null || nd <= ndWatch)) return null;
+      return { id: 'leverage', sev: (de > bd.bad || nd > bn.bad) ? 'high' : 'med',
         title: { en: 'High debt load', ar: 'عبء ديون مرتفع' },
         ev: l => [de != null ? (l === 'en' ? `Debt/equity ${x(de, l)}` : `الديون/حقوق الملكية ${x(de, l)}`) : null, nd != null ? (l === 'en' ? `net debt/EBITDA ${x(nd, l)}` : `صافي الدين/EBITDA ${x(nd, l)}`) : null].filter(Boolean).join(l === 'en' ? '; ' : '؛ '),
         rec: { en: 'Set a deleveraging target (e.g. net debt/EBITDA below 2.5×) funded from free cash flow, asset sales or new equity.', ar: 'حدد هدفاً لخفض الديون (مثلاً صافي الدين/EBITDA أقل من 2.5×) يُموّل من التدفق النقدي الحر أو بيع أصول أو زيادة رأس المال.' } };
@@ -95,6 +98,15 @@
         title: { en: 'Margin compression', ar: 'تآكل الهوامش' },
         ev: l => [gDrop > 0 ? (l === 'en' ? `Gross margin ${pct(g0, l)} → ${pct(g1, l)}` : `هامش مجمل الربح ${pct(g0, l)} ← ${pct(g1, l)}`) : null, nDrop > 0 ? (l === 'en' ? `net margin ${pct(n0, l)} → ${pct(n1, l)}` : `هامش صافي الربح ${pct(n0, l)} ← ${pct(n1, l)}`) : null].filter(Boolean).join(l === 'en' ? '; ' : '؛ '),
         rec: { en: 'Break down the change into price, volume, mix and input cost; review pricing and supplier contracts.', ar: 'حلّل التغير إلى سعر وكمية ومزيج منتجات وتكلفة مدخلات؛ وراجع التسعير وعقود الموردين.' } };
+    },
+    ctx => {
+      // Margins weak for the selected sector (a separate question from whether they are falling).
+      const weak = ['gross_margin', 'operating_margin', 'net_margin'].filter(id => { const v = ctx.R(id); return v != null && v < B(id).bad; });
+      if (!weak.length) return null;
+      return { id: 'sector_margins', sev: 'med',
+        title: { en: 'Margins below the sector norm', ar: 'هوامش أقل من المعتاد في القطاع' },
+        ev: l => weak.map(id => `${CFO.ratioName(id, l)} ${pct(ctx.R(id), l)} (${l === 'en' ? 'typical' : 'المعتاد'} ${pct(B(id).typical, l)})`).join(l === 'en' ? '; ' : '؛ '),
+        rec: { en: 'Benchmark prices and unit costs against peers; review product mix, supplier contracts and overheads to close the gap.', ar: 'قارن الأسعار وتكلفة الوحدة بالمنافسين؛ وراجع مزيج المنتجات وعقود الموردين والمصروفات العامة لسد الفجوة.' } };
     },
     ctx => {
       const rv = ctx.g('revenue');

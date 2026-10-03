@@ -25,6 +25,9 @@ const LIBS = {
   'pdf.min.js': 'pdfjs-dist/build/pdf.min.js',
   'pdf.worker.min.js': 'pdfjs-dist/build/pdf.worker.min.js',
   'chart.umd.min.js': 'chart.js/dist/chart.umd.js',
+  'html2canvas.min.js': 'html2canvas/dist/html2canvas.min.js',
+  'jspdf.umd.min.js': 'jspdf/dist/jspdf.umd.min.js',
+  'index.umd.js': 'docx/build/index.umd.js',
 };
 // U+FFFD only occurs inside library string tables (SheetJS codepages); the \uFFFD escape keeps the same value
 // while keeping the HTML free of replacement characters, which some hosts reject as corrupted text.
@@ -32,7 +35,7 @@ const inlineScript = code => `<script>\n${code.replace(/<\/script/gi, '<\\/scrip
 
 let html = readFileSync(`${root}/index.html`, 'utf8');
 if (!flag('--cdn')) {
-  html = html.replace(/<script src="https:\/\/cdnjs\.cloudflare\.com\/[^"]+"><\/script>/g, tag => {
+  html = html.replace(/<script src="https:\/\/(cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net)\/[^"]+"><\/script>/g, tag => {
     const name = basename(tag.match(/src="([^"]+)"/)[1]);
     const file = `${libs}/${LIBS[name]}`;
     if (!LIBS[name] || !existsSync(file)) throw new Error(`Missing ${name}: run "npm install --prefix cfo-dashboard" or pass --cdn`);

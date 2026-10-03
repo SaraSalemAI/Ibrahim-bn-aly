@@ -102,10 +102,12 @@
   ];
   const GROUPS = ['liquidity', 'profitability', 'efficiency', 'leverage', 'cashflow', 'distress'];
 
+  /** Healthy / watch / weak against the selected sector's limits (js/benchmarks.js), else the defaults above. */
   function status(def, v) {
     if (v == null || !def.dir) return null;
-    if (def.dir === 'high') return v >= def.good ? 'good' : v < def.bad ? 'bad' : (def.good === def.bad ? 'bad' : 'warn');
-    return v <= def.good ? 'good' : v > def.bad ? 'bad' : 'warn';
+    const { good, bad } = CFO.bench ? CFO.bench(def.id) : def;
+    if (def.dir === 'high') return v >= good ? 'good' : v < bad ? 'bad' : (good === bad ? 'bad' : 'warn');
+    return v <= good ? 'good' : v > bad ? 'bad' : 'warn';
   }
 
   /** Ratios for every period: { [id]: { [period]: { value, status, avgUsed } } } */

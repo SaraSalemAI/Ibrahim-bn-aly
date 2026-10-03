@@ -17,6 +17,7 @@
       <h1 data-t="appName">CFO Lens</h1>
       <span class="tagline" data-t="tagline">Financial statement analysis</span>
     </div>
+    <select id="sector" class="sector-select" aria-label="Sector"></select>
     <button class="btn ghost" id="btn-theme" type="button" aria-label="Theme">
       <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 2a6 6 0 0 1 0 12z" fill="currentColor"/></svg>
     </button>
@@ -46,6 +47,7 @@
     <button class="tab" role="tab" data-tab="vertical">Vertical</button>
     <button class="tab" role="tab" data-tab="horizontal">Horizontal</button>
     <button class="tab" role="tab" data-tab="flags">Red flags</button>
+    <button class="tab" role="tab" data-tab="forecast">Forecast</button>
     <button class="tab" role="tab" data-tab="review">Data review</button>
     <button class="tab" role="tab" data-tab="report">Report</button>
   </nav>
@@ -61,11 +63,13 @@
         <div class="card"><h3 data-t="chart.cash">Cash flow</h3><div class="chart-box"><canvas id="c-cash" role="img" aria-label="Cash flow by year"></canvas></div></div>
       </div>
       <div class="card" id="top-flags"></div>
+      <div class="card" id="ai-overview" hidden></div>
     </section>
     <section class="panel" id="p-ratios" role="tabpanel" hidden></section>
     <section class="panel" id="p-vertical" role="tabpanel" hidden></section>
     <section class="panel" id="p-horizontal" role="tabpanel" hidden></section>
     <section class="panel" id="p-flags" role="tabpanel" hidden></section>
+    <section class="panel" id="p-forecast" role="tabpanel" hidden></section>
     <section class="panel" id="p-review" role="tabpanel" hidden></section>
     <section class="panel" id="p-report" role="tabpanel" hidden></section>
   </main>
@@ -77,15 +81,21 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 <script src="js/catalog.js"></script>
 <script src="js/parsers.js"></script>
 <script src="js/mapper.js"></script>
 <script src="js/analysis.js"></script>
+<script src="js/benchmarks.js"></script>
 <script src="js/i18n.js"></script>
 <script src="js/insights.js"></script>
 <script src="js/sample.js"></script>
+<script src="js/forecast.js"></script>
 <script src="js/charts.js"></script>
 <script src="js/report.js"></script>
+<script src="js/ai.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

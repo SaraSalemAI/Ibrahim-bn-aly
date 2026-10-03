@@ -71,6 +71,18 @@
     return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path d="${area}" fill="var(--accent-soft)"/><path d="${d}" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke"/><circle cx="${X(li).toFixed(1)}" cy="${Y(lv).toFixed(1)}" r="3" fill="var(--accent)"/></svg>`;
   }
 
+  /** Cash and net income per scenario, starting from the last actual year. */
+  function drawForecast(S, ds, lang) {
+    if (!S) return;
+    const last = ds.periods[ds.periods.length - 1], F = CFO.UI[lang].fc;
+    const labels = [last, ...S.base.years.map(y => y.period)];
+    const colors = { base: css('--s1'), upside: css('--s2'), downside: css('--s3') };
+    const series = key => Object.keys(colors).map(n => line(F.sc[n], [ds.data[last][key] ?? null, ...S[n].years.map(y => y.data[key])], colors[n]));
+    put('c-fc-cash', { type: 'line', data: { labels, datasets: series('cash') }, options: base(lang) });
+    put('c-fc-ni', { type: 'line', data: { labels, datasets: series('net_income') }, options: base(lang) });
+  }
+
   CFO.drawCharts = draw;
+  CFO.drawForecastCharts = drawForecast;
   CFO.sparkline = sparkline;
 })(globalThis.CFO = globalThis.CFO || {});

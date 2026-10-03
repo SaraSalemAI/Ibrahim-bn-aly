@@ -193,3 +193,21 @@ textarea#md-out { width: 100%; min-height: 140px; font: 0.8rem/1.4 var(--font-nu
   .panel[hidden] { display: none !important; }
   body { background: #fff; color: #000; }
 }
+
+/* Sector picker, forecast drivers, Claude commentary */
+.sector-select { border: 1px solid var(--line); background: var(--surface); border-radius: 6px; padding: 6px 8px; max-width: 46vw; }
+.drivers { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 10px 16px; margin: 10px 0; }
+.driver { display: grid; gap: 4px; font-size: 0.85rem; color: var(--muted); }
+.driver-in { display: flex; align-items: center; gap: 6px; }
+.driver input { width: 100%; min-width: 0; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font-family: var(--font-num); }
+.driver em { font-style: normal; color: var(--muted); min-width: 2.5em; }
+.ai-ask { display: flex; gap: 8px; flex-wrap: wrap; }
+.ai-ask input { flex: 1 1 260px; min-width: 0; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
+.ai-out { margin-top: 12px; }
+.ai-text { max-width: 78ch; }
+.ai-text h4 { font-family: var(--font-display); font-size: 1rem; margin: 14px 0 4px; }
+.ai-text p { margin: 4px 0; }
+.ai-text ul { margin: 4px 0; padding-inline-start: 0; list-style: none; }
+/* Bullets drawn as text so they follow the writing direction in the page and in the PDF export. */
+.ai-text li { position: relative; padding-inline-start: 18px; }
+.ai-text li::before { content: '•'; position: absolute; inset-inline-start: 4px; color: var(--accent); }

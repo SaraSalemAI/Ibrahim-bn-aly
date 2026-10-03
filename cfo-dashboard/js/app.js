@@ -6,7 +6,7 @@
     get(k) { try { return localStorage.getItem('cfo-lens:' + k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem('cfo-lens:' + k, v); } catch (e) { /* storage unavailable */ } },
   };
-  const TABS = ['overview', 'ratios', 'vertical', 'horizontal', 'flags', 'review', 'report'];
+  const TABS = ['overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'review', 'report'];
   const SUBTOTALS = new Set(['gross_profit', 'operating_income', 'pretax_income', 'net_income', 'current_assets', 'total_assets', 'current_liabilities', 'total_liabilities', 'equity', 'cfo', 'cfi', 'cff']);
 
   const state = {
@@ -14,7 +14,15 @@
     lang: store.get('lang') === 'ar' ? 'ar' : 'en',
     tab: TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview',
     hMode: 'pct', A: null, F: [],
+    sector: CFO.SECTORS[store.get('sector')] ? store.get('sector') : 'general',
+    drivers: null, fcYears: 3, S: null,            // forecast: drivers (null = from history), scenarios
+    ai: { text: '', busy: false, err: '', ctl: null }, aiOn: false,
   };
+  CFO.setSector(state.sector);
+  // Anything that changes the data starts the forecast and the commentary afresh.
+  const dataChanged = () => { state.drivers = null; state.ai.ctl?.abort(); state.ai = { text: '', busy: false, err: '', ctl: null }; };
+  // Everything the report and the exports need, in one object.
+  const ctx = () => ({ A: state.A, F: state.F, S: state.S, ai: state.ai.text, lang: state.lang });
 
   // pdf.js runs on the main thread when its worker script is loaded as a plain script (globalThis.pdfjsWorker),
   // which avoids web-worker restrictions in sandboxed frames. Otherwise fall back to the CDN worker.
@@ -53,7 +61,7 @@
         const names = new Set(added.map(a => a.name));
         state.tables = [...kept.tables.filter(t => !names.has(t.file)), ...added.flatMap(a => a.tables)];
         state.files = [...kept.files.filter(n => !names.has(n)), ...added.map(a => a.name)];
-        state.overrides = {}; state.isSample = false;
+        state.overrides = {}; state.isSample = false; dataChanged();
         if (!added.some(a => a.matched)) state.tab = 'review';
       } else if (wasSample) {
         state.notes.push(() => L().keptExample);
@@ -68,13 +76,13 @@
   function loadSample() {
     state.tables = CFO.sampleTables().map(t => ({ ...t, file: t.source }));
     state.files = state.tables.map(t => t.file);
-    state.overrides = {}; state.isSample = true;
+    state.overrides = {}; state.isSample = true; dataChanged();
   }
 
   function removeFile(name) {
     state.tables = state.tables.filter(t => t.file !== name);
     state.files = state.files.filter(f => f !== name);
-    state.overrides = {};
+    state.overrides = {}; dataChanged();
     if (!state.files.length) loadSample();
     render();
   }
@@ -136,6 +144,8 @@
     const top = F.slice(0, 3);
     $('top-flags').innerHTML = `<div class="section-head"><h3>${L.flagsTitle}</h3><button class="btn" type="button" data-go="flags">${F.length} →</button></div>
       <div class="list" style="margin-top:10px">${top.length ? top.map(flagCard).join('') : `<p class="muted">${L.noFlags}</p>`}</div>`;
+    $('ai-overview').innerHTML = aiPanel();
+    $('ai-overview').hidden = !state.aiOn;
     requestAnimationFrame(() => CFO.drawCharts(A, lang));
   }
 
@@ -155,16 +165,18 @@
         const avg = P.some(p => A.ratios[def.id][p].avgUsed) ? ` · ${L.avgNote}` : '';
         return `<tr><td><div class="ratio-name">${esc(CFO.ratioName(def.id, lang))}</div><div class="meaning">${esc(meaning)}</div><div class="formula" dir="ltr">${esc(def.f)}${esc(avg)}</div></td>
           ${P.map(p => `<td class="n">${CFO.fmtVal(def.unit, A.ratios[def.id][p].value, lang)}</td>`).join('')}
+          <td class="n muted">${CFO.fmtVal(def.unit, CFO.bench(def.id).typical, lang)}</td>
           <td class="n">${trend(def.id)}</td><td>${cell.value != null && !def.dir ? pill('na', T().status.info) : statusPill(cell.status)}</td></tr>`;
       }).join('');
       return `<div class="card" style="padding:0;overflow:hidden"><div style="padding:14px 16px 10px"><h3>${L.groups[g]}</h3>${g === 'distress' ? `<span class="muted small">${L.zZones}</span>` : ''}</div>
-        <div class="table-wrap" style="border:0;border-radius:0;border-top:1px solid var(--line)"><table><thead><tr><th>${L.item}</th>${P.map(p => `<th class="n">${p}</th>`).join('')}<th class="n"></th><th>${A.latest}</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+        <div class="table-wrap" style="border:0;border-radius:0;border-top:1px solid var(--line)"><table><thead><tr><th>${L.item}</th>${P.map(p => `<th class="n">${p}</th>`).join('')}<th class="n">${L.typical}</th><th class="n"></th><th>${A.latest}</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
     }).join('');
     const dp = A.dupont;
     const dupont = `<div class="card"><h3>${L.dupont}</h3><p class="muted small">${L.dupontHint}</p>
       <div class="table-wrap"><table><thead><tr><th>${L.period}</th><th class="n">${CFO.ratioName('net_margin', lang)}</th><th class="n">${CFO.ratioName('asset_turnover', lang)}</th><th class="n">${CFO.ratioName('equity_multiplier', lang)}</th><th class="n">ROE</th></tr></thead>
       <tbody>${dp.map(r => `<tr><td>${r.period}</td><td class="n">${CFO.fmtPct(r.net_margin, lang)}</td><td class="n">${CFO.fmtVal('x', r.asset_turnover, lang)}</td><td class="n">${CFO.fmtVal('x', r.equity_multiplier, lang)}</td><td class="n">${CFO.fmtPct(r.roe, lang)}</td></tr>`).join('')}</tbody></table></div></div>`;
-    $('p-ratios').innerHTML = groups + dupont;
+    const sectorNote = `<p class="muted small" style="margin:0">${esc(L.sector)}: <b>${esc(CFO.sectorName(state.sector, lang))}</b>. ${esc(L.sectorNote)}</p>`;
+    $('p-ratios').innerHTML = sectorNote + groups + dupont;
   }
 
   function statementTables(rows, cellsFor, headFor) {
@@ -234,14 +246,105 @@
   }
 
   function renderReport() {
-    const L = T(), { A, F } = state, lang = state.lang;
+    const L = T();
     $('p-report').innerHTML = `<div class="actions">
-        <button class="btn primary" type="button" id="x-xlsx">${L.exportXlsx}</button>
-        <button class="btn" type="button" id="x-html">${L.exportHtml}</button>
+        <button class="btn primary" type="button" data-export="pdf">${L.exportPdf}</button>
+        <button class="btn primary" type="button" data-export="docx">${L.exportDocx}</button>
+        <button class="btn" type="button" data-export="xlsx">${L.exportXlsx}</button>
+        <button class="btn" type="button" data-export="html">${L.exportHtml}</button>
         <button class="btn" type="button" id="x-md">${L.copyMd}</button><span id="copy-msg" class="muted small" role="status"></span>
       </div>
-      <article class="card report">${CFO.reportHTML(A, F, lang)}</article>
-      <textarea id="md-out" readonly aria-label="Markdown">${esc(CFO.reportMarkdown(A, F, lang))}</textarea>`;
+      ${state.aiOn ? `<div class="card" id="ai-report">${aiPanel()}</div>` : ''}
+      <article class="card report" id="report-doc">${CFO.reportHTML(ctx())}</article>
+      <textarea id="md-out" readonly aria-label="Markdown">${esc(CFO.reportMarkdown(ctx()))}</textarea>`;
+  }
+
+  /* ---------- Claude commentary ---------- */
+  function aiPanel() {
+    const L = T().ai, a = state.ai;
+    const body = a.busy && !a.text ? `<p class="muted">${esc(L.thinking)}</p>` : a.text ? `<div class="ai-text">${CFO.md(a.text)}</div><p class="muted small">${esc(L.note)}</p>` : '';
+    return `<div class="section-head"><h3>${esc(L.title)}</h3></div>
+      <p class="muted small" style="margin:4px 0 10px">${esc(L.hint)}</p>
+      <form class="ai-ask" data-ai-form>
+        <input class="ai-q" name="q" type="text" placeholder="${esc(L.placeholder)}" aria-label="${esc(L.placeholder)}" ${a.busy ? 'disabled' : ''}>
+        <button class="btn" type="submit" ${a.busy ? 'disabled' : ''}>${esc(L.askQ)}</button>
+        <button class="btn primary" type="button" data-ai="ask" ${a.busy ? 'disabled' : ''}>${esc(L.ask)}</button>
+        ${a.busy ? `<button class="btn" type="button" data-ai="stop">${esc(L.stop)}</button>` : ''}
+      </form>
+      ${a.err ? `<div class="error" role="alert" style="margin-top:10px">${esc(a.err)}</div>` : ''}
+      <div class="ai-out" aria-live="polite">${body}</div>`;
+  }
+
+  function refreshAi() {
+    for (const id of ['ai-overview', 'ai-report']) { const el = $(id); if (el) el.innerHTML = aiPanel(); }
+  }
+  // While streaming, only the visible answer is redrawn, at most once per frame.
+  let aiFrame = 0;
+  function refreshAiText() {
+    if (aiFrame) return;
+    aiFrame = requestAnimationFrame(() => {
+      aiFrame = 0;
+      const out = document.querySelector(`#${state.tab === 'report' ? 'ai-report' : 'ai-overview'} .ai-out`);
+      if (out) out.innerHTML = `<div class="ai-text">${CFO.md(state.ai.text)}</div>`;
+    });
+  }
+
+  async function runAi(question) {
+    if (state.ai.busy) return;
+    const ctl = new AbortController();
+    state.ai = { text: '', busy: true, err: '', ctl };
+    refreshAi();
+    try {
+      const { text } = await CFO.askClaude(state.A, state.F, state.S, state.lang, question, {
+        signal: ctl.signal, onText: ({ text }) => { if (state.ai.ctl === ctl) { state.ai.text = text; refreshAiText(); } },
+      });
+      if (state.ai.ctl === ctl) state.ai.text = text;
+    } catch (e) {
+      if (state.ai.ctl !== ctl) return;
+      state.ai.text = e?.text || state.ai.text;
+      const errs = T().ai.err;
+      const stopped = ctl.signal.aborted || e?.code === 'cancelled' || e?.name === 'AbortError';
+      state.ai.err = stopped ? '' : (errs[e?.code] || errs.other);
+    } finally {
+      if (state.ai.ctl === ctl) { state.ai.busy = false; state.ai.ctl = null; refreshAi(); if (state.tab === 'report') renderReport(); }
+    }
+  }
+
+  /* ---------- forecast ---------- */
+  function renderForecast() {
+    const L = T(), F = L.fc, lang = state.lang, ds = state.A.ds;
+    const missing = CFO.forecastMissing(ds);
+    if (missing.length) { $('p-forecast').innerHTML = `<div class="card"><h2>${esc(F.title)}</h2><p>${esc(F.missing(missing.map(k => CFO.itemName(k, lang)).join(lang === 'ar' ? '، ' : ', ')))}</p></div>`; return; }
+    const S = state.S, dr = state.drivers, P = ds.periods, last = P[P.length - 1];
+    const fmtDriver = (k, v) => CFO.FORECAST_DRIVERS[k][3] === '%' ? +(v * 100).toFixed(2) : Math.round(v);
+    const inputs = Object.entries(CFO.FORECAST_DRIVERS).map(([k, [lo, hi, step, unit]]) => {
+      const pct = unit === '%';
+      return `<label class="driver"><span>${esc(F.d[k])}</span><span class="driver-in"><input type="number" data-driver="${k}" id="drv-${k}" value="${fmtDriver(k, dr[k])}"
+        ${lo != null ? `min="${pct ? lo * 100 : lo}" max="${pct ? hi * 100 : hi}" step="${pct ? +(step * 100).toFixed(2) : step}"` : 'step="100"'}><em>${pct ? '%' : unit === 'days' ? esc(L.days) : ''}</em></span></label>`;
+    }).join('');
+    const fc = CFO.reportModel(ctx()).forecast;   // the same comparison the report uses
+    const compare = `<div class="table-wrap"><table><thead><tr>${fc.head.map((h, i) => `<th${i ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead>
+      <tbody>${fc.rows.map(r => `<tr>${r.map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    const lines = ['revenue', 'gross_profit', 'operating_income', 'interest', 'net_income', 'cash', 'receivables', 'inventory', 'total_assets', 'short_debt', 'long_debt', 'total_liabilities', 'equity', 'cfo', 'capex', 'dividends'];
+    const detail = `<div class="table-wrap"><table><thead><tr><th>${esc(L.item)}</th><th class="n">${last}</th>${S.base.years.map(y => `<th class="n">${y.period}</th>`).join('')}</tr></thead>
+      <tbody>${lines.map(k => `<tr class="${SUBTOTALS.has(k) ? 'subtotal' : ''}"><td>${esc(CFO.itemName(k, lang))}</td><td class="n">${CFO.fmtNum(ds.data[last][k], 0, lang)}</td>${S.base.years.map(y => `<td class="n">${CFO.fmtNum(y.data[k], 0, lang)}</td>`).join('')}</tr>`).join('')}
+      <tr><td>${esc(F.funding)}</td><td class="n">—</td>${S.base.years.map(y => `<td class="n${y.fundingNeed ? ' heat-down' : ''}">${CFO.fmtNum(y.fundingNeed, 0, lang)}</td>`).join('')}</tr></tbody></table></div>`;
+    const down = S.downside.F.slice(0, 4);
+    $('p-forecast').innerHTML = `<div class="card"><div class="section-head"><h2>${esc(F.title)}</h2>
+        <span class="actions"><label class="small">${esc(F.years)} <select id="fc-years">${[1, 2, 3].map(n => `<option${n === state.fcYears ? ' selected' : ''}>${n}</option>`).join('')}</select></label>
+        <button class="btn" type="button" data-fc="reset">${esc(F.reset)}</button></span></div>
+        <p class="muted small">${esc(F.hint)}</p>
+        <h3 style="margin-top:12px">${esc(F.drivers)}</h3><div class="drivers">${inputs}</div>
+        <p class="muted small" style="margin-bottom:0">${esc(F.scHint)}</p></div>
+      <div class="card"><h3>${esc(F.compare)}</h3>${compare}</div>
+      <div class="grid-2">
+        <div class="card"><h3>${esc(F.cash)}</h3><div class="chart-box"><canvas id="c-fc-cash" role="img" aria-label="${esc(F.cash)}"></canvas></div></div>
+        <div class="card"><h3>${esc(F.ni)}</h3><div class="chart-box"><canvas id="c-fc-ni" role="img" aria-label="${esc(F.ni)}"></canvas></div></div>
+      </div>
+      <div class="card"><h3>${esc(F.detail)}</h3>${detail}</div>
+      <div class="card"><h3>${esc(F.flagsIn(F.sc.downside))}</h3><div class="list" style="margin-top:8px">${down.length ? down.map(flagCard).join('') : `<p class="muted">${L.noFlags}</p>`}</div>
+        <p class="muted small">${esc(F.note)}</p></div>`;
+    requestAnimationFrame(() => CFO.drawForecastCharts(state.S, ds, lang));
   }
 
   /* ---------- shell ---------- */
@@ -260,6 +363,8 @@
     });
     TABS.forEach(t => { $('p-' + t).hidden = t !== state.tab; });
     $('sample-notice').hidden = !state.isSample;
+    $('sector').innerHTML = Object.keys(CFO.SECTORS).map(k => `<option value="${k}"${k === state.sector ? ' selected' : ''}>${esc(CFO.sectorName(k, state.lang))}</option>`).join('');
+    $('sector').setAttribute('aria-label', L.sector);
     $('files').innerHTML = state.isSample ? '' : `<span class="muted small">${L.filesLoaded}:</span>` +
       state.files.map(f => `<span class="chip" title="${esc(f)}">${esc(f)} <button type="button" class="btn ghost" style="padding:0 4px;border:0" data-remove="${esc(f)}" aria-label="Remove ${esc(f)}">×</button></span>`).join('') +
       ` <button class="btn ghost small" type="button" id="btn-sample">${L.loadSample}</button>`;
@@ -267,12 +372,17 @@
       state.notes.map(n => `<div class="note" role="status">${esc(n())}</div>`).join('');
   }
 
-  const PANELS = { overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, review: renderReview, report: renderReport };
+  const PANELS = { overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, review: renderReview, report: renderReport };
 
   function render() {
     const ds = CFO.buildDataset(state.tables, state.overrides);
     state.A = CFO.analyze(ds);
     state.F = CFO.flags(state.A);
+    state.S = null;
+    if (ds.periods.length && !CFO.forecastMissing(ds).length) {
+      state.drivers = state.drivers || CFO.defaultDrivers(ds);
+      state.S = CFO.runScenarios(ds, state.drivers, state.fcYears);
+    }
     renderChrome();
     if (!ds.periods.length) { $('p-' + state.tab).innerHTML = ''; return; }
     PANELS[state.tab]();
@@ -285,6 +395,12 @@
     if (state.A?.ds.periods.length) PANELS[t]();
   }
 
+  // Chart colours come from CSS tokens, so a theme change redraws the visible charts.
+  const redrawCharts = () => {
+    if (state.tab === 'overview') CFO.drawCharts(state.A, state.lang);
+    if (state.tab === 'forecast') CFO.drawForecastCharts(state.S, state.A.ds, state.lang);
+  };
+
   /* ---------- events ---------- */
   document.addEventListener('click', e => {
     const t = e.target.closest('[data-tab]'); if (t) return setTab(t.dataset.tab);
@@ -292,21 +408,43 @@
     const h = e.target.closest('[data-hmode]'); if (h) { state.hMode = h.dataset.hmode; return renderHorizontal(); }
     const r = e.target.closest('[data-remove]'); if (r) return removeFile(r.dataset.remove);
     if (e.target.closest('#btn-sample')) { loadSample(); state.errors = []; state.notes = []; return render(); }
-    const x = e.target.closest('#x-xlsx, #x-html');
+    const x = e.target.closest('[data-export]');
     if (x) {
-      const run = x.id === 'x-xlsx' ? CFO.exportXLSX : CFO.exportHTML;
-      Promise.resolve().then(() => run(state.A, state.F, state.lang)).then(status => { $('copy-msg').textContent = T().saveStatus[status] || ''; },
-        err => { $('copy-msg').textContent = T().unexpected((err && err.message) || err); });
+      const run = { xlsx: CFO.exportXLSX, html: CFO.exportHTML, docx: CFO.exportDOCX, pdf: CFO.exportPDF }[x.dataset.export];
+      const msg = $('copy-msg'); msg.textContent = T().building;
+      document.querySelectorAll('[data-export]').forEach(b => { b.disabled = true; });
+      Promise.resolve().then(() => run(ctx(), $('report-doc'))).then(status => { msg.textContent = T().saveStatus[status] || ''; },
+        err => { console.error(err); msg.textContent = T().unexpected((err && err.message) || err); })
+        .finally(() => document.querySelectorAll('[data-export]').forEach(b => { b.disabled = false; }));
       return;
     }
+    if (e.target.closest('[data-fc="reset"]')) { state.drivers = null; return render(); }
+    if (e.target.closest('[data-ai="ask"]')) return runAi('');
+    if (e.target.closest('[data-ai="stop"]')) { state.ai.ctl?.abort(); return; }
     if (e.target.closest('#x-md')) {
-      const text = CFO.reportMarkdown(state.A, state.F, state.lang), msg = $('copy-msg');
+      const text = CFO.reportMarkdown(ctx()), msg = $('copy-msg');
       const fail = () => { msg.textContent = T().copyFail; $('md-out').select(); };
       try { navigator.clipboard.writeText(text).then(() => { msg.textContent = T().copied; }, fail); } catch (err) { fail(); }
     }
   });
+  document.addEventListener('submit', e => {
+    if (!e.target.matches('[data-ai-form]')) return;
+    e.preventDefault();
+    const q = (e.target.querySelector('.ai-q')?.value || '').trim();
+    if (q) runAi(q);
+  });
   document.addEventListener('change', e => {
-    if (e.target.matches('select.map')) { state.overrides[e.target.dataset.line] = e.target.value; render(); }
+    if (e.target.matches('select.map')) { state.overrides[e.target.dataset.line] = e.target.value; dataChanged(); render(); }
+    if (e.target.id === 'sector') {
+      // Commentary was written against the old sector's limits and flags, so it is cleared.
+      state.ai.ctl?.abort(); state.ai = { text: '', busy: false, err: '', ctl: null };
+      state.sector = e.target.value; store.set('sector', state.sector); CFO.setSector(state.sector); render();
+    }
+    if (e.target.matches('[data-driver]')) {
+      const k = e.target.dataset.driver, unit = CFO.FORECAST_DRIVERS[k][3], v = parseFloat(e.target.value);
+      if (isFinite(v)) { state.drivers = { ...state.drivers, [k]: CFO.clampDriver(k, unit === '%' ? v / 100 : v) }; render(); }
+    }
+    if (e.target.id === 'fc-years') { state.fcYears = +e.target.value; render(); }
     if (e.target.id === 'file-input') { addFiles(e.target.files); e.target.value = ''; }
   });
   $('btn-lang').addEventListener('click', () => { state.lang = state.lang === 'en' ? 'ar' : 'en'; store.set('lang', state.lang); render(); });
@@ -315,10 +453,10 @@
     const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
     root.dataset.theme = dark ? 'light' : 'dark';
     store.set('theme', root.dataset.theme);
-    if (state.tab === 'overview') CFO.drawCharts(state.A, state.lang);
+    redrawCharts();
   });
   const theme = store.get('theme'); if (theme === 'dark' || theme === 'light') document.documentElement.dataset.theme = theme;
-  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { if (state.tab === 'overview') CFO.drawCharts(state.A, state.lang); });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change', () => { redrawCharts(); });
 
   // File intake: drop (on the card or anywhere), click / keyboard on the card, or paste copied files.
   const hasFiles = e => [...(e.dataTransfer?.types || [])].includes('Files');
@@ -345,9 +483,11 @@
   const showUnexpected = msg => { state.errors.push(() => T().unexpected(msg)); $('loading').hidden = true; busy = false; renderChrome(); };
   window.addEventListener('error', e => { if (e.message) showUnexpected(e.message); });
   window.addEventListener('unhandledrejection', e => showUnexpected((e.reason && e.reason.message) || String(e.reason)));
-  const missing = [['SheetJS (Excel)', 'XLSX'], ['PapaParse (CSV)', 'Papa'], ['pdf.js (PDF)', 'pdfjsLib'], ['Chart.js (charts)', 'Chart']]
+  const missing = [['SheetJS (Excel)', 'XLSX'], ['PapaParse (CSV)', 'Papa'], ['pdf.js (PDF)', 'pdfjsLib'], ['Chart.js (charts)', 'Chart'], ['jsPDF (PDF report)', 'jspdf'], ['html2canvas (PDF report)', 'html2canvas'], ['docx (Word report)', 'docx']]
     .filter(([, g]) => !globalThis[g]).map(([n]) => n);
 
+  // Claude commentary appears only where the claude.ai viewer offers it.
+  CFO.aiAvailable().then(on => { state.aiOn = on; if (on && ['overview', 'report'].includes(state.tab)) PANELS[state.tab](); });
   loadSample();
   if (missing.length) state.errors.push(() => T().libMissing(missing.join(', ')));
   render();

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
 const dir = fileURLToPath(new URL('../js/', import.meta.url));
-for (const f of ['catalog', 'parsers', 'mapper', 'analysis', 'i18n', 'insights', 'sample']) {
+for (const f of ['catalog', 'parsers', 'mapper', 'analysis', 'benchmarks', 'i18n', 'insights', 'sample']) {
   vm.runInThisContext(readFileSync(dir + f + '.js', 'utf8'), { filename: f + '.js' });
 }
 const CFO = globalThis.CFO;
