@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Digital Sustainability Research Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column; paper identity first, then the three ways in (understand, apply, download). Palette shared with the Hub and the Workbench. */
+:root{--bg:#f3f6f4;--surface:#fff;--ink:#10242c;--muted:#506068;--line:#cfdad5;--green:#0f7a45;--navy:#12303d;--navy-soft:#dbe6ec;
+--f-display:'Cairo','IBM Plex Sans Arabic',system-ui,sans-serif;--f-body:'IBM Plex Sans Arabic',system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#0c171c;--surface:#13242b;--ink:#e6eef0;--muted:#9bb0b6;--line:#27424c;--green:#3fc27d;--navy:#8fc1d6;--navy-soft:#1b3340;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.6;padding-inline:16px;padding-block:32px 48px}
+.wrap{max-width:960px;margin-inline:auto;display:grid;gap:28px}
+h1,h2{font-family:var(--f-display);line-height:1.3;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.4rem,3.6vw,2.1rem)}
+p{margin:0;max-width:72ch}
+.eyebrow{font-size:.8rem;letter-spacing:.06em;text-transform:uppercase;color:var(--green);font-weight:600}
+.ar{font-family:var(--f-body);direction:rtl;text-align:right}
+.hero{display:grid;gap:10px;padding-block-end:20px;border-bottom:1px solid var(--line)}
+.hero .ar h1{font-size:clamp(1.15rem,3vw,1.6rem)}
+.muted{color:var(--muted)}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:16px}
+a.card{display:grid;gap:8px;align-content:start;padding:20px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:inherit;text-decoration:none}
+a.card:hover{border-color:var(--green)}
+a.card:focus-visible{outline:3px solid var(--green);outline-offset:2px}
+.card .k{font-size:.78rem;color:var(--green);font-weight:600;letter-spacing:.04em}
+.card h2{font-size:1.15rem}
+.card .go{color:var(--green);font-weight:600;font-size:.9rem}
+.files{display:grid;gap:8px}
+.files a{color:var(--ink);padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);text-decoration:none;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.files a:hover{border-color:var(--green)}
+.files span{color:var(--muted);font-size:.85rem}
+footer{font-size:.82rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <span class="eyebrow">Alexandria University · Faculty of Business · Digital Sustainability Conference 2026</span>
+    <h1>The Transition to Digital Accounting and Financial Reporting and the Institutionalisation of Green Accounting for Digital Sustainability in Egypt</h1>
+    <div class="ar"><h1>التحول إلى المحاسبة والتقارير المالية الرقمية ومأسسة المحاسبة الخضراء لتحقيق الاستدامة الرقمية في مصر</h1></div>
+    <p class="muted">Dr. Sara Salem · د. سارة سالم · An analytical study in light of Egypt Vision 2030 · September 2026</p>
+  </header>
+
+  <section class="cards" aria-label="Platform">
+    <a class="card" href="research-hub.html">
+      <span class="k">UNDERSTAND · افهم</span>
+      <h2>Research Hub</h2>
+      <p class="muted">The paper as an interactive guide: framework, findings, readiness self-check, roadmap, evidence ledger and library. Arabic and English.</p>
+      <p class="muted ar">البحث كدليل تفاعلي: الإطار والنتائج وتشخيص الجاهزية وخارطة الطريق وسجل الأدلة والمكتبة.</p>
+      <span class="go">Open the hub →</span>
+    </a>
+    <a class="card" href="green-ledger.html">
+      <span class="k">APPLY · طبّق</span>
+      <h2>Green Ledger Workbench</h2>
+      <p class="muted">The paper's four conditions put into practice: record physical flows next to e-invoice cost, score assurability, price carbon, and generate a TCFD-structured disclosure draft.</p>
+      <p class="muted ar">الشروط الأربعة في البحث مطبقة عملياً: تسجيل التدفقات المادية بجانب تكلفة الفاتورة الإلكترونية، وقياس القابلية للتأكيد، وتسعير الكربون، وتوليد مسودة إفصاح.</p>
+      <span class="go">Open the workbench →</span>
+    </a>
+  </section>
+
+  <section class="files" aria-label="Downloads">
+    <span class="eyebrow">Read &amp; present · اقرأ واعرض</span>
+    <a href="docs/Digital_Accounting_Green_Accounting_Egypt_Vision_2030.docx">Full research paper <span>Word · APA &amp; MLA references</span></a>
+    <a href="docs/Conference_Presentation_Bilingual.pptx">Conference presentation, bilingual <span>PowerPoint · Arabic / English</span></a>
+    <a href="docs/Conference_Presentation_Digital_Accounting_Green_Accounting.pptx">Conference presentation <span>PowerPoint</span></a>
+  </section>
+
+  <footer>The paper is a documentary, descriptive-analytical study. The Workbench's demo company is fictitious and its emission factors are illustrative defaults; it shows how the paper's recommendations could be implemented and is not empirical evidence.</footer>
+</div>
+</body>
+</html>

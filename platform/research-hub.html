@@ -1,0 +1,586 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Digital Sustainability Research Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky bilingual top bar, tab rail, one working panel per tab. Palette and type follow the conference flyer (forest green, lighthouse navy). */
+:root{
+  --bg:#f3f6f4; --surface:#ffffff; --surface2:#e9efec; --ink:#10242c; --muted:#506068; --line:#cfdad5;
+  --green:#0f7a45; --green-soft:#d8eee2; --navy:#12303d; --navy-soft:#dbe6ec;
+  --ok:#0f7a45; --warn:#9a6200; --warn-soft:#f6e8c8; --bad:#b3362b; --bad-soft:#f6dcd8; --info:#2a5f8f; --info-soft:#dce9f5; --idle:#6b7a80; --idle-soft:#e3e8ea;
+  --f-display:'Cairo','IBM Plex Sans Arabic',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans Arabic','IBM Plex Sans',system-ui,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c171c; --surface:#13242b; --surface2:#1a2f37; --ink:#e6eef0; --muted:#9bb0b6; --line:#27424c;
+  --green:#3fc27d; --green-soft:#17382b; --navy:#8fc1d6; --navy-soft:#1b3340;
+  --ok:#3fc27d; --warn:#e3b04a; --warn-soft:#3a2f14; --bad:#ef7d70; --bad-soft:#3c1f1c; --info:#7db4e6; --info-soft:#17304a; --idle:#93a5ab; --idle-soft:#20353d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c171c; --surface:#13242b; --surface2:#1a2f37; --ink:#e6eef0; --muted:#9bb0b6; --line:#27424c;
+  --green:#3fc27d; --green-soft:#17382b; --navy:#8fc1d6; --navy-soft:#1b3340;
+  --ok:#3fc27d; --warn:#e3b04a; --warn-soft:#3a2f14; --bad:#ef7d70; --bad-soft:#3c1f1c; --info:#7db4e6; --info-soft:#17304a; --idle:#93a5ab; --idle-soft:#20353d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.65;padding-inline:16px;padding-block:0}
+h1,h2,h3,h4{font-family:var(--f-display);line-height:1.3;margin:0;text-wrap:balance}
+p{margin:0}
+.wrap{max-width:1120px;margin-inline:auto}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--green);outline-offset:2px;border-radius:4px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding:10px 16px}
+.top .wrap{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1 1 280px}
+.mark{width:34px;height:34px;flex:none}
+.brand b{font-family:var(--f-display);font-size:15px;line-height:1.2;display:block}
+.brand small{color:var(--muted);font-size:12px;display:block}
+.ctl{display:flex;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 14px;font-size:13px;font-weight:500}
+.chip:hover{border-color:var(--green)}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;padding-block:10px 2px;scrollbar-width:thin}
+nav.tabs button{border:0;background:none;padding:7px 14px;border-radius:8px;font-weight:600;font-size:14px;white-space:nowrap;color:var(--muted)}
+nav.tabs button[aria-selected="true"]{background:var(--navy);color:var(--bg)}
+nav.tabs button:hover:not([aria-selected="true"]){background:var(--surface2);color:var(--ink)}
+
+main{padding-block:24px 56px;display:flex;flex-direction:column;gap:28px}
+.panel[hidden]{display:none}
+.panel{display:flex;flex-direction:column;gap:28px}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--green);font-weight:600}
+[dir=rtl] .eyebrow{letter-spacing:0}
+.sec-h{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.sec-h h2{font-size:22px}
+.sec-h p{color:var(--muted);max-width:68ch}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;min-width:0}
+.card h3{font-size:16px;margin-bottom:6px}
+.card p{color:var(--muted);font-size:14px}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 10px;border-radius:999px;background:var(--idle-soft);color:var(--ink)}
+.pill.ok{background:var(--green-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.info{background:var(--info-soft);color:var(--info)}
+.pill.idle{background:var(--idle-soft);color:var(--idle)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:22px;align-items:stretch}
+@media(max-width:820px){.hero{grid-template-columns:minmax(0,1fr)}}
+.hero-main{background:var(--navy);color:var(--bg);border-radius:12px;padding:26px 28px;display:flex;flex-direction:column;gap:14px}
+:root[data-theme="dark"] .hero-main,:root:not([data-theme="light"]) .hero-main{--hm:var(--ink)}
+.hero-main h1{font-size:clamp(22px,3.4vw,32px);font-weight:800}
+.hero-main .sub{opacity:.85;font-size:14px}
+.hero-main .eyebrow{color:#7fe0aa}
+.hero-main .rq{border-top:1px solid rgba(255,255,255,.25);padding-top:14px;font-size:14.5px}
+.hero-main .rq b{display:block;font-family:var(--f-display);margin-bottom:4px;color:#7fe0aa}
+.stat{display:flex;flex-direction:column;gap:10px}
+.countdown{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.countdown .n{font-family:var(--f-display);font-weight:800;font-size:54px;line-height:1;color:var(--green)}
+.facts{display:grid;gap:8px;font-size:14px}
+.facts div{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:8px}
+.facts span:first-child{color:var(--muted)}
+.facts span:last-child{font-weight:600;text-align:end}
+.meter{height:10px;background:var(--surface2);border-radius:5px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--green)}
+
+/* findings */
+.find{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start}
+.find .no{font-family:var(--f-display);font-weight:800;font-size:28px;color:var(--green);line-height:1}
+
+/* axes */
+.axis{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 0;border-top:1px solid var(--line)}
+.axis:first-of-type{border-top:0}
+.axis .an{font-family:var(--f-display);font-weight:800;color:var(--navy);width:28px}
+.axis h4{font-size:14px;font-weight:700}
+.axis p{font-size:13.5px;color:var(--muted)}
+.axis.dim h4{color:var(--muted)}
+
+/* layer selector */
+.seg{display:flex;gap:8px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 16px;text-align:start;min-width:0;flex:1 1 200px}
+.seg button b{font-family:var(--f-display);display:block;font-size:15px}
+.seg button span{font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{border-color:var(--green);background:var(--green-soft)}
+.detail{margin-top:12px;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.detail .card h4{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+[dir=rtl] .detail .card h4{letter-spacing:0}
+.detail .card p{color:var(--ink)}
+
+/* conditions */
+.cond{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:0;min-width:0}
+.cond>button{width:100%;background:none;border:0;text-align:start;padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.cond .ic{width:36px;height:36px;border-radius:8px;background:var(--green-soft);color:var(--green);display:grid;place-items:center;font-family:var(--f-display);font-weight:800;flex:none}
+.cond h3{font-size:15px}
+.cond .body{padding:0 16px 14px;color:var(--muted);font-size:14px;display:grid;gap:8px}
+.cond .body b{color:var(--ink)}
+
+/* diagnostic */
+.diag{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:900px){.diag{grid-template-columns:minmax(0,1fr)}}
+.diag .res{position:sticky;top:calc(env(safe-area-inset-top,0px) + 118px)}
+@media(max-width:900px){.diag .res{position:static}}
+.q{padding:12px 0;border-top:1px solid var(--line);display:grid;gap:8px}
+.q:first-of-type{border-top:0}
+.q p{font-size:14.5px}
+.scale{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.scale label{position:relative}
+.scale input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0}
+.scale span{display:block;text-align:center;border:1px solid var(--line);border-radius:8px;padding:5px 2px;font-size:12px;background:var(--surface);color:var(--muted);line-height:1.3;font-family:var(--f-mono)}
+.scale input:checked+span{background:var(--navy);color:var(--bg);border-color:var(--navy)}
+.scale input:focus-visible+span{outline:3px solid var(--green);outline-offset:1px}
+.scale-legend{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.grp-h{display:flex;align-items:center;gap:10px;margin-top:18px}
+.grp-h:first-child{margin-top:0}
+.grp-h h3{font-size:16px}
+.bar{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:10px;align-items:center;font-size:13.5px}
+.bar .t{grid-column:1/-1;display:flex;justify-content:space-between;gap:8px}
+.bar .m{height:8px;border-radius:4px;background:var(--surface2);overflow:hidden;grid-column:1}
+.bar .m i{display:block;height:100%;background:var(--green)}
+.bar.risk .m i{background:var(--warn)}
+.bar .v{text-align:end;font-family:var(--f-mono);font-size:13px;grid-column:2}
+.level{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border-radius:10px;background:var(--navy-soft)}
+.level b{font-family:var(--f-display);font-size:18px;color:var(--navy)}
+svg text{font-family:var(--f-body)}
+.actions{display:grid;gap:8px}
+.act{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;font-size:14px}
+.act .tag{font-size:11px;font-weight:700;border-radius:6px;padding:1px 8px;background:var(--surface2);height:fit-content;white-space:nowrap}
+.note{font-size:12.5px;color:var(--muted);border-inline-start:3px solid var(--warn);padding-inline-start:10px}
+
+/* roadmap */
+.rm li{margin-bottom:8px}
+.rm ul{margin:0;padding-inline-start:18px;display:grid;gap:8px}
+.finding-ref{font-size:12px;color:var(--muted)}
+
+/* ledger */
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:14px}
+th,td{text-align:start;padding:10px 14px;border-top:1px solid var(--line);vertical-align:top}
+th{border-top:0;background:var(--surface2);font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+[dir=rtl] th{letter-spacing:0}
+td.say{color:var(--muted)}
+
+/* library */
+.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.tools input[type=search]{flex:1 1 220px;min-width:0;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 12px;border-radius:8px;font:inherit}
+.lit h3{font-size:15px}
+.lit .meta{font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-bottom:6px}
+.lit .role{margin-top:8px;font-size:13px;color:var(--ink);border-top:1px dashed var(--line);padding-top:8px}
+.lit .role b{color:var(--green)}
+.ref{padding:10px 0;border-top:1px solid var(--line);font-size:13.5px;display:grid;gap:2px}
+.ref a{color:var(--info);overflow-wrap:anywhere}
+.ref .au{color:var(--ink)}
+.ref .ti{color:var(--muted)}
+footer{border-top:1px solid var(--line);padding-block:18px 40px;color:var(--muted);font-size:12.5px;margin-inline:0}
+.toast{position:fixed;inset-inline:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));max-width:360px;margin-inline:auto;background:var(--navy);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:30}
+@media(prefers-reduced-motion:no-preference){.meter i,.bar .m i{transition:width .3s}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="9" fill="var(--navy)"/><path d="M17 31h6l-1-14h-4z" fill="var(--green)"/><path d="M16 17h8l-2-5h-4z" fill="var(--bg)"/><rect x="19" y="8" width="2" height="4" fill="var(--bg)"/><path d="M12 31h16" stroke="var(--bg)" stroke-width="2"/><path d="M8 20c2-1 4-1 6 0M26 20c2-1 4-1 6 0M9 14c2-1 3-1 5 0M26 14c2-1 3-1 5 0" stroke="var(--green)" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+      <div><b id="brandT"></b><small id="brandS"></small></div>
+    </div>
+    <div class="ctl">
+      <button class="chip" id="langBtn" type="button"></button>
+      <button class="chip" id="themeBtn" type="button"></button>
+    </div>
+  </div>
+  <div class="wrap"><nav class="tabs" role="tablist" id="tabs"></nav></div>
+</header>
+
+<div class="wrap"><main id="main"></main>
+<footer id="foot"></footer></div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- content ---------- */
+const L={en:{},ar:{}};
+const tr=(en,ar)=>({en,ar});
+
+const UI={
+  brandT:tr("Digital Sustainability Research Hub","منصة أبحاث الاستدامة الرقمية"),
+  brandS:tr("Dr. Sara Salem · Alexandria University Faculty of Business · 23rd Int'l Scientific Conference","د. سارة سالم · كلية الأعمال جامعة الإسكندرية · المؤتمر العلمي الدولي الثالث والعشرون"),
+  lang:tr("العربية","English"),
+  themeLight:tr("Light","فاتح"),themeDark:tr("Dark","داكن"),
+  tabs:[["overview",tr("Overview","نظرة عامة")],["framework",tr("Framework","الإطار التحليلي")],["diagnostic",tr("Readiness check","تشخيص الجاهزية")],["roadmap",tr("Roadmap","خارطة الطريق")],["evidence",tr("Evidence ledger","سجل الأدلة")],["library",tr("Library","المكتبة")]],
+  foot:tr("Built from the research paper and both conference presentations (September 2026). The paper is a documentary and analytical study; nothing on this page is survey data. The readiness check is an illustrative self-assessment, not a validated instrument.","بُنيت هذه المنصة من الورقة البحثية وعرضي المؤتمر (سبتمبر 2026). الدراسة وثائقية تحليلية، ولا تحتوي الصفحة على بيانات استبيان. تشخيص الجاهزية تقييم ذاتي توضيحي وليس أداة محكّمة.")
+};
+
+const FIND=[
+ {t:tr("Digitalisation is deep but transaction-bound","الرقمنة عميقة لكنها مرتبطة بالمعاملات فقط"),d:tr("E-invoicing raises data quality across the formal economy, yet it records the invoice, not the physical resource flow (energy, water, emissions).","ترفع الفوترة الإلكترونية جودة البيانات في الاقتصاد الرسمي، لكنها تسجل الفاتورة لا تدفق الموارد الفعلي (الطاقة والمياه والانبعاثات).")},
+ {t:tr("Mandate without a measurement architecture","إلزام بلا بنية قياس"),d:tr("Decrees 107/108 secure comparable output aligned with the ISSB baseline, but not methodology, governance or assurance.","يضمن القراران 107 و108 مخرجات قابلة للمقارنة متسقة مع ISSB، دون ضمان المنهجية أو الحوكمة أو التأكيد.")},
+ {t:tr("Green accounting stays outside-in","المحاسبة الخضراء تظل من الخارج إلى الداخل"),d:tr("On the theoretical reading, the regulator's form drives collection, so environmental data stay detached from the ledger.","وفق القراءة النظرية، يقود نموذج الجهة الرقابية جمع البيانات فتبقى البيانات البيئية منفصلة عن الدفاتر.")},
+ {t:tr("The binding constraint is institutional, not technological","القيد الحقيقي مؤسسي لا تقني"),d:tr("The technology exists and is deployed for operations. What is missing is governance discipline and combined professional competence.","التقنيات متوفرة ومستخدمة تشغيلياً. الناقص هو انضباط الحوكمة والكفاءة المهنية المركّبة.")}
+];
+
+const AXES=[
+ {n:"1",fit:"partial",t:tr("Administrative and regulatory frameworks for digital sustainability","الأطر الإدارية والتنظيمية للاستدامة الرقمية"),d:tr("Strategic planning for digital transformation, regulatory structures, cybersecurity regulatory policy, digital skills for green transformation.","التخطيط الاستراتيجي للتحول الرقمي، الهياكل التنظيمية، سياسات الأمن السيبراني، المهارات الرقمية للتحول الأخضر."),p:tr("Paper §8.2 and §8.5 (regulatory layer, constraints)","البحث §8.2 و§8.5 (الطبقة التنظيمية والمعوقات)")},
+ {n:"2",fit:"core",t:tr("Digital sustainability and accounting and auditing","الاستدامة الرقمية والمحاسبة والمراجعة"),d:tr("Digital accounting, AI in financial reporting, accountant and auditor skills, ESG non-financial reports supporting Vision 2030, green accounting integrated with digital sustainability, data governance and information security.","المحاسبة الرقمية، الذكاء الاصطناعي في التقارير المالية، مهارات المحاسبين والمراجعين، تقارير ESG، تكامل المحاسبة الخضراء والاستدامة الرقمية، حوكمة البيانات وأمن المعلومات."),p:tr("The paper's home axis: §8.1 to §8.4, findings 1 to 4","المحور الأساسي للبحث: §8.1 إلى §8.4 والنتائج 1 إلى 4")},
+ {n:"3",fit:"none",t:tr("Digital sustainability and financial policy","الاستدامة الرقمية والسياسات المالية"),d:tr("Digital sustainability as a route to financial policy and economic efficiency.","الاستدامة الرقمية كمدخل لتطوير السياسات المالية والكفاءة الاقتصادية."),p:tr("Touched only by the green bond precedent (§8.2, §8.6)","يمس فقط سابقة السند الأخضر (§8.2، §8.6)")},
+ {n:"4",fit:"none",t:tr("Statistics and digital sustainability","الإحصاء والاستدامة الرقمية"),d:tr("Statistical models and indicators for measuring digital sustainability.","النماذج والمؤشرات الإحصائية لقياس الاستدامة الرقمية."),p:tr("Not covered: the paper uses no statistical models","غير مغطى: لا يستخدم البحث نماذج إحصائية")},
+ {n:"5",fit:"partial",t:tr("AI and data science for digital sustainability","الذكاء الاصطناعي وعلوم البيانات"),d:tr("IoT and big data, ICT for sustainable services, cybersecurity, data protection and privacy.","إنترنت الأشياء والبيانات الضخمة، تكنولوجيا المعلومات، الأمن السيبراني، حماية البيانات."),p:tr("Paper §8.4 (sensor/IoT capture), §8.5 (cybersecurity)","البحث §8.4 (الرصد بالاستشعار) و§8.5 (الأمن السيبراني)")}
+];
+const FITLABEL={core:[tr("Core fit","ملاءمة أساسية"),"ok"],partial:[tr("Partial fit","ملاءمة جزئية"),"info"],none:[tr("Little overlap","تداخل محدود"),"idle"]};
+
+const LAYERS=[
+ {k:"infra",ic:"I",name:tr("Digital infrastructure","البنية الرقمية"),tag:tr("Deep, but narrow","عميقة لكنها ضيقة"),
+  does:tr("Mandatory e-invoicing and e-receipts (Egyptian Tax Authority) push validated transaction data through a central clearance platform. Audit evidence becomes a systemically validated population.","تلزم الفوترة والإيصال الإلكتروني (مصلحة الضرائب) بتمرير بيانات معاملات موثقة عبر منصة مركزية، فتصبح أدلة المراجعة مجتمعاً مُتحقَّقاً منه نظامياً."),
+  gap:tr("Built around the transaction because the transaction is the object of fiscal interest. Energy, water, emissions and waste generate no invoice, and an invoice records the amount paid, not the quantity consumed.","بُنيت حول المعاملة لأنها محل الاهتمام الضريبي. الطاقة والمياه والانبعاثات والنفايات لا تنتج فاتورة، والفاتورة تسجل المبلغ المدفوع لا الكمية المستهلكة."),
+  lens:tr("Technology adoption (TOE / UTAUT): a mandate alone is not enough for effective use.","تبني التكنولوجيا (TOE / UTAUT): الإلزام وحده لا يكفي لتحقيق استخدام فعّال.")},
+ {k:"reg",ic:"R",name:tr("Disclosure regulation","تنظيم الإفصاح"),tag:tr("Mandate, no method","إلزام بلا منهجية"),
+  does:tr("FRA Decrees 107 and 108 of 2021 require annual ESG disclosure through prescribed forms, with TCFD-structured climate disclosure for larger entities. This gives comparability and ISSB continuity.","يُلزم القراران 107 و108 لسنة 2021 بإفصاح ESG سنوي عبر نماذج محددة، مع إفصاح مناخي وفق TCFD للكيانات الأكبر، مما يحقق قابلية المقارنة والاتساق مع ISSB."),
+  gap:tr("A mandate prescribes an output, not the measurement system, the internal controls or the assurance behind it. The rational preparer assembles a return instead of building a controlled system.","الإلزام يحدد المخرج لا نظام القياس ولا الضوابط الداخلية ولا التأكيد. فيميل المُعِد إلى تجميع نموذج بدلاً من بناء نظام منضبط."),
+  lens:tr("Legitimacy and institutional theory: symbolic compliance and decoupling of form from practice.","نظريتا الشرعية والمؤسسية: الامتثال الرمزي وانفصال الشكل عن الممارسة.")},
+ {k:"green",ic:"G",name:tr("Green accounting","المحاسبة الخضراء"),tag:tr("Reporting, not measuring","إفصاح لا قياس"),
+  does:tr("In principle a measurement discipline: environmental costs are traced to products, processes and decisions (environmental cost accounting, material flow cost accounting, life-cycle costing, carbon accounting).","من حيث المبدأ انضباط قياس: تُتتبع التكاليف البيئية إلى المنتجات والعمليات والقرارات (محاسبة التكلفة البيئية، تكلفة تدفق المواد، تكلفة دورة الحياة، محاسبة الكربون)."),
+  gap:tr("Theoretical expectation, not an observed fact: the regulator's form drives collection (outside-in), so data are compiled periodically outside the accounting system and cannot be reconciled to financial records.","توقع نظري لا حقيقة مرصودة: يقود نموذج الجهة الرقابية الجمع (من الخارج إلى الداخل)، فتُجمع البيانات دورياً خارج النظام المحاسبي ولا يمكن مطابقتها بالسجلات المالية."),
+  lens:tr("Burritt & Schaltegger (2010): outside-in versus inside-out. Gray (2010): entity-based accounting cannot capture planetary limits.","بوريت وشالتيغر (2010): من الخارج للداخل مقابل العكس. غراي (2010): المحاسبة القائمة على الكيان لا تستوعب حدود الكوكب.")}
+];
+
+const CONDS=[
+ {n:"1",t:tr("Capture at source","الرصد من المصدر"),d:tr("Physical consumption and emission data are recorded at the point of occurrence, with the discipline applied to transaction capture.","تُسجَّل بيانات الاستهلاك والانبعاثات عند نقطة حدوثها، بنفس انضباط رصد المعاملات."),how:tr("Extend the meters and sensors already installed for process control and maintenance, and add physical-unit dimensions inside the ERP.","وسّع العدادات وأجهزة الاستشعار المركبة أصلاً لضبط العمليات والصيانة، وأضف الوحدات الفعلية داخل نظام ERP.")},
+ {n:"2",t:tr("Unified data governance","حوكمة بيانات موحدة"),d:tr("Defined ownership, documented methodology, version control and access control, on the same basis as financial data.","ملكية محددة ومنهجية موثقة وضبط للإصدارات والصلاحيات، على نفس أساس البيانات المالية."),how:tr("Assign sustainability data ownership within finance, under the same control framework.","أسند ملكية بيانات الاستدامة للإدارة المالية تحت إطار الضوابط ذاته.")},
+ {n:"3",t:tr("Taxonomy-based reporting","تقارير بتصنيف موحد"),d:tr("Structured, machine-readable disclosures that are computable and comparable across entities and periods.","إفصاحات مُهيكلة قابلة للقراءة الآلية، قابلة للحوسبة والمقارنة عبر الكيانات والفترات."),how:tr("Regulator side: a national machine-readable sustainability taxonomy. Preparer side: map internal fields to it so the return is generated, not re-keyed.","من جانب الجهة الرقابية: تصنيف وطني قابل للقراءة الآلية. من جانب المُعِد: ربط الحقول الداخلية به ليُولَّد النموذج لا يُعاد إدخاله.")},
+ {n:"4",t:tr("Designed assurability","قابلية تأكيد مُصمَّمة"),d:tr("An independent verifier can trace a reported figure to evidence and re-perform its computation.","يستطيع مُدقق مستقل تتبع الرقم إلى دليله وإعادة حسابه."),how:tr("Keep evidence, calibration logs and computation records. Auditors need guidance on instrumentation integrity and pipeline controls.","احتفظ بالأدلة وسجلات المعايرة وسجلات الحساب. يحتاج المراجعون إرشادات حول سلامة الأجهزة وضوابط خطوط البيانات.")}
+];
+
+const CONSTR=[
+ {k:"k1",t:tr("Professional competence","الكفاءة المهنية"),d:tr("Practitioners must move between accounting, environmental measurement and data engineering. Supply is presently insufficient: the most severe near-term constraint.","يجب أن يجمع الممارسون بين المحاسبة والقياس البيئي وهندسة البيانات. المعروض غير كافٍ حالياً: أشد المعوقات على المدى القريب.")},
+ {k:"k2",t:tr("Assurance capability","القدرة على التأكيد"),d:tr("Automated environmental data need methods beyond documentary evidence: calibration, pipeline configuration, controls.","تحتاج البيانات البيئية المؤتمتة أساليب تتجاوز الأدلة المستندية: المعايرة وإعداد خطوط البيانات والضوابط.")},
+ {k:"k3",t:tr("Infrastructure footprint","البصمة البيئية للبنية"),d:tr("Data centres, networks and hardware lifecycle carry real energy costs and belong inside the reporting boundary.","تحمل مراكز البيانات والشبكات ودورة حياة الأجهزة تكاليف طاقة حقيقية ويجب إدراجها ضمن حدود التقرير.")},
+ {k:"k4",t:tr("Cybersecurity","الأمن السيبراني"),d:tr("Centralising data concentrates risk. A breach of environmental data compromises reported figures as directly as one of financial records.","مركزية البيانات تُركّز المخاطر. اختراق البيانات البيئية يُضعف الأرقام المعلنة كاختراق السجلات المالية.")},
+ {k:"k5",t:tr("SME proportionality","التناسب مع المنشآت الصغيرة"),d:tr("Exemption thresholds push value-chain data requests onto smaller suppliers that lack capability to respond.","تدفع حدود الإعفاء طلبات بيانات سلسلة القيمة نحو الموردين الأصغر الذين يفتقرون للقدرة على الاستجابة.")}
+];
+
+const V2030=[
+ {t:tr("Economic","الاقتصادي"),d:tr("Reliable, comparable information reduces friction on cost of capital. The sovereign green bond is a tentative precedent; extending it to corporates needs caution.","المعلومات الموثوقة تقلل الاحتكاك في تكلفة رأس المال. السند الأخضر السيادي سابقة استرشادية، وتوسيعها للشركات يتطلب الحذر.")},
+ {t:tr("Environmental","البيئي"),d:tr("Measurement is a precondition of resource-efficiency, emissions and circular-economy goals: unmeasured consumption cannot be verifiably reduced.","القياس شرط مسبق لأهداف كفاءة الموارد والانبعاثات والاقتصاد الدائري: ما لا يُقاس لا يمكن خفضه بصورة قابلة للتحقق.")},
+ {t:tr("Governance","الحوكمي"),d:tr("Machine-readable reporting permits systematic supervisory analysis instead of document-by-document review.","التقارير القابلة للقراءة الآلية تتيح تحليلاً رقابياً منهجياً بدل مراجعة المستندات واحداً واحداً.")}
+];
+
+/* diagnostic */
+const SC=[tr("Not at all","لا إطلاقاً"),tr("Rarely","نادراً"),tr("Partly","جزئياً"),tr("Mostly","غالباً"),tr("Fully","كلياً")];
+const SK=[tr("None","لا يوجد"),tr("Minor","طفيف"),tr("Moderate","متوسط"),tr("Serious","جدي"),tr("Severe","شديد")];
+const ITEMS=[
+ {id:"c1a",g:"c1",q:tr("Energy, water and emissions data are recorded automatically by meters or sensors at the point of use.","تُسجَّل بيانات الطاقة والمياه والانبعاثات آلياً عبر عدادات أو أجهزة استشعار عند نقطة الاستخدام.")},
+ {id:"c1b",g:"c1",q:tr("Physical quantities (kWh, m³, tCO₂e) are stored in our ERP or accounting system next to monetary amounts.","تُخزَّن الكميات الفعلية (كيلوواط ساعة، م³، طن كربون مكافئ) في نظام ERP أو المحاسبة إلى جانب المبالغ المالية.")},
+ {id:"c2a",g:"c2",q:tr("Each sustainability metric has a named owner and a documented measurement methodology.","لكل مؤشر استدامة مسؤول محدد ومنهجية قياس موثقة.")},
+ {id:"c2b",g:"c2",q:tr("Sustainability data sit under the same version and access controls as financial data.","تخضع بيانات الاستدامة لنفس ضوابط الإصدارات والصلاحيات المطبقة على البيانات المالية.")},
+ {id:"c3a",g:"c3",q:tr("ESG data are held in structured fields mapped to a standard (FRA forms, ISSB, GRI) instead of free-form spreadsheets.","تُحفظ بيانات ESG في حقول مُهيكلة مرتبطة بمعيار (نماذج الرقابة المالية، ISSB، GRI) بدل جداول حرة.")},
+ {id:"c3b",g:"c3",q:tr("The regulatory return is generated from the same data, with no manual re-keying.","يُولَّد نموذج الإفصاح الرقابي من البيانات ذاتها دون إعادة إدخال يدوي.")},
+ {id:"c4a",g:"c4",q:tr("An independent party could trace any reported figure back to its source evidence.","يستطيع طرف مستقل تتبع أي رقم معلن إلى دليله المصدري.")},
+ {id:"c4b",g:"c4",q:tr("Computations can be re-performed, and meter or sensor calibration is logged.","يمكن إعادة إجراء الحسابات، وتُسجَّل معايرة العدادات وأجهزة الاستشعار.")},
+ {id:"o1",g:"o",q:tr("Environmental cost drivers are used in pricing, budgeting or investment decisions.","تُستخدم محركات التكلفة البيئية في التسعير أو الموازنة أو قرارات الاستثمار.")},
+ {id:"o2",g:"o",q:tr("Measurement runs all year, not only in the weeks before a filing deadline.","يجري القياس طوال العام، لا في الأسابيع السابقة لموعد الإفصاح فقط.")},
+ {id:"k1",g:"k",q:tr("We lack staff who combine accounting, environmental measurement and data skills.","نفتقر إلى كوادر تجمع بين المحاسبة والقياس البيئي ومهارات البيانات.")},
+ {id:"k2",g:"k",q:tr("Our auditors have no accepted method to assure automatically captured environmental data.","ليس لدى مراجعينا منهج مقبول لتأكيد البيانات البيئية المُلتقطة آلياً.")},
+ {id:"k3",g:"k",q:tr("The energy and resource footprint of our digital systems is outside our reporting boundary.","البصمة البيئية لأنظمتنا الرقمية خارج حدود تقريرنا.")},
+ {id:"k4",g:"k",q:tr("Centralising environmental data would expose us to cyber risk we are not ready to control.","مركزية البيانات البيئية تعرّضنا لمخاطر سيبرانية لسنا مستعدين لضبطها.")},
+ {id:"k5",g:"k",q:tr("Our suppliers (often SMEs) cannot supply the environmental data we are asked for.","موردونا (غالباً منشآت صغيرة) لا يستطيعون تزويدنا بالبيانات البيئية المطلوبة منا.")}
+];
+const GROUPS={c1:CONDS[0],c2:CONDS[1],c3:CONDS[2],c4:CONDS[3]};
+const EXAMPLE={c1a:1,c1b:1,c2a:2,c2b:1,c3a:2,c3b:1,c4a:2,c4b:1,o1:1,o2:1,k1:3,k2:3,k3:2,k4:2,k5:3};
+const LEVELS=[
+ [25,tr("Reporting only","إفصاح فقط"),tr("Sustainability data are compiled for the return, outside the accounting system. This is the outside-in configuration the paper describes.","تُجمع بيانات الاستدامة لأجل النموذج خارج النظام المحاسبي، وهو التكوين من الخارج إلى الداخل الذي يصفه البحث.")],
+ [50,tr("Foundations in place","أسس قائمة"),tr("Some conditions are met in pockets. Measurement is still mostly driven by the filing calendar.","بعض الشروط متحققة في مواضع محدودة، ولا يزال القياس مدفوعاً بجدول الإفصاح غالباً.")],
+ [75,tr("Integrating","قيد التكامل"),tr("Sustainability data are becoming a data class inside the accounting system. Close the weakest condition next.","أصبحت بيانات الاستدامة فئة بيانات داخل النظام المحاسبي. عالج أضعف شرط تالياً.")],
+ [101,tr("Embedded","مُدمجة"),tr("Data are captured at source, governed like financial data, structured and assurable: the architecture the paper specifies.","تُرصد البيانات عند المصدر وتُحوكم كالبيانات المالية وتكون مُهيكلة وقابلة للتأكيد: البنية التي يحددها البحث.")]
+];
+const ACT_AUD={c1:tr("Preparers","المُعِدّون"),c2:tr("Preparers","المُعِدّون"),c3:tr("Regulators + preparers","الرقابة + المُعِدّون"),c4:tr("Auditors + regulators","المراجعون + الرقابة")};
+
+/* roadmap */
+const AUD=[
+ {k:"reg",t:tr("Regulators","الجهات الرقابية"),f:"2, 4",items:[tr("Require documented measurement methodology behind every disclosure (boundaries, evidence retention).","إلزام بمنهجية قياس موثقة خلف كل إفصاح (الحدود والاحتفاظ بالأدلة)."),tr("Publish a phased pathway to independent limited assurance of core metrics, in advance.","نشر مسار تدريجي مسبق نحو التأكيد المحدود المستقل للمؤشرات الأساسية."),tr("Build a national machine-readable sustainability taxonomy.","بناء تصنيف وطني قابل للقراءة الآلية للاستدامة."),tr("Add a simplified measurement pathway for value-chain SMEs.","إتاحة مسار قياس مبسط للمنشآت الصغيرة في سلسلة القيمة.")]},
+ {k:"prep",t:tr("Preparers","معدّو التقارير"),f:"3",items:[tr("Reposition measurement as inside-out, driven by material environmental cost drivers.","إعادة توجيه القياس ليكون من الداخل إلى الخارج بقيادة محركات التكلفة البيئية الجوهرية."),tr("Add physical-unit dimensions inside existing ERP systems, not parallel spreadsheets.","إدراج الوحدات الفعلية داخل أنظمة ERP القائمة لا في جداول موازية."),tr("Assign sustainability data ownership within finance, under the financial control framework.","إسناد ملكية بيانات الاستدامة للإدارة المالية تحت إطار الضوابط المالية."),tr("Extend existing IoT and sensor instrumentation to feed ESG data, and bring the digital footprint inside the reporting boundary.","توسيع أجهزة إنترنت الأشياء والاستشعار القائمة لتغذية بيانات ESG، وإدراج البصمة الرقمية ضمن حدود التقرير.")]},
+ {k:"aud",t:tr("Auditors and professional bodies","المراجعون والهيئات المهنية"),f:"4",items:[tr("Publish assurance guidance for automatically captured non-financial data: instrumentation integrity, pipeline controls, computational reproducibility.","إصدار إرشادات تأكيد للبيانات غير المالية المُلتقطة آلياً: سلامة الأجهزة وضوابط خطوط البيانات وقابلية إعادة الحساب.")]},
+ {k:"acad",t:tr("Universities","الجامعات والأكاديميا"),f:"4",items:[tr("Integrate environmental measurement and data analytics into the accounting programme itself, not as separate electives.","دمج القياس البيئي وتحليل البيانات في برنامج المحاسبة ذاته لا كمقررات اختيارية منفصلة."),tr("Build combined accounting and data-analytics competence.","بناء كفاءة مركّبة بين المحاسبة وتحليل البيانات.")]}
+];
+const FUT=[
+ {t:tr("Content analysis of filed returns","تحليل محتوى النماذج المقدمة"),d:tr("Did disclosure quality under Decrees 107/108 improve across cycles, and which entity traits predict it?","هل تحسنت جودة الإفصاح بموجب القرارين 107/108 عبر الدورات، وأي خصائص للكيانات تتنبأ بها؟"),f:"1, 2"},
+ {t:tr("Entity case studies, surveys, interviews","دراسات حالة واستبيانات ومقابلات"),d:tr("Test directly the outside-in expectation. Named in the paper as its most pressing empirical gap.","اختبار توقع المنهج من الخارج للداخل مباشرة. يصفه البحث بأنه أشد فجواته التطبيقية إلحاحاً."),f:"3"},
+ {t:tr("Assurance and cost of capital","التأكيد وتكلفة رأس المال"),d:tr("Does assurance of sustainability information lower Egyptian issuers' cost of capital, as the sovereign green bond suggests?","هل يخفض تأكيد معلومات الاستدامة تكلفة رأس المال لدى المصدرين المصريين كما يوحي السند الأخضر السيادي؟"),f:"4"},
+ {t:tr("MENA comparison","مقارنة إقليمية"),d:tr("Compare Middle East and North Africa jurisdictions converging on ISSB standards.","مقارنة دول الشرق الأوسط وشمال أفريقيا المتقاربة مع معايير ISSB."),f:"2"}
+];
+
+/* ledger */
+const ST={doc:[tr("Documented","موثق"),"ok"],qual:[tr("Documented, qualified","موثق بتحفظ"),"warn"],exp:[tr("Theoretical expectation","توقع نظري"),"info"],unt:[tr("Untested","غير مختبر"),"idle"]};
+const LEDGER=[
+ {s:"doc",c:tr("E-invoicing and e-receipts are mandatory, cleared through a central platform run by the Egyptian Tax Authority.","الفوترة والإيصال الإلكتروني إلزاميان ويمران عبر منصة مركزية لمصلحة الضرائب."),w:"§8.1",say:tr("Regulatory fact. State it plainly.","واقع تنظيمي. اذكره بوضوح.")},
+ {s:"doc",c:tr("Decrees 107/108 (2021) require annual ESG disclosure on prescribed forms, with TCFD-structured climate disclosure above a higher threshold.","القراران 107/108 (2021) يوجبان إفصاح ESG سنوياً عبر نماذج محددة، مع إفصاح مناخي وفق TCFD فوق حد أعلى."),w:"§8.2",say:tr("Regulatory fact. State it plainly.","واقع تنظيمي. اذكره بوضوح.")},
+ {s:"qual",c:tr("The decrees prescribe no measurement methodology, governance or assurance.","لا يحدد القراران منهجية قياس ولا حوكمة ولا تأكيداً."),w:"§8.2",say:tr("A reading of the instruments' content, so say \"as written\".","قراءة لمحتوى الأدوات، فقل «بحسب النص».")},
+ {s:"qual",c:tr("The 2020 sovereign green bond was oversubscribed and priced below comparable conventional issuance.","السند الأخضر السيادي 2020 تجاوز الاكتتاب المطروح وسُعِّر بعائد أقل من الإصدار التقليدي المماثل."),w:"§8.2 (World Bank, 2022)",say:tr("Sovereign evidence only. Never present it as corporate evidence.","دليل سيادي فقط. لا تقدمه كدليل على الشركات.")},
+ {s:"unt",c:tr("Credible assurance would lower corporate issuers' cost of capital in Egypt.","التأكيد الموثوق سيخفض تكلفة رأس المال للمصدرين من الشركات في مصر."),w:"§8.2, §10.2",say:tr("Offer it as a hypothesis for future research.","اطرحه كفرضية للبحوث المستقبلية.")},
+ {s:"qual",c:tr("Board characteristics moderate the ESG disclosure to integrated-reporting quality link (34 non-financial listed firms, 2015–2021).","خصائص مجلس الإدارة تعدّل العلاقة بين إفصاح ESG وجودة التقرير المتكامل (34 شركة غير مالية مقيدة، 2015–2021)."),w:"§7, §8.2 (Abdelmoneim & El-Deeb, 2024)",say:tr("It studies disclosure quality, not internal measurement. The inference to measurement architecture is an extrapolation.","تدرس جودة الإفصاح لا القياس الداخلي. والاستدلال إلى بنية القياس امتداد.")},
+ {s:"qual",c:tr("Operational ERP, sensor and IoT systems exist in Egyptian industry but are not generally wired into sustainability reporting.","أنظمة ERP والاستشعار وإنترنت الأشياء التشغيلية قائمة في الصناعة المصرية لكنها غير موصولة عموماً بتقارير الاستدامة."),w:"§8.4 (\"on available evidence\")",say:tr("Keep the phrase \"on available evidence\".","احتفظ بعبارة «وفق الأدلة المتاحة».")},
+ {s:"exp",c:tr("Many Egyptian entities compile ESG data in spreadsheets outside the accounting system.","كثير من الكيانات المصرية تجمع بيانات ESG في جداول خارج النظام المحاسبي."),w:"§1, §8.3",say:tr("Say \"theory predicts\". The paper collected no entity-level data.","قل «تتوقع النظرية». لم يجمع البحث بيانات على مستوى الكيانات.")},
+ {s:"exp",c:tr("Green accounting in Egypt is currently outside-in.","المحاسبة الخضراء في مصر حالياً من الخارج إلى الداخل."),w:"§8.3, Finding 3",say:tr("A hypothesis from institutional and legitimacy theory, offered for testing.","فرضية من النظرية المؤسسية ونظرية الشرعية، تُطرح للاختبار.")},
+ {s:"exp",c:tr("The binding constraint is institutional and human, not technological.","القيد الحاكم مؤسسي وبشري لا تقني."),w:"§8.4, §8.5, Finding 4",say:tr("An analytical conclusion from documents and theory, not a statistical result.","استنتاج تحليلي من الوثائق والنظرية، لا نتيجة إحصائية.")}
+];
+
+/* literature */
+const LIT=[
+ {k:"dai",a:"Dai & Vasarhelyi",y:2017,src:"J. of Information Systems",tag:"tech",f:tr("A shared, cryptographically secured ledger could support triple-entry bookkeeping and move assurance from sampling toward continuous verification.","دفتر مشترك ومؤمَّن تشفيرياً يدعم القيد الثلاثي وينقل التأكيد من المعاينة إلى التحقق المستمر."),r:tr("Locates the promise of digitalisation in changing the evidential basis of accounting.","يضع وعد الرقمنة في تغيير الأساس الإثباتي للمحاسبة.")},
+ {k:"jed",a:"Jędrzejka",y:2019,src:"Zeszyty Teoretyczne Rachunkowości",tag:"tech",f:tr("RPA suits high-volume, rule-based processes; little benefit where professional judgement is needed.","الأتمتة الروبوتية تناسب العمليات كثيفة الحجم القائمة على قواعد، وفائدتها محدودة حيث يلزم الحكم المهني."),r:tr("Environmental data are largely judgemental and estimate-based, so automation has a limit.","البيانات البيئية في معظمها حكمية وتقديرية، فللأتمتة حد.")},
+ {k:"spa",a:"Spanò et al.",y:2022,src:"AAAJ",tag:"tech",f:tr("Blockchain scholarship is rapid but technical and normative; accountability consequences need study.","أدبيات البلوك تشين متسارعة لكنها تقنية ومعيارية؛ تحتاج دراسة آثار المساءلة."),r:tr("Supports governance, not technical capability, as the decisive variable.","تدعم أن الحوكمة لا القدرة التقنية هي المتغير الحاسم.")},
+ {k:"gar",a:"Garanina et al.",y:2022,src:"AAAJ",tag:"tech",f:tr("Large conceptual literature, little implementation evidence; sustainability and supply-chain traceability are emerging uses.","أدبيات مفاهيمية واسعة وأدلة تطبيق قليلة؛ الاستدامة وتتبع سلاسل الإمداد استخدامات ناشئة."),r:tr("Backs the \"theory outpaces implementation\" point.","تدعم فكرة «النظرية تسبق التطبيق».")},
+ {k:"sil",a:"Silva et al.",y:2022,src:"Int'l J. of Digital Accounting Research",tag:"tech",f:tr("Blockchain changes the nature of audit evidence and enables continuous auditing, while raising the auditor's-role question.","يغيّر البلوك تشين طبيعة أدلة المراجعة ويتيح المراجعة المستمرة، ويثير سؤال دور المراجع."),r:tr("Analogous to assuring sustainability data whose reliability sits in the sensing layer.","مماثل لتأكيد بيانات استدامة تعتمد موثوقيتها على طبقة الاستشعار.")},
+ {k:"han",a:"Han et al.",y:2023,src:"Int'l J. of Accounting Information Systems",tag:"tech",f:tr("Blockchain and AI mainly reduce information asymmetry; organisations remain cautious about adoption.","تقلل التقنيتان أساساً عدم تماثل المعلومات، ولا تزال المؤسسات حذرة في التبني."),r:tr("Framing adopted: reducing asymmetry in sustainability information is the central problem.","الإطار المعتمد: تقليل عدم التماثل في معلومات الاستدامة هو المشكلة المحورية.")},
+ {k:"jac",a:"Jackson et al.",y:2022,src:"Pacific Accounting Review",tag:"skills",f:tr("Employers want analytical and digital skills combined with, not replacing, accounting knowledge.","يريد أصحاب العمل مهارات تحليلية ورقمية مضافة إلى المعرفة المحاسبية لا بديلة عنها."),r:tr("Grounds the competence constraint.","تؤسس لمعوق الكفاءة المهنية.")},
+ {k:"gra",a:"Gray",y:2010,src:"Accounting, Organizations and Society",tag:"sust",f:tr("Sustainability accounting mostly reports organisational activity; entity-based boundaries cannot accommodate planetary limits.","محاسبة الاستدامة تُبلغ غالباً عن نشاط المنشأة؛ وحدود الكيان لا تستوعب حدود الكوكب."),r:tr("A corrective: better data infrastructure is not enough on its own.","مصحح ضروري: تحسين البنية البيانية وحده لا يكفي.")},
+ {k:"bur",a:"Burritt & Schaltegger",y:2010,src:"AAAJ",tag:"sust",f:tr("Outside-in (external requirements decide what is measured) versus inside-out (management needs drive measurement).","من الخارج للداخل (المتطلبات الخارجية تحدد ما يُقاس) مقابل من الداخل للخارج (حاجات الإدارة تقود القياس)."),r:tr("The paper's principal analytical axis.","المحور التحليلي الرئيسي في البحث.")},
+ {k:"abd",a:"Abdelmoneim & El-Deeb",y:2024,src:"Future Business Journal",tag:"egypt",f:tr("34 Egyptian non-financial listed firms, 2015–2021: ESG disclosure relates positively to integrated-reporting quality, moderated by board traits.","34 شركة مصرية غير مالية مقيدة، 2015–2021: يرتبط إفصاح ESG إيجاباً بجودة التقرير المتكامل وتعدّله خصائص المجلس."),r:tr("One of few Egypt-specific studies. Supports governance over technology.","من الدراسات القليلة عن مصر. تدعم أولوية الحوكمة على التقنية.")}
+];
+const TAGS={all:tr("All","الكل"),tech:tr("Digital technology","التقنيات الرقمية"),sust:tr("Sustainability accounting","محاسبة الاستدامة"),skills:tr("Skills","المهارات"),egypt:tr("Egypt","مصر")};
+const THEORY=[
+ {t:tr("Stakeholder theory","نظرية أصحاب المصلحة"),a:"Freeman, 1984",d:tr("Extends the reporting boundary beyond equity providers.","توسع حدود التقرير لتتجاوز مقدمي رأس المال.")},
+ {t:tr("Legitimacy theory","نظرية الشرعية"),a:"Suchman, 1995",d:tr("Explains symbolic compliance: disclosure without underlying measurement.","تفسر الامتثال الرمزي: إفصاح دون قياس فعلي.")},
+ {t:tr("Institutional theory","النظرية المؤسسية"),a:"DiMaggio & Powell, 1983",d:tr("Coercive, mimetic and normative pressure; predicts decoupling of form from practice.","ضغوط قسرية ومحاكاة ومعيارية؛ تتنبأ بانفصال الشكل عن الممارسة.")},
+ {t:tr("Signalling theory","نظرية الإشارة"),a:"Spence, 1973",d:tr("Verified disclosure lowers cost of capital; unverified disclosure conveys little.","الإفصاح المُتحقق منه يخفض تكلفة رأس المال، وغير المُتحقق منه يحمل معلومات قليلة.")},
+ {t:tr("Technology adoption (TOE / UTAUT)","تبني التكنولوجيا (TOE / UTAUT)"),a:"Tornatzky & Fleischer, 1990; Venkatesh et al., 2003",d:tr("Adoption depends on technology, organisational readiness and environmental pressure.","يعتمد التبني على التقنية وجاهزية المنظمة والضغط البيئي.")}
+];
+const REFS=[
+["Abdelmoneim, Z., & El-Deeb, M. S. (2024)","BOD characteristics and their impact on the link between ESG disclosure and integrated reporting disclosure quality: A study of Egyptian non-financial firms.","Future Business Journal, 10(1), 1–20.","10.1186/s43093-023-00297-y"],
+["Burritt, R. L., & Schaltegger, S. (2010)","Sustainability accounting and reporting: Fad or trend?","Accounting, Auditing & Accountability Journal, 23(7), 829–846.","10.1108/09513571011080144"],
+["Dai, J., & Vasarhelyi, M. A. (2017)","Toward blockchain-based accounting and assurance.","Journal of Information Systems, 31(3), 5–21.","10.2308/isys-51804"],
+["DiMaggio, P. J., & Powell, W. W. (1983)","The iron cage revisited: Institutional isomorphism and collective rationality in organizational fields.","American Sociological Review, 48(2), 147–160.","10.2307/2095101"],
+["Financial Regulatory Authority (2021)","Decrees No. 107 and No. 108 of 2021 concerning ESG disclosure and climate-related financial disclosure.","Arab Republic of Egypt.",""],
+["Freeman, R. E. (1984)","Strategic management: A stakeholder approach.","Pitman Publishing.",""],
+["Garanina, T., Ranta, M., & Dumay, J. (2022)","Blockchain in accounting research: Current trends and emerging topics.","Accounting, Auditing & Accountability Journal, 35(7), 1507–1533.","10.1108/AAAJ-10-2020-4991"],
+["Global Reporting Initiative (2021)","GRI universal standards: GRI 1, GRI 2 and GRI 3.","Global Sustainability Standards Board.",""],
+["Gray, R. (2010)","Is accounting for sustainability actually accounting for sustainability… and how would we know?","Accounting, Organizations and Society, 35(1), 47–62.",""],
+["Han, H., Shiwakoti, R. K., Jarvis, R., Mordi, C., & Botchie, D. (2023)","Accounting and auditing with blockchain technology and artificial intelligence: A literature review.","International Journal of Accounting Information Systems, 48, 100598.",""],
+["IFRS Foundation (2023a)","IFRS S1 general requirements for disclosure of sustainability-related financial information.","ISSB.",""],
+["IFRS Foundation (2023b)","IFRS S2 climate-related disclosures.","ISSB.",""],
+["IFRS Foundation (2025)","IFRS Foundation publishes jurisdictional profiles providing transparency and evidencing progress towards adoption of ISSB Standards.","ifrs.org news, 2025.",""],
+["Jackson, D., Michelson, G., & Munir, R. (2022)","New technology and desired skills of early career accountants.","Pacific Accounting Review, 34(4), 548–568.","10.1108/PAR-02-2022-0012"],
+["Jędrzejka, D. (2019)","Robotic process automation and its impact on accounting.","Zeszyty Teoretyczne Rachunkowości, 105(161), 137–166.","10.5604/01.3001.0013.4750"],
+["Ministry of Planning and Economic Development (2023)","Egypt's Vision 2030: Sustainable development strategy.","Arab Republic of Egypt.",""],
+["Schaltegger, S., & Burritt, R. (2000)","Contemporary environmental accounting: Issues, concepts and practice.","Greenleaf Publishing.",""],
+["Silva, R., Inácio, H., & Marques, R. P. (2022)","Blockchain implications for auditing: A systematic literature review and bibliometric analysis.","International Journal of Digital Accounting Research, 22, 163–192.","10.4192/1577-8517-v22_6"],
+["Spanò, R., Massaro, M., Ferri, L., Dumay, J., & Schmitz, J. (2022)","Blockchain in accounting, accountability and assurance: An overview.","Accounting, Auditing & Accountability Journal, 35(7), 1493–1506.","10.1108/AAAJ-06-2022-5850"],
+["Spence, M. (1973)","Job market signaling.","The Quarterly Journal of Economics, 87(3), 355–374.","10.2307/1882010"],
+["Suchman, M. C. (1995)","Managing legitimacy: Strategic and institutional approaches.","Academy of Management Review, 20(3), 571–610.","10.2307/258788"],
+["Task Force on Climate-related Financial Disclosures (2017)","Recommendations of the Task Force on Climate-related Financial Disclosures: Final report.","Financial Stability Board.",""],
+["Tornatzky, L. G., & Fleischer, M. (1990)","The processes of technological innovation.","Lexington Books.",""],
+["Venkatesh, V., Morris, M. G., Davis, G. B., & Davis, F. D. (2003)","User acceptance of information technology: Toward a unified view.","MIS Quarterly, 27(3), 425–478.","10.2307/30036540"],
+["World Bank (2022)","Supporting Egypt's inaugural green bond issuance.","The World Bank Group.",""]
+];
+
+/* ---------- state ---------- */
+let lang="en", tab="overview", layer="infra", openCond=null, litTag="all", audience="reg", q="";
+let ans={}, isExample=true;
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+try{const s=JSON.parse(store.get("dsh.ans")||"null");if(s&&s.a){ans=s.a;isExample=false}}catch(e){}
+if(!Object.keys(ans).length){ans=Object.assign({},EXAMPLE);isExample=true}
+const sl=store.get("dsh.lang"); if(sl==="ar"||sl==="en")lang=sl;
+else if((navigator.language||"").toLowerCase().startsWith("ar"))lang="ar";
+const th=store.get("dsh.theme");
+if(th==="light"||th==="dark")document.documentElement.setAttribute("data-theme",th);
+
+/* ---------- helpers ---------- */
+const $=(s,r)=>(r||document).querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const t=o=>o[lang];
+const nf=n=>lang==="ar"?String(n).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[d]):String(n);
+const pill=(k,txt)=>`<span class="pill ${k}">${esc(txt)}</span>`;
+
+function scores(){
+  const g=id=>ans[id]==null?null:ans[id];
+  const avg=ids=>{const v=ids.map(g).filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0)/v.length/4*100:0};
+  const out={};
+  ["c1","c2","c3","c4","o"].forEach(k=>out[k]=avg(ITEMS.filter(i=>i.g===k).map(i=>i.id)));
+  out.ready=(out.c1+out.c2+out.c3+out.c4)/4;
+  CONSTR.forEach((c,i)=>out[c.k]=g(c.k)==null?0:g(c.k)/4*100);
+  return out;
+}
+
+function radar(sc){
+  const cx=150,cy=140,R=95,keys=["c1","c2","c3","c4"];
+  const pt=(i,r)=>{const a=-Math.PI/2+i*Math.PI/2;return [cx+Math.cos(a)*R*r,cy+Math.sin(a)*R*r]};
+  let g="";
+  [.25,.5,.75,1].forEach(r=>{g+=`<polygon points="${keys.map((_,i)=>pt(i,r).join(",")).join(" ")}" fill="none" stroke="var(--line)" stroke-width="1"/>`});
+  keys.forEach((_,i)=>{const p=pt(i,1);g+=`<line x1="${cx}" y1="${cy}" x2="${p[0]}" y2="${p[1]}" stroke="var(--line)"/>`});
+  const poly=keys.map((k,i)=>pt(i,Math.max(sc[k],3)/100).join(",")).join(" ");
+  g+=`<polygon points="${poly}" fill="var(--green)" fill-opacity=".22" stroke="var(--green)" stroke-width="2.5" stroke-linejoin="round"/>`;
+  keys.forEach((k,i)=>{const p=pt(i,Math.max(sc[k],3)/100);g+=`<circle cx="${p[0]}" cy="${p[1]}" r="4.5" fill="var(--green)"/>`});
+  const lab=[[cx,18,"middle"],[cx+R+18,cy+4,"start"],[cx,cy+R+26,"middle"],[cx-R-18,cy+4,"end"]];
+  keys.forEach((k,i)=>{const [x,y,an]=lab[i];g+=`<text x="${x}" y="${y}" text-anchor="${an}" font-size="12" fill="var(--ink)" font-weight="600">${esc(t(GROUPS[k].t))}</text><text x="${x}" y="${y+14}" text-anchor="${an}" font-size="12" fill="var(--muted)" font-family="IBM Plex Mono,monospace">${nf(Math.round(sc[k]))}</text>`});
+  return `<svg viewBox="-40 0 380 290" width="100%" role="img" aria-label="${esc(lang==='ar'?'مخطط رادار للشروط الأربعة':'Radar chart of the four conditions')}">${g}</svg>`;
+}
+
+/* ---------- renderers ---------- */
+function rOverview(){
+  const d=Math.ceil((new Date("2026-10-10T00:00:00")-new Date(new Date().toDateString()))/864e5);
+  const dayTxt=d>0?nf(d):d===0?(lang==="ar"?"اليوم":"0"):nf(Math.abs(d));
+  const dayLab=d>0?(lang==="ar"?"أيام حتى المؤتمر":"days to the conference"):d===0?(lang==="ar"?"موعد المؤتمر":"conference day"):(lang==="ar"?"أيام منذ المؤتمر":"days since the conference");
+  const words=6983;
+  return `<div class="hero">
+   <div class="hero-main">
+    <span class="eyebrow">${lang==="ar"?"دراسة تحليلية في ضوء رؤية مصر 2030":"An analytical study in light of Egypt Vision 2030"}</span>
+    <h1>${lang==="ar"?"التحول إلى المحاسبة والتقارير المالية الرقمية ومأسسة المحاسبة الخضراء لتحقيق الاستدامة الرقمية في مصر":"The Transition to Digital Accounting and Financial Reporting and the Institutionalisation of Green Accounting for Digital Sustainability in Egypt"}</h1>
+    <p class="sub">${lang==="ar"?"د. سارة سالم · خبيرة تدريب في الذكاء الاصطناعي والتمويل، جامعة القاهرة · باحثة دكتوراه، الأكاديمية العربية للعلوم المالية والمصرفية":"Dr. Sara Salem · AI &amp; Finance Educator, Cairo University · Doctoral Researcher, Arab Academy for Management, Banking and Financial Sciences"}</p>
+    <div class="rq"><b>${lang==="ar"?"السؤال البحثي الرئيسي":"Principal research question"}</b>${lang==="ar"?"كيف يمكن توظيف التحول إلى المحاسبة والتقارير المالية الرقمية في مصر لترسيخ المحاسبة الخضراء والاستدامة الرقمية بما يتسق مع رؤية مصر 2030؟":"How can the transition to digital accounting and financial reporting in Egypt be leveraged to institutionalise green accounting and digital sustainability in a manner consistent with Egypt Vision 2030?"}</div>
+   </div>
+   <div class="card stat">
+    <div class="countdown"><span class="n mono">${dayTxt}</span><span>${dayLab}</span></div>
+    <div class="facts">
+     <div><span>${lang==="ar"?"التاريخ":"Date"}</span><span>${lang==="ar"?"10 أكتوبر 2026":"10 October 2026"}</span></div>
+     <div><span>${lang==="ar"?"الحدث":"Event"}</span><span>${lang==="ar"?"المؤتمر العلمي الدولي الثالث والعشرون":"23rd International Scientific Conference"}</span></div>
+     <div><span>${lang==="ar"?"الجهة":"Host"}</span><span>${lang==="ar"?"كلية الأعمال، جامعة الإسكندرية":"Faculty of Business, Alexandria University"}</span></div>
+     <div><span>${lang==="ar"?"المنهج":"Method"}</span><span>${lang==="ar"?"وصفي تحليلي، تحليل وثائقي 2016–2026":"Descriptive-analytical, documentary 2016–2026"}</span></div>
+    </div>
+    <div>
+     <div class="bar" style="grid-template-columns:minmax(0,1fr) auto"><div class="t" style="grid-column:1/-1"><span>${lang==="ar"?"عدد كلمات البحث (دون المراجع)":"Paper length, excluding references"}</span></div><div class="meter" role="img" aria-label="${nf(words)} / ${nf(7000)}"><i style="width:${words/70}%"></i></div><span class="mono" style="font-size:13px">${nf(words.toLocaleString("en"))} / ${nf("7,000")}</span></div>
+     <p class="note" style="margin-top:8px">${lang==="ar"?"حد المؤتمر 7000 كلمة دون المراجع والملاحق. العدد يشمل الملخص ولا يشمل العناوين، وقد يختلف قليلاً عن عدّ برنامج الكتابة.":"The conference limit is 7,000 words excluding references and appendices. The count includes the abstract and excludes headings, so your word processor may differ slightly."}</p>
+    </div>
+   </div>
+  </div>
+
+  <section><div class="sec-h"><span class="eyebrow">${lang==="ar"?"النتائج":"Findings"}</span><h2>${lang==="ar"?"أربع نتائج تحليلية":"Four analytical conclusions"}</h2><p>${lang==="ar"?"تقابل الأهداف الأربعة للبحث. مصدرها الوثائق والنظرية لا بيانات أولية.":"One for each research objective. Derived from documents and theory, not primary data."}</p></div>
+  <div class="grid g2">${FIND.map((f,i)=>`<div class="card find"><span class="no">${nf(i+1)}</span><div><h3>${esc(t(f.t))}</h3><p>${esc(t(f.d))}</p></div></div>`).join("")}</div></section>
+
+  <section><div class="sec-h"><span class="eyebrow">${lang==="ar"?"ملاءمة المؤتمر":"Conference fit"}</span><h2>${lang==="ar"?"أين يقع البحث بين محاور المؤتمر الخمسة":"Where the paper sits among the five conference axes"}</h2><p>${lang==="ar"?"تقدير مني بناءً على بنود كل محور المنشورة في الإعلان، وليس تصنيفاً رسمياً من المؤتمر.":"My mapping from the topics listed under each axis in the call for papers. It is not an official classification."}</p></div>
+  <div class="card">${AXES.map(a=>{const f=FITLABEL[a.fit];return `<div class="axis ${a.fit==="none"?"dim":""}"><span class="an">${nf(a.n)}</span><div><h4>${esc(t(a.t))}</h4><p>${esc(t(a.d))}</p><p style="margin-top:4px;color:var(--ink)">${esc(t(a.p))}</p></div>${pill(f[1],t(f[0]))}</div>`}).join("")}</div></section>
+
+  <section><div class="sec-h"><span class="eyebrow">${lang==="ar"?"شروط التقديم":"Submission rules"}</span><h2>${lang==="ar"?"شروط وضوابط تقييم الأبحاث":"Conditions and evaluation criteria"}</h2></div>
+  <div class="grid g4">
+   <div class="card"><h3>${lang==="ar"?"التحكيم العلمي":"Peer review"}</h3><p>${lang==="ar"?"تخضع جميع الأوراق للتحكيم العلمي.":"All papers undergo scientific refereeing."}</p></div>
+   <div class="card"><h3>${lang==="ar"?"الأصالة":"Originality"}</h3><p>${lang==="ar"?"ألا يكون البحث قد سبق تقديمه في مؤتمر أو ورشة أو نُشر في مجلة محكّمة.":"Not previously presented at a conference or workshop, nor published in a refereed journal."}</p></div>
+   <div class="card"><h3>${lang==="ar"?"الطول":"Length"}</h3><p>${lang==="ar"?"لا يزيد عن 7000 كلمة دون المراجع والملاحق.":"No more than 7,000 words excluding references and appendices."}</p></div>
+   <div class="card"><h3>${lang==="ar"?"المواعيد":"Dates"}</h3><p>${lang==="ar"?"آخر موعد للاستلام 20 سبتمبر 2026، والرد على ملاحظات التحكيم حتى 25 سبتمبر 2026.":"Submission deadline 20 September 2026; responses to referee comments by 25 September 2026."}</p></div>
+  </div></section>`;
+}
+
+function rFramework(){
+  const L0=LAYERS.find(x=>x.k===layer);
+  return `<section><div class="sec-h"><span class="eyebrow">${lang==="ar"?"التحليل":"Analysis"}</span><h2>${lang==="ar"?"ثلاث طبقات وفجوة واحدة":"Three layers, one gap"}</h2><p>${lang==="ar"?"تقدمت الرقمنة والإفصاح عن الاستدامة دون بنية قياس مشتركة. اختر طبقة لترى ما تحققه وما ينقصها.":"Digitalisation and sustainability disclosure advanced without a shared measurement architecture. Pick a layer to see what it delivers and what it lacks."}</p></div>
+   <div class="seg" role="group" aria-label="layers">${LAYERS.map(l=>`<button type="button" data-layer="${l.k}" aria-pressed="${l.k===layer}"><b>${esc(t(l.name))}</b><span>${esc(t(l.tag))}</span></button>`).join("")}</div>
+   <div class="detail">
+    <div class="card"><h4>${lang==="ar"?"ما تحققه":"What it delivers"}</h4><p>${esc(t(L0.does))}</p></div>
+    <div class="card"><h4>${lang==="ar"?"ما ينقصها":"What is missing"}</h4><p>${esc(t(L0.gap))}</p></div>
+    <div class="card"><h4>${lang==="ar"?"العدسة النظرية":"Theoretical lens"}</h4><p>${esc(t(L0.lens))}</p></div>
+   </div></section>
+
+  <section><div class="sec-h"><span class="eyebrow">${lang==="ar"?"الشروط":"Conditions"}</span><h2>${lang==="ar"?"الاستدامة الرقمية كمسألة بنيوية":"Digital sustainability as an architectural problem"}</h2><p>${lang==="ar"?"أربعة شروط تُدخل بيانات الاستدامة إلى النظام المحاسبي كفئة بيانات أساسية. افتح الشرط لترى كيف يُطبَّق.":"Four conditions admit sustainability data into the accounting system as a first-class data class. Open one to see how it is applied."}</p></div>
+   <div class="grid g2">${CONDS.map((c,i)=>`<div class="cond"><button type="button" data-cond="${i}" aria-expanded="${openCond===i}"><span class="ic">${nf(c.n)}</span><span><h3>${esc(t(c.t))}</h3><span style="font-size:14px;color:var(--muted)">${esc(t(c.d))}</span></span></button>${openCond===i?`<div class="body"><div><b>${lang==="ar"?"التطبيق":"In practice"}:</b> ${esc(t(c.how))}</div></div>`:""}</div>`).join("")}</div></section>
+
+  <section><div class="sec-h"><span class="eyebrow">${lang==="ar"?"المعوقات":"Constraints"}</span><h2>${lang==="ar"?"خمسة معوقات أمام التطبيق":"Five constraints on implementation"}</h2><p>${lang==="ar"?"إطار يتجاهلها لا يمكن تنفيذه.":"A framework that ignores them cannot be implemented."}</p></div>
+   <div class="grid g3">${CONSTR.map(c=>`<div class="card"><h3>${esc(t(c.t))}</h3><p>${esc(t(c.d))}</p></div>`).join("")}</div></section>
+
+  <section><div class="sec-h"><span class="eyebrow">${lang==="ar"?"الاتساق":"Alignment"}</span><h2>${lang==="ar"?"الاتساق مع رؤية مصر 2030":"Alignment with Egypt Vision 2030"}</h2></div>
+   <div class="grid g3">${V2030.map(c=>`<div class="card"><h3>${esc(t(c.t))} ${lang==="ar"?"":"dimension"}</h3><p>${esc(t(c.d))}</p></div>`).join("")}</div></section>`;
+}
+
+function rDiag(){
+  const grpOrder=[["c1"],["c2"],["c3"],["c4"],["o"],["k"]];
+  const gName=k=>k==="o"?{t:tr("Inside-out orientation","التوجه من الداخل إلى الخارج"),sub:tr("Is measurement driven by management or by the filing form?","هل يقود القياس الإدارة أم نموذج الإفصاح؟")}:k==="k"?{t:tr("Constraints","المعوقات"),sub:tr("Rate how strongly each one holds you back.","قيّم مدى إعاقة كل منها لك.")}:{t:GROUPS[k].t,sub:GROUPS[k].d};
+  const form=grpOrder.map(([k])=>{
+    const gn=gName(k);const scale=k==="k"?SK:SC;
+    return `<div class="grp-h"><h3>${esc(t(gn.t))}</h3></div><p style="color:var(--muted);font-size:13.5px">${esc(t(gn.sub))}</p>`+ITEMS.filter(i=>i.g===k).map(i=>`<div class="q"><p>${esc(t(i.q))}</p><div class="scale" role="radiogroup" aria-label="${esc(t(i.q))}">${[0,1,2,3,4].map(v=>`<label><input type="radio" name="${i.id}" value="${v}" ${ans[i.id]===v?"checked":""}><span>${nf(v)}<br>${esc(t(scale[v]))}</span></label>`).join("")}</div></div>`).join("");
+  }).join("");
+  const sc=scores();
+  const lv=LEVELS.find(l=>sc.ready<l[0]);
+  const weakest=["c1","c2","c3","c4"].slice().sort((a,b)=>sc[a]-sc[b]);
+  const topK=CONSTR.map(c=>c).sort((a,b)=>sc[b.k]-sc[a.k])[0];
+  return `<section><div class="sec-h"><span class="eyebrow">${lang==="ar"?"أداة تطبيقية":"Practical tool"}</span><h2>${lang==="ar"?"تشخيص جاهزية المنشأة":"Entity readiness check"}</h2><p>${lang==="ar"?"تطبّق الشروط الأربعة والمعوقات الخمسة من البحث على منشأة بعينها. استخدمها في ورشة تدريب أو مع عميل. تُحفظ الإجابات في متصفحك فقط.":"Applies the paper's four conditions and five constraints to one organisation. Use it in a training workshop or with a client. Answers stay in your browser only."}</p></div>
+  <div class="diag">
+   <div class="card" id="diagForm">${isExample?`<p class="note" style="margin-bottom:12px">${lang==="ar"?"الإجابات الحالية أمثلة توضيحية لمنشأة افتراضية. غيّر أي إجابة لتبدأ تقييمك.":"The answers shown are an example for a hypothetical entity. Change any answer to start your own."}</p>`:""}<div class="scale-legend"><span>${lang==="ar"?"0 = لا إطلاقاً":"0 = not at all"}</span><span>${lang==="ar"?"4 = كلياً":"4 = fully"}</span></div>${form}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px"><button class="chip" type="button" id="resetBtn">${lang==="ar"?"مسح الإجابات":"Clear answers"}</button><button class="chip" type="button" id="exBtn">${lang==="ar"?"تحميل المثال":"Load example"}</button></div>
+   </div>
+   <div class="res card" style="display:grid;gap:16px" aria-live="polite">
+    <div class="level"><span style="font-size:12px;color:var(--muted)">${lang==="ar"?"مؤشر الجاهزية":"Readiness index"} · <span class="mono">${nf(Math.round(sc.ready))}/${nf(100)}</span></span><b>${esc(t(lv[1]))}</b><span style="font-size:14px">${esc(t(lv[2]))}</span></div>
+    ${radar(sc)}
+    <div class="bar"><div class="t"><span>${lang==="ar"?"التوجه من الداخل إلى الخارج":"Inside-out orientation"}</span></div><div class="m"><i style="width:${sc.o}%"></i></div><span class="v">${nf(Math.round(sc.o))}</span></div>
+    <div style="display:grid;gap:10px"><h4 style="font-size:14px">${lang==="ar"?"شدة المعوقات":"Constraint severity"}</h4>${CONSTR.map(c=>`<div class="bar risk"><div class="t"><span>${esc(t(c.t))}</span></div><div class="m"><i style="width:${sc[c.k]}%"></i></div><span class="v">${nf(Math.round(sc[c.k]))}</span></div>`).join("")}</div>
+    <div><h4 style="font-size:14px;margin-bottom:8px">${lang==="ar"?"أولويات الإجراء من توصيات البحث":"Priorities from the paper's recommendations"}</h4><div class="actions">${weakest.slice(0,2).map((k,i)=>`<div class="act"><span class="tag">${esc(t(ACT_AUD[k]))}</span><span><b>${esc(t(GROUPS[k].t))}</b> (${nf(Math.round(sc[k]))}): ${esc(t(GROUPS[k].how))}</span></div>`).join("")}<div class="act"><span class="tag">${lang==="ar"?"أشد معوق":"Top constraint"}</span><span><b>${esc(t(topK.t))}</b>: ${esc(t(topK.d))}</span></div></div></div>
+    <button class="chip" type="button" id="copyBtn">${lang==="ar"?"نسخ ملخص النتائج":"Copy results summary"}</button>
+    <p class="note">${lang==="ar"?"مؤشر توضيحي: متوسط بسيط للإجابات دون معايرة أو اختبار صدق. يصلح للنقاش وليس للحكم أو المقارنة بين المنشآت.":"Illustrative index: a simple average of answers, not calibrated or validated. Use it for discussion, not to rank or certify entities."}</p>
+   </div>
+  </div></section>`;
+}
+
+function rRoadmap(){
+  const a=AUD.find(x=>x.k===audience);
+  return `<section><div class="sec-h"><span class="eyebrow">${lang==="ar"?"التوصيات":"Recommendations"}</span><h2>${lang==="ar"?"خارطة طريق لأربع فئات معنية":"A roadmap for four audiences"}</h2><p>${lang==="ar"?"اختر الفئة لترى ما يُطلب منها ومن أي نتيجة تنبع التوصية.":"Pick an audience to see what is asked of it and which finding each recommendation follows from."}</p></div>
+  <div class="seg" role="group">${AUD.map(x=>`<button type="button" data-aud="${x.k}" aria-pressed="${x.k===audience}"><b>${esc(t(x.t))}</b><span>${lang==="ar"?"تنبع من النتيجة":"From finding"} ${nf(x.f)}</span></button>`).join("")}</div>
+  <div class="card rm" style="margin-top:12px"><ul>${a.items.map(i=>`<li>${esc(t(i))}</li>`).join("")}</ul></div></section>
+  <section><div class="sec-h"><span class="eyebrow">${lang==="ar"?"البحوث المستقبلية":"Future research"}</span><h2>${lang==="ar"?"ما يبقى مفتوحاً":"What stays open"}</h2><p>${lang==="ar"?"تقترح الدراسة أربعة مسارات تجريبية تختبر ما طرحته نظرياً. يمكن تطوير تشخيص الجاهزية ليصبح أداة جمع بيانات للمسار الثاني.":"The paper proposes four empirical routes that test what it argued theoretically. The readiness check could be developed into a data-collection instrument for the second."}</p></div>
+  <div class="grid g4">${FUT.map(f=>`<div class="card"><h3>${esc(t(f.t))}</h3><p>${esc(t(f.d))}</p><p class="finding-ref" style="margin-top:8px">${lang==="ar"?"يتبع النتائج":"Follows findings"} ${nf(f.f)}</p></div>`).join("")}</div></section>`;
+}
+
+function rEvidence(){
+  return `<section><div class="sec-h"><span class="eyebrow">${lang==="ar"?"الاستعداد للأسئلة":"Q&amp;A preparation"}</span><h2>${lang==="ar"?"سجل الأدلة: ما الذي يمكنك الدفاع عنه وكيف تصوغه":"Evidence ledger: what you can defend, and how to phrase it"}</h2><p>${lang==="ar"?"يعلن البحث أنه تحليل وثائقي دون استبيانات أو مقابلات. يبيّن هذا الجدول مستوى الدعم لكل ادعاء رئيسي، لتصوغ إجاباتك أمام لجنة التحكيم والحضور بدقة.":"The paper states it is documentary analysis with no surveys or interviews. This table shows the support behind each main claim so you phrase answers precisely for referees and the audience."}</p></div>
+  <div class="tbl"><table><thead><tr><th>${lang==="ar"?"الادعاء":"Claim"}</th><th>${lang==="ar"?"الحالة":"Status"}</th><th>${lang==="ar"?"الموضع":"Where"}</th><th>${lang==="ar"?"كيف تقولها":"How to say it"}</th></tr></thead><tbody>${LEDGER.map(r=>`<tr><td>${esc(t(r.c))}</td><td>${pill(ST[r.s][1],t(ST[r.s][0]))}</td><td class="mono" style="font-size:12.5px">${esc(r.w)}</td><td class="say">${esc(t(r.say))}</td></tr>`).join("")}</tbody></table></div></section>`;
+}
+
+function rLibrary(){
+  const ql=q.trim().toLowerCase();
+  const lit=LIT.filter(x=>(litTag==="all"||x.tag===litTag)&&(!ql||(x.a+" "+x.y+" "+t(x.f)+" "+t(x.r)).toLowerCase().includes(ql)));
+  const refs=REFS.filter(r=>!ql||r.join(" ").toLowerCase().includes(ql));
+  return `<section><div class="sec-h"><span class="eyebrow">${lang==="ar"?"الأدبيات":"Literature"}</span><h2>${lang==="ar"?"عشر دراسات: ما تؤكده وما تتركه مفتوحاً":"Ten studies: what they establish and leave open"}</h2><p>${lang==="ar"?"تؤكد الدراسات ثلاثة مواقف: التقنيات الرقمية تغير إنتاج المعلومات والتحقق منها، والأدبيات تميل للنظري على حساب التطبيقي، والإفصاح كثيراً ما ينفصل عن القياس. المفتوح: هل تحمل البنية الرقمية معلومات استدامة بموثوقية القوائم المالية؟":"They establish three positions: digital technologies change how information is produced and verified, the literature leans conceptual over empirical, and reporting often detaches from measurement. Left open: can digital accounting infrastructure carry sustainability information at financial-statement reliability?"}</p></div>
+  <div class="tools"><input type="search" id="q" placeholder="${lang==="ar"?"ابحث في الدراسات والمراجع":"Search studies and references"}" value="${esc(q)}" aria-label="search"><div class="seg" role="group" style="flex:0 1 auto">${Object.keys(TAGS).map(k=>`<button type="button" class="chip" data-tag="${k}" aria-pressed="${k===litTag}" style="${k===litTag?"background:var(--navy);color:var(--bg);border-color:var(--navy);flex:none;min-width:0;padding:5px 14px":"flex:none;min-width:0;padding:5px 14px"}">${esc(t(TAGS[k]))}</button>`).join("")}</div></div>
+  <div class="grid g2" style="margin-top:14px">${lit.map(x=>`<div class="card lit"><div class="meta">${esc(x.a)} · ${x.y} · ${esc(x.src)}</div><p style="color:var(--ink)">${esc(t(x.f))}</p><p class="role"><b>${lang==="ar"?"دوره في البحث":"Role in the paper"}:</b> ${esc(t(x.r))}</p></div>`).join("")||`<p style="color:var(--muted)">${lang==="ar"?"لا نتائج.":"No matches."}</p>`}</div></section>
+  <section><div class="sec-h"><span class="eyebrow">${lang==="ar"?"الأسس النظرية":"Theory"}</span><h2>${lang==="ar"?"خمس نظريات، لكل منها وجه من المشكلة":"Five theories, each covering one facet of the problem"}</h2></div>
+   <div class="grid g3">${THEORY.map(x=>`<div class="card"><h3>${esc(t(x.t))}</h3><p class="mono" style="font-size:12px;margin-bottom:6px">${esc(x.a)}</p><p>${esc(t(x.d))}</p></div>`).join("")}</div></section>
+  <section><div class="sec-h"><span class="eyebrow">${lang==="ar"?"المراجع":"References"}</span><h2>${lang==="ar"?"قائمة المراجع (APA 7)":"Reference list (APA 7)"}</h2></div>
+   <div class="card" dir="ltr" style="text-align:left">${refs.map(r=>`<div class="ref"><span class="au">${esc(r[0])}</span><span class="ti">${esc(r[1])} <i>${esc(r[2])}</i></span>${r[3]?`<a href="https://doi.org/${r[3]}" target="_blank" rel="noopener">https://doi.org/${esc(r[3])}</a>`:""}</div>`).join("")}</div></section>`;
+}
+
+const R={overview:rOverview,framework:rFramework,diagnostic:rDiag,roadmap:rRoadmap,evidence:rEvidence,library:rLibrary};
+
+function render(){
+  document.documentElement.lang=lang;document.documentElement.dir=lang==="ar"?"rtl":"ltr";
+  document.title=lang==="ar"?"منصة أبحاث الاستدامة الرقمية":"Digital Sustainability Research Hub";
+  $("#brandT").textContent=t(UI.brandT);$("#brandS").textContent=t(UI.brandS);
+  $("#langBtn").textContent=t(UI.lang);
+  const dark=document.documentElement.getAttribute("data-theme")==="dark"||(!document.documentElement.getAttribute("data-theme")&&matchMedia("(prefers-color-scheme:dark)").matches);
+  $("#themeBtn").textContent=dark?t(UI.themeLight):t(UI.themeDark);
+  $("#tabs").innerHTML=UI.tabs.map(([k,n])=>`<button type="button" role="tab" data-tab="${k}" aria-selected="${k===tab}">${esc(t(n))}</button>`).join("");
+  $("#main").innerHTML=`<div class="panel">${R[tab]()}</div>`;
+  $("#foot").textContent=t(UI.foot);
+  if(tab==="library"&&document.activeElement&&document.activeElement.id==="q"){}
+}
+let toastT;function toast(m){const e=$("#toast");e.textContent=m;e.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>e.hidden=true,2400)}
+function setTab(k,keepScroll){if(!R[k])return;tab=k;render();if(!keepScroll)window.scrollTo(0,0)}
+function save(){isExample=false;store.set("dsh.ans",JSON.stringify({a:ans}))}
+
+/* ---------- events ---------- */
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.id==="langBtn"){lang=lang==="en"?"ar":"en";store.set("dsh.lang",lang);render();return}
+  if(b.id==="themeBtn"){const cur=document.documentElement.getAttribute("data-theme");const dark=cur==="dark"||(!cur&&matchMedia("(prefers-color-scheme:dark)").matches);const nx=dark?"light":"dark";document.documentElement.setAttribute("data-theme",nx);store.set("dsh.theme",nx);render();return}
+  if(b.dataset.tab){location.hash=b.dataset.tab;setTab(b.dataset.tab);return}
+  if(b.dataset.layer){layer=b.dataset.layer;render();return}
+  if(b.dataset.cond!=null){const i=+b.dataset.cond;openCond=openCond===i?null:i;render();return}
+  if(b.dataset.aud){audience=b.dataset.aud;render();return}
+  if(b.dataset.tag){litTag=b.dataset.tag;render();return}
+  if(b.id==="resetBtn"){ans={};isExample=false;store.set("dsh.ans",JSON.stringify({a:ans}));const y=scrollY;render();scrollTo(0,y);return}
+  if(b.id==="exBtn"){ans=Object.assign({},EXAMPLE);isExample=true;store.set("dsh.ans","");const y=scrollY;render();scrollTo(0,y);return}
+  if(b.id==="copyBtn"){
+    const sc=scores();const lv=LEVELS.find(l=>sc.ready<l[0]);
+    const txt=["Digital sustainability readiness check","Level: "+lv[1].en+" ("+Math.round(sc.ready)+"/100)"].concat(["c1","c2","c3","c4"].map(k=>GROUPS[k].t.en+": "+Math.round(sc[k]))).concat(["Inside-out orientation: "+Math.round(sc.o)],CONSTR.map(c=>c.t.en+" constraint: "+Math.round(sc[c.k]))).join("\n");
+    const done=()=>toast(lang==="ar"?"تم النسخ":"Copied");
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done,()=>toast(lang==="ar"?"تعذر النسخ تلقائياً":"Copy was blocked. Select the scores manually."))}else toast(lang==="ar"?"تعذر النسخ تلقائياً":"Copy was blocked. Select the scores manually.");
+  }
+});
+document.addEventListener("change",e=>{
+  const r=e.target;if(r.type==="radio"&&r.name){ans[r.name]=+r.value;save();const y=scrollY;render();scrollTo(0,y);const f=document.querySelector(`input[name="${r.name}"][value="${r.value}"]`);if(f)f.focus()}
+});
+document.addEventListener("input",e=>{
+  if(e.target.id==="q"){q=e.target.value;const pos=e.target.selectionStart;render();const n=$("#q");n.focus();try{n.setSelectionRange(pos,pos)}catch(x){}}
+});
+window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(R[h]&&h!==tab)setTab(h)});
+
+const h0=location.hash.slice(1);if(R[h0])tab=h0;
+render();
+})();
+</script>
+
+</body></html>

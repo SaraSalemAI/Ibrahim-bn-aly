@@ -1,0 +1,630 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+</head><body>
+<title>Green Ledger Workbench</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky bilingual bar + tab rail; each tab is one working surface. Palette follows the Research Hub (forest green, lighthouse navy) so both read as one platform. */
+:root{
+  --bg:#f3f6f4; --surface:#ffffff; --surface2:#e9efec; --ink:#10242c; --muted:#506068; --line:#cfdad5;
+  --green:#0f7a45; --green-soft:#d8eee2; --navy:#12303d; --navy-soft:#dbe6ec;
+  --ok:#0f7a45; --ok-soft:#d8eee2; --warn:#9a6200; --warn-soft:#f6e8c8; --bad:#b3362b; --bad-soft:#f6dcd8;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --grid:#dfe7e3;
+  --f-display:'Cairo','IBM Plex Sans Arabic',system-ui,sans-serif;
+  --f-body:'IBM Plex Sans Arabic','IBM Plex Sans',system-ui,sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0c171c; --surface:#13242b; --surface2:#1a2f37; --ink:#e6eef0; --muted:#9bb0b6; --line:#27424c;
+  --green:#3fc27d; --green-soft:#17382b; --navy:#8fc1d6; --navy-soft:#1b3340;
+  --ok:#3fc27d; --ok-soft:#17382b; --warn:#e3b04a; --warn-soft:#3a2f14; --bad:#ef7d70; --bad-soft:#3c1f1c;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --grid:#223a43; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0c171c; --surface:#13242b; --surface2:#1a2f37; --ink:#e6eef0; --muted:#9bb0b6; --line:#27424c;
+  --green:#3fc27d; --green-soft:#17382b; --navy:#8fc1d6; --navy-soft:#1b3340;
+  --ok:#3fc27d; --ok-soft:#17382b; --warn:#e3b04a; --warn-soft:#3a2f14; --bad:#ef7d70; --bad-soft:#3c1f1c;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --grid:#223a43; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;padding-inline:16px;padding-block:0 40px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.3;margin:0;text-wrap:balance}
+h2{font-size:1.3rem} h3{font-size:1.02rem}
+p{margin:0}
+.wrap{max-width:1160px;margin-inline:auto}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--green);outline-offset:2px;border-radius:4px}
+.mono,.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding-inline:16px}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-block:12px 6px;flex-wrap:wrap}
+.brand{display:flex;gap:10px;align-items:center;min-width:0}
+.brand b{font-family:var(--f-display);font-size:1.1rem;display:block}
+.brand small{color:var(--muted);font-size:.8rem;display:block}
+.ctl{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 14px;font-size:.85rem}
+.chip:hover{border-color:var(--green)}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding-block:4px 0}
+.tabs button{border:0;background:none;padding:9px 14px;border-bottom:3px solid transparent;white-space:nowrap;color:var(--muted);font-weight:500}
+.tabs button[aria-selected="true"]{color:var(--ink);border-color:var(--green)}
+main{padding-block:22px;display:grid;gap:20px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;min-width:0}
+.head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-block-end:12px}
+.head p{max-width:68ch}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:20px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:2px;align-content:start}
+.kpi .lab{font-size:.78rem;color:var(--muted);letter-spacing:.02em}
+.kpi .val{font-family:var(--f-mono);font-size:1.45rem;font-weight:500;font-variant-numeric:tabular-nums}
+.kpi .sub{font-size:.8rem;color:var(--muted)}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px;font-size:.8rem;font-weight:600;width:fit-content}
+.pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.p-ok{background:var(--ok-soft);color:var(--ok)} .p-warn{background:var(--warn-soft);color:var(--warn)} .p-bad{background:var(--bad-soft);color:var(--bad)}
+.intro{display:grid;gap:8px;padding:18px;border-radius:12px;background:var(--navy-soft);border:1px solid var(--line)}
+.intro p{max-width:80ch}
+.demo-flag{font-size:.8rem;font-weight:600;color:var(--warn)}
+.btn{border:1px solid var(--line);background:var(--surface2);border-radius:8px;padding:7px 14px;font-size:.88rem}
+.btn:hover{border-color:var(--green)}
+.btn.pri{background:var(--green);border-color:var(--green);color:var(--surface);font-weight:600}
+.btn.danger{color:var(--bad)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+/* chart */
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{fill:var(--muted);font-family:var(--f-mono);font-size:11px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem;margin-block-end:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+.tip{position:absolute;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:.8rem;box-shadow:0 4px 14px rgba(0,0,0,.12);min-width:150px;z-index:3}
+.tip b{display:block;font-family:var(--f-display)}
+.tip div{display:flex;justify-content:space-between;gap:12px}
+/* meters */
+.meters{display:grid;gap:14px}
+.meter{display:grid;gap:4px}
+.meter .mh{display:flex;justify-content:space-between;gap:10px;font-size:.9rem}
+.track{height:10px;border-radius:999px;background:var(--surface2);overflow:hidden}
+.fill{height:100%;border-radius:999px;background:var(--green)}
+.score{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-block-end:14px}
+.score .big{font-family:var(--f-mono);font-size:2.6rem;line-height:1;font-variant-numeric:tabular-nums}
+/* tables */
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{padding:8px 10px;text-align:start;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--surface2);font-weight:600;font-size:.8rem;color:var(--muted)}
+td.n,th.n{text-align:end;font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+tbody tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer} tbody tr.click:hover{background:var(--surface2)}
+tr.sel{background:var(--green-soft)}
+.ib{display:flex;align-items:center;gap:8px;min-width:150px}
+.ib i{display:block;height:8px;border-radius:0 4px 4px 0;background:var(--navy)}
+[dir="rtl"] .ib i{border-radius:4px 0 0 4px}
+.tag{font-size:.75rem;padding:1px 8px;border-radius:6px;background:var(--surface2);color:var(--muted)}
+.tag.ok{background:var(--ok-soft);color:var(--ok)} .tag.warn{background:var(--warn-soft);color:var(--warn)} .tag.bad{background:var(--bad-soft);color:var(--bad)}
+/* forms */
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,160px),1fr));gap:10px;align-items:end}
+label.f{display:grid;gap:3px;font-size:.8rem;color:var(--muted)}
+label.f input,label.f select,textarea{border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:7px 9px;font-size:.9rem;width:100%;min-width:0}
+label.cb{display:flex;gap:8px;align-items:center;font-size:.88rem}
+textarea{font-family:var(--f-mono);font-size:.8rem;min-height:120px}
+.cite{font-size:.78rem;color:var(--muted);border-inline-start:3px solid var(--green);padding-inline-start:10px}
+.slider{display:grid;gap:4px}
+.slider input{width:100%;accent-color:var(--green)}
+.slider .mh{display:flex;justify-content:space-between;font-size:.88rem}
+.out{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px;max-height:620px;overflow:auto}
+.out h3{font-size:.98rem;color:var(--green)}
+.out p,.out li{max-width:78ch;font-size:.9rem}
+.out ul{margin:0;padding-inline-start:20px}
+pre.json{margin:0;font-family:var(--f-mono);font-size:.78rem;white-space:pre;overflow:auto;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px;max-height:420px}
+.toast{position:fixed;inset-inline:0;bottom:calc(18px + env(safe-area-inset-bottom,0px));margin-inline:auto;width:fit-content;max-width:calc(100% - 32px);background:var(--navy);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:.88rem;z-index:9}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px}
+.step{border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:6px;align-content:start;background:var(--surface)}
+.step .k{font-family:var(--f-mono);font-size:.78rem;color:var(--green);font-weight:500}
+footer{color:var(--muted);font-size:.8rem;max-width:90ch;padding-block:8px}
+@media (prefers-reduced-motion:no-preference){.fill{transition:width .4s ease}}
+</style>
+
+<header class="top">
+  <div class="wrap">
+    <div class="bar">
+      <div class="brand">
+        <svg width="36" height="36" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="9" fill="var(--navy)"/><path d="M10 28h20M10 22h20M10 16h12" stroke="var(--bg)" stroke-width="2" stroke-linecap="round"/><path d="M27 9c-5 1-7 5-6 10 5-1 7-5 6-10z" fill="var(--green)"/></svg>
+        <div><b id="brandT"></b><small id="brandS"></small></div>
+      </div>
+      <div class="ctl">
+        <button class="chip" id="langBtn" type="button"></button>
+        <button class="chip" id="themeBtn" type="button"></button>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+  </div>
+</header>
+<div class="wrap">
+  <main id="main"></main>
+  <footer id="foot"></footer>
+</div>
+<div class="toast" id="toast" hidden role="status"></div>
+
+<script>
+(function(){
+"use strict";
+const tr=(en,ar)=>({en,ar});
+let lang="en";
+const t=o=>typeof o==="string"?o:(o[lang]??o.en);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nf=(v,d=0)=>Number(v||0).toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d});
+
+/* ---------- vocabulary ---------- */
+const CATS={
+ electricity:{n:tr("Electricity","الكهرباء"),u:"kWh"},
+ natgas:{n:tr("Natural gas","الغاز الطبيعي"),u:"m³"},
+ diesel:{n:tr("Diesel (fleet, generators)","السولار (الأسطول والمولدات)"),u:"L"},
+ petrol:{n:tr("Petrol","البنزين"),u:"L"},
+ water:{n:tr("Water supply","إمدادات المياه"),u:"m³"},
+ waste:{n:tr("Waste to landfill","النفايات إلى المدافن"),u:"t"}
+};
+const METHODS={
+ meter:{n:tr("Meter / IoT at source","عداد / إنترنت الأشياء عند المصدر"),w:1},
+ invoice:{n:tr("Read from invoice","مستخرج من الفاتورة"),w:.5},
+ estimate:{n:tr("Estimate","تقدير"),w:0}
+};
+const OWNERS={
+ finance:tr("Finance (under financial controls)","الإدارة المالية (تحت الرقابة المالية)"),
+ sustainability:tr("Sustainability team (spreadsheet)","فريق الاستدامة (جداول بيانات)"),
+ operations:tr("Operations","العمليات"),
+ "":tr("Unassigned","غير محدد")
+};
+const TIERS={
+ climate:tr("Covered: ESG + climate-related disclosure","مشمولة: إفصاح ESG + الإفصاح المناخي"),
+ esg:tr("Covered: ESG disclosure","مشمولة: إفصاح ESG"),
+ supplier:tr("Not covered: supplier to a reporting entity (simplified pathway)","غير مشمولة: مورد لجهة مُفصِحة (مسار مبسط)")
+};
+const MONTHS=[tr("Jan","يناير"),tr("Feb","فبراير"),tr("Mar","مارس"),tr("Apr","أبريل"),tr("May","مايو"),tr("Jun","يونيو"),tr("Jul","يوليو"),tr("Aug","أغسطس"),tr("Sep","سبتمبر"),tr("Oct","أكتوبر"),tr("Nov","نوفمبر"),tr("Dec","ديسمبر")];
+
+const UI={
+ brandT:tr("Green Ledger Workbench","منصة الدفتر الأخضر"),
+ brandS:tr("Dr. Sara Salem · Applying the research: green accounting inside the digital ledger","د. سارة سالم · تطبيق البحث: المحاسبة الخضراء داخل الدفتر الرقمي"),
+ lang:tr("العربية","English"), light:tr("Light","فاتح"), dark:tr("Dark","داكن"),
+ tabs:[["dash",tr("Dashboard","لوحة المؤشرات")],["ledger",tr("Activity ledger","سجل الأنشطة")],["factors",tr("Factors & method","المعاملات والمنهجية")],["cost",tr("Green cost & scenarios","التكلفة الخضراء والسيناريوهات")],["disclose",tr("Disclosure draft","مسودة الإفصاح")],["about",tr("How it maps to the paper","الربط بالبحث")]],
+ foot:tr("Practical companion to the paper “The Transition to Digital Accounting and Financial Reporting and the Institutionalisation of Green Accounting for Digital Sustainability in Egypt” (Alexandria University, 2026). The demo company and every number in it are fictitious. Emission factors are illustrative defaults to be replaced with documented factors. The assurability index is an illustrative operationalisation of the paper's four conditions, not a validated instrument. Data stays in this browser.","تطبيق عملي مرافق لبحث «التحول إلى المحاسبة والتقارير المالية الرقمية ومأسسة المحاسبة الخضراء لتحقيق الاستدامة الرقمية في مصر» (جامعة الإسكندرية، 2026). الشركة التجريبية وكل أرقامها افتراضية. معاملات الانبعاث قيم توضيحية يجب استبدالها بمعاملات موثقة. مؤشر القابلية للتأكيد ترجمة توضيحية للشروط الأربعة في البحث وليس أداة محكّمة. البيانات تبقى في هذا المتصفح فقط.")
+};
+
+/* ---------- state ---------- */
+const KEY="glw.v1";
+function defaultFactors(){return [
+ {cat:"electricity",kg:0.47,scope:2,src:""},
+ {cat:"natgas",kg:2.02,scope:1,src:"Illustrative combustion value — replace with documented source"},
+ {cat:"diesel",kg:2.68,scope:1,src:"Illustrative combustion value — replace with documented source"},
+ {cat:"petrol",kg:2.31,scope:1,src:"Illustrative combustion value — replace with documented source"},
+ {cat:"water",kg:0.34,scope:3,src:""},
+ {cat:"waste",kg:450,scope:3,src:""}
+];}
+function demo(){
+  const rows=[];let id=1;
+  const season=[.82,.8,.86,.95,1.08,1.2,1.28,1.3,1.15,1,.88,.84];
+  for(let m=1;m<=12;m++){
+    const s=season[m-1];
+    const pk=Math.round(178000*s), ok=Math.round(12400*s);
+    rows.push({id:id++,m,site:"Borg El Arab plant",cat:"electricity",qty:pk,cost:Math.round(pk*1.9),inv:"EINV-P-"+(2025*100+m),method:m>=7?"meter":"invoice",owner:m>=7?"finance":"sustainability",ev:m>=7});
+    rows.push({id:id++,m,site:"Alexandria head office",cat:"electricity",qty:ok,cost:Math.round(ok*2.1),inv:"EINV-O-"+(2025*100+m),method:"invoice",owner:"sustainability",ev:m%3!==0});
+    rows.push({id:id++,m,site:"Borg El Arab plant",cat:"natgas",qty:Math.round(9100*(2-s)),cost:Math.round(9100*(2-s)*4.2),inv:"EINV-G-"+(2025*100+m),method:"invoice",owner:"finance",ev:true});
+    rows.push({id:id++,m,site:"Delivery fleet",cat:"diesel",qty:3400+((m*137)%600),cost:(3400+((m*137)%600))*15.5,inv:m%4===0?"":"EINV-D-"+(2025*100+m),method:"invoice",owner:"operations",ev:m%4!==0});
+    rows.push({id:id++,m,site:"Borg El Arab plant",cat:"water",qty:Math.round(2350*s),cost:Math.round(2350*s*8),inv:m<=6?"EINV-W-"+(2025*100+m):"",method:m<=6?"invoice":"estimate",owner:"sustainability",ev:false});
+    rows.push({id:id++,m,site:"Borg El Arab plant",cat:"waste",qty:16+(m%5),cost:(16+(m%5))*900,inv:"",method:"estimate",owner:"",ev:false});
+  }
+  return {demo:true,entity:{name:"Delta Packaging Co. (fictitious demo)",sector:"Manufacturing — packaging",tier:"climate",year:"2025",boundary:"operational"},factors:defaultFactors(),rows,nextId:id,price:1500,eff:10,solar:15};
+}
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
+if(!S||!S.rows)S=demo();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const fac=c=>S.factors.find(f=>f.cat===c)||{kg:0,scope:3,src:""};
+
+/* ---------- computation ---------- */
+function calc(){
+  const R=S.rows.map(r=>{const f=fac(r.cat);return {...r,t:(+r.qty||0)*f.kg/1000,scope:f.scope,doc:!!(f.src&&f.src.trim())}});
+  const tot=R.reduce((a,r)=>a+r.t,0)||0, cost=R.reduce((a,r)=>a+(+r.cost||0),0);
+  const sc={1:0,2:0,3:0}; R.forEach(r=>sc[r.scope]+=r.t);
+  const months=MONTHS.map((_,i)=>({1:0,2:0,3:0,cost:0}));
+  R.forEach(r=>{const k=months[(r.m||1)-1];k[r.scope]+=r.t;k.cost+=+r.cost||0});
+  const cats={};R.forEach(r=>{const c=cats[r.cat]||(cats[r.cat]={t:0,cost:0,qty:0,n:0});c.t+=r.t;c.cost+=+r.cost||0;c.qty+=+r.qty||0;c.n++});
+  // four conditions, each weighted by emissions so material rows matter more
+  const W=R.map(r=>r.t||0), sw=W.reduce((a,b)=>a+b,0)||1;
+  const wavg=fn=>R.reduce((a,r,i)=>a+fn(r)*W[i],0)/sw*100;
+  const c1=wavg(r=>METHODS[r.method]?METHODS[r.method].w:0);
+  const c2=(wavg(r=>r.owner==="finance"?1:0)+wavg(r=>r.doc?1:0))/2;
+  const c3=wavg(r=>(r.cat&&r.site&&r.m&&(+r.qty>0)&&(+r.cost>0))?1:0);
+  const c4=(wavg(r=>r.ev?1:0)+wavg(r=>(r.inv&&r.inv.trim())||r.method==="meter"?1:0))/2;
+  const idx=R.length?(c1+c2+c3+c4)/4:0;
+  const recon=R.length?R.filter(r=>r.inv&&r.inv.trim()).length/R.length*100:0;
+  return {R,tot,cost,sc,months,cats,c:[c1,c2,c3,c4],idx,recon};
+}
+function band(v){
+  if(v>=70)return {cls:"p-ok",n:tr("Assurance-ready (inside-out)","جاهزة للتأكيد (من الداخل للخارج)")};
+  if(v>=40)return {cls:"p-warn",n:tr("Transitional","مرحلة انتقالية")};
+  return {cls:"p-bad",n:tr("Compliance-only (outside-in)","امتثال شكلي (من الخارج للداخل)")};
+}
+const COND=[
+ {n:tr("Capture at source","الرصد عند المصدر"),p:"§8.4",d:tr("Share of emissions measured by meter or IoT rather than read off an invoice or estimated.","نسبة الانبعاثات المقاسة بالعدادات أو إنترنت الأشياء بدلاً من الفاتورة أو التقدير.")},
+ {n:tr("Unified data governance","حوكمة موحدة للبيانات"),p:"§8.4, §10.1",d:tr("Data owned by Finance under financial controls, and every factor backed by a documented source.","بيانات مملوكة للإدارة المالية تحت الرقابة المالية، وكل معامل له مصدر موثق.")},
+ {n:tr("Structured reporting","تقارير مهيكلة"),p:"§8.4",d:tr("Each record carries the physical quantity next to the monetary amount, coded by category, site and period.","كل سجل يحمل الكمية المادية بجانب القيمة النقدية، مرمزاً بالفئة والموقع والفترة.")},
+ {n:tr("Designed assurability","قابلية التأكيد بالتصميم"),p:"§8.4, §8.5",d:tr("A verifier can trace the figure: evidence retained, and linked to an e-invoice or a meter.","يمكن للمراجع تتبع الرقم: أدلة محفوظة ومرتبطة بفاتورة إلكترونية أو عداد.")}
+];
+
+/* ---------- shell ---------- */
+let tab="dash"; try{const h=location.hash.slice(1);if(UI.tabs.some(x=>x[0]===h))tab=h}catch(e){}
+let editId=null, fCat="", fSite="";
+const $=id=>document.getElementById(id);
+function toast(m){const el=$("toast");el.textContent=m;el.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>el.hidden=true,2400)}
+function copy(txt,okMsg){
+  const done=()=>toast(okMsg||t(tr("Copied","تم النسخ")));
+  try{navigator.clipboard.writeText(txt).then(done,()=>fallback())}catch(e){fallback()}
+  function fallback(){const ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");done()}catch(e){toast(t(tr("Select the text and copy it manually","حدد النص وانسخه يدوياً")))}ta.remove()}
+}
+function shell(){
+  document.documentElement.lang=lang;document.documentElement.dir=lang==="ar"?"rtl":"ltr";
+  $("brandT").textContent=t(UI.brandT);$("brandS").textContent=t(UI.brandS);
+  $("langBtn").textContent=t(UI.lang);
+  const dk=document.documentElement.dataset.theme==="dark"||(!document.documentElement.dataset.theme&&matchMedia("(prefers-color-scheme: dark)").matches);
+  $("themeBtn").textContent=dk?t(UI.light):t(UI.dark);
+  $("tabs").innerHTML=UI.tabs.map(([k,n])=>`<button role="tab" type="button" data-tab="${k}" aria-selected="${k===tab}">${esc(t(n))}</button>`).join("");
+  $("foot").textContent=t(UI.foot);
+}
+function render(){shell();const C=calc();$("main").innerHTML=({dash,ledger,factors,cost,disclose,about})[tab](C);after(C)}
+
+/* ---------- dashboard ---------- */
+function dash(C){
+  const b=band(C.idx), e=S.entity;
+  return `
+  <section class="intro">
+    <div class="row" style="justify-content:space-between"><h2>${esc(e.name)} · ${esc(e.year)}</h2>${S.demo?`<span class="demo-flag">${esc(t(tr("Demo data — fictitious company. Replace it in the Activity ledger.","بيانات تجريبية لشركة افتراضية. استبدلها من سجل الأنشطة.")))}</span>`:""}</div>
+    <p class="muted">${esc(t(tr("The paper argues that sustainability data will reach financial-statement reliability only when it sits inside the same system, under the same governance, with the same verification as financial data. This workbench puts that into practice: physical flows (kWh, m³, litres, tonnes) are recorded next to their e-invoice cost, owned, documented and traced, so the disclosure becomes a by-product of the ledger.","يرى البحث أن بيانات الاستدامة لن تبلغ موثوقية القوائم المالية إلا إذا وُضعت داخل النظام نفسه، وبالحوكمة نفسها، وخضعت للتحقق نفسه. هذه المنصة تطبق ذلك عملياً: تُسجَّل التدفقات المادية (كيلوواط ساعة، م³، لترات، أطنان) بجانب تكلفتها في الفاتورة الإلكترونية، مع تحديد المالك وتوثيق المنهجية وإمكانية التتبع، فيصبح الإفصاح ناتجاً طبيعياً عن الدفتر.")))}</p>
+  </section>
+  <section class="kpis">
+    ${kpi(tr("Total emissions","إجمالي الانبعاثات"),nf(C.tot,1),"tCO₂e")}
+    ${kpi(tr("Scope 1 · direct fuels","النطاق 1 · الوقود المباشر"),nf(C.sc[1],1),"tCO₂e")}
+    ${kpi(tr("Scope 2 · electricity","النطاق 2 · الكهرباء"),nf(C.sc[2],1),"tCO₂e")}
+    ${kpi(tr("Scope 3 · water & waste","النطاق 3 · المياه والنفايات"),nf(C.sc[3],1),"tCO₂e")}
+    ${kpi(tr("Environmental cost traced","التكلفة البيئية المتتبَّعة"),nf(C.cost/1e6,2),t(tr("EGP million","مليون جنيه")))}
+    ${kpi(tr("Reconciled to an e-invoice","مطابقة مع فاتورة إلكترونية"),nf(C.recon,0)+"%",t(tr("of records","من السجلات")))}
+  </section>
+  <section class="grid2">
+    <div class="panel">
+      <div class="head"><div><h3>${esc(t(tr("Monthly emissions by scope","الانبعاثات الشهرية حسب النطاق")))}</h3><p class="muted small">${esc(t(tr("tCO₂e per month. Hover a bar for the breakdown.","طن مكافئ CO₂ شهرياً. مرر على العمود لرؤية التفاصيل.")))}</p></div>
+      <button class="btn" type="button" data-act="tbl">${esc(t(tr("Table view","عرض جدولي")))}</button></div>
+      <div class="legend">${[1,2,3].map(s=>`<span><i style="background:var(--s${s})"></i>${esc(t(tr("Scope ","النطاق ")))}${s}</span>`).join("")}</div>
+      <div class="chart" id="mchart"></div>
+      <div id="mtable" hidden></div>
+    </div>
+    <div class="panel">
+      <div class="head"><div><h3>${esc(t(tr("Assurability index","مؤشر القابلية للتأكيد")))}</h3><p class="muted small">${esc(t(tr("The paper's four conditions for embedding green accounting in the digital ledger, scored from your records.","الشروط الأربعة في البحث لدمج المحاسبة الخضراء في الدفتر الرقمي، محسوبة من سجلاتك.")))}</p></div></div>
+      <div class="score"><span class="big">${nf(C.idx,0)}</span><div style="display:grid;gap:4px"><span class="pill ${b.cls}">${esc(t(b.n))}</span><span class="muted small">${esc(t(tr("out of 100, weighted by emissions","من 100، مرجح بحجم الانبعاثات")))}</span></div></div>
+      <div class="meters">${COND.map((c,i)=>meter(c,C.c[i])).join("")}</div>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="head"><div><h3>${esc(t(tr("Where the environmental cost sits","أين تقع التكلفة البيئية")))}</h3><p class="muted small">${esc(t(tr("Conventional accounts bury these costs in overhead (§8.3). Here each one is traced to its physical driver and its emissions.","المحاسبة التقليدية تدفن هذه التكاليف في المصروفات العامة (§8.3). هنا تُتتبع كل تكلفة إلى محركها المادي وانبعاثاتها.")))}</p></div></div>
+    ${catTable(C)}
+  </section>
+  <section class="panel">
+    <div class="head"><h3>${esc(t(tr("What to fix first","ما الذي يجب إصلاحه أولاً")))}</h3></div>
+    <div class="steps">${actions(C).map(a=>`<div class="step"><span class="k">${esc(a.k)}</span><b>${esc(t(a.h))}</b><p class="small muted">${esc(t(a.d))}</p></div>`).join("")}</div>
+  </section>`;
+}
+const kpi=(l,v,s)=>`<div class="kpi"><span class="lab">${esc(t(l))}</span><span class="val">${esc(v)}</span><span class="sub">${esc(s)}</span></div>`;
+function meter(c,v){
+  const col=v>=70?"var(--ok)":v>=40?"var(--warn)":"var(--bad)";
+  return `<div class="meter"><div class="mh"><b>${esc(t(c.n))} <span class="muted small mono">${c.p}</span></b><span class="mono">${nf(v,0)}</span></div><div class="track"><div class="fill" style="width:${Math.max(1,v)}%;background:${col}"></div></div><p class="small muted">${esc(t(c.d))}</p></div>`;
+}
+function catTable(C){
+  const ks=Object.keys(CATS).filter(k=>C.cats[k]);
+  const mt=Math.max(...ks.map(k=>C.cats[k].t),1e-9), mc=Math.max(...ks.map(k=>C.cats[k].cost),1e-9);
+  return `<div class="tw"><table><thead><tr><th>${esc(t(tr("Category","الفئة")))}</th><th class="n">${esc(t(tr("Quantity","الكمية")))}</th><th>${esc(t(tr("Emissions (tCO₂e)","الانبعاثات (طن CO₂e)")))}</th><th>${esc(t(tr("Cost (EGP)","التكلفة (جنيه)")))}</th><th class="n">${esc(t(tr("EGP per tCO₂e","جنيه لكل طن")))}</th></tr></thead><tbody>
+  ${ks.map(k=>{const c=C.cats[k];return `<tr><td>${esc(t(CATS[k].n))}</td><td class="n">${nf(c.qty)} ${CATS[k].u}</td><td><div class="ib"><i style="width:${c.t/mt*110}px"></i><span class="num">${nf(c.t,1)}</span></div></td><td><div class="ib"><i style="width:${c.cost/mc*110}px;background:var(--green)"></i><span class="num">${nf(c.cost)}</span></div></td><td class="n">${c.t?nf(c.cost/c.t):"—"}</td></tr>`}).join("")}
+  </tbody></table></div>`;
+}
+function actions(C){
+  const out=[], R=C.R;
+  const est=R.filter(r=>r.method==="estimate"), noOwn=R.filter(r=>r.owner!=="finance"), undoc=S.factors.filter(f=>!(f.src&&f.src.trim())&&R.some(r=>r.cat===f.cat)), noEv=R.filter(r=>!r.ev);
+  if(est.length)out.push({k:"§8.4 · "+t(COND[0].n),h:tr(`Replace ${est.length} estimated records with metered data`,`استبدال ${est.length} سجلاً تقديرياً ببيانات من العدادات`),d:tr("Extend the sensors already installed for process control to feed this ledger. The paper finds the technology is there, just not wired to reporting.","وسّع استخدام الحساسات المركبة أصلاً للتحكم في العمليات لتغذي هذا الدفتر. يخلص البحث إلى أن التقنية موجودة لكنها غير موصولة بالتقارير.")});
+  if(undoc.length)out.push({k:"§10.1 · "+t(COND[1].n),h:tr(`Document ${undoc.length} emission factor(s)`,`توثيق ${undoc.length} من معاملات الانبعاث`),d:tr("Record the source and year for each factor. Undocumented methodology is what the paper says the current mandate does not require.","سجّل المصدر والسنة لكل معامل. المنهجية غير الموثقة هي ما يقول البحث إن الإلزام الحالي لا يشترطه.")});
+  if(noOwn.length)out.push({k:"§10.1 · "+t(COND[1].n),h:tr(`Move ${noOwn.length} records under Finance ownership`,`نقل ملكية ${noOwn.length} سجلاً إلى الإدارة المالية`),d:tr("Assign sustainability data to Finance under the same control framework as financial data, instead of separate spreadsheets.","أسند بيانات الاستدامة للإدارة المالية تحت إطار الرقابة نفسه المطبق على البيانات المالية بدلاً من جداول منفصلة.")});
+  if(noEv.length)out.push({k:"§8.5 · "+t(COND[3].n),h:tr(`Retain evidence for ${noEv.length} records`,`حفظ الأدلة لعدد ${noEv.length} سجلاً`),d:tr("A figure a verifier cannot trace cannot be assured. Keep the meter log, invoice or weighbridge ticket behind every row.","الرقم الذي لا يستطيع المراجع تتبعه لا يمكن تأكيده. احتفظ بسجل العداد أو الفاتورة أو تذكرة الميزان لكل سجل.")});
+  if(!out.length)out.push({k:"✓",h:tr("All four conditions are met","الشروط الأربعة مستوفاة"),d:tr("Next step from the paper: a phased path to independent limited assurance of core metrics.","الخطوة التالية وفق البحث: مسار مرحلي نحو تأكيد محدود مستقل للمؤشرات الأساسية.")});
+  return out.slice(0,4);
+}
+function monthChart(C){
+  const el=$("mchart");if(!el)return;
+  const W=560,H=250,L=44,B=26,T=10,Rr=8,iw=W-L-Rr,ih=H-T-B;
+  const tots=C.months.map(m=>m[1]+m[2]+m[3]);const mx=Math.max(...tots,1);
+  const step=niceStep(mx/4),top=Math.ceil(mx/step)*step;const y=v=>T+ih-v/top*ih;
+  const bw=iw/12, w=Math.max(6,bw*.62);
+  let g="";for(let v=0;v<=top+1e-9;v+=step){g+=`<line x1="${L}" x2="${W-Rr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)"/><text x="${L-6}" y="${y(v)+4}" text-anchor="end">${nf(v)}</text>`}
+  let bars="";
+  C.months.forEach((m,i)=>{
+    const x=L+i*bw+(bw-w)/2;let acc=0;const segs=[1,2,3].filter(s=>m[s]>0);
+    segs.forEach((s,j)=>{const y0=y(acc);acc+=m[s];const y1=y(acc);const bot=j>0?y0-2:y0,h=bot-y1;if(h<=0)return;
+      if(j===segs.length-1){const r=Math.min(4,h/2,w/2);bars+=`<path d="M${x},${bot} V${y1+r} Q${x},${y1} ${x+r},${y1} H${x+w-r} Q${x+w},${y1} ${x+w},${y1+r} V${bot} Z" fill="var(--s${s})"/>`}
+      else bars+=`<rect x="${x}" y="${y1}" width="${w}" height="${h}" fill="var(--s${s})"/>`;});
+    bars+=`<rect x="${L+i*bw}" y="${T}" width="${bw}" height="${ih}" fill="transparent" data-m="${i}"/>`;
+    bars+=`<text x="${L+i*bw+bw/2}" y="${H-8}" text-anchor="middle">${esc(t(MONTHS[i]).slice(0,lang==="ar"?5:3))}</text>`;
+  });
+  el.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(t(tr("Monthly emissions by scope","الانبعاثات الشهرية حسب النطاق")))}">${g}<line x1="${L}" x2="${W-Rr}" y1="${y(0)}" y2="${y(0)}" stroke="var(--muted)"/>${bars}</svg><div class="tip" hidden></div>`;
+  const tip=el.querySelector(".tip"),svg=el.querySelector("svg");
+  svg.querySelectorAll("[data-m]").forEach(r=>{
+    const show=()=>{const i=+r.dataset.m,m=C.months[i];
+      tip.innerHTML=`<b>${esc(t(MONTHS[i]))} ${esc(S.entity.year)}</b>${[1,2,3].map(s=>`<div><span>${esc(t(tr("Scope ","النطاق ")))}${s}</span><span class="num">${nf(m[s],1)}</span></div>`).join("")}<div><span>${esc(t(tr("Total","الإجمالي")))}</span><span class="num">${nf(m[1]+m[2]+m[3],1)}</span></div>`;
+      tip.hidden=false;const bb=svg.getBoundingClientRect(),sx=bb.width/W;let px=(L+i*bw+bw/2)*sx;
+      px=Math.min(Math.max(px-80,0),bb.width-170);tip.style.left=px+"px";tip.style.top="0px";
+      r.setAttribute("fill","var(--grid)");r.setAttribute("fill-opacity",".35")};
+    const hide=()=>{tip.hidden=true;r.setAttribute("fill","transparent")};
+    r.addEventListener("mouseenter",show);r.addEventListener("mouseleave",hide);
+    r.addEventListener("click",show);
+  });
+  $("mtable").innerHTML=`<div class="tw"><table><thead><tr><th>${esc(t(tr("Month","الشهر")))}</th>${[1,2,3].map(s=>`<th class="n">${esc(t(tr("Scope ","النطاق ")))}${s}</th>`).join("")}<th class="n">${esc(t(tr("Total","الإجمالي")))}</th></tr></thead><tbody>${C.months.map((m,i)=>`<tr><td>${esc(t(MONTHS[i]))}</td>${[1,2,3].map(s=>`<td class="n">${nf(m[s],1)}</td>`).join("")}<td class="n">${nf(m[1]+m[2]+m[3],1)}</td></tr>`).join("")}</tbody></table></div>`;
+}
+function niceStep(v){const p=Math.pow(10,Math.floor(Math.log10(v||1)));const f=v/p;return (f<=1?1:f<=2?2:f<=5?5:10)*p}
+
+/* ---------- ledger ---------- */
+function ledger(C){
+  const sites=[...new Set(S.rows.map(r=>r.site))];
+  const rows=C.R.filter(r=>(!fCat||r.cat===fCat)&&(!fSite||r.site===fSite));
+  const e=editId!=null?S.rows.find(r=>r.id===editId):null;
+  const v=e||{m:1,site:sites[0]||"",cat:"electricity",qty:"",cost:"",inv:"",method:"meter",owner:"finance",ev:false};
+  const opt=(o,cur)=>Object.entries(o).map(([k,n])=>`<option value="${esc(k)}"${k===cur?" selected":""}>${esc(t(n.n||n))}</option>`).join("");
+  return `
+  <section class="panel">
+    <div class="head"><div><h2>${esc(t(e?tr("Edit record","تعديل سجل"):tr("Add a record","إضافة سجل")))}</h2><p class="muted small">${esc(t(tr("One row per physical flow per site per month. Enter the physical quantity and the monetary amount together: the e-invoice holds only the money (§8.1).","سجل واحد لكل تدفق مادي لكل موقع لكل شهر. أدخل الكمية المادية والقيمة النقدية معاً: الفاتورة الإلكترونية تحمل النقود فقط (§8.1).")))}</p></div></div>
+    <form class="form" id="rowForm">
+      <label class="f">${esc(t(tr("Month","الشهر")))}<select id="f_m">${MONTHS.map((n,i)=>`<option value="${i+1}"${v.m===i+1?" selected":""}>${esc(t(n))}</option>`).join("")}</select></label>
+      <label class="f">${esc(t(tr("Site / activity","الموقع / النشاط")))}<input id="f_site" list="siteList" value="${esc(v.site)}" required><datalist id="siteList">${sites.map(s=>`<option value="${esc(s)}">`).join("")}</datalist></label>
+      <label class="f">${esc(t(tr("Category","الفئة")))}<select id="f_cat">${opt(CATS,v.cat)}</select></label>
+      <label class="f"><span id="f_qty_l">${esc(t(tr("Quantity","الكمية")))} (${CATS[v.cat].u})</span><input id="f_qty" type="number" min="0" step="any" value="${esc(v.qty)}" required></label>
+      <label class="f">${esc(t(tr("Cost (EGP)","التكلفة (جنيه)")))}<input id="f_cost" type="number" min="0" step="any" value="${esc(v.cost)}"></label>
+      <label class="f">${esc(t(tr("E-invoice / receipt ref.","مرجع الفاتورة / الإيصال الإلكتروني")))}<input id="f_inv" value="${esc(v.inv)}" placeholder="ETA UUID"></label>
+      <label class="f">${esc(t(tr("Capture method","طريقة الرصد")))}<select id="f_method">${opt(METHODS,v.method)}</select></label>
+      <label class="f">${esc(t(tr("Data owner","مالك البيانات")))}<select id="f_owner">${opt(OWNERS,v.owner)}</select></label>
+      <label class="cb"><input type="checkbox" id="f_ev"${v.ev?" checked":""}> ${esc(t(tr("Evidence retained","الأدلة محفوظة")))}</label>
+      <div class="row"><button class="btn pri" type="submit">${esc(t(e?tr("Save changes","حفظ التعديلات"):tr("Add record","إضافة السجل")))}</button>${e?`<button class="btn" type="button" data-act="cancel">${esc(t(tr("Cancel","إلغاء")))}</button><button class="btn danger" type="button" data-act="del">${esc(t(tr("Delete","حذف")))}</button>`:""}</div>
+    </form>
+  </section>
+  <section class="panel">
+    <div class="head"><div><h2>${esc(t(tr("Records","السجلات")))} <span class="muted mono small">${rows.length}/${S.rows.length}</span></h2><p class="muted small">${esc(t(tr("Select a row to edit it.","اختر سجلاً لتعديله.")))}</p></div>
+      <div class="row">
+        <select class="btn" id="fCat" aria-label="category filter"><option value="">${esc(t(tr("All categories","كل الفئات")))}</option>${opt(CATS,fCat)}</select>
+        <select class="btn" id="fSite" aria-label="site filter"><option value="">${esc(t(tr("All sites","كل المواقع")))}</option>${sites.map(s=>`<option${s===fSite?" selected":""}>${esc(s)}</option>`).join("")}</select>
+      </div></div>
+    <div class="tw" style="max-height:520px;overflow:auto"><table><thead><tr><th>${esc(t(tr("Month","الشهر")))}</th><th>${esc(t(tr("Site","الموقع")))}</th><th>${esc(t(tr("Category","الفئة")))}</th><th class="n">${esc(t(tr("Quantity","الكمية")))}</th><th class="n">${esc(t(tr("Cost EGP","التكلفة")))}</th><th class="n">tCO₂e</th><th>${esc(t(tr("Method","الطريقة")))}</th><th>${esc(t(tr("Owner","المالك")))}</th><th>${esc(t(tr("Trace","التتبع")))}</th></tr></thead><tbody>
+    ${rows.map(r=>`<tr class="click${r.id===editId?" sel":""}" data-id="${r.id}" tabindex="0"><td>${esc(t(MONTHS[r.m-1]))}</td><td>${esc(r.site)}</td><td>${esc(t(CATS[r.cat].n))}</td><td class="n">${nf(r.qty)} ${CATS[r.cat].u}</td><td class="n">${nf(r.cost)}</td><td class="n">${nf(r.t,2)}</td><td><span class="tag ${r.method==="meter"?"ok":r.method==="invoice"?"warn":"bad"}">${esc(t(METHODS[r.method].n))}</span></td><td><span class="tag ${r.owner==="finance"?"ok":r.owner?"warn":"bad"}">${esc(t(OWNERS[r.owner]||OWNERS[""]))}</span></td><td>${r.inv?`<span class="tag ok mono">${esc(r.inv)}</span>`:`<span class="tag bad">${esc(t(tr("no invoice","بلا فاتورة")))}</span>`} ${r.ev?"":`<span class="tag bad">${esc(t(tr("no evidence","بلا أدلة")))}</span>`}</td></tr>`).join("")}
+    </tbody></table></div>
+  </section>
+  <section class="panel">
+    <div class="head"><div><h2>${esc(t(tr("Bring your own data","استيراد بياناتك")))}</h2><p class="muted small">${esc(t(tr("Paste CSV with this header, export from your ERP or e-invoice portal, or load a saved workbench file.","الصق ملف CSV بهذا الترويس، أو صدّر من نظام ERP أو بوابة الفاتورة الإلكترونية، أو حمّل ملف منصة محفوظ.")))}</p></div></div>
+    <p class="mono small" style="overflow-x:auto;white-space:nowrap">month,site,category,quantity,cost_egp,einvoice_ref,method,owner,evidence</p>
+    <p class="small muted">${esc(t(tr("category: electricity | natgas | diesel | petrol | water | waste · method: meter | invoice | estimate · owner: finance | sustainability | operations · evidence: yes | no","الفئة: electricity | natgas | diesel | petrol | water | waste · الطريقة: meter | invoice | estimate · المالك: finance | sustainability | operations · الأدلة: yes | no")))}</p>
+    <textarea id="csvIn" aria-label="CSV" placeholder="1,Main plant,electricity,120000,228000,EINV-001,meter,finance,yes"></textarea>
+    <div class="row" style="margin-block-start:10px">
+      <button class="btn pri" type="button" data-act="csvAdd">${esc(t(tr("Add CSV rows","إضافة صفوف CSV")))}</button>
+      <button class="btn" type="button" data-act="csvReplace">${esc(t(tr("Replace all with CSV","استبدال الكل بـ CSV")))}</button>
+      <button class="btn" type="button" data-act="csvOut">${esc(t(tr("Copy ledger as CSV","نسخ السجل كـ CSV")))}</button>
+      <button class="btn" type="button" data-act="jsonOut">${esc(t(tr("Copy workbench file (JSON)","نسخ ملف المنصة (JSON)")))}</button>
+      <label class="btn" for="jsonIn" style="cursor:pointer">${esc(t(tr("Load workbench file…","تحميل ملف منصة…")))}</label><input type="file" id="jsonIn" accept=".json,application/json,.csv,text/csv" hidden>
+      <button class="btn" type="button" data-act="demo">${esc(t(tr("Reload demo","إعادة تحميل العرض التجريبي")))}</button>
+      <button class="btn danger" type="button" data-act="clear">${esc(t(tr("Clear all records","مسح كل السجلات")))}</button>
+    </div>
+    <div id="confirm" hidden class="row" style="margin-block-start:10px"></div>
+  </section>`;
+}
+
+/* ---------- factors & entity ---------- */
+function factors(){
+  const e=S.entity;
+  return `
+  <section class="panel">
+    <div class="head"><div><h2>${esc(t(tr("Reporting entity & boundary","الجهة المُفصِحة والحدود")))}</h2><p class="muted small">${esc(t(tr("Gray (2010): accounting reports on the entity, not the planet. State the boundary so readers know what the figures cover (§8.3).","غراي (2010): المحاسبة تقرر عن المنشأة لا عن الكوكب. حدد النطاق ليعرف القارئ ما تغطيه الأرقام (§8.3).")))}</p></div></div>
+    <form class="form" id="entForm">
+      <label class="f">${esc(t(tr("Entity name","اسم الجهة")))}<input id="e_name" value="${esc(e.name)}"></label>
+      <label class="f">${esc(t(tr("Sector","القطاع")))}<input id="e_sector" value="${esc(e.sector)}"></label>
+      <label class="f">${esc(t(tr("Reporting year","سنة التقرير")))}<input id="e_year" value="${esc(e.year)}"></label>
+      <label class="f">${esc(t(tr("Obligation under FRA Decrees 107/108 (2021)","الالتزام وفق قراري الرقابة المالية 107/108 (2021)")))}<select id="e_tier">${Object.entries(TIERS).map(([k,n])=>`<option value="${k}"${k===e.tier?" selected":""}>${esc(t(n))}</option>`).join("")}</select></label>
+      <label class="f">${esc(t(tr("Consolidation approach","أساس التجميع")))}<select id="e_boundary">${[["operational",tr("Operational control","السيطرة التشغيلية")],["financial",tr("Financial control","السيطرة المالية")],["equity",tr("Equity share","حصة الملكية")]].map(([k,n])=>`<option value="${k}"${k===e.boundary?" selected":""}>${esc(t(n))}</option>`).join("")}</select></label>
+    </form>
+  </section>
+  <section class="panel">
+    <div class="head"><div><h2>${esc(t(tr("Emission factor register","سجل معاملات الانبعاث")))}</h2><p class="muted small">${esc(t(tr("The methodology the disclosure mandate does not specify (§8.2). Default values are illustrative only. Replace each with a factor from a documented source and record that source: governance scores count only documented factors.","هذه هي المنهجية التي لا يحددها إلزام الإفصاح (§8.2). القيم الافتراضية توضيحية فقط. استبدل كل قيمة بمعامل من مصدر موثق وسجّل المصدر: مؤشر الحوكمة يحتسب المعاملات الموثقة فقط.")))}</p></div>
+      <button class="btn" type="button" data-act="resetF">${esc(t(tr("Reset to illustrative defaults","إعادة القيم التوضيحية")))}</button></div>
+    <div class="tw"><table><thead><tr><th>${esc(t(tr("Category","الفئة")))}</th><th>${esc(t(tr("kg CO₂e per unit","كجم CO₂e لكل وحدة")))}</th><th>${esc(t(tr("Scope","النطاق")))}</th><th>${esc(t(tr("Source & year","المصدر والسنة")))}</th><th>${esc(t(tr("Status","الحالة")))}</th></tr></thead><tbody>
+    ${S.factors.map((f,i)=>`<tr><td>${esc(t(CATS[f.cat].n))} <span class="muted mono small">/${CATS[f.cat].u}</span></td><td><input class="btn mono" style="width:110px" type="number" step="any" min="0" data-f="${i}" data-k="kg" value="${f.kg}" aria-label="factor"></td><td><select class="btn" data-f="${i}" data-k="scope" aria-label="scope">${[1,2,3].map(s=>`<option${s===f.scope?" selected":""}>${s}</option>`).join("")}</select></td><td><input class="btn" style="width:min(340px,60vw)" data-f="${i}" data-k="src" value="${esc(f.src)}" placeholder="${esc(t(tr("e.g. national grid factor, publisher, year","مثال: معامل الشبكة القومية، الجهة، السنة")))}" aria-label="source"></td><td>${f.src&&f.src.trim()?`<span class="tag ok">${esc(t(tr("documented","موثق")))}</span>`:`<span class="tag bad">${esc(t(tr("undocumented","غير موثق")))}</span>`}</td></tr>`).join("")}
+    </tbody></table></div>
+    <p class="cite" style="margin-block-start:12px">${esc(t(tr("Practical recommendation to preparers (§10.1): incorporate physical-unit dimensions within the existing ERP rather than parallel spreadsheets, with documented methodology and defined boundaries.","توصية عملية للمُعِدّين (§10.1): إدراج الأبعاد المادية داخل نظام ERP القائم بدلاً من جداول موازية، مع منهجية موثقة وحدود محددة.")))}</p>
+  </section>`;
+}
+
+/* ---------- green cost & scenarios ---------- */
+function cost(C){
+  const elec=C.cats.electricity||{t:0,cost:0};
+  const effT=elec.t*S.eff/100, effC=elec.cost*S.eff/100;
+  const solT=(elec.t-effT)*S.solar/100;
+  const newTot=C.tot-effT-solT;
+  const shadow=C.tot*S.price, shadowNew=newTot*S.price;
+  return `
+  <section class="grid2">
+    <div class="panel">
+      <div class="head"><div><h2>${esc(t(tr("Shadow carbon price","سعر الكربون الظلي")))}</h2><p class="muted small">${esc(t(tr("Green accounting serves decisions first (§8.3). Price emissions internally so they enter pricing and capital budgeting. Choose your own internal price; it is a management assumption, not a market rate.","المحاسبة الخضراء تخدم القرار أولاً (§8.3). سعّر الانبعاثات داخلياً لتدخل في التسعير والموازنة الرأسمالية. اختر سعرك الداخلي؛ فهو افتراض إداري وليس سعراً سوقياً.")))}</p></div></div>
+      <div class="slider"><div class="mh"><label for="price">${esc(t(tr("Internal price, EGP per tCO₂e","السعر الداخلي، جنيه لكل طن")))}</label><b class="mono">${nf(S.price)}</b></div><input type="range" id="price" min="0" max="10000" step="100" value="${S.price}"></div>
+      <div class="kpis" style="margin-block-start:14px">
+        ${kpi(tr("Hidden carbon cost","تكلفة الكربون الخفية"),nf(shadow/1e6,2),t(tr("EGP million per year","مليون جنيه سنوياً")))}
+        ${kpi(tr("As share of traced cost","كنسبة من التكلفة المتتبعة"),C.cost?nf(shadow/C.cost*100,1)+"%":"—",t(tr("on top of what is paid","فوق ما يُدفع فعلياً")))}
+      </div>
+    </div>
+    <div class="panel">
+      <div class="head"><div><h2>${esc(t(tr("Reduction scenario","سيناريو التخفيض")))}</h2><p class="muted small">${esc(t(tr("Unmeasured consumption cannot be verifiably reduced (§8.6). With electricity measured at source, test two levers.","لا يمكن تخفيض استهلاك غير مقاس بشكل قابل للتحقق (§8.6). مع قياس الكهرباء عند المصدر، اختبر رافعتين.")))}</p></div></div>
+      <div class="slider"><div class="mh"><label for="eff">${esc(t(tr("Electricity efficiency saving","وفر كفاءة الكهرباء")))}</label><b class="mono">${S.eff}%</b></div><input type="range" id="eff" min="0" max="40" step="1" value="${S.eff}"></div>
+      <div class="slider" style="margin-block-start:10px"><div class="mh"><label for="solar">${esc(t(tr("Share of remaining electricity from on-site solar","حصة الطاقة الشمسية الذاتية من الكهرباء المتبقية")))}</label><b class="mono">${S.solar}%</b></div><input type="range" id="solar" min="0" max="60" step="1" value="${S.solar}"></div>
+      <div class="kpis" style="margin-block-start:14px">
+        ${kpi(tr("Emissions after levers","الانبعاثات بعد التدابير"),nf(newTot,1),"tCO₂e · −"+nf(C.tot?(1-newTot/C.tot)*100:0,1)+"%")}
+        ${kpi(tr("Energy bill saved by efficiency","وفر فاتورة الكهرباء من الكفاءة"),nf(effC/1e6,2),t(tr("EGP million per year","مليون جنيه سنوياً")))}
+        ${kpi(tr("Carbon cost avoided","تكلفة الكربون المتجنبة"),nf((shadow-shadowNew)/1e6,2),t(tr("EGP million at your price","مليون جنيه بسعرك")))}
+      </div>
+      <p class="small muted" style="margin-block-start:10px">${esc(t(tr("Solar capex and its own lifecycle footprint are outside this sketch. The paper asks that the footprint of the digital and energy infrastructure be brought inside the boundary (§8.5).","تكلفة الاستثمار في الطاقة الشمسية وبصمتها خلال دورة حياتها خارج هذا التقدير. يطالب البحث بإدخال بصمة البنية الرقمية والطاقية داخل الحدود (§8.5).")))}</p>
+    </div>
+  </section>
+  <section class="panel">
+    <div class="head"><div><h2>${esc(t(tr("Cost per category, with carbon priced in","التكلفة لكل فئة مع تسعير الكربون")))}</h2><p class="muted small">${esc(t(tr("Paid cost from the ledger plus emissions at your internal price.","التكلفة المدفوعة من الدفتر مضافاً إليها الانبعاثات بسعرك الداخلي.")))}</p></div></div>
+    <div class="tw"><table><thead><tr><th>${esc(t(tr("Category","الفئة")))}</th><th class="n">${esc(t(tr("Paid (EGP)","المدفوع (جنيه)")))}</th><th class="n">${esc(t(tr("Carbon at internal price","الكربون بالسعر الداخلي")))}</th><th class="n">${esc(t(tr("Full cost","التكلفة الكاملة")))}</th><th class="n">${esc(t(tr("Uplift","الزيادة")))}</th></tr></thead><tbody>
+    ${Object.keys(CATS).filter(k=>C.cats[k]).map(k=>{const c=C.cats[k],cc=c.t*S.price;return `<tr><td>${esc(t(CATS[k].n))}</td><td class="n">${nf(c.cost)}</td><td class="n">${nf(cc)}</td><td class="n">${nf(c.cost+cc)}</td><td class="n">${c.cost?"+"+nf(cc/c.cost*100,1)+"%":"—"}</td></tr>`}).join("")}
+    </tbody></table></div>
+  </section>`;
+}
+
+/* ---------- disclosure ---------- */
+function disclose(C){
+  const e=S.entity, b=band(C.idx), sup=e.tier==="supplier";
+  const undoc=S.factors.filter(f=>!(f.src&&f.src.trim())&&C.cats[f.cat]).map(f=>t(CATS[f.cat].n));
+  const meterShare=C.c[0];
+  const bnd={operational:tr("operational control","السيطرة التشغيلية"),financial:tr("financial control","السيطرة المالية"),equity:tr("equity share","حصة الملكية")}[e.boundary];
+  const L=lang==="ar";
+  const metrics=`<ul>
+    <li>${esc(t(tr("Scope 1","النطاق 1")))}: <b class="num">${nf(C.sc[1],1)}</b> tCO₂e</li>
+    <li>${esc(t(tr("Scope 2 (location-based)","النطاق 2 (على أساس الموقع)")))}: <b class="num">${nf(C.sc[2],1)}</b> tCO₂e</li>
+    ${sup?"":`<li>${esc(t(tr("Scope 3 (water supply, waste to landfill only)","النطاق 3 (إمدادات المياه والنفايات للمدافن فقط)")))}: <b class="num">${nf(C.sc[3],1)}</b> tCO₂e</li>`}
+    ${Object.keys(CATS).filter(k=>C.cats[k]&&(!sup||["electricity","natgas","diesel","petrol"].includes(k))).map(k=>`<li>${esc(t(CATS[k].n))}: <span class="num">${nf(C.cats[k].qty)} ${CATS[k].u}</span></li>`).join("")}
+  </ul>`;
+  const quality=`<p>${esc(L?`مؤشر القابلية للتأكيد: ${nf(C.idx,0)}/100 (${t(b.n)}). ${nf(meterShare,0)}٪ من الانبعاثات مرصودة عند المصدر، و${nf(C.recon,0)}٪ من السجلات مطابقة مع فاتورة إلكترونية. ${undoc.length?`معاملات غير موثقة بعد: ${undoc.join("، ")}.`:"جميع المعاملات موثقة المصدر."} لم تخضع هذه البيانات لتأكيد مستقل.`:`Assurability index: ${nf(C.idx,0)}/100 (${t(b.n)}). ${nf(meterShare,0)}% of emissions are captured at source and ${nf(C.recon,0)}% of records reconcile to an e-invoice. ${undoc.length?`Factors not yet documented: ${undoc.join(", ")}.`:"All factors have a documented source."} These data have not been independently assured.`)}</p>`;
+  const body=sup?`
+    <h3>${esc(t(tr("Supplier data sheet (simplified pathway)","ورقة بيانات المورد (المسار المبسط)")))}</h3>
+    <p>${esc(L?`${e.name} غير مشمولة بالإفصاح الإلزامي، لكنها تقع في سلسلة قيمة جهات مُفصِحة. تقدم هذه الورقة الحد الأدنى من بيانات الطاقة والوقود التي يحتاجها العملاء لحساب انبعاثات النطاق 3، وفق المسار المبسط الذي يوصي به البحث (§8.5، §10.1).`:`${e.name} is outside the mandatory disclosure threshold but sits in the value chain of reporting entities. This sheet gives customers the minimum energy and fuel data they need for their Scope 3, following the simplified pathway the paper recommends (§8.5, §10.1).`)}</p>
+    <h3>${esc(t(tr("Metrics","المؤشرات")))} · ${esc(e.year)}</h3>${metrics}
+    <h3>${esc(t(tr("Data quality","جودة البيانات")))}</h3>${quality}`:`
+    <h3>${esc(t(tr("1 · Governance","1 · الحوكمة")))}</h3>
+    <p>${esc(L?`تُسند ملكية بيانات الاستدامة إلى ${C.c[1]>=70?"الإدارة المالية وتخضع لإطار الرقابة الداخلية المطبق على البيانات المالية":"عدة إدارات، ويجري نقلها إلى الإدارة المالية تحت إطار الرقابة الداخلية"}. [أضف: دور مجلس الإدارة ولجنة المراجعة في الإشراف على المخاطر المناخية].`:`Ownership of sustainability data ${C.c[1]>=70?"sits with Finance under the internal control framework applied to financial data":"is spread across functions and is being moved under Finance and the internal control framework"}. [Add: the board's and audit committee's oversight of climate-related risks.]`)}</p>
+    <h3>${esc(t(tr("2 · Strategy","2 · الاستراتيجية")))}</h3>
+    <p>${esc(L?`عند سعر كربون داخلي قدره ${nf(S.price)} جنيه للطن، تبلغ تكلفة الكربون غير المسعرة ${nf(C.tot*S.price/1e6,2)} مليون جنيه، أي ${C.cost?nf(C.tot*S.price/C.cost*100,1):0}٪ فوق التكلفة البيئية المدفوعة. [أضف: المخاطر والفرص المناخية الجوهرية وأثرها على خطة العمل].`:`At an internal carbon price of EGP ${nf(S.price)} per tonne, unpriced carbon cost is EGP ${nf(C.tot*S.price/1e6,2)} million, ${C.cost?nf(C.tot*S.price/C.cost*100,1):0}% above the environmental cost actually paid. [Add: material climate-related risks and opportunities and their effect on the business plan.]`)}</p>
+    <h3>${esc(t(tr("3 · Risk management","3 · إدارة المخاطر")))}</h3>
+    <p>${esc(L?`تُرصد تدفقات الطاقة والمياه والنفايات شهرياً لكل موقع في الدفتر نفسه الذي يسجل تكلفتها، مما يسمح بمطابقتها مع السجلات المالية. [أضف: كيفية دمج المخاطر المناخية في إدارة المخاطر المؤسسية].`:`Energy, water and waste flows are recorded monthly per site in the same ledger as their cost, so they reconcile to financial records. [Add: how climate risks are integrated into enterprise risk management.]`)}</p>
+    <h3>${esc(t(tr("4 · Metrics & targets","4 · المؤشرات والمستهدفات")))} · ${esc(e.year)}</h3>${metrics}
+    <p>${esc(L?`كثافة الانبعاثات: ${C.cost?nf(C.tot/(C.cost/1e6),1):0} طن CO₂e لكل مليون جنيه من التكلفة البيئية المتتبعة. [أضف: المستهدفات وسنة الأساس].`:`Intensity: ${C.cost?nf(C.tot/(C.cost/1e6),1):0} tCO₂e per EGP million of traced environmental cost. [Add: targets and base year.]`)}</p>`;
+  return `
+  <section class="panel">
+    <div class="head"><div><h2>${esc(t(sup?tr("Supplier data sheet","ورقة بيانات المورد"):tr("Climate disclosure draft","مسودة الإفصاح المناخي")))}</h2><p class="muted small">${esc(t(sup?tr("Generated from the ledger for an entity below the FRA thresholds.","مولدة من الدفتر لجهة دون حدود الرقابة المالية."):tr("Generated from the ledger and structured on the four TCFD pillars that FRA climate disclosure follows. This is a working draft for the preparer, not the official FRA form. Text in [brackets] needs management input.","مولدة من الدفتر ومنظمة على ركائز TCFD الأربع التي يتبعها الإفصاح المناخي لدى الرقابة المالية. هذه مسودة عمل للمُعِدّ وليست النموذج الرسمي. النص بين [أقواس] يحتاج مدخلات الإدارة.")))}</p></div>
+      <div class="row"><button class="btn pri" type="button" data-act="copyDraft">${esc(t(tr("Copy draft text","نسخ نص المسودة")))}</button></div></div>
+    <div class="out" id="draft">
+      <p class="small muted">${esc(e.name)} · ${esc(e.sector)} · ${esc(t(TIERS[e.tier]))}</p>
+      ${body}
+      <h3>${esc(t(tr("Boundary & methodology","الحدود والمنهجية")))}</h3>
+      <p>${esc(L?`تغطي الأرقام العمليات الخاضعة لـ${t(bnd)} لدى ${e.name} خلال ${e.year}. وهي معلومات عن الأداء البيئي للمنشأة داخل هذه الحدود، وليست قياساً للاستدامة البيئية بالمعنى المطلق. المعاملات المستخدمة:`:`Figures cover operations under the ${t(bnd)} of ${e.name} for ${e.year}. They are information about the entity's environmental performance within that boundary, not a measure of ecological sustainability in an absolute sense. Factors used:`)}</p>
+      <ul>${S.factors.filter(f=>C.cats[f.cat]).map(f=>`<li>${esc(t(CATS[f.cat].n))}: <span class="num">${f.kg}</span> kg CO₂e/${CATS[f.cat].u} · ${esc(f.src&&f.src.trim()?f.src:t(tr("source not documented","المصدر غير موثق")))}</li>`).join("")}</ul>
+      ${sup?"":`<h3>${esc(t(tr("Data quality","جودة البيانات")))}</h3>${quality}`}
+    </div>
+  </section>
+  <section class="panel">
+    <div class="head"><div><h2>${esc(t(tr("Machine-readable version","النسخة القابلة للقراءة آلياً")))}</h2><p class="muted small">${esc(t(tr("The paper recommends a national, machine-readable sustainability taxonomy (§10.1). This JSON shows what a computable disclosure looks like: every value tagged, traceable to the ledger.","يوصي البحث بتصنيف وطني للاستدامة قابل للقراءة آلياً (§10.1). يوضح هذا الملف شكل الإفصاح القابل للحساب: كل قيمة موسومة ويمكن تتبعها إلى الدفتر.")))}</p></div>
+      <button class="btn" type="button" data-act="copyJson">${esc(t(tr("Copy JSON","نسخ JSON")))}</button></div>
+    <pre class="json" id="djson">${esc(JSON.stringify(taxo(C),null,2))}</pre>
+  </section>`;
+}
+function taxo(C){
+  const r=v=>Math.round(v*100)/100;
+  return {
+    "eg.entity":{name:S.entity.name,sector:S.entity.sector,period:S.entity.year,obligation:S.entity.tier,consolidation:S.entity.boundary},
+    "env.ghg.scope1.tco2e":r(C.sc[1]),"env.ghg.scope2.location.tco2e":r(C.sc[2]),"env.ghg.scope3.partial.tco2e":r(C.sc[3]),
+    "env.activity":Object.fromEntries(Object.keys(C.cats).map(k=>[k,{quantity:r(C.cats[k].qty),unit:CATS[k].u,cost_egp:r(C.cats[k].cost),tco2e:r(C.cats[k].t),records:C.cats[k].n}])),
+    "env.methodology.factors":S.factors.map(f=>({category:f.cat,kgco2e_per_unit:f.kg,scope:f.scope,source:f.src||null})),
+    "dq.assurability":{index:r(C.idx),capture_at_source:r(C.c[0]),unified_governance:r(C.c[1]),structured_reporting:r(C.c[2]),designed_assurability:r(C.c[3]),einvoice_reconciled_pct:r(C.recon),independently_assured:false},
+    "mgmt.internal_carbon_price_egp":S.price
+  };
+}
+function draftText(){const el=$("draft");return el?el.innerText:""}
+
+/* ---------- about ---------- */
+function about(){
+  const M=[
+   [tr("Finding 1 · Digitalisation is transaction-bound","النتيجة 1 · الرقمنة مرتبطة بالمعاملة"),tr("The ledger stores the physical quantity next to the e-invoice amount, adding the layer the e-invoice lacks.","يخزن الدفتر الكمية المادية بجانب قيمة الفاتورة الإلكترونية، مضيفاً الطبقة التي تفتقدها الفاتورة."),tr("Activity ledger","سجل الأنشطة")],
+   [tr("Finding 2 · Mandate without measurement architecture","النتيجة 2 · إلزام بلا بنية قياس"),tr("The factor register and boundary statement make the methodology explicit, which the decrees do not require.","يجعل سجل المعاملات وبيان الحدود المنهجية صريحة، وهو ما لا يشترطه القراران."),tr("Factors & method","المعاملات والمنهجية")],
+   [tr("Finding 3 · Green accounting is outside-in","النتيجة 3 · المحاسبة الخضراء من الخارج للداخل"),tr("Management uses come first (shadow price, cost per category, scenarios). The disclosure is generated afterwards as a by-product.","الاستخدام الإداري أولاً (السعر الظلي، التكلفة لكل فئة، السيناريوهات)، ثم يُولَّد الإفصاح كناتج ثانوي."),tr("Green cost & scenarios","التكلفة الخضراء")],
+   [tr("Finding 4 · The constraint is institutional","النتيجة 4 · القيد مؤسسي"),tr("The assurability index scores governance and traceability, not technology, and lists the organisational fixes first.","يقيس مؤشر القابلية للتأكيد الحوكمة والتتبع لا التقنية، ويعرض الإصلاحات التنظيمية أولاً."),tr("Dashboard","لوحة المؤشرات")],
+   [tr("Recommendation · Simplified pathway for SMEs","توصية · مسار مبسط للشركات الصغيرة"),tr("Selecting “supplier” produces a short data sheet a reporting customer can use for its value-chain emissions.","اختيار «مورد» ينتج ورقة بيانات مختصرة يستخدمها العميل المُفصِح لانبعاثات سلسلة القيمة."),tr("Disclosure draft","مسودة الإفصاح")],
+   [tr("Recommendation · Machine-readable taxonomy","توصية · تصنيف قابل للقراءة آلياً"),tr("Every disclosed value is exported with a tag and a trace back to its records.","كل قيمة مفصح عنها تُصدّر بوسم وتتبع إلى سجلاتها."),tr("Disclosure draft","مسودة الإفصاح")]
+  ];
+  return `
+  <section class="intro"><h2>${esc(t(tr("From analytical study to working tool","من دراسة تحليلية إلى أداة عملية")))}</h2>
+  <p>${esc(t(tr("The paper is a descriptive-analytical study based on documents. It ends with conditions and recommendations, not with data. This workbench turns those conditions into something a preparer, auditor or student can operate. It does not add evidence to the paper. It shows what implementing the paper would involve, and it can become the data-collection instrument for the case-study research the paper recommends (§10.2).","البحث دراسة وصفية تحليلية قائمة على الوثائق، وينتهي بشروط وتوصيات لا ببيانات. تحول هذه المنصة تلك الشروط إلى شيء يمكن للمُعِدّ أو المراجع أو الطالب تشغيله. هي لا تضيف أدلة للبحث، بل توضح ما يتطلبه تطبيقه، ويمكن أن تصبح أداة جمع البيانات لدراسات الحالة التي يوصي بها البحث (§10.2).")))}</p></section>
+  <section class="panel"><div class="head"><h2>${esc(t(tr("Findings and recommendations, mapped to features","النتائج والتوصيات مقابل الخصائص")))}</h2></div>
+    <div class="tw"><table><thead><tr><th>${esc(t(tr("Paper","البحث")))}</th><th>${esc(t(tr("How the workbench applies it","كيف تطبقه المنصة")))}</th><th>${esc(t(tr("Where","أين")))}</th></tr></thead><tbody>
+    ${M.map(m=>`<tr><td style="white-space:normal;min-width:200px"><b>${esc(t(m[0]))}</b></td><td style="white-space:normal;min-width:260px">${esc(t(m[1]))}</td><td>${esc(t(m[2]))}</td></tr>`).join("")}
+    </tbody></table></div></section>
+  <section class="panel"><div class="head"><h2>${esc(t(tr("Who uses it, and for what","من يستخدمها ولماذا")))}</h2></div>
+    <div class="steps">
+      ${[[tr("Preparers","المُعِدّون"),tr("Run the ledger for a year, watch the index rise as estimates become meter readings, and copy the draft into the FRA return.","تشغيل الدفتر لسنة، ومتابعة ارتفاع المؤشر مع تحول التقديرات إلى قراءات عدادات، ونسخ المسودة إلى نموذج الرقابة المالية.")],
+         [tr("Auditors","المراجعون"),tr("Use the trace column and the four conditions as a first checklist for assuring non-financial data captured by systems (§10.1).","استخدام عمود التتبع والشروط الأربعة كقائمة أولية لتأكيد البيانات غير المالية المرصودة آلياً (§10.1).")],
+         [tr("Universities","الجامعات"),tr("A classroom case that joins accounting, environmental measurement and data analytics in one exercise (§10.1).","حالة دراسية تجمع المحاسبة والقياس البيئي وتحليل البيانات في تمرين واحد (§10.1).")],
+         [tr("Researchers","الباحثون"),tr("Give the same template to several Egyptian firms and compare their indices: the case-based evidence §10.2 calls the most pressing gap.","توزيع النموذج نفسه على عدة شركات مصرية ومقارنة مؤشراتها: وهي أدلة دراسات الحالة التي يعدها §10.2 أهم فجوة.")]].map(s=>`<div class="step"><b>${esc(t(s[0]))}</b><p class="small muted">${esc(t(s[1]))}</p></div>`).join("")}
+    </div></section>`;
+}
+
+/* ---------- events ---------- */
+function after(C){
+  if(tab==="dash")monthChart(C);
+  if(tab==="ledger"){
+    const f=$("rowForm");
+    $("f_cat").addEventListener("change",ev=>{$("f_qty_l").textContent=t(tr("Quantity","الكمية"))+" ("+CATS[ev.target.value].u+")"});
+    f.addEventListener("submit",ev=>{ev.preventDefault();
+      const r={m:+$("f_m").value,site:$("f_site").value.trim(),cat:$("f_cat").value,qty:+$("f_qty").value||0,cost:+$("f_cost").value||0,inv:$("f_inv").value.trim(),method:$("f_method").value,owner:$("f_owner").value,ev:$("f_ev").checked};
+      if(editId!=null){Object.assign(S.rows.find(x=>x.id===editId),r);editId=null;toast(t(tr("Record saved","تم حفظ السجل")))}
+      else{r.id=S.nextId++;S.rows.push(r);toast(t(tr("Record added","تمت إضافة السجل")))}
+      S.demo=S.demo&&true;save();render()});
+    document.querySelectorAll("tr[data-id]").forEach(tr_=>{const go=()=>{editId=+tr_.dataset.id;render();window.scrollTo({top:0})};tr_.addEventListener("click",go);tr_.addEventListener("keydown",e=>{if(e.key==="Enter")go()})});
+    $("fCat").addEventListener("change",e=>{fCat=e.target.value;render()});
+    $("fSite").addEventListener("change",e=>{fSite=e.target.value;render()});
+    $("jsonIn").addEventListener("change",e=>{const file=e.target.files[0];if(!file)return;const rd=new FileReader();rd.onload=()=>{const txt=String(rd.result);
+      if(/\.csv$/i.test(file.name)){importCSV(txt,false);return}
+      try{const o=JSON.parse(txt);if(!o.rows||!o.factors)throw 0;S=o;S.demo=false;save();render();toast(t(tr("Workbench file loaded","تم تحميل ملف المنصة")))}catch(err){toast(t(tr("That file is not a workbench file. Use one copied from “Copy workbench file”.","هذا ليس ملف منصة. استخدم ملفاً منسوخاً من «نسخ ملف المنصة».")))}};rd.readAsText(file)});
+  }
+  if(tab==="factors"){
+    document.querySelectorAll("[data-f]").forEach(inp=>inp.addEventListener("change",e=>{const f=S.factors[+e.target.dataset.f],k=e.target.dataset.k;f[k]=k==="src"?e.target.value:+e.target.value;save();render()}));
+    const ent=()=>{const e=S.entity;e.name=$("e_name").value;e.sector=$("e_sector").value;e.year=$("e_year").value;e.tier=$("e_tier").value;e.boundary=$("e_boundary").value;save()};
+    $("entForm").addEventListener("change",()=>{ent();render()});
+    $("entForm").addEventListener("submit",e=>e.preventDefault());
+  }
+  if(tab==="cost"){["price","eff","solar"].forEach(k=>{$(k).addEventListener("input",e=>{S[k]=+e.target.value;save();const y=window.scrollY;render();window.scrollTo(0,y);$(k).focus()})})}
+}
+function importCSV(txt,replace){
+  const lines=txt.trim().split(/\r?\n/).filter(Boolean);if(!lines.length){toast(t(tr("Paste CSV rows first","الصق صفوف CSV أولاً")));return}
+  if(/month/i.test(lines[0]))lines.shift();
+  const out=[],bad=[];
+  lines.forEach((ln,i)=>{const c=ln.split(",").map(s=>s.trim());const cat=(c[2]||"").toLowerCase();
+    if(!CATS[cat]||!(+c[0]>=1&&+c[0]<=12)){bad.push(i+1);return}
+    out.push({m:+c[0],site:c[1]||"—",cat,qty:+c[3]||0,cost:+c[4]||0,inv:c[5]||"",method:METHODS[(c[6]||"").toLowerCase()]?(c[6]||"").toLowerCase():"estimate",owner:OWNERS[(c[7]||"").toLowerCase()]?(c[7]||"").toLowerCase():"",ev:/^(y|yes|1|true|نعم)$/i.test(c[8]||"")})});
+  if(!out.length){toast(t(tr("No valid rows. Check the month (1–12) and category columns.","لا توجد صفوف صالحة. راجع عمودي الشهر (1–12) والفئة.")));return}
+  if(replace){S.rows=[];S.demo=false;S.entity.name=S.entity.name.replace(/\s*\(fictitious demo\)/,"")}
+  out.forEach(r=>{r.id=S.nextId++;S.rows.push(r)});save();render();
+  toast(t(tr(`${out.length} rows added`+(bad.length?`, ${bad.length} skipped (lines ${bad.slice(0,5).join(", ")})`:""),`تمت إضافة ${out.length} صفاً`+(bad.length?`، وتم تخطي ${bad.length}`:""))));
+}
+function toCSV(){return "month,site,category,quantity,cost_egp,einvoice_ref,method,owner,evidence\n"+S.rows.map(r=>[r.m,r.site.replace(/,/g," "),r.cat,r.qty,r.cost,r.inv,r.method,r.owner,r.ev?"yes":"no"].join(",")).join("\n")}
+function ask(msg,yes){const c=$("confirm");c.hidden=false;c.innerHTML=`<span class="small">${esc(msg)}</span><button class="btn danger" type="button" id="cYes">${esc(t(tr("Yes, continue","نعم، تابع")))}</button><button class="btn" type="button" id="cNo">${esc(t(tr("Keep my data","احتفظ ببياناتي")))}</button>`;$("cYes").onclick=yes;$("cNo").onclick=()=>{c.hidden=true}}
+document.addEventListener("click",e=>{
+  const tb=e.target.closest("[data-tab]");if(tb){tab=tb.dataset.tab;editId=null;try{history.replaceState(null,"","#"+tab)}catch(_){}render();return}
+  const a=e.target.closest("[data-act]");if(!a)return;const act=a.dataset.act;
+  if(act==="tbl"){const m=$("mtable"),c=$("mchart");const show=m.hidden;m.hidden=!show;c.hidden=show;a.textContent=t(show?tr("Chart view","عرض بياني"):tr("Table view","عرض جدولي"))}
+  if(act==="cancel"){editId=null;render()}
+  if(act==="del"){S.rows=S.rows.filter(r=>r.id!==editId);editId=null;save();render();toast(t(tr("Record deleted","تم حذف السجل")))}
+  if(act==="csvAdd")importCSV($("csvIn").value,false);
+  if(act==="csvReplace")ask(t(tr("Replace every record with the pasted CSV?","استبدال جميع السجلات بملف CSV الملصق؟")),()=>importCSV($("csvIn").value,true));
+  if(act==="csvOut")copy(toCSV(),t(tr("Ledger copied as CSV","تم نسخ السجل كـ CSV")));
+  if(act==="jsonOut")copy(JSON.stringify(S),t(tr("Workbench file copied. Paste it into a .json file to keep it.","تم نسخ ملف المنصة. الصقه في ملف ‎.json لحفظه.")));
+  if(act==="demo")ask(t(tr("Replace your records with the fictitious demo company?","استبدال سجلاتك ببيانات الشركة التجريبية؟")),()=>{S=demo();save();render();toast(t(tr("Demo loaded","تم تحميل العرض التجريبي")))});
+  if(act==="clear")ask(t(tr("Delete every record? Factors and entity details stay.","حذف جميع السجلات؟ تبقى المعاملات وبيانات الجهة.")),()=>{S.rows=[];S.demo=false;save();render();toast(t(tr("Records cleared","تم مسح السجلات")))});
+  if(act==="resetF"){S.factors=defaultFactors();save();render()}
+  if(act==="copyDraft")copy(draftText(),t(tr("Draft copied","تم نسخ المسودة")));
+  if(act==="copyJson")copy(JSON.stringify(taxo(calc()),null,2),t(tr("JSON copied","تم نسخ JSON")));
+});
+$("langBtn").addEventListener("click",()=>{lang=lang==="en"?"ar":"en";try{localStorage.setItem("glw.lang",lang)}catch(e){}render()});
+$("themeBtn").addEventListener("click",()=>{const r=document.documentElement;const dk=r.dataset.theme==="dark"||(!r.dataset.theme&&matchMedia("(prefers-color-scheme: dark)").matches);r.dataset.theme=dk?"light":"dark";render()});
+try{const l=localStorage.getItem("glw.lang");if(l==="ar"||l==="en")lang=l}catch(e){}
+render();
+})();
+</script>
+
+</body></html>
