@@ -11,7 +11,7 @@ export interface Insights {
   topFindings: Finding[];
   topRecommendations: Recommendation[];
   cfoActions: Recommendation[];
-  auditPriorities: { area: string; reason: 'high-risk' | 'insufficient-data' | 'repeat'; score: number | null; detail: string }[];
+  auditPriorities: { area: string; reason: 'high-risk' | 'insufficient-data' | 'repeat'; score: number | null; detail: { en: string; ar: string } }[];
   topExposures: Finding[];
   controlWeaknesses: ControlRow[];
   fraudIndicators: Finding[];
@@ -27,9 +27,9 @@ export function buildInsights(a: Analysis, s: Settings): Insights {
   const topRecommendations = a.recommendations.slice(0, 10);
   const cfoActions = a.recommendations.filter((r) => FIN_AREAS.has(TEST_BY_ID[r.findingId.slice(2)]?.area ?? '')).slice(0, 10);
   const pri: Insights['auditPriorities'] = [];
-  for (const u of a.universe) if (u.rating === 'high') pri.push({ area: u.area, reason: 'high-risk', score: u.score, detail: `Risk score ${u.score}; ${u.findings} finding(s)` });
-  for (const c of a.controls.filter((c) => c.repeat)) pri.push({ area: c.def.id, reason: 'repeat', score: c.score, detail: `Repeat exceptions on control ${c.def.id}` });
-  for (const u of a.universe) if (u.rows === 0 || u.insufficient > 0) pri.push({ area: u.area, reason: 'insufficient-data', score: null, detail: `${u.insufficient} test(s) not performed — obtain data` });
+  for (const u of a.universe) if (u.rating === 'high') pri.push({ area: u.area, reason: 'high-risk', score: u.score, detail: { en: `Risk score ${u.score}; ${u.findings} finding(s)`, ar: `درجة المخاطر ${u.score}؛ ${u.findings} ملاحظة` } });
+  for (const c of a.controls.filter((c) => c.repeat)) pri.push({ area: c.def.id, reason: 'repeat', score: c.score, detail: { en: `Repeat exceptions on control ${c.def.id}`, ar: `استثناءات متكررة على الضابط ${c.def.id}` } });
+  for (const u of a.universe) if (u.rows === 0 || u.insufficient > 0) pri.push({ area: u.area, reason: 'insufficient-data', score: null, detail: { en: `${u.insufficient} test(s) not performed`, ar: `${u.insufficient} اختبار غير منفذ` } });
   const auditPriorities = pri.slice(0, 10);
   const topExposures = a.findings.filter((f) => Object.values(f.exposure).some((v) => v > 0)).sort((x, y) => base(y) - base(x) || Object.values(y.exposure).reduce((p, q) => p + q, 0) - Object.values(x.exposure).reduce((p, q) => p + q, 0)).slice(0, 10);
   const controlWeaknesses = a.controls.filter((c) => c.rating === 'ineffective' || c.rating === 'needs-improvement').sort((x, y) => (Number(y.repeat) - Number(x.repeat)) || (x.score ?? 0) - (y.score ?? 0)).slice(0, 10);

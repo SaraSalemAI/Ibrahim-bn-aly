@@ -20,7 +20,7 @@ const RULES: [FsCat, RegExp][] = [
   ['taxExpense', /income tax expense|tax expense|ضريبة الدخل/i],
   ['otherIncome', /interest income|other income|investment income|فوائد دائنة|ايرادات اخرى|إيرادات أخرى/i],
   ['revenue', /revenue|sales|transport(ation)? (fees|income)|throughput|storage income|ايراد|إيراد|مبيعات/i],
-  ['opex', /expense|salar|wage|rent|utilit|maintenance|insurance|مصروف|مصاريف|رواتب|اجور|أجور|صيانة/i],
+  ['opex', /expense|salar|wage|\brent\b|utilit|maintenance|insurance|مصروف|مصاريف|رواتب|اجور|أجور|صيانة/i],
   ['otherCurrentAssets', /prepaid|advance|deposit|current asset|other receivable|مقدم|سلف|تأمينات|اصول متداولة|أصول متداولة/i],
 ];
 

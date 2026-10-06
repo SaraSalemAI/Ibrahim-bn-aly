@@ -7,6 +7,7 @@ import { Card, DataTable, Empty, Money, Modal, Sev, Tag, Field, SevStack, QC } f
 import { useFindings, printNow } from './common';
 import { downloadBlob, downloadCsv, evidencePackageXlsx, evidenceRows, EVIDENCE_HEADER, fileStamp } from '../exports';
 import { fmtMoney } from '../engine/values';
+import { statusLabel } from '../i18n/dict';
 
 export function FindingsPage() {
   const { t, tl, analysis, setNav, go, lang } = useApp();
@@ -28,7 +29,7 @@ export function FindingsPage() {
           { key: 'exposure', label: t('exposure'), value: (f) => Object.values(f.exposure).reduce((a, b) => a + b, 0), csv: (f) => fmtMoney(f.exposure), render: (f) => <Money m={f.exposure} />, num: true },
           { key: 'evidenceStatus', label: t('evidence'), value: (f) => f.evidenceStatus, render: (f) => <EvStatus f={f} /> },
           { key: 'confidence', label: t('confidence') },
-          { key: 'status', label: t('status') },
+          { key: 'status', label: t('status'), render: (f) => statusLabel(f.status, lang) },
           { key: 'owner', label: t('owner'), render: (f) => f.owner || <span className="muted">{t('unassigned')}</span> },
           { key: 'ev', label: '', csv: () => '', render: (f) => <button className="btn sm evidence-btn" onClick={(e) => { e.stopPropagation(); setNav({ evidence: { findingId: f.id, index: 0 } }); }}>{t('showEvidence')}</button> },
         ]} />
@@ -72,7 +73,7 @@ export function FindingDetail({ id }: { id: string }) {
   return (
     <Modal title={<><span className="mono">{f.id}</span> · {tl(f.title)}</>} onClose={() => setNav({ findingId: null })}
       actions={<button className="btn evidence-btn" onClick={() => setNav({ evidence: { findingId: f.id, index: 0 } })}>🔍 {t('showEvidence')}</button>}>
-      <div className="row"><Sev s={f.rating} /><EvStatus f={f} /><span className="badge">{t('status')}: {f.status}</span><span className="badge">{t('confidence')}: {f.confidence}</span>{f.fraudIndicator && <span className="badge fail">⚠ {lang === 'ar' ? 'مؤشر مخاطر احتيال — يتطلب التحقيق' : 'Fraud Risk Indicator — Requires Investigation'}</span>}</div>
+      <div className="row"><Sev s={f.rating} /><EvStatus f={f} /><span className="badge">{t('status')}: {statusLabel(f.status, lang)}</span><span className="badge">{t('confidence')}: {f.confidence}</span>{f.fraudIndicator && <span className="badge fail">⚠ {lang === 'ar' ? 'مؤشر مخاطر احتيال — يتطلب التحقيق' : 'Fraud Risk Indicator — Requires Investigation'}</span>}</div>
       {f.fraudIndicator && <div className="banner warn small">{tl({ en: 'This is an anomaly pattern, not a conclusion of fraud. A human auditor must validate before any fraud-related conclusion is drawn.', ar: 'هذا نمط غير معتاد وليس استنتاجًا بوقوع احتيال. يجب أن يتحقق منه مراجع بشري قبل أي استنتاج.' })}</div>}
       {(high || CAN.review(prefs.role)) && prefs.role !== 'readonly' && prefs.role !== 'committee' && (
         <div className="card btn-row no-print">
@@ -84,7 +85,7 @@ export function FindingDetail({ id }: { id: string }) {
           <button className="btn" disabled={!CAN.export(prefs.role)} onClick={exportC}>CSV</button>
           <button className="btn" disabled={!CAN.export(prefs.role)} onClick={() => { log_('EXPORT_EVIDENCE_PDF', f.id); printNow(true); }}>PDF</button>
           <span className="spacer" />
-          {CAN.validate(prefs.role) && <select className="inp" value={f.status} onChange={(e) => setStatus(e.target.value as FindingStatus)}>{NEXT_STATUS.map((s) => <option key={s} value={s} disabled={s === 'official' && !canOfficial && f.status !== 'official'}>{s}</option>)}</select>}
+          {CAN.validate(prefs.role) && <select className="inp" value={f.status} onChange={(e) => setStatus(e.target.value as FindingStatus)}>{NEXT_STATUS.map((s) => <option key={s} value={s} disabled={s === 'official' && !canOfficial && f.status !== 'official'}>{statusLabel(s, lang)}</option>)}</select>}
         </div>
       )}
       {analysis.qcStatus === 'FAIL' && <div className="banner fail small">{t('qcBlock')}</div>}
@@ -115,10 +116,10 @@ export function FindingDetail({ id }: { id: string }) {
       <div className="grid g2">
         <Card title={<><Tag kind="rec" /> {t('recommendation')} <span className="mono small">{rec?.id}</span></>}>
           <p>{tl(rec?.action)}</p>
-          <dl className="kv small"><dt>{tl({ en: 'Root cause', ar: 'السبب الجذري' })}</dt><dd>{tl(rec?.rootCause)}</dd><dt>{tl({ en: 'Expected benefit', ar: 'العائد المتوقع' })}</dt><dd>{tl(rec?.benefit)}</dd><dt>{tl({ en: 'Control improvement', ar: 'تحسين الرقابة' })}</dt><dd>{tl(rec?.controlImprovement)}</dd><dt>{tl({ en: 'Priority', ar: 'الأولوية' })}</dt><dd>{rec?.priority} · {tl({ en: 'target', ar: 'المستهدف' })} {rec?.targetDate}</dd><dt>{tl({ en: 'Effort (estimate)', ar: 'الجهد (تقدير)' })}</dt><dd>{rec?.effort} <Tag kind="asm" /></dd></dl>
+          <dl className="kv small"><dt>{tl({ en: 'Root cause', ar: 'السبب الجذري' })}</dt><dd>{tl(rec?.rootCause)}</dd><dt>{tl({ en: 'Expected benefit', ar: 'العائد المتوقع' })}</dt><dd>{tl(rec?.benefit)}</dd><dt>{tl({ en: 'Control improvement', ar: 'تحسين الرقابة' })}</dt><dd>{tl(rec?.controlImprovement)}</dd><dt>{tl({ en: 'Priority', ar: 'الأولوية' })}</dt><dd>{statusLabel(rec?.priority ?? '', lang)} · {tl({ en: 'target', ar: 'المستهدف' })} {rec?.targetDate}</dd><dt>{tl({ en: 'Effort (estimate)', ar: 'الجهد (تقدير)' })}</dt><dd>{statusLabel(rec?.effort ?? '', lang)} <Tag kind="asm" /></dd></dl>
         </Card>
         <Card title={<span id="assign-box">{t('managementAction')}</span>}>
-          {act && <p className="small">{act.id} · {act.owner} · {act.dueDate} · <b>{act.status}</b> · {act.completion}%</p>}
+          {act && <p className="small">{act.id} · {act.owner} · {act.dueDate} · <b>{statusLabel(act.status, lang)}</b> · {act.completion}%</p>}
           {CAN.assign(prefs.role) ? (
             <div className="filters">
               <Field label={t('owner')}><input value={owner} onChange={(e) => setOwner(e.target.value)} /></Field>

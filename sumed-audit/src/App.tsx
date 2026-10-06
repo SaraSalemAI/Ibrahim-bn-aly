@@ -35,12 +35,14 @@ function Filters() {
         <Field label={t('site')}><select value={filters.site} onChange={(e) => set('site', e.target.value)}><option value="">{t('all')}</option>{settings.sites.map((s) => <option key={s.id} value={s.id}>{tl(s.name)}</option>)}</select></Field>
         <Field label={t('department')}><select value={filters.department} onChange={(e) => set('department', e.target.value)}><option value="">{t('all')}</option>{opts('department').map((o) => <option key={o}>{o}</option>)}</select></Field>
         <Field label={t('costCenter')}><select value={filters.costCenter} onChange={(e) => set('costCenter', e.target.value)}><option value="">{t('all')}</option>{opts('costCenter').map((o) => <option key={o}>{o}</option>)}</select></Field>
+        <Field label={tl({ en: 'Bank', ar: 'البنك' })}><select value={filters.bank} onChange={(e) => set('bank', e.target.value)}><option value="">{t('all')}</option>{opts('bank').map((o) => <option key={o}>{o}</option>)}</select></Field>
         <Field label={t('currency')}><select value={filters.currency} onChange={(e) => set('currency', e.target.value)}><option value="">{t('all')}</option>{opts('currency').map((o) => <option key={o}>{o}</option>)}</select></Field>
         <Field label={t('party')}><input value={filters.vendor} onChange={(e) => set('vendor', e.target.value)} /></Field>
         <Field label={t('account')}><input value={filters.account} onChange={(e) => set('account', e.target.value)} /></Field>
         <Field label={t('area')}><select value={filters.area} onChange={(e) => set('area', e.target.value)}><option value="">{t('all')}</option>{AREAS.map((a) => <option key={a.id} value={a.id}>{tl(a.label)}</option>)}</select></Field>
         <Field label={t('riskLevel')}><select value={filters.risk} onChange={(e) => set('risk', e.target.value)}><option value="">{t('all')}</option>{(['critical', 'high', 'medium', 'low', 'info'] as const).map((k) => <option key={k} value={k}>{t(k)}</option>)}</select></Field>
         <Field label={t('status')}><select value={filters.status} onChange={(e) => set('status', e.target.value)}><option value="">{t('all')}</option>{['draft', 'under-review', 'validated', 'official', 'closed', 'dismissed'].map((k) => <option key={k} value={k}>{k}</option>)}</select></Field>
+        <Field label={tl({ en: 'Management owner', ar: 'مسؤول الإدارة' })}><input value={filters.owner} onChange={(e) => set('owner', e.target.value)} /></Field>
         {active && <button className="btn" onClick={() => setFilters(EMPTY_FILTERS)}>✕ {t('clearFilters')}</button>}
       </div>
       {analysis.filterNotes.length > 0 && <details className="small muted" style={{ marginTop: 6 }}><summary>{analysis.filterNotes.length} note(s)</summary><ul>{analysis.filterNotes.map((n) => <li key={n}>{n}</li>)}</ul></details>}

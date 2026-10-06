@@ -50,4 +50,4 @@ export const DEFAULT_SETTINGS: Settings = {
   policySources: [],
 };
 
-export const EMPTY_FILTERS: Filters = { dateFrom: '', dateTo: '', department: '', costCenter: '', site: '', currency: '', vendor: '', account: '', area: '', risk: '', status: '' };
+export const EMPTY_FILTERS: Filters = { dateFrom: '', dateTo: '', department: '', costCenter: '', site: '', bank: '', owner: '', currency: '', vendor: '', account: '', area: '', risk: '', status: '' };

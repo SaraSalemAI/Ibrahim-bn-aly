@@ -160,3 +160,21 @@ describe('audit trail', () => {
     expect(await verifyLog(tampered)).toBe(2);
   });
 });
+
+describe('additional tests', () => {
+  const TB = ['Account Code,Account Name,FS Classification,Debit,Credit,Closing Balance',
+    '1100,Bank current,Current assets,100,50,5000', '1200,Trade receivables,Current assets,10,0,3000', '1300,Spare parts inventory,Current assets,0,0,900', // 1300 unmoved
+    '1400,Advances to suppliers,Current assets,0,10,-200', '2100,Accounts payable,Current liabilities,5,10,700', '4000,Revenue,Revenue,0,100,-9000'].join('\n');
+  const VM = ['Vendor ID,Vendor Name,Tax ID', 'V1,Delta Supplies Co.,123456789', 'V2,DELTA SUPPLIES,999', 'V3,Other Ltd,123456789'].join('\n');
+  const a = run([fileFromCsv('tb.csv', TB), fileFromCsv('vendors.csv', VM)]);
+  it('flags unmoved and abnormal-side balances', () => {
+    expect(a.resultById['GL-20'].exceptions.map((e) => e.key)).toEqual(['GL-20|1300']);
+    expect(a.resultById['GL-21'].exceptions.map((e) => e.key).sort()).toEqual(['GL-21|1400', 'GL-21|2100']);
+  });
+  it('flags duplicate vendors by name and tax ID', () => {
+    expect(a.resultById['AP-18'].exceptions).toHaveLength(2);
+  });
+  it('requires fiscal year-end for cut-off test', () => {
+    expect(a.resultById['AR-07'].status).toBe('insufficient');
+  });
+});

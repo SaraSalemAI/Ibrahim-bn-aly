@@ -4,6 +4,7 @@ import type { ActionItem } from '../engine/types';
 import { TEST_BY_ID } from '../engine/tests';
 import { makeSnapshot, type Recommendation } from '../engine/analysis';
 import { Card, DataTable, Empty, Kpi, Sev, Field, Tag } from '../ui/kit';
+import { statusLabel } from '../i18n/dict';
 
 const PRI_LABEL = { immediate: ['Immediate (0–30 days)', 'فوري (0–30 يومًا)'], short: ['Short-term (31–90 days)', 'قصير الأجل (31–90 يومًا)'], medium: ['Medium-term (91–180 days)', 'متوسط الأجل (91–180 يومًا)'], long: ['Long-term (180+ days)', 'طويل الأجل (+180 يومًا)'] } as const;
 
@@ -45,7 +46,7 @@ export function Recommendations() {
                 <button className="btn sm" onClick={() => go('actions')}>{t('track')}</button>
               </div>
               <p style={{ margin: '6px 0' }}><Tag kind="rec" /> {tl(r.action)}</p>
-              <div className="small muted">{tl({ en: 'Risk addressed', ar: 'المخاطر المعالجة' })}: {r.riskId} · {tl({ en: 'Root cause', ar: 'السبب الجذري' })}: {tl(r.rootCause)} · {tl({ en: 'Benefit', ar: 'العائد' })}: {tl(r.benefit)} · {tl({ en: 'Effort', ar: 'الجهد' })}: {r.effort} · {t('owner')}: {r.owner || t('unassigned')} · {tl({ en: 'Target', ar: 'المستهدف' })}: {r.targetDate} · {t('status')}: {r.status}</div>
+              <div className="small muted">{tl({ en: 'Risk addressed', ar: 'المخاطر المعالجة' })}: {r.riskId} · {tl({ en: 'Root cause', ar: 'السبب الجذري' })}: {tl(r.rootCause)} · {tl({ en: 'Benefit', ar: 'العائد' })}: {tl(r.benefit)} · {tl({ en: 'Effort', ar: 'الجهد' })}: {statusLabel(r.effort, lang)} · {t('owner')}: {r.owner || t('unassigned')} · {tl({ en: 'Target', ar: 'المستهدف' })}: {r.targetDate} · {t('status')}: {statusLabel(r.status, lang)}</div>
               {open === r.id && <AssignBox r={r} onDone={() => setOpen(null)} />}
             </div>
           ))}
@@ -58,12 +59,12 @@ export function Recommendations() {
           { key: 'riskId', label: tl({ en: 'Risk', ar: 'المخاطر' }) },
           { key: 'action', label: t('recommendation'), value: (r) => tl(r.action) },
           { key: 'ci', label: tl({ en: 'Control improvement', ar: 'تحسين الرقابة' }), value: (r) => tl(r.controlImprovement) },
-          { key: 'priority', label: tl({ en: 'Priority', ar: 'الأولوية' }) },
-          { key: 'effort', label: tl({ en: 'Effort', ar: 'الجهد' }) },
+          { key: 'priority', label: tl({ en: 'Priority', ar: 'الأولوية' }), render: (r) => statusLabel(r.priority, lang) },
+          { key: 'effort', label: tl({ en: 'Effort', ar: 'الجهد' }), render: (r) => statusLabel(r.effort, lang) },
           { key: 'owner', label: t('owner') },
           { key: 'targetDate', label: tl({ en: 'Target date', ar: 'التاريخ المستهدف' }) },
           { key: 'score', label: tl({ en: 'Score', ar: 'الدرجة' }), num: true },
-          { key: 'status', label: t('status') },
+          { key: 'status', label: t('status'), render: (r) => statusLabel(r.status, lang) },
         ]} />
       </Card>
     </>
@@ -71,7 +72,7 @@ export function Recommendations() {
 }
 
 export function Actions() {
-  const { t, tl, actions, upsertAction, analysis, prefs, setNav } = useApp();
+  const { t, tl, actions, upsertAction, analysis, prefs, setNav, lang } = useApp();
   const today = analysis.today;
   const mine = prefs.role === 'management' ? actions.filter((a) => a.owner.trim().toLowerCase() === prefs.user.trim().toLowerCase()) : actions;
   const isOver = (a: ActionItem) => a.status !== 'closed' && !!a.dueDate && a.dueDate < today;
@@ -83,7 +84,7 @@ export function Actions() {
   return (
     <>
       <div className="kpis">
-        {['open', 'in-progress', 'overdue', 'implemented', 'pending-validation', 'closed'].map((s) => <Kpi key={s} accent={s === 'overdue'} label={s} value={counts(s)} />)}
+        {['open', 'in-progress', 'overdue', 'implemented', 'pending-validation', 'closed'].map((s) => <Kpi key={s} accent={s === 'overdue'} label={statusLabel(s, lang)} value={counts(s)} />)}
       </div>
       {prefs.role === 'management' && <div className="banner info small">{tl({ en: `Showing actions assigned to "${prefs.user}".`, ar: `عرض الإجراءات المسندة إلى "${prefs.user}".` })}</div>}
       <Card title={t('actions')} hint={tl({ en: 'Overdue status is flagged automatically when the due date passes. Closure requires Internal Audit validation (Senior Auditor / CAE).', ar: 'تُرصد حالة التأخر آليًا عند تجاوز الموعد. يتطلب الإغلاق تحقق المراجعة الداخلية.' })}>
@@ -94,13 +95,13 @@ export function Actions() {
             { key: 'rec', label: t('recommendation'), value: (a) => tl(TEST_BY_ID[a.findingId.slice(2)]?.recommendation), render: (a) => <span className="small">{tl(TEST_BY_ID[a.findingId.slice(2)]?.recommendation)}</span> },
             { key: 'owner', label: t('owner') }, { key: 'department', label: t('department') },
             { key: 'dueDate', label: t('dueDate'), render: (a) => <span className={isOver(a) ? 'insufficient' : ''}>{a.dueDate}</span> },
-            { key: 'priority', label: tl({ en: 'Priority', ar: 'الأولوية' }) },
+            { key: 'priority', label: tl({ en: 'Priority', ar: 'الأولوية' }), render: (a) => statusLabel(a.priority, lang) },
             { key: 'status', label: t('status'), value: disp, render: (a) => (
               <select className="inp" disabled={!canUpd} value={a.status} onChange={(e) => {
                 const s = e.target.value as ActionItem['status'];
                 if (s === 'closed' && !canVal) { alert(tl({ en: 'Closure requires Internal Audit validation.', ar: 'الإغلاق يتطلب تحقق المراجعة الداخلية.' })); return; }
                 upd(a, { status: s, closureDate: s === 'closed' ? today : a.closureDate, completion: s === 'implemented' || s === 'pending-validation' || s === 'closed' ? 100 : a.completion }, `status → ${s}`);
-              }}>{['open', 'in-progress', 'implemented', 'pending-validation', 'closed'].map((s) => <option key={s} value={s}>{s}</option>)}</select>) },
+              }}>{['open', 'in-progress', 'implemented', 'pending-validation', 'closed'].map((s) => <option key={s} value={s}>{statusLabel(s, lang)}</option>)}</select>) },
             { key: 'completion', label: '%', num: true, render: (a) => <input className="inp" type="number" min={0} max={100} style={{ width: 64 }} disabled={!canUpd} defaultValue={a.completion} onBlur={(e) => +e.target.value !== a.completion && upd(a, { completion: Math.max(0, Math.min(100, +e.target.value)) }, `completion ${e.target.value}%`)} /> },
             { key: 'evidence', label: t('evidence'), render: (a) => <input className="inp" disabled={!canUpd} defaultValue={a.evidence} placeholder="…" onBlur={(e) => e.target.value !== a.evidence && upd(a, { evidence: e.target.value }, 'evidence updated')} /> },
             { key: 'validation', label: tl({ en: 'IA validation', ar: 'تحقق المراجعة' }), render: (a) => canVal ? <input className="inp" defaultValue={a.validation} placeholder="…" onBlur={(e) => e.target.value !== a.validation && upd(a, { validation: e.target.value }, 'validation note')} /> : a.validation },

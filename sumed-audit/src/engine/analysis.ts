@@ -89,7 +89,7 @@ const PARTY_FIELDS = ['vendor', 'customer', 'counterparty', 'beneficiary', 'part
 /** Apply global filters to tables. Filters only apply where the table maps the relevant field. */
 export function applyFilters(tables: SourceTable[], f: Filters, s: Settings): { tables: SourceTable[]; notes: string[] } {
   const notes: string[] = [];
-  const active = f.dateFrom || f.dateTo || f.department || f.costCenter || f.site || f.currency || f.vendor || f.account;
+  const active = f.dateFrom || f.dateTo || f.department || f.costCenter || f.site || f.bank || f.currency || f.vendor || f.account;
   if (!active) return { tables, notes };
   const out = tables.map((t) => {
     const a = accessor(t);
@@ -106,6 +106,7 @@ export function applyFilters(tables: SourceTable[], f: Filters, s: Settings): { 
     };
     textEq('department', f.department);
     textEq('costCenter', f.costCenter);
+    textEq('bank', f.bank);
     if (f.currency) { if (a.has('currency')) checks.push((r) => a.t(r, 'currency').toUpperCase() === f.currency.toUpperCase()); else na.push('currency'); }
     if (f.site) {
       if (['site', 'location', 'costCenter', 'department'].some((x) => a.has(x))) checks.push((r) => rowSite(t, r, s.sites) === f.site); else na.push('site');
@@ -146,14 +147,18 @@ const HORIZON_DAYS: Record<Recommendation['priority'], number> = { immediate: 30
 
 function addDays(iso: string, d: number) { const t = new Date(iso + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + d); return t.toISOString().slice(0, 10); }
 
-export function runAnalysis(input: AnalysisInput): Analysis {
-  const s = input.settings;
-  const today = input.today ?? new Date().toISOString().slice(0, 10);
-  const tables = input.files.flatMap((f) => f.tables);
-  const { tables: filtered, notes } = applyFilters(tables, input.filters, s);
+interface Core { tables: SourceTable[]; filtered: SourceTable[]; notes: string[]; quality: QualityReport; results: TestResult[]; resultById: Record<string, TestResult>; findings: Finding[]; fsa: FsaResult }
+let coreCache: { files: SourceFile[]; settings: Settings; filters: Filters; core: Core } | null = null;
+
+/** Heavy phase (tests, data quality, evidence validation, FS analytics). Cached until files, settings or filters change. */
+function computeCore(files: SourceFile[], s: Settings, filters: Filters): Core {
+  if (coreCache && coreCache.files === files && coreCache.settings === s && coreCache.filters === filters) return coreCache.core;
+  const tables = files.flatMap((f) => f.tables);
+  const { tables: filtered, notes } = applyFilters(tables, filters, s);
   const quality = assessQuality(tables);
   const tableById = new Map(tables.map((t) => [t.id, t]));
-  const rowExists = (tid: string, rid: string) => !!tableById.get(tid)?.rows.some((r) => r.recordId === rid);
+  const rowIndex = new Map(tables.map((t) => [t.id, new Set(t.rows.map((r) => r.recordId))]));
+  const rowExists = (tid: string, rid: string) => !!rowIndex.get(tid)?.has(rid);
 
   // 1) Run tests
   const ctx = { tables: filtered, settings: s };
@@ -166,8 +171,7 @@ export function runAnalysis(input: AnalysisInput): Analysis {
   const dqFlag = new Set<string>();
   for (const tq of quality.tables) for (const i of tq.issues) if (['duplicate-rows', 'invalid-type'].includes(i.kind)) i.sample.forEach((x) => dqFlag.add(x.recordId));
 
-  // 2) Findings
-  const lastSnap = input.snapshots[input.snapshots.length - 1] ?? null;
+  // 2) Findings (status/owner/due are applied later from auditor overrides)
   const findings: Finding[] = [];
   const seenRowSets = new Map<string, string>();
   for (const r of results) {
@@ -177,7 +181,6 @@ export function runAnalysis(input: AnalysisInput): Analysis {
     for (const e of r.exceptions) if (e.money) exposure[e.money.currency] = (exposure[e.money.currency] ?? 0) + Math.abs(e.money.amount);
     const { rating, basis } = rateFinding(def, exposure, s);
     const id = `F-${def.id}`;
-    const ov = input.overrides[id] ?? {};
 
     // Evidence validation (9 checks)
     const allRefs = r.exceptions.flatMap((e) => e.rows);
@@ -218,10 +221,24 @@ export function runAnalysis(input: AnalysisInput): Analysis {
       rating, ratingBasis: basis, exposure, exceptionCount: n, population: r.population,
       confidence, confidenceBasis: confBasis, evidenceChecks: checks, evidenceStatus,
       fraudIndicator: !!def.fraud, recommendationId: `RM-${def.id}`,
-      status: ov.status ?? 'draft', owner: ov.owner ?? '', dueDate: ov.dueDate ?? '',
+      status: 'draft', owner: '', dueDate: '',
     });
   }
   findings.sort((a, b) => SEV_RANK[b.rating] - SEV_RANK[a.rating] || baseExposure(b.exposure, s) - baseExposure(a.exposure, s));
+  const core: Core = { tables, filtered, notes, quality, results, resultById, findings, fsa: analyseFS(filtered, s) };
+  coreCache = { files, settings: s, filters, core };
+  return core;
+}
+
+export function runAnalysis(input: AnalysisInput): Analysis {
+  const s = input.settings;
+  const today = input.today ?? new Date().toISOString().slice(0, 10);
+  const { tables, filtered, notes, quality, results, resultById, fsa } = computeCore(input.files, s, input.filters);
+  const lastSnap = input.snapshots[input.snapshots.length - 1] ?? null;
+  const findings: Finding[] = computeCore(input.files, s, input.filters).findings.map((f) => {
+    const ov = input.overrides[f.id] ?? {};
+    return { ...f, status: ov.status ?? 'draft', owner: ov.owner ?? '', dueDate: ov.dueDate ?? '' };
+  });
   const findingById = Object.fromEntries(findings.map((f) => [f.id, f]));
 
   // 3) Recommendations
@@ -383,8 +400,6 @@ export function runAnalysis(input: AnalysisInput): Analysis {
     for (const [k, v] of Object.entries(entObj)) { const prev = new Set(lastSnap.entities[k] ?? []); const nw = v.filter((x) => !prev.has(x)); if (nw.length) change.newEntities[k] = nw; }
   }
 
-  // 8) Financial statement analytics
-  const fsa = analyseFS(filtered, s);
 
   // 9) Audit platform quality check
   const hasData = tables.length > 0;

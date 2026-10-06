@@ -58,6 +58,8 @@ export const ROLE_AREAS: Partial<Record<Role, string[]>> = {
   compliance: ['tax', 'related', 'contracts', 'procurement'],
 };
 
+export interface PlanMeta { planned?: string; auditor?: string; hours?: number; status?: string; notes?: string }
+
 interface Prefs { lang: Lang; theme: 'light' | 'dark'; role: Role; user: string; unmask: boolean }
 interface Nav { page: Page; findingId: string | null; evidence: { findingId: string; index: number } | null; riskId: string | null; testId: string | null; controlId: string | null }
 
@@ -69,6 +71,7 @@ interface Ctx {
   overrides: Record<string, FindingOverride>;
   riskMeta: Record<string, RiskMeta>;
   controlMeta: Record<string, { owner?: string }>;
+  planMeta: Record<string, PlanMeta>;
   actions: ActionItem[];
   snapshots: Snapshot[];
   log: AuditLogEntry[];
@@ -88,6 +91,7 @@ interface Ctx {
   setOverride: (id: string, o: FindingOverride, why: string) => void;
   setRiskMeta: (id: string, m: RiskMeta) => void;
   setControlMeta: (id: string, m: { owner?: string }) => void;
+  setPlanMeta: (area: string, m: PlanMeta) => void;
   upsertAction: (a: ActionItem, why: string) => void;
   addSnapshot: (s: Snapshot) => void;
   setPrefs: (p: Partial<Prefs>) => void;
@@ -111,6 +115,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [overrides, setOverrides] = useState<Record<string, FindingOverride>>({});
   const [riskMeta, setRiskMetaS] = useState<Record<string, RiskMeta>>({});
   const [controlMeta, setControlMetaS] = useState<Record<string, { owner?: string }>>({});
+  const [planMeta, setPlanMetaS] = useState<Record<string, PlanMeta>>({});
   const [actions, setActions] = useState<ActionItem[]>([]);
   const [snapshots, setSnapshots] = useState<Snapshot[]>([]);
   const [log, setLog] = useState<AuditLogEntry[]>([]);
@@ -121,11 +126,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     (async () => {
-      const [f, s, fl, o, rm, cm, a, sn, lg, nv] = await Promise.all([
+      const [f, s, fl, o, rm, cm, a, sn, lg, nv, pl] = await Promise.all([
         store.allFiles(), store.get('settings', DEFAULT_SETTINGS), store.get('filters', EMPTY_FILTERS), store.get('overrides', {}), store.get('riskMeta', {}), store.get('controlMeta', {}),
-        store.get<ActionItem[]>('actions', []), store.get<Snapshot[]>('snapshots', []), store.get<AuditLogEntry[]>('log', []), store.get<Partial<Nav>>('nav', {}),
+        store.get<ActionItem[]>('actions', []), store.get<Snapshot[]>('snapshots', []), store.get<AuditLogEntry[]>('log', []), store.get<Partial<Nav>>('nav', {}), store.get<Record<string, PlanMeta>>('plan', {}),
       ]);
-      setFiles(f); setSettingsS({ ...DEFAULT_SETTINGS, ...s }); setFiltersS({ ...EMPTY_FILTERS, ...fl }); setOverrides(o); setRiskMetaS(rm); setControlMetaS(cm); setActions(a); setSnapshots(sn); setLog(lg); logRef.current = lg;
+      setFiles(f); setSettingsS({ ...DEFAULT_SETTINGS, ...s }); setFiltersS({ ...EMPTY_FILTERS, ...fl }); setOverrides(o); setRiskMetaS(rm); setControlMetaS(cm); setActions(a); setPlanMetaS(pl); setSnapshots(sn); setLog(lg); logRef.current = lg;
       setNavS((n) => ({ ...n, ...nv, page: nv.page ?? (f.length ? 'overview' : 'upload') }));
       setLoaded(true);
     })();
@@ -152,7 +157,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const tl = useCallback((l: L | string | undefined | null) => (l == null ? '' : typeof l === 'string' ? l : l[prefs.lang] || l.en), [prefs.lang]);
 
   const value: Ctx = {
-    loaded, files, settings, filters, overrides, riskMeta, controlMeta, actions, snapshots, log, prefs, nav, analysis, t, tl, lang: prefs.lang,
+    loaded, files, settings, filters, overrides, riskMeta, controlMeta, planMeta, actions, snapshots, log, prefs, nav, analysis, t, tl, lang: prefs.lang,
     go: (page, extra = {}) => setNavS((n) => ({ ...n, ...extra, page })),
     setNav: (x) => setNavS((n) => ({ ...n, ...x })),
     addFiles: async (fs) => { for (const f of fs) { await store.putFile(f); log_('UPLOAD', f.name, `sha256=${f.sha256}; status=${f.status}; tables=${f.tables.length}; rows=${f.tables.reduce((s, x) => s + x.rows.length, 0)}`); } setFiles((p) => [...p, ...fs]); },
@@ -163,6 +168,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setOverride: (id, o, why) => { setOverrides((p) => { const n = { ...p, [id]: { ...p[id], ...o } }; store.set('overrides', n); return n; }); log_('FINDING_UPDATE', id, why); },
     setRiskMeta: (id, m) => { setRiskMetaS((p) => { const n = { ...p, [id]: { ...p[id], ...m } }; store.set('riskMeta', n); return n; }); log_('RISK_UPDATE', id, JSON.stringify(m)); },
     setControlMeta: (id, m) => { setControlMetaS((p) => { const n = { ...p, [id]: { ...p[id], ...m } }; store.set('controlMeta', n); return n; }); log_('CONTROL_UPDATE', id, JSON.stringify(m)); },
+    setPlanMeta: (area, m) => { setPlanMetaS((p) => { const n = { ...p, [area]: { ...p[area], ...m } }; store.set('plan', n); return n; }); log_('PLAN_UPDATE', area, JSON.stringify(m)); },
     upsertAction: (a, why) => { setActions((p) => { const n = p.some((x) => x.id === a.id) ? p.map((x) => (x.id === a.id ? a : x)) : [...p, a]; store.set('actions', n); return n; }); log_('ACTION_UPDATE', a.id, why); },
     addSnapshot: (s) => { setSnapshots((p) => { const n = [...p, s]; store.set('snapshots', n); return n; }); log_('SNAPSHOT', s.id, s.label); },
     setPrefs: (p) => {

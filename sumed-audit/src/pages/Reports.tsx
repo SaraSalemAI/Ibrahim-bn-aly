@@ -41,13 +41,13 @@ export const REPORTS: ReportDef[] = [
 
 export function Reports() {
   const app = useApp();
-  const { t, tl, analysis, settings, prefs, lang, log, actions, log_, files } = app;
+  const { t, tl, analysis, settings, prefs, lang, log, actions, log_, files, planMeta } = app;
   const [sel, setSel] = useState('exec');
   const [busy, setBusy] = useState(false);
   const def = REPORTS.find((r) => r.id === sel)!;
   const fs = analysis.findings.filter((f) => !def.filter || def.filter(f));
   const canExport = CAN.export(prefs.role);
-  const wb = async () => { setBusy(true); try { downloadBlob(`SUMED-audit-workbook-${lang}-${fileStamp()}.xlsx`, await buildWorkbook(analysis, settings, lang, log, actions, prefs.unmask)); log_('EXPORT_WORKBOOK', 'workbook', lang); } finally { setBusy(false); } };
+  const wb = async () => { setBusy(true); try { downloadBlob(`SUMED-audit-workbook-${lang}-${fileStamp()}.xlsx`, await buildWorkbook(analysis, settings, lang, log, actions, prefs.unmask, planMeta)); log_('EXPORT_WORKBOOK', 'workbook', lang); } finally { setBusy(false); } };
   const csv = () => {
     log_('EXPORT_REPORT_CSV', def.id, lang);
     if (def.kind === 'evidence') return downloadCsv(`evidence-register-${fileStamp()}`, EVIDENCE_HEADER, fs.flatMap((f) => evidenceRows(analysis, f, prefs.unmask, lang)));

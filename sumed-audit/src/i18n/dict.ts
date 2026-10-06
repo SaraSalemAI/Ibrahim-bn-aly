@@ -77,3 +77,18 @@ export function translateValue(v: string, lang: 'en' | 'ar'): string | null {
   const k = v.trim().toLowerCase();
   return VALUE_TR[k] ?? null;
 }
+
+const STATUS_AR: Record<string, string> = {
+  draft: 'مسودة', 'under-review': 'قيد المراجعة', validated: 'معتمدة من المراجع', official: 'رسمية', closed: 'مغلقة', dismissed: 'مستبعدة',
+  open: 'مفتوح', 'in-progress': 'قيد التنفيذ', implemented: 'تم التنفيذ', 'pending-validation': 'بانتظار التحقق', overdue: 'متأخر',
+  monitored: 'تحت المراقبة', mitigating: 'قيد المعالجة', accepted: 'مقبولة', 'not-assessed': 'لم تُقيّم', 'not-assigned': 'غير مسند',
+  immediate: 'فوري', short: 'قصير الأجل', medium: 'متوسط الأجل', long: 'طويل الأجل', high: 'مرتفعة', low: 'منخفضة',
+  Low: 'منخفض', Medium: 'متوسط', High: 'مرتفع', 'Tested': 'تم الاختبار', 'Partially tested': 'مختبر جزئيًا', 'Awaiting data': 'بانتظار البيانات',
+  Planned: 'مخطط', Fieldwork: 'العمل الميداني', Reporting: 'إعداد التقرير', Completed: 'مكتمل', Deferred: 'مؤجل',
+};
+const STATUS_EN: Record<string, string> = { immediate: 'Immediate', short: 'Short-term', medium: 'Medium-term', long: 'Long-term', 'not-assigned': 'Not assigned' };
+/** Display label for workflow statuses and priorities (stored values stay in English). */
+export function statusLabel(s: string, lang: 'en' | 'ar'): string {
+  if (!s) return s;
+  return lang === 'ar' ? STATUS_AR[s] ?? s : STATUS_EN[s] ?? s;
+}

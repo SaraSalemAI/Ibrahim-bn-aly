@@ -12,7 +12,19 @@ export const DEFAULT_SITES: SiteDef[] = [
 export const UNASSIGNED = '__unassigned__';
 
 /** Resolve a raw site/location text to a configured site ID (longest keyword wins). Returns null if no match. */
+const cache = new WeakMap<SiteDef[], Map<string, string | null>>();
+
 export function resolveSite(raw: string, sites: SiteDef[]): string | null {
+  let c = cache.get(sites);
+  if (!c) { c = new Map(); cache.set(sites, c); }
+  const hit0 = c.get(raw);
+  if (hit0 !== undefined) return hit0;
+  const r = resolveUncached(raw, sites);
+  c.set(raw, r);
+  return r;
+}
+
+function resolveUncached(raw: string, sites: SiteDef[]): string | null {
   const v = norm(raw);
   if (!v) return null;
   let best: { id: string; len: number } | null = null;

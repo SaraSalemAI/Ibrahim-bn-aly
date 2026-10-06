@@ -68,7 +68,7 @@ function sheet(wb: WB, name: string, header: string[], rows: unknown[][], rtl: b
   return ws;
 }
 
-export async function buildWorkbook(a: Analysis, s: Settings, lang: Lang, log: AuditLogEntry[], actions: ActionItem[], unmask: boolean): Promise<Blob> {
+export async function buildWorkbook(a: Analysis, s: Settings, lang: Lang, log: AuditLogEntry[], actions: ActionItem[], unmask: boolean, plan: Record<string, { planned?: string; auditor?: string; hours?: number; status?: string }> = {}): Promise<Blob> {
   const wb = await newWb();
   const rtl = lang === 'ar';
   const ins = buildInsights(a, s);
@@ -86,7 +86,7 @@ export async function buildWorkbook(a: Analysis, s: Settings, lang: Lang, log: A
     a.risks.map((r) => [r.def.id, r.def.category, tl(r.def.title, lang), tl(r.def.description, lang), tl(r.def.cause, lang), tl(r.def.impact, lang), r.likelihood ?? INS, r.impact ?? INS, r.inherent, r.residual, r.controls.join(', '), r.owner, r.controlOwner, money(r.exposure), tl(r.recommendedAction ?? undefined, lang), r.dueDate, r.status, tl(r.basis, lang)]), rtl);
   sheet(wb, '4 Control Register', ['Control ID', 'Category', 'Process', 'Risk', 'Objective', 'Description', 'Owner', 'Frequency', 'Evidence required', 'Testing procedure', 'Tests', 'Exceptions', 'Score', 'Rating', 'Repeat'],
     a.controls.map((c) => [c.def.id, c.def.category, tl(c.def.process, lang), c.def.riskId, tl(c.def.objective, lang), tl(c.def.description, lang), c.owner, tl(c.def.frequency, lang), tl(c.def.evidence, lang), tl(c.def.procedure, lang), c.tests.join(', '), c.exceptions, c.score ?? 'Not tested', c.rating, c.repeat ? 'Yes' : 'No']), rtl);
-  sheet(wb, '5 Audit Plan', ['Priority', 'Audit area', 'Risk score', 'Rating', 'Findings', 'Data gaps'], a.universe.map((u, i) => [i + 1, tl(u.label, lang), u.score ?? INS, u.rating, u.findings, u.insufficient]), rtl);
+  sheet(wb, '5 Audit Plan', ['Priority', 'Audit area', 'Risk score', 'Rating', 'Planned date', 'Auditor', 'Hours', 'Status', 'Findings', 'Data gaps'], a.universe.map((u, i) => [i + 1, tl(u.label, lang), u.score ?? INS, u.rating, plan[u.area]?.planned ?? '', plan[u.area]?.auditor ?? '', plan[u.area]?.hours ?? '', plan[u.area]?.status ?? '', u.findings, u.insufficient]), rtl);
   testSheet('6 GL Analytics', ['REC-01']);
   testSheet('7 Journal Testing', ['GL-']);
   testSheet('8 AP Testing', ['AP-', 'ST-01']);

@@ -1,3 +1,4 @@
+import '../polyfills';
 // Browser-side file ingestion. Produces immutable SourceFile objects; original bytes are hashed (SHA-256)
 // so every finding can cite the exact file version it came from.
 import Papa from 'papaparse';

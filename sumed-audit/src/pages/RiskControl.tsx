@@ -5,6 +5,7 @@ import { UNIVERSE_FACTORS } from '../engine/defaults';
 import { TEST_BY_ID } from '../engine/tests';
 import type { Severity } from '../engine/types';
 import { Card, DataTable, Empty, Money, Sev, Field, Tag } from '../ui/kit';
+import { statusLabel } from '../i18n/dict';
 
 const cellColor = (score: number): string => (score >= 20 ? 'var(--sev-critical)' : score >= 12 ? 'var(--sev-high)' : score >= 6 ? 'var(--sev-medium)' : 'var(--sev-low)');
 
@@ -41,7 +42,7 @@ export function Heatmap() {
 }
 
 export function Risks() {
-  const { t, tl, analysis, nav, setNav, go, prefs, setRiskMeta } = useApp();
+  const { t, tl, analysis, nav, setNav, go, prefs, setRiskMeta, lang } = useApp();
   const sel = analysis.risks.find((r) => r.def.id === nav.riskId);
   const canEdit = CAN.editParameters(prefs.role) || prefs.role === 'risk';
   return (
@@ -65,7 +66,7 @@ export function Risks() {
               <Field label={tl({ en: 'Risk owner', ar: 'مسؤول المخاطر' })}><input disabled={!canEdit} defaultValue={sel.owner} onBlur={(e) => e.target.value !== sel.owner && setRiskMeta(sel.def.id, { owner: e.target.value })} /></Field>
               <Field label={tl({ en: 'Control owner', ar: 'مسؤول الرقابة' })}><input disabled={!canEdit} defaultValue={sel.controlOwner} onBlur={(e) => e.target.value !== sel.controlOwner && setRiskMeta(sel.def.id, { controlOwner: e.target.value })} /></Field>
               <Field label={t('dueDate')}><input type="date" disabled={!canEdit} defaultValue={sel.dueDate} onBlur={(e) => e.target.value !== sel.dueDate && setRiskMeta(sel.def.id, { dueDate: e.target.value })} /></Field>
-              <Field label={t('status')}><select disabled={!canEdit} value={sel.status} onChange={(e) => setRiskMeta(sel.def.id, { status: e.target.value })}>{['open', 'monitored', 'mitigating', 'accepted', 'closed', 'not-assessed'].map((s) => <option key={s}>{s}</option>)}</select></Field>
+              <Field label={t('status')}><select disabled={!canEdit} value={sel.status} onChange={(e) => setRiskMeta(sel.def.id, { status: e.target.value })}>{['open', 'monitored', 'mitigating', 'accepted', 'closed', 'not-assessed'].map((s) => <option key={s} value={s}>{statusLabel(s, lang)}</option>)}</select></Field>
             </div>
             <div className="btn-row" style={{ marginTop: 10 }}>
               <button className="btn" onClick={() => { setNav({ controlId: sel.controls[0] ?? null }); go('controls'); }}>{t('viewControls')} ({sel.controls.length})</button>
@@ -90,7 +91,7 @@ export function Risks() {
           { key: 'f', label: t('findings'), value: (r) => r.findings.length, num: true },
           { key: 'owner', label: t('owner'), value: (r) => r.owner },
           { key: 'due', label: t('dueDate'), value: (r) => r.dueDate },
-          { key: 'status', label: t('status'), value: (r) => r.status },
+          { key: 'status', label: t('status'), value: (r) => r.status, render: (r) => statusLabel(r.status, lang) },
         ]} />
       </Card>
     </>
@@ -191,21 +192,28 @@ export function Universe() {
 }
 
 function AuditPlan() {
-  const { t, tl, analysis } = useApp();
+  const { t, tl, analysis, planMeta, setPlanMeta, prefs, lang } = useApp();
+  const can = CAN.editParameters(prefs.role);
   const rows = analysis.universe.filter((u) => u.rows > 0 || u.insufficient > 0).map((u, i) => {
     const tests = Object.values(TEST_BY_ID).filter((x) => x.area === u.area);
     const perf = tests.filter((x) => analysis.resultById[x.id].status === 'performed');
-    return { u, priority: i + 1, tests, perf };
+    return { u, priority: i + 1, tests, perf, m: planMeta[u.area] ?? {} };
   });
+  const auto = (r: typeof rows[number]) => (r.perf.length === r.tests.length ? 'Tested' : r.perf.length ? 'Partially tested' : 'Awaiting data');
+  const hours = rows.reduce((s, r) => s + (r.m.hours ?? 0), 0);
   return (
-    <Card title={tl({ en: 'Risk-based Internal Audit Plan', ar: 'خطة المراجعة الداخلية على أساس المخاطر' })} hint={tl({ en: 'Prioritized by audit-universe score. Planned dates, auditors and hours are assigned by the CAE (not generated).', ar: 'مرتبة حسب درجة المخاطر. التواريخ والمراجعون والساعات يحددها رئيس المراجعة (لا تُولد آليًا).' })}>
+    <Card title={tl({ en: 'Risk-based Internal Audit Plan', ar: 'خطة المراجعة الداخلية على أساس المخاطر' })} hint={tl({ en: 'Prioritized automatically by audit-universe score. Planned date, auditor, hours and status are entered by the CAE / Senior Auditor (never generated).', ar: 'مرتبة آليًا حسب درجة المخاطر. التاريخ المخطط والمراجع والساعات والحالة يدخلها رئيس المراجعة / المراجع الأول (لا تُولد آليًا).' })}>
+      <p className="small muted">{tl({ en: 'Planned hours', ar: 'الساعات المخططة' })}: <b>{hours}</b></p>
       <DataTable rows={rows} csvName="audit-plan" cols={[
         { key: 'p', label: '#', value: (r) => r.priority, num: true },
         { key: 'a', label: t('area'), value: (r) => tl(r.u.label) },
         { key: 's', label: tl({ en: 'Risk score', ar: 'درجة المخاطر' }), value: (r) => r.u.score, num: true },
-        { key: 'scope', label: tl({ en: 'Scope / procedures', ar: 'النطاق / الإجراءات' }), value: (r) => r.tests.map((x) => x.id).join(', ') },
+        { key: 'pd', label: tl({ en: 'Planned date', ar: 'التاريخ المخطط' }), value: (r) => r.m.planned ?? '', render: (r) => <input type="date" className="inp" disabled={!can} defaultValue={r.m.planned ?? ''} onBlur={(e) => e.target.value !== (r.m.planned ?? '') && setPlanMeta(r.u.area, { planned: e.target.value })} /> },
+        { key: 'au', label: tl({ en: 'Auditor', ar: 'المراجع' }), value: (r) => r.m.auditor ?? '', render: (r) => <input className="inp" style={{ width: 130 }} disabled={!can} defaultValue={r.m.auditor ?? ''} onBlur={(e) => e.target.value !== (r.m.auditor ?? '') && setPlanMeta(r.u.area, { auditor: e.target.value })} /> },
+        { key: 'h', label: tl({ en: 'Hours', ar: 'الساعات' }), value: (r) => r.m.hours ?? null, num: true, render: (r) => <input type="number" min={0} className="inp" style={{ width: 70 }} disabled={!can} defaultValue={r.m.hours ?? ''} onBlur={(e) => +e.target.value !== (r.m.hours ?? 0) && setPlanMeta(r.u.area, { hours: +e.target.value || 0 })} /> },
+        { key: 'scope', label: tl({ en: 'Scope / procedures', ar: 'النطاق / الإجراءات' }), value: (r) => r.tests.map((x) => x.id).join(', '), render: (r) => <span className="small mono">{r.tests.map((x) => x.id).join(', ')}</span> },
         { key: 'obj', label: tl({ en: 'Objectives', ar: 'الأهداف' }), value: (r) => [...new Set(r.tests.map((x) => x.controlId))].map((c) => tl(CONTROL_BY_ID[c]?.objective)).slice(0, 2).join('; ') },
-        { key: 'st', label: t('status'), value: (r) => (r.perf.length === r.tests.length ? 'Tested' : r.perf.length ? 'Partially tested' : 'Awaiting data') },
+        { key: 'st', label: t('status'), value: (r) => r.m.status || auto(r), render: (r) => <select className="inp" disabled={!can} value={r.m.status ?? ''} onChange={(e) => setPlanMeta(r.u.area, { status: e.target.value })}><option value="">{statusLabel(auto(r), lang)} (auto)</option>{['Planned', 'Fieldwork', 'Reporting', 'Completed', 'Deferred'].map((x) => <option key={x} value={x}>{statusLabel(x, lang)}</option>)}</select> },
         { key: 'f', label: t('findings'), value: (r) => r.u.findings, num: true },
         { key: 'fu', label: tl({ en: 'Follow-up', ar: 'المتابعة' }), value: (r) => (r.u.findings ? 'Management actions' : '—') },
       ]} />

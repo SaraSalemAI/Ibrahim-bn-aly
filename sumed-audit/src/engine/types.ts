@@ -180,6 +180,8 @@ export interface Filters {
   department: string;
   costCenter: string;
   site: string;
+  bank: string;
+  owner: string;
   currency: string;
   vendor: string;
   account: string;

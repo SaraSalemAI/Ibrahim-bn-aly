@@ -4,7 +4,11 @@ Evidence-driven Internal Audit platform for **Arab Petroleum Pipelines Company (
 
 It is not pre-loaded with any figures. **Uploaded data is the only source of truth.** With no data, the app shows *UPLOAD YOUR DATA TO START THE AUDIT* and the list of required datasets.
 
-## Run
+## Open it (no installation)
+
+Download **`release/SUMED-Audit-Platform.html`** and double-click it. It is a single offline file (Chrome or Edge recommended). Data stays in that browser on that computer.
+
+## Run from source
 
 ```bash
 cd sumed-audit
@@ -12,6 +16,7 @@ npm install
 npm run dev        # http://localhost:5173
 npm test           # engine unit tests (vitest)
 npm run build      # static build in dist/ (can be hosted on any static web server)
+npm run build:single  # regenerate release/SUMED-Audit-Platform.html
 ```
 
 ## What it does
@@ -20,16 +25,20 @@ npm run build      # static build in dist/ (can be hosted on any static web serv
 |---|---|
 | Upload | Drag & drop of multiple files, sheets and periods: `.xlsx`, `.csv/.tsv`, text-based `.pdf` (table extraction), `.docx`/`.txt` (stored as policy evidence). History is kept. |
 | Ingestion & data quality | Header detection, dataset classification (17 types), EN/AR field mapping (editable), duplicates, blanks, invalid types, date anomalies, currency issues, unbalanced journals, unmapped accounts, totals checks, outliers, and a Data Quality Score. |
-| Audit tests | 117 deterministic tests: GL/journals, AP, AR, bank/treasury, fixed assets, inventory, procurement, payroll, CAPEX/OPEX/budget, tax, loans, contracts, related parties, **site payments & contracts**, and 11 reconciliations (GL↔TB, AP/AR/FA/inventory/loans/bank↔GL, bank↔GL transaction matching with ageing, tax, payroll, intercompany). |
+| Audit tests | 126 deterministic tests: GL/journals, AP, AR, bank/treasury, fixed assets, inventory, procurement, payroll, CAPEX/OPEX/budget, tax, loans, contracts, related parties, **site payments & contracts**, month-end journals, unmoved and abnormal-side TB balances, duplicate vendors, POs without invoice, post-period reversals, cash concentration, FX rate anomalies, CWIP ageing, and 11 reconciliations (GL↔TB, AP/AR/FA/inventory/loans/bank↔GL, bank↔GL transaction matching with ageing, tax, payroll, intercompany). |
 | Site review | Payments and contracts by **Head Office (المركز الرئيسي), Ain Sokhna (السخنة), Sidi Kerir (كرير), Dahshour (دهشور)**. Sites are configurable and matched by EN/AR keywords. Tests: unallocated payments, payments after contract expiry, cross-site contract use, significant spend without a contract, contracts without a site. A site filter applies across the whole platform. |
 | Findings | Condition / Criteria / Cause / Effect, a rating based on materiality, exposure by currency, 9-point evidence validation, AI confidence, and a status workflow (draft → review → validated → official; making a finding official requires a Senior Auditor/CAE and QC ≠ FAIL). |
 | SHOW EVIDENCE | Finding → Risk → Control → Audit test → Calculation (formula + actual inputs) → Transaction → Source record → File (SHA-256) → Sheet → Row, with highlighted source fields and original/translated values. |
-| Risk & control | Risk register (22 risks), Impact × Likelihood heatmap with drill-down, control library (37 controls) with an effectiveness score, audit universe with CAE-editable weights, risk-based audit plan. |
+| Risk & control | Risk register (22 risks), Impact × Likelihood heatmap with drill-down, control library (37 controls) with an effectiveness score, audit universe with CAE-editable weights, and a risk-based audit plan (auto-prioritized; planned date, auditor, hours and status editable). |
 | Follow-up | Recommendations (Top 10, Immediate / Short / Medium / Long), management action tracker with automatic overdue flags and IA validation before closure, change monitor (new / repeat / resolved exceptions, new entities) against saved cycle snapshots. |
 | Dashboards | Executive overview, CFO, Audit Committee, Platform Quality Check (PASS / WARNING / FAIL gate) and the Executive Insight Engine (Top-10 lists). |
 | Copilot | Deterministic and evidence-grounded. It answers from computed results only and cites findings/risks/controls/tests. |
 | Reports & exports | 24 reports (on screen, PDF via the print engine, CSV), a 26-sheet Excel workbook, and evidence packages (Excel/CSV/PDF). All in EN or AR. |
 | Audit trail | Append-only, SHA-256 hash-chained log (uploads, mapping changes, evidence views, status changes, exports, settings), with an integrity check. |
+
+## Performance
+
+About 2 s to analyse 50,000 rows. Edits to status, owner or actions take ~70 ms because test results are cached until the data, settings or filters change.
 
 ## No-hallucination design
 
