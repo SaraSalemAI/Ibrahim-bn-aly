@@ -139,3 +139,24 @@ describe('filters and materiality', () => {
     expect(a.findingById['F-AP-01'].rating).toBe('critical');
   });
 });
+
+describe('financial statement classification', () => {
+  it('classifies bank loans as borrowings, not cash', async () => {
+    const { classifyAccount } = await import('../src/engine/fsa');
+    expect(classifyAccount('Borrowings Bank loans')).toBe('debt');
+    expect(classifyAccount('Current assets - cash Bank - CIB current')).toBe('cash');
+    expect(classifyAccount('Non-current assets Accumulated depreciation')).toBe('nonCurrentAssets');
+    expect(classifyAccount('Depreciation Depreciation expense')).toBe('depreciation');
+  });
+});
+
+describe('audit trail', () => {
+  it('hash chain detects tampering', async () => {
+    const { appendLog, verifyLog } = await import('../src/store/db');
+    let log = await appendLog([], { user: 'u', role: 'cae', action: 'A', target: 't', detail: 'd' });
+    log = await appendLog(log, { user: 'u', role: 'cae', action: 'B', target: 't', detail: 'd' });
+    expect(await verifyLog(log)).toBeNull();
+    const tampered = [log[0], { ...log[1], detail: 'changed' }];
+    expect(await verifyLog(tampered)).toBe(2);
+  });
+});

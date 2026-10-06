@@ -154,3 +154,8 @@ export async function sha256(buf: ArrayBuffer): Promise<string> {
 export async function sha256Text(s: string): Promise<string> {
   return sha256(new TextEncoder().encode(s).buffer as ArrayBuffer);
 }
+
+/** Lowercase, strip Arabic diacritics and normalize alef/ya/ta-marbuta variants for search matching. */
+export function normalizeForSearch(s: string): string {
+  return s.toLowerCase().replace(/[ً-ٰٟ]/g, '').replace(/[إأآا]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/\s+/g, ' ').trim();
+}

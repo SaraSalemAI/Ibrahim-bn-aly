@@ -5,12 +5,13 @@ import { accessor, dayDiff } from './values';
 export type FsCat = 'cash' | 'receivables' | 'inventory' | 'otherCurrentAssets' | 'nonCurrentAssets' | 'currentLiabilities' | 'debt' | 'otherLiabilities' | 'equity' | 'revenue' | 'cogs' | 'opex' | 'depreciation' | 'interest' | 'taxExpense' | 'otherIncome' | 'unclassified';
 
 const RULES: [FsCat, RegExp][] = [
-  ['depreciation', /depreciation expense|amortization expense|مصروف (ال)?[إا]هلاك|(^| )depreciation( |$)(?!.*accum)/i],
+  ['nonCurrentAssets', /accumulated (depreciation|amortization)|مجمع (ال)?[إا]هلاك/i],
+  ['depreciation', /depreciation expense|amortization expense|مصروف (ال)?[إا]هلاك|(^| )depreciation( |$)/i],
   ['nonCurrentAssets', /accumulated depreciation|مجمع (ال)?[إا]هلاك|fixed asset|property|plant|equipment|intangible|non.?current asset|long.?term investment|projects under|cwip|اصول ثابتة|أصول ثابتة|اصول غير متداولة|أصول غير متداولة|مشروعات تحت التنفيذ/i],
+  ['debt', /loan|borrowing|overdraft|facility|قرض|قروض|سحب على المكشوف|تسهيلات/i],
   ['cash', /cash|bank|treasury bill|نقدية|بنوك|بنك|الصندوق/i],
   ['receivables', /receivable|debtor|customers|مدينون|عملاء|اوراق قبض|أوراق قبض/i],
   ['inventory', /inventory|stock|stores|spare parts|مخزون|المخازن|قطع غيار/i],
-  ['debt', /loan|borrowing|overdraft|facility|قرض|قروض|سحب على المكشوف|تسهيلات/i],
   ['currentLiabilities', /payable|creditor|accrued|accrual|current liabilit|provision|tax payable|دائنون|موردين|مستحق|مخصص|التزامات متداولة|خصوم متداولة/i],
   ['otherLiabilities', /liabilit|deferred|التزامات|خصوم/i],
   ['equity', /equity|share capital|capital|reserve|retained|حقوق الملكية|راس المال|رأس المال|احتياطي|أرباح مرحلة|ارباح مرحلة/i],
