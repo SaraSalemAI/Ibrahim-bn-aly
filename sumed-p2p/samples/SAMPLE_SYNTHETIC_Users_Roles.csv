@@ -1,0 +1,18 @@
+﻿user id,name,role,department,email,phone,active,Data Note
+u.cfo,Demo User — CFO,CFO,Finance,u.cfo@demo.invalid,+00-DEMO-1000,Y,SYNTHETIC SAMPLE — NOT SUMED DATA
+u.fd,Demo User — Finance Director,Finance Director,Finance,u.fd@demo.invalid,+00-DEMO-1001,Y,SYNTHETIC SAMPLE — NOT SUMED DATA
+u.tm,Demo User — Treasury Manager,Treasury Manager,Finance,u.tm@demo.invalid,+00-DEMO-1002,Y,SYNTHETIC SAMPLE — NOT SUMED DATA
+u.to,Demo User — Treasury Officer,Treasury Officer,Finance,u.to@demo.invalid,+00-DEMO-1003,Y,SYNTHETIC SAMPLE — NOT SUMED DATA
+u.apm,Demo User — AP Manager,AP Manager,Finance,u.apm@demo.invalid,+00-DEMO-1004,Y,SYNTHETIC SAMPLE — NOT SUMED DATA
+u.acc1,Demo User — Accountant 1,Accountant,Finance,u.acc1@demo.invalid,+00-DEMO-1005,Y,SYNTHETIC SAMPLE — NOT SUMED DATA
+u.acc2,Demo User — Accountant 2,Accountant,Finance,u.acc2@demo.invalid,+00-DEMO-1006,Y,SYNTHETIC SAMPLE — NOT SUMED DATA
+u.pm,Demo User — Procurement Manager,Procurement Manager,Procurement,u.pm@demo.invalid,+00-DEMO-1007,Y,SYNTHETIC SAMPLE — NOT SUMED DATA
+u.po1,Demo User — Procurement Officer,Procurement Officer,Procurement,u.po1@demo.invalid,+00-DEMO-7777,Y,SYNTHETIC SAMPLE — NOT SUMED DATA
+u.ia,Demo User — Internal Auditor,Internal Auditor,Internal Audit,u.ia@demo.invalid,+00-DEMO-1009,Y,SYNTHETIC SAMPLE — NOT SUMED DATA
+u.co,Demo User — Compliance Officer,Compliance Officer,Compliance,u.co@demo.invalid,+00-DEMO-1010,Y,SYNTHETIC SAMPLE — NOT SUMED DATA
+u.dm.ops,Demo User — Ops Manager,Department Manager,Operations,u.dm.ops@demo.invalid,+00-DEMO-1011,Y,SYNTHETIC SAMPLE — NOT SUMED DATA
+u.dm.mar,Demo User — Marine Manager,Department Manager,Marine Terminal,u.dm.mar@demo.invalid,+00-DEMO-1012,Y,SYNTHETIC SAMPLE — NOT SUMED DATA
+u.dm.mnt,Demo User — Maintenance Manager,Department Manager,Maintenance,u.dm.mnt@demo.invalid,+00-DEMO-1013,Y,SYNTHETIC SAMPLE — NOT SUMED DATA
+u.exec,Demo User — Authorized Executive,Authorized Executive,Executive,u.exec@demo.invalid,+00-DEMO-1014,Y,SYNTHETIC SAMPLE — NOT SUMED DATA
+u.view,Demo User — Viewer,Viewer,Finance,u.view@demo.invalid,+00-DEMO-1015,Y,SYNTHETIC SAMPLE — NOT SUMED DATA
+u.admin,Demo User — System Admin,System Administrator,IT,u.admin@demo.invalid,+00-DEMO-1016,Y,SYNTHETIC SAMPLE — NOT SUMED DATA

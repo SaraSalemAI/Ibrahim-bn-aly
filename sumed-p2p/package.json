@@ -1,0 +1,14 @@
+{
+  "name": "sumed-p2p",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SUMED Supplier & Payments Management System — evidence-first Procure-to-Pay, AP, treasury, risk, fraud and internal-control platform (static web app, no build step).",
+  "scripts": {
+    "start": "node tools/serve.js 8080",
+    "test": "node tests/run-tests.js",
+    "samples": "node tools/make-samples.js",
+    "docs": "node tools/gen-docs.js",
+    "i18n:check": "node tools/extract-i18n.js --missing"
+  },
+  "license": "UNLICENSED"
+}

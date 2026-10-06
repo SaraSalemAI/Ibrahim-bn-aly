@@ -1,0 +1,7 @@
+﻿dispute id,dispute type,supplier id,invoice no,amount,currency,issue,owner,date raised,resolution target,status,root cause,resolution,Data Note
+DSP-DEMO-01,Price dispute,S011,011-INV-00008,53579.7,USD,Unit price above PO,u.apm,22/09/2026,13/10/2026,Open,Supplier applied new tariff without PO amendment,,SYNTHETIC SAMPLE — NOT SUMED DATA
+DSP-DEMO-02,Quantity dispute,S003,003-INV-00022,1468944.44,EGP,Invoiced qty exceeds GRN,u.apm,27/09/2026,11/10/2026,Open,,,SYNTHETIC SAMPLE — NOT SUMED DATA
+DSP-DEMO-03,Quality dispute,S010,,,,Rejected bearing sets,u.pm,27/08/2026,26/09/2026,Overdue,Supplier QA failure,,SYNTHETIC SAMPLE — NOT SUMED DATA
+DSP-DEMO-04,Contract dispute,S013,13-INV-OFFC,1425000,EGP,Work billed after contract expiry,u.pm,30/09/2026,26/10/2026,Open,,,SYNTHETIC SAMPLE — NOT SUMED DATA
+DSP-DEMO-05,Payment dispute,S001,,,,Supplier claims late payment penalty,u.tm,07/08/2026,06/09/2026,Resolved,Payment delayed by approval bottleneck,Penalty waived after negotiation,SYNTHETIC SAMPLE — NOT SUMED DATA
+DSP-DEMO-06,Tax dispute,S017,17-INV-TAX10,704000,EGP,VAT rate on invoice differs from configured rate,u.acc1,03/10/2026,18/10/2026,Open,,,SYNTHETIC SAMPLE — NOT SUMED DATA

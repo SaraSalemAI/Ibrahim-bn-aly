@@ -1,0 +1,4 @@
+﻿tax code,tax name,tax type,rate,source,Data Note
+VAT-STD,VAT standard (DEMO config),VAT,14,DEMO / SYNTHETIC — replace with authoritative configuration,SYNTHETIC SAMPLE — NOT SUMED DATA
+WHT-SVC,Withholding — services (DEMO config),WHT,3,DEMO / SYNTHETIC,SYNTHETIC SAMPLE — NOT SUMED DATA
+WHT-GDS,Withholding — goods (DEMO config),WHT,1,DEMO / SYNTHETIC,SYNTHETIC SAMPLE — NOT SUMED DATA
