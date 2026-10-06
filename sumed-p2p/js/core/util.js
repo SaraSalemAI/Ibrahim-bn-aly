@@ -233,6 +233,15 @@
   U.download = (name, content, mime = 'text/plain;charset=utf-8') => {
     if (typeof document === 'undefined') return;
     const blob = content instanceof Blob ? content : new Blob([content], { type: mime });
+    // Shared web view (claude.ai artifact): saves go through the viewer's confirmation prompt.
+    if (root.SUMED_ARTIFACT && root.claude && root.claude.use) {
+      const toast = (m, k) => root.SUMED.ui && root.SUMED.ui.toast(m, k);
+      root.claude.use('downloads').then((dl) => {
+        if (!dl) return toast(root.SUMED.t('dl.unavailable', 'File saving is not available in this view.'), 'error');
+        return dl.save({ filename: name, data: blob }).catch((e) => { if (e && e.code !== 'declined') toast(root.SUMED.t('dl.failed', 'The file could not be saved ({c}).', { c: e.code || 'error' }), 'error'); });
+      });
+      return;
+    }
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = name;

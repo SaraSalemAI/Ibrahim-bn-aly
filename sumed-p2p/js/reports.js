@@ -162,6 +162,7 @@
       <section class="pg"><h2>${esc(t('rep.recs', 'Recommendations'))}</h2><ul>${S.R.insights.slice(0, 8).map((i) => `<li><b>${esc(S.insightText(i, 'o'))}</b> — ${esc(S.insightText(i, 'a'))}</li>`).join('')}</ul></section>
       <section class="pg"><h2>${esc(t('rep.evidence', 'Evidence references'))}</h2><ul>${S.engine.sourceSummary(b.findings.flatMap((f) => f.rows || []).concat(b.kpis.flatMap((k) => (k.rows || []).map((x) => S.R.index.get(x.key)).filter(Boolean)))).map((s) => `<li>${esc(s.file)}${s.sheet ? ' · ' + esc(s.sheet) : ''}${s.rows ? ' · rows ' + esc(s.rows) : ''} (${s.count})</li>`).join('')}</ul></section>
       <script>setTimeout(function(){window.print()},400)<\/script></body></html>`;
+    if (root.SUMED_ARTIFACT) { U.download(fileBase(id) + '.html', html, 'text/html;charset=utf-8'); S.audit('report.export', 'report', id, { newValue: 'html (print to PDF)' }); return; }
     const w = window.open('', '_blank');
     if (!w) { S.ui.toast(t('rep.popup', 'Allow pop-ups to generate the PDF.'), 'error'); return; }
     w.document.write(html); w.document.close();

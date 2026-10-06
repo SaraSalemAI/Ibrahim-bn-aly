@@ -62,8 +62,9 @@
     const html = document.documentElement;
     html.lang = S.lang();
     html.dir = S.isAr() ? 'rtl' : 'ltr';
+    // Theme: only touch data-theme when the user chose one in the app (a host page may set its own).
     const th = S.state.prefs.theme;
-    if (th === 'auto') html.removeAttribute('data-theme'); else html.setAttribute('data-theme', th);
+    if (th !== 'auto') { html.setAttribute('data-theme', th); A._themeSet = true; } else if (A._themeSet) { html.removeAttribute('data-theme'); A._themeSet = false; }
     const r = A.route();
     const view = V[r.name] || V.dashboard;
     document.getElementById('top').innerHTML = A.header();
@@ -71,7 +72,7 @@
     const main = document.getElementById('main');
     let out;
     try { out = view.render(r.param); } catch (e) { console.error(e); out = `<div class="warnbar crit">⚠ ${esc(t('err.render', 'This view could not be rendered from the current data.'))}<pre class="small">${esc(e.stack || e)}</pre></div>`; }
-    main.innerHTML = (S.state.mode === 'demo' ? `<div class="demo-banner" role="note">${esc(t('demo.banner', 'DEMO MODE — all figures are synthetic sample data generated for demonstration. They are not SUMED data. Upload source files to analyse real data.'))}</div>` : '') + out;
+    main.innerHTML = `<div class="proto-note" role="note">${esc(t('app.disclaimer', 'Independent prototype built for SUMED — not an official SUMED system.'))}${root.SUMED_ARTIFACT ? ' ' + esc(t('app.webNote', 'Shared web view: exports ask before saving; PDF reports save as a print-ready HTML file; OCR of scanned images needs the local app.')) : ''}</div>` + (S.state.mode === 'demo' ? `<div class="demo-banner" role="note">${esc(t('demo.banner', 'DEMO MODE — all figures are synthetic sample data generated for demonstration. They are not SUMED data. Upload source files to analyse real data.'))}</div>` : '') + out;
     document.title = `${view.title ? view.title() : ''} · ${t('app.short', 'SUMED P2P')}`;
     if (view.after) view.after(main);
   };
@@ -525,6 +526,7 @@
     E.run();
     A.bind();
     if (!restored && S.state.audit.length === 0) S.audit('session.start', 'session', S.state.session.userId);
+    if (!restored && root.SUMED_AUTODEMO && S.state.mode === 'empty') S.loadDemo();
     A.render();
   };
   if (typeof document !== 'undefined') {
