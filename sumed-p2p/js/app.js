@@ -527,6 +527,7 @@
     A.bind();
     if (!restored && S.state.audit.length === 0) S.audit('session.start', 'session', S.state.session.userId);
     if (!restored && root.SUMED_AUTODEMO && S.state.mode === 'empty') S.loadDemo();
+    if (root.SUMED_NO_DEMO && S.state.mode === 'demo') { S.resetData('empty'); S.clearWorkspace(); E.run(); } // upload-only build: drop any earlier demo workspace
     A.render();
   };
   if (typeof document !== 'undefined') {

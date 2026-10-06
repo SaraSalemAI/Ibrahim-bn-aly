@@ -287,7 +287,7 @@ q { font-style: italic; color: var(--ink-3); }
 
 </style>
 <div id="app"><noscript>This application requires JavaScript.</noscript></div>
-<script>window.SUMED_AUTODEMO = true; window.SUMED_ARTIFACT = true;</script>
+<script>window.SUMED_NO_DEMO = true; window.SUMED_ARTIFACT = true;</script>
 <script>
 /* js/core/util.js */
 /* SUMED P2P — core utilities (no dependencies). Classic script: attaches to window.SUMED */
@@ -1646,6 +1646,7 @@ q { font-style: italic; color: var(--ink-3); }
   Object.assign(S.i18n.ar, {
     /* ---------- App shell ---------- */
     'app.disclaimer': 'نموذج أولي مستقل مُعد لسوميد — ليس نظاماً رسمياً لسوميد.', 'app.webNote': 'عرض ويب مشترك: تطلب عمليات التصدير التأكيد قبل الحفظ؛ تُحفظ تقارير PDF كملف HTML جاهز للطباعة؛ التعرف الضوئي على الصور الممسوحة يتطلب التطبيق المحلي.', 'dl.unavailable': 'حفظ الملفات غير متاح في هذا العرض.', 'dl.failed': 'تعذّر حفظ الملف ({c}).',
+    'common.noDataUp': 'لم يتم تحميل أي بيانات بعد. قم برفع ملفات المصدر للبدء.',
     'app.name': 'سوميد — منظومة الموردين والمدفوعات', 'app.org': 'الشركة العربية لأنابيب البترول · الإسكندرية', 'app.short': 'سوميد P2P',
     'hdr.asOf': 'في تاريخ', 'hdr.session': 'المستخدم / الدور الحالي (صلاحيات حسب الدور)', 'hdr.theme': 'الوضع الفاتح / الداكن',
     'search.label': 'البحث الشامل', 'search.none': 'لا توجد نتائج', 'search.ph': 'ابحث عن مورد، فاتورة، أمر شراء، عقد، دفعة، مرجع بنكي، مستخدم، مشروع… ( / )',
@@ -4955,7 +4956,7 @@ q { font-style: italic; color: var(--ink-3); }
   /* ---------------- Misc ---------------- */
   UI.section = (title, body, opts = {}) => `<section class="card ${opts.cls || ''}">${title ? `<header class="card-h"><h3>${esc(title)}</h3>${opts.right || ''}</header>` : ''}<div class="card-b">${body}</div></section>`;
   UI.tabs = (id, tabs, active) => `<nav class="tabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${k === active}" class="${k === active ? 'on' : ''}" data-tab="${esc(id)}:${esc(k)}">${esc(l)}</button>`).join('')}</nav>`;
-  UI.empty = (msg) => `<div class="empty-state"><p>${esc(msg || t('common.noData', 'No data loaded. Upload source files or start Demo Mode.'))}</p><div class="btn-row"><button class="btn primary" data-nav="upload">⤒ ${esc(t('nav.upload', 'Upload & Validate'))}</button><button class="btn" data-act="demo">${esc(t('demo.start', 'Start Demo Mode'))}</button></div></div>`;
+  UI.empty = (msg) => `<div class="empty-state"><p>${esc(msg || t(root.SUMED_NO_DEMO ? 'common.noDataUp' : 'common.noData', root.SUMED_NO_DEMO ? 'No data loaded yet. Upload your source files to begin.' : 'No data loaded. Upload source files or start Demo Mode.'))}</p><div class="btn-row"><button class="btn primary" data-nav="upload">⤒ ${esc(t('nav.upload', 'Upload & Validate'))}</button>${root.SUMED_NO_DEMO ? '' : `<button class="btn" data-act="demo">${esc(t('demo.start', 'Start Demo Mode'))}</button>`}</div></div>`;
   UI.supName = (sid) => { const s = S.R && S.R.P.sup.get(sid); return s ? (S.isAr() ? s.nameAr || s.name : s.name) : sid ? sid + ' (' + t('common.notInMaster', 'not in master') + ')' : null; };
   UI.supLink = (sid) => { const s = S.R && S.R.P.sup.get(sid); return s ? `<a data-drill="${esc(s._key)}">${esc(UI.supName(sid))}</a>` : UI.v(UI.supName(sid)); };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -5369,7 +5370,7 @@ q { font-style: italic; color: var(--ink-3); }
         </div>`).join('');
       const loaded = S.state.sources;
       return `<div class="page-h"><div><h1>${esc(t('nav.upload', 'Upload & Validate'))}</h1><p class="muted">${esc(t('up.sub', 'Upload-first: every dashboard is built only from files you load here. Nothing is invented.'))}</p></div>
-        <div class="btn-row"><button class="btn" data-act="templates">⤓ ${esc(t('up.templates', 'CSV templates'))}</button><button class="btn" data-act="demo">${esc(t('demo.start', 'Start Demo Mode'))}</button></div></div>
+        <div class="btn-row"><button class="btn" data-act="templates">⤓ ${esc(t('up.templates', 'CSV templates'))}</button>${root.SUMED_NO_DEMO ? '' : `<button class="btn" data-act="demo">${esc(t('demo.start', 'Start Demo Mode'))}</button>`}</div></div>
         ${V.stepper(step)}
         <label class="drop ${busy ? 'busy' : ''}" id="dropzone">
           <input type="file" id="fileInput" multiple accept=".xlsx,.xls,.xlsm,.csv,.txt,.tsv,.json,.pdf,.png,.jpg,.jpeg,.tif,.tiff,.webp,.bmp,.docx,.zip" hidden>
@@ -7327,6 +7328,7 @@ SUMED.api.exportWorkspace() // JSON for archiving / Power BI</pre>
     A.bind();
     if (!restored && S.state.audit.length === 0) S.audit('session.start', 'session', S.state.session.userId);
     if (!restored && root.SUMED_AUTODEMO && S.state.mode === 'empty') S.loadDemo();
+    if (root.SUMED_NO_DEMO && S.state.mode === 'demo') { S.resetData('empty'); S.clearWorkspace(); E.run(); } // upload-only build: drop any earlier demo workspace
     A.render();
   };
   if (typeof document !== 'undefined') {

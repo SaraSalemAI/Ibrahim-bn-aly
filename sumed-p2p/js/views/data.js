@@ -37,7 +37,7 @@
         </div>`).join('');
       const loaded = S.state.sources;
       return `<div class="page-h"><div><h1>${esc(t('nav.upload', 'Upload & Validate'))}</h1><p class="muted">${esc(t('up.sub', 'Upload-first: every dashboard is built only from files you load here. Nothing is invented.'))}</p></div>
-        <div class="btn-row"><button class="btn" data-act="templates">⤓ ${esc(t('up.templates', 'CSV templates'))}</button><button class="btn" data-act="demo">${esc(t('demo.start', 'Start Demo Mode'))}</button></div></div>
+        <div class="btn-row"><button class="btn" data-act="templates">⤓ ${esc(t('up.templates', 'CSV templates'))}</button>${root.SUMED_NO_DEMO ? '' : `<button class="btn" data-act="demo">${esc(t('demo.start', 'Start Demo Mode'))}</button>`}</div></div>
         ${V.stepper(step)}
         <label class="drop ${busy ? 'busy' : ''}" id="dropzone">
           <input type="file" id="fileInput" multiple accept=".xlsx,.xls,.xlsm,.csv,.txt,.tsv,.json,.pdf,.png,.jpg,.jpeg,.tif,.tiff,.webp,.bmp,.docx,.zip" hidden>

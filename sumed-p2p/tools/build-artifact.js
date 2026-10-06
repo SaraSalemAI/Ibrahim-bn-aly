@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /* Builds dist/sumed-artifact.html: one page with inlined CSS and app scripts (vendor parsers stay as separate files).
- * The page auto-starts Demo Mode and marks itself as a shared web view. Usage: node tools/build-artifact.js */
+ * The page opens on Upload & Validate (no demo mode) and marks itself as a shared web view. Usage: node tools/build-artifact.js */
 'use strict';
 const fs = require('fs'), path = require('path');
 const root = path.join(__dirname, '..');
@@ -16,7 +16,7 @@ const out = `<title>SUMED Supplier Payments</title>
 ${css}
 </style>
 <div id="app"><noscript>This application requires JavaScript.</noscript></div>
-<script>window.SUMED_AUTODEMO = true; window.SUMED_ARTIFACT = true;</script>
+<script>window.SUMED_NO_DEMO = true; window.SUMED_ARTIFACT = true;</script>
 <script>
 ${js}
 </script>
