@@ -48,7 +48,7 @@
 /* s8 grids */
 .cur h2{top:96px;font-size:66px}
 .cur .grid{top:250px}
-#s8b .grid{grid-template-columns:repeat(3,520px)}
+#s8b .grid{grid-template-columns:repeat(4,400px)}
 .mod{height:270px;transition:none}
 .mod.on{border-color:var(--gold);box-shadow:0 0 50px rgba(226,184,74,.35),0 20px 60px rgba(0,0,0,.35)}
 /* s10 */
@@ -270,6 +270,7 @@ body{direction:ltr}
     <div class="card mod L" data-in="3" data-a="card"><div class="num goldtxt">12</div><div class="t">Presentations &amp; Executive Reports</div><div class="d">Reports that help management decide</div></div>
     <div class="card mod L" data-in="4" data-a="card"><div class="num goldtxt">13</div><div class="t">Excel + AI</div><div class="d">Analysis, modeling, reporting &amp; automation</div></div>
     <div class="card mod L" data-in="5" data-a="card"><div class="num goldtxt">14</div><div class="t">Risk Management &amp; Cost Reduction</div><div class="d">Cost-cutting recommendations + build an AI agent</div></div>
+    <div class="card mod L" data-in="6" data-a="card" style="border-color:var(--gold)"><div class="num goldtxt">15</div><div class="t">Claude Skills &amp; Agents</div><div class="d">Create your own skills &amp; build AI agents in Claude</div></div>
   </div>
 </section>
 
@@ -477,7 +478,7 @@ const _seek=t=>{const s=Math.floor(t);if(s!==lastS){lastS=s;tcEl.textContent=Str
   tl.set(o,{n:0,onComplete:render},s.start);})();
 // s8i chart + counter
 (()=>{const s=sc('s8i');tl.fromTo('#s8i .chart div',{scaleY:0},{scaleY:1,duration:.7,stagger:.12,ease:'back.out(1.4)',immediateRender:false},s.lines[0].start+.8);
-  const o={v:0},m=document.getElementById('modn');tl.fromTo(o,{v:0},{v:14,duration:1.6,ease:'power2.out',onUpdate:()=>m.textContent=Math.round(o.v),immediateRender:false},s.lines[1].start+2);})();
+  const o={v:0},m=document.getElementById('modn');tl.fromTo(o,{v:0},{v:15,duration:1.6,ease:'power2.out',onUpdate:()=>m.textContent=Math.round(o.v),immediateRender:false},s.lines[1].start+2);})();
 // s9 line chart draw
 (()=>{const s=sc('s9');const p=document.getElementById('lcp');const L=p.getTotalLength();p.style.strokeDasharray=L;
   tl.fromTo(p,{strokeDashoffset:L},{strokeDashoffset:0,duration:2.5,ease:'power2.inOut',immediateRender:false},s.lines[1].start+.2);})();

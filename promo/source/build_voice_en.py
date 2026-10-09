@@ -8,23 +8,22 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from script_en import SCENES
 
 SR = 44100
-V = PiperVoice.load('tts/vits-piper-en_GB-cori-high/en_GB-cori-high.onnx')
-CFG = SynthesisConfig(length_scale=float(os.environ.get('LS', '0.94')), noise_scale=0.45, noise_w_scale=0.6)
+KD='tts/kokoro-multi-lang-v1_0/'
+KT=so.OfflineTts(so.OfflineTtsConfig(model=so.OfflineTtsModelConfig(kokoro=so.OfflineTtsKokoroModelConfig(model=KD+'model.onnx',voices=KD+'voices.bin',tokens=KD+'tokens.txt',data_dir=KD+'espeak-ng-data',dict_dir=KD+'dict',lexicon=KD+'lexicon-us-en.txt'),num_threads=4)))
+SID=int(os.environ.get('SID','3')); SPEED=float(os.environ.get('SPEED','1.05'))
+#CFG = SynthesisConfig(length_scale=float(os.environ.get('LS', '0.94')), noise_scale=0.45, noise_w_scale=0.6)
 WH = 'tts/sherpa-onnx-whisper-small/small-'
 ASR = so.OfflineRecognizer.from_whisper(encoder=WH+'encoder.int8.onnx', decoder=WH+'decoder.int8.onnx', tokens=WH+'tokens.txt', language='en', task='transcribe', num_threads=4)
 K = int(os.environ.get('TAKES', '2'))
 LOG = open('takes_en.log', 'w')
 
-MAP = [(r'\bFP&A\b', 'F. P. and A.'), (r'\bLLMs\b', 'L. L. M.s'), (r'\bLLM\b', 'L. L. M.'), (r'\bKPIs\b', 'K. P. I.s'),
-       (r'\bFMVA\b', 'F. M. V. A.'), (r'\bAI\b', 'A. I.'), ('’', "'")]
+MAP = [(r'\bFP&A\b', 'FP and A'), ('’', "'"), (r'Excel plus AI', 'Excel plus AI')]
 def tts_text(s):
     for a, b in MAP: s = re.sub(a, b, s)
     return s
 
 def synth1(text):
-    buf = io.BytesIO()
-    with wave.open(buf, 'wb') as w: V.synthesize_wav(text, w, syn_config=CFG)
-    buf.seek(0); x, sr = sf.read(buf, dtype='float32')
+    a = KT.generate(text, sid=SID, speed=SPEED); x = np.array(a.samples, dtype=np.float32); sr = a.sample_rate
     x = resample_poly(x, SR, sr).astype(np.float32)
     env = np.convolve(np.abs(x), np.ones(441)/441, 'same'); idx = np.nonzero(env > 0.01)[0]
     if len(idx): x = x[max(0, idx[0]-600): idx[-1]+int(0.18*SR)]

@@ -2,7 +2,7 @@
 SCENES = [
  ("s1", ["The AI for Finance journey.",
          "A journey that started just last year."]),
- ("s2", ["When we launched the very first AI for Finance workshop in Egypt and the Middle East."]),
+ ("s2", ["When we launched the first AI for Finance workshop in Egypt and the Middle East."]),
  ("s3", ["I'm Sara Salem.",
          "And since then, we have never treated AI as just another new tool,",
          "but as a real transformation in how finance professionals work, and how they think."]),
@@ -46,7 +46,8 @@ SCENES = [
           "Financial Reporting Automation: creating reports faster, and connecting data and processes through automation.",
           "Presentations and Executive Reports: turning financial analysis into professional reports that help management decide.",
           "Excel plus AI: connecting AI with Excel for analysis, modeling, reporting, and automation.",
-          "Risk Management and Cost Reduction: recommendations to manage risk and cut costs, and building your own AI agent."]),
+          "Risk Management and Cost Reduction: recommendations to manage risk and cut costs, and building your own AI agent.",
+          "Claude Skills and Agents: how to create your own skills, and build AI agents in Claude, to automate your finance work."]),
  ("s9", ["And from financial analysis, all the way to financial valuation, and valuing companies.",
          "It's an intensive, practical application of financial modeling, business intelligence, analysis, and valuation."]),
  ("s10", ["I use more than one LLM, and more than one skill.",
