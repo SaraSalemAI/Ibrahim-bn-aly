@@ -1,0 +1,449 @@
+{
+ "duration": 331.27,
+ "scenes": [
+  {
+   "id": "s1",
+   "start": 0.0,
+   "lines": [
+    {
+     "text": "The AI for Finance journey.",
+     "start": 0.8,
+     "end": 2.457
+    },
+    {
+     "text": "A journey that started just last year.",
+     "start": 2.837,
+     "end": 4.736
+    }
+   ],
+   "end": 5.816
+  },
+  {
+   "id": "s2",
+   "start": 5.816,
+   "lines": [
+    {
+     "text": "When we launched the first AI for Finance workshop in Egypt and the Middle East.",
+     "start": 6.616,
+     "end": 10.777
+    }
+   ],
+   "end": 11.857
+  },
+  {
+   "id": "s3",
+   "start": 11.857,
+   "lines": [
+    {
+     "text": "I'm Sara Salem.",
+     "start": 12.657,
+     "end": 13.736
+    },
+    {
+     "text": "And since then, we have never treated AI as just another new tool,",
+     "start": 14.116,
+     "end": 17.634
+    },
+    {
+     "text": "but as a real transformation in how finance professionals work, and how they think.",
+     "start": 18.014,
+     "end": 22.347
+    }
+   ],
+   "end": 23.427
+  },
+  {
+   "id": "s4",
+   "start": 23.427,
+   "lines": [
+    {
+     "text": "I designed and built the entire program from scratch,",
+     "start": 24.227,
+     "end": 27.067
+    },
+    {
+     "text": "covering the full finance content with AI, the tools, and AI workflows,",
+     "start": 27.447,
+     "end": 31.612
+    },
+    {
+     "text": "real-world cases, hands-on applications, and automation.",
+     "start": 31.992,
+     "end": 35.243
+    }
+   ],
+   "end": 36.323
+  },
+  {
+   "id": "s4b",
+   "start": 36.323,
+   "lines": [
+    {
+     "text": "Here, participants don't just learn to use ready-made tools or templates.",
+     "start": 37.123,
+     "end": 41.048
+    },
+    {
+     "text": "They learn how to build the solution, the models, and the projects themselves, from start to finish.",
+     "start": 41.428,
+     "end": 46.113
+    },
+    {
+     "text": "Because AI has already restructured every profession, including finance and economics.",
+     "start": 46.493,
+     "end": 51.433
+    }
+   ],
+   "end": 52.513
+  },
+  {
+   "id": "s5",
+   "start": 52.513,
+   "lines": [
+    {
+     "text": "How do you understand the data, and what lies behind the numbers?",
+     "start": 53.313,
+     "end": 56.322
+    },
+    {
+     "text": "How do you do financial mapping?",
+     "start": 56.702,
+     "end": 58.248
+    },
+    {
+     "text": "How do you define the right KPIs?",
+     "start": 58.628,
+     "end": 60.602
+    },
+    {
+     "text": "How do you build a financial model?",
+     "start": 60.982,
+     "end": 62.719
+    },
+    {
+     "text": "How do you connect your data?",
+     "start": 63.099,
+     "end": 64.407
+    },
+    {
+     "text": "How do you use Excel with AI?",
+     "start": 64.787,
+     "end": 66.436
+    },
+    {
+     "text": "How do you build a project, and an artifact?",
+     "start": 66.816,
+     "end": 69.092
+    },
+    {
+     "text": "And how do you make AI a real part of your finance workflow?",
+     "start": 69.472,
+     "end": 72.715
+    }
+   ],
+   "end": 73.795
+  },
+  {
+   "id": "s6",
+   "start": 73.795,
+   "lines": [
+    {
+     "text": "It's all about mindset.",
+     "start": 74.595,
+     "end": 75.845
+    },
+    {
+     "text": "For me, the most important thing in the AI journey isn't learning a new tool.",
+     "start": 76.225,
+     "end": 79.919
+    },
+    {
+     "text": "It's changing the way you think, and understanding the philosophy of AI.",
+     "start": 80.299,
+     "end": 84.048
+    },
+    {
+     "text": "Because the human mind will always own the idea, the vision, and the creativity.",
+     "start": 84.428,
+     "end": 88.453
+    }
+   ],
+   "end": 89.533
+  },
+  {
+   "id": "s6b",
+   "start": 89.533,
+   "lines": [
+    {
+     "text": "AI is a powerful assistant that helps you execute your ideas faster, and more efficiently.",
+     "start": 90.333,
+     "end": 95.481
+    },
+    {
+     "text": "And the beauty of technology is that you direct the AI, not the other way around.",
+     "start": 95.861,
+     "end": 100.013
+    },
+    {
+     "text": "When we understand the language of technology, and how to work with it, we discover its potential, and see the magic of AI.",
+     "start": 100.393,
+     "end": 106.462
+    },
+    {
+     "text": "AI is your assistant. You are still the decision-maker.",
+     "start": 106.842,
+     "end": 109.794
+    }
+   ],
+   "end": 110.874
+  },
+  {
+   "id": "s7",
+   "start": 110.874,
+   "lines": [
+    {
+     "text": "Context engineering. The most important lesson: context is everything.",
+     "start": 111.674,
+     "end": 115.5
+    },
+    {
+     "text": "How to talk to AI.",
+     "start": 115.88,
+     "end": 117.04
+    },
+    {
+     "text": "Because the quality of what you get from AI depends heavily on the quality of the context you give it.",
+     "start": 117.42,
+     "end": 122.52
+    }
+   ],
+   "end": 123.6
+  },
+  {
+   "id": "s8i",
+   "start": 123.6,
+   "lines": [
+    {
+     "text": "So, what will you learn in AI for Finance?",
+     "start": 124.4,
+     "end": 126.809
+    },
+    {
+     "text": "The program covers an integrated set of financial skills and practical AI applications, from the fundamentals, all the way to building advanced solutions.",
+     "start": 127.189,
+     "end": 135.52
+    }
+   ],
+   "end": 136.6
+  },
+  {
+   "id": "s8",
+   "start": 136.6,
+   "lines": [
+    {
+     "text": "Generative AI for Finance: understanding generative AI, and how to apply it across finance and your daily work.",
+     "start": 137.4,
+     "end": 143.755
+    },
+    {
+     "text": "Prompt Engineering for Finance: building professional prompts designed for financial problems and tasks.",
+     "start": 144.135,
+     "end": 149.529
+    },
+    {
+     "text": "Financial Statement Analysis: analyzing statements, extracting key ratios, uncovering insights, and turning data into decision-ready information, with hands-on practice on FMVA.",
+     "start": 149.909,
+     "end": 160.657
+    },
+    {
+     "text": "FP&A with AI: using AI for planning and analysis, forecasting, scenarios, and decision support.",
+     "start": 161.037,
+     "end": 167.283
+    },
+    {
+     "text": "Treasury Management and Forecasting: managing cash position, banks, liquidity, actual cash flows, forecasts, exchange rates, suppliers and customers.",
+     "start": 167.663,
+     "end": 176.396
+    },
+    {
+     "text": "Liquidity Management: analyzing and managing liquidity, forecasting cash needs, monitoring risk, and analyzing bank statements.",
+     "start": 176.776,
+     "end": 183.63
+    },
+    {
+     "text": "Budget Preparation: preparing budgets in more than one way, and linking the budget to actual data.",
+     "start": 184.01,
+     "end": 188.933
+    },
+    {
+     "text": "Cash Flow Forecasting: forecasting cash flows, analyzing trends, and building future scenarios.",
+     "start": 189.313,
+     "end": 194.491
+    }
+   ],
+   "end": 195.571
+  },
+  {
+   "id": "s8b",
+   "start": 195.571,
+   "lines": [
+    {
+     "text": "Financial Modeling: building financial models that link data, assumptions, and calculations using AI.",
+     "start": 196.371,
+     "end": 202.282
+    },
+    {
+     "text": "Variance Analysis: actual versus budget versus forecast. Analyzing variances, understanding their causes, and reaching clear recommendations.",
+     "start": 202.662,
+     "end": 210.549
+    },
+    {
+     "text": "Financial Reporting Automation: creating reports faster, and connecting data and processes through automation.",
+     "start": 210.929,
+     "end": 216.96
+    },
+    {
+     "text": "Presentations and Executive Reports: turning financial analysis into professional reports that help management decide.",
+     "start": 217.34,
+     "end": 224.241
+    },
+    {
+     "text": "Excel plus AI: connecting AI with Excel for analysis, modeling, reporting, and automation.",
+     "start": 224.621,
+     "end": 230.404
+    },
+    {
+     "text": "Risk Management and Cost Reduction: recommendations to manage risk and cut costs, and building your own AI agent.",
+     "start": 230.784,
+     "end": 237.403
+    },
+    {
+     "text": "Claude Skills and Agents: how to create your own skills, and build AI agents in Claude, to automate your finance work.",
+     "start": 237.783,
+     "end": 243.889
+    }
+   ],
+   "end": 244.969
+  },
+  {
+   "id": "s9",
+   "start": 244.969,
+   "lines": [
+    {
+     "text": "And from financial analysis, all the way to financial valuation, and valuing companies.",
+     "start": 245.769,
+     "end": 250.513
+    },
+    {
+     "text": "It's an intensive, practical application of financial modeling, business intelligence, analysis, and valuation.",
+     "start": 250.893,
+     "end": 256.882
+    }
+   ],
+   "end": 257.962
+  },
+  {
+   "id": "s10",
+   "start": 257.962,
+   "lines": [
+    {
+     "text": "I use more than one LLM, and more than one skill.",
+     "start": 258.762,
+     "end": 261.313
+    },
+    {
+     "text": "Because the AI world moves fast, we never rely on a single model.",
+     "start": 261.693,
+     "end": 265.391
+    },
+    {
+     "text": "That makes learning more flexible, and applicable in any work environment.",
+     "start": 265.771,
+     "end": 269.227
+    },
+    {
+     "text": "And you graduate able to build new projects, artifacts, and skills on your own.",
+     "start": 269.607,
+     "end": 273.679
+    }
+   ],
+   "end": 274.759
+  },
+  {
+   "id": "s11",
+   "start": 274.759,
+   "lines": [
+    {
+     "text": "What makes me happiest with every wave is seeing participants bring creative projects and ideas, and move from:",
+     "start": 275.559,
+     "end": 281.352
+    },
+    {
+     "text": "What can I do with AI?",
+     "start": 281.732,
+     "end": 283.01
+    },
+    {
+     "text": "To: I had an idea, and I built it with AI, and it saved me a huge amount of time and effort.",
+     "start": 283.39,
+     "end": 288.424
+    },
+    {
+     "text": "That's where the real change, and the real impact, happen.",
+     "start": 288.804,
+     "end": 291.452
+    }
+   ],
+   "end": 292.532
+  },
+  {
+   "id": "s12",
+   "start": 292.532,
+   "lines": [
+    {
+     "text": "And the best part? They don't stop when the course ends.",
+     "start": 293.332,
+     "end": 295.841
+    },
+    {
+     "text": "They stay with us in the AI Community, our AI family, sharing ideas, experiences, and everything new in AI.",
+     "start": 296.221,
+     "end": 302.874
+    }
+   ],
+   "end": 303.954
+  },
+  {
+   "id": "s13",
+   "start": 303.954,
+   "lines": [
+    {
+     "text": "AI for Finance. Eight sessions, three hours each, every Saturday and Wednesday.",
+     "start": 304.754,
+     "end": 309.215
+    },
+    {
+     "text": "Online course. Practical learning. Real-world finance use cases.",
+     "start": 309.595,
+     "end": 313.718
+    },
+    {
+     "text": "Multiple LLMs and AI tools. Projects and artifacts. Certificates.",
+     "start": 314.098,
+     "end": 318.705
+    },
+    {
+     "text": "Book your seat now, with Sara Salem.",
+     "start": 319.085,
+     "end": 320.979
+    },
+    {
+     "text": "For more details, call or WhatsApp: 01201834442",
+     "start": 321.529,
+     "end": 326.87
+    }
+   ],
+   "end": 331.27
+  }
+ ]
+}

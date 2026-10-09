@@ -99,6 +99,15 @@
 #s12 .orb{position:absolute;width:20px;height:20px;border-radius:50%;background:var(--gold);box-shadow:0 0 20px var(--gold);left:50%;top:50%;margin:-10px}
 #s12 .orb.b{background:var(--blue2);box-shadow:0 0 20px var(--blue2)}
 
+/* contact card */
+#s13 .contact{display:inline-flex;align-items:center;gap:22px;margin-top:26px;padding:16px 34px 16px 18px;border-radius:20px;background:rgba(3,8,26,.7);border:2px solid var(--gold);box-shadow:0 0 50px rgba(226,184,74,.35)}
+#s13 .contact svg{background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:50%;padding:12px;width:68px;height:68px}
+#s13 .contact small{display:block;font-size:24px;color:var(--mute);font-weight:700;letter-spacing:2px;text-transform:uppercase}
+#s13 .contact b{display:block;font-size:56px;font-weight:900;color:#fff;letter-spacing:2px;line-height:1.1}
+#s13 .panel{top:40px}
+#s13 .feats{margin-top:34px}
+#s13 .cta{margin-top:34px;font-size:46px;padding:20px 56px}
+#s13 .by{margin-top:18px;font-size:34px}
 /* ===== English / LTR overrides ===== */
 body{direction:ltr}
 #s3 .txt{right:110px;width:1000px;text-align:left}
@@ -322,6 +331,7 @@ body{direction:ltr}
     </div>
     <div class="cta L" data-in="3" data-a="pop">Book Your Seat Now</div>
     <div class="by L" data-in="3" data-a="up" data-d=".6">Sara Salem <span>| AI for Finance</span></div>
+    <div class="contact L" data-in="4" data-a="pop"><svg viewBox="0 0 24 24" width="44" height="44"><path fill="#050d26" d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 0 1 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1z"/></svg><div><small>Call / WhatsApp</small><b>0120 183 4442</b></div></div>
   </div>
 </section>
 
@@ -484,6 +494,7 @@ const _seek=t=>{const s=Math.floor(t);if(s!==lastS){lastS=s;tcEl.textContent=Str
   tl.fromTo(p,{strokeDashoffset:L},{strokeDashoffset:0,duration:2.5,ease:'power2.inOut',immediateRender:false},s.lines[1].start+.2);})();
 // s12 orbit is driven by ring rotation; add twinkle
 tl.to('#s12 .orb',{opacity:.25,duration:.6,yoyo:true,repeat:9,stagger:.15,ease:'sine.inOut'},sc('s12').start+1);
+(()=>{const s=sc('s13');if(s.lines[4]) tl.to('#s13 .contact',{boxShadow:'0 0 90px rgba(226,184,74,.75)',duration:.7,yoyo:true,repeat:5,ease:'sine.inOut'},s.lines[4].start+.8);})();
 tl.fromTo('#prog',{width:'0%'},{width:'100%',duration:DUR,ease:'none'},0);
 tl.to({}, {duration:.01},DUR);
 window.DUR=DUR;
