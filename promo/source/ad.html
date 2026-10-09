@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>AI for Finance Ad</title>
+<style>
+@font-face{font-family:Cairo;font-weight:400;src:url(fonts/cairo-arabic-400-normal.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+FB50-FDFF,U+FE70-FEFF,U+200C-200E}
+@font-face{font-family:Cairo;font-weight:600;src:url(fonts/cairo-arabic-600-normal.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+FB50-FDFF,U+FE70-FEFF,U+200C-200E}
+@font-face{font-family:Cairo;font-weight:700;src:url(fonts/cairo-arabic-700-normal.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+FB50-FDFF,U+FE70-FEFF,U+200C-200E}
+@font-face{font-family:Cairo;font-weight:800;src:url(fonts/cairo-arabic-800-normal.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+FB50-FDFF,U+FE70-FEFF,U+200C-200E}
+@font-face{font-family:Cairo;font-weight:900;src:url(fonts/cairo-arabic-900-normal.woff2) format('woff2');unicode-range:U+0600-06FF,U+0750-077F,U+FB50-FDFF,U+FE70-FEFF,U+200C-200E}
+@font-face{font-family:Cairo;font-weight:400;src:url(fonts/cairo-latin-400-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+2190-21FF}
+@font-face{font-family:Cairo;font-weight:600;src:url(fonts/cairo-latin-600-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+2190-21FF}
+@font-face{font-family:Cairo;font-weight:700;src:url(fonts/cairo-latin-700-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+2190-21FF}
+@font-face{font-family:Cairo;font-weight:800;src:url(fonts/cairo-latin-800-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+2190-21FF}
+@font-face{font-family:Cairo;font-weight:900;src:url(fonts/cairo-latin-900-normal.woff2) format('woff2');unicode-range:U+0000-00FF,U+2000-206F,U+2190-21FF}
+:root{--navy:#050d26;--navy2:#0b1a45;--blue:#1f5fe0;--blue2:#3d8bff;--gold:#e2b84a;--gold2:#f6dc8a;--ink:#eef3ff;--mute:#9fb0d8}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--navy)}
+body{font-family:Cairo,sans-serif;color:var(--ink);position:relative}
+#bg{position:absolute;inset:0}
+.vignette{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,transparent 45%,rgba(0,0,0,.55) 100%);pointer-events:none;z-index:50}
+.grain{position:absolute;inset:0;z-index:51;opacity:.06;background-image:repeating-linear-gradient(0deg,#fff 0 1px,transparent 1px 3px)}
+.scene{position:absolute;inset:0;opacity:0;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:10}
+.en{direction:ltr;unicode-bidi:isolate;display:inline-block}
+.gold{color:var(--gold)}
+.goldtxt{background:linear-gradient(100deg,var(--gold) 0%,var(--gold2) 45%,var(--gold) 60%,#b98a22 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.bluetxt{background:linear-gradient(100deg,#8fc0ff,#3d8bff 60%,#7fb2ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.w{display:inline-block;will-change:transform,opacity}
+.kicker{font-size:30px;letter-spacing:6px;color:var(--gold);font-weight:700;direction:ltr;text-transform:uppercase}
+.line{height:4px;background:linear-gradient(90deg,transparent,var(--gold),transparent);transform-origin:center}
+.card{background:linear-gradient(160deg,rgba(255,255,255,.09),rgba(255,255,255,.02));border:1px solid rgba(226,184,74,.35);border-radius:22px;backdrop-filter:blur(6px);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+
+/* brand bug */
+#bug{position:absolute;top:44px;left:60px;z-index:40;display:flex;align-items:center;gap:16px;direction:ltr;opacity:0}
+#bug .dot{width:14px;height:14px;border-radius:50%;background:var(--gold);box-shadow:0 0 18px var(--gold)}
+#bug b{font-size:26px;font-weight:800;letter-spacing:1px}
+#bug span{font-size:22px;color:var(--mute);font-weight:600}
+#prog{position:absolute;bottom:0;left:0;height:5px;background:linear-gradient(90deg,var(--blue),var(--gold));z-index:40;width:0}
+
+/* S1 intro */
+#s1 .title{font-size:190px;font-weight:900;line-height:1;direction:ltr;letter-spacing:-2px}
+#s1 .sub{font-size:52px;font-weight:700;margin-top:40px}
+#s1 .line{width:900px;margin-top:34px}
+
+/* S2 first */
+#s2 .badge{width:300px;height:300px;border-radius:50%;border:3px solid var(--gold);display:flex;align-items:center;justify-content:center;flex-direction:column;box-shadow:0 0 80px rgba(226,184,74,.35),inset 0 0 60px rgba(226,184,74,.15);margin-bottom:50px}
+#s2 .badge .n{font-size:150px;font-weight:900;line-height:1;direction:ltr}
+#s2 .badge .t{font-size:30px;font-weight:700;color:var(--gold2);margin-top:-6px}
+#s2 h2{font-size:76px;font-weight:900;text-align:center;line-height:1.35}
+#s2 p{font-size:44px;color:var(--mute);margin-top:18px;font-weight:600}
+
+/* S3 sara */
+#s3{flex-direction:row;justify-content:flex-start}
+.sara{position:absolute;bottom:-20px;height:1010px;filter:drop-shadow(0 30px 50px rgba(0,0,0,.6))}
+#s3 .sara{left:170px}
+.halo{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(61,139,255,.45),rgba(31,95,224,.12) 45%,transparent 70%)}
+#s3 .halo{left:-40px;top:80px;width:1000px;height:1000px}
+#s3 .ring{position:absolute;left:150px;top:140px;width:700px;height:700px;border-radius:50%;border:2px dashed rgba(226,184,74,.45)}
+#s3 .txt{position:absolute;right:140px;top:200px;width:950px}
+#s3 .hello{font-size:44px;color:var(--mute);font-weight:700}
+#s3 .name{font-size:150px;font-weight:900;line-height:1.15}
+#s3 .role{font-size:42px;font-weight:700;margin-top:10px}
+#s3 .quote{font-size:46px;font-weight:700;line-height:1.6;margin-top:50px;padding-right:34px;border-right:6px solid var(--gold)}
+
+/* S4 scratch */
+#s4 h2{font-size:84px;font-weight:900;text-align:center}
+#s4 .chips{display:flex;flex-wrap:wrap;gap:26px;justify-content:center;width:1500px;margin-top:60px}
+.chip{padding:20px 40px;border-radius:999px;font-size:40px;font-weight:800;border:2px solid rgba(226,184,74,.6);background:rgba(226,184,74,.08)}
+.chip.b{border-color:rgba(61,139,255,.7);background:rgba(61,139,255,.12)}
+#s4 .foot{font-size:48px;font-weight:700;margin-top:70px;text-align:center;line-height:1.5}
+
+/* S5 questions */
+#s5 .k{position:absolute;top:150px;font-size:40px;font-weight:800;color:var(--gold)}
+#s5 .q{position:absolute;font-size:110px;font-weight:900;text-align:center;width:1700px;line-height:1.3;opacity:0}
+#s5 .q .qm{color:var(--gold)}
+#s5 .counter{position:absolute;bottom:150px;font-size:34px;font-weight:800;color:var(--mute);direction:ltr}
+
+/* S6 mindset */
+#s6 .big{font-size:150px;font-weight:900;direction:ltr;line-height:1.1;text-align:center}
+#s6 .ar{font-size:54px;font-weight:700;margin-top:40px;text-align:center;line-height:1.6;width:1500px}
+#s6b .en1{font-size:110px;font-weight:900;direction:ltr;text-align:center;line-height:1.2}
+#s6b .en2{font-size:110px;font-weight:900;direction:ltr;text-align:center;line-height:1.2;margin-top:10px}
+#s6b .ar{font-size:50px;font-weight:700;margin-top:50px;color:var(--mute);text-align:center;width:1500px;line-height:1.6}
+
+/* S7 context */
+#s7 .ce{font-size:150px;font-weight:900;direction:ltr}
+#s7 .tag{font-size:64px;font-weight:900;margin-top:10px}
+#s7 .eq{display:flex;gap:40px;align-items:center;margin-top:70px;direction:rtl}
+#s7 .eq .card{padding:34px 56px;font-size:46px;font-weight:800}
+#s7 .eq .op{font-size:90px;font-weight:900;color:var(--gold)}
+#s7 .how{position:absolute;top:170px;font-size:44px;font-weight:800;color:var(--blue2);direction:ltr;letter-spacing:4px}
+
+/* S8 curriculum */
+.cur h2{position:absolute;top:110px;font-size:80px;font-weight:900}
+.cur .grid{position:absolute;top:290px;display:grid;grid-template-columns:repeat(4,400px);gap:30px;direction:rtl}
+.mod{padding:30px 30px 30px;height:300px;position:relative;overflow:hidden}
+.mod .num{font-size:70px;font-weight:900;direction:ltr;line-height:1;opacity:.95}
+.mod .t{font-size:34px;font-weight:900;direction:ltr;text-align:left;margin-top:14px;line-height:1.25}
+.mod .d{font-size:24px;font-weight:600;color:var(--mute);margin-top:12px;line-height:1.5}
+.mod:after{content:"";position:absolute;left:0;top:0;width:100%;height:5px;background:linear-gradient(90deg,var(--blue),var(--gold))}
+
+/* S9 analysis->valuation */
+#s9 .row{display:flex;align-items:center;gap:60px;direction:ltr}
+#s9 .card{padding:50px 70px;font-size:64px;font-weight:900}
+#s9 .arrow{width:260px;height:6px;background:linear-gradient(90deg,var(--blue2),var(--gold));position:relative;transform-origin:left}
+#s9 .arrow:after{content:"";position:absolute;right:-6px;top:-17px;border-left:34px solid var(--gold);border-top:20px solid transparent;border-bottom:20px solid transparent}
+#s9 .ar{font-size:58px;font-weight:800;margin-top:60px}
+#s9 .pills{display:flex;gap:24px;margin-top:50px;direction:ltr}
+
+/* S10 LLMs */
+#s10 svg{position:absolute;inset:0}
+#s10 .core{width:330px;height:330px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;background:radial-gradient(circle,#1f5fe0,#0b1a45 75%);border:3px solid var(--gold);box-shadow:0 0 90px rgba(61,139,255,.6);position:absolute}
+#s10 .core b{font-size:64px;font-weight:900;direction:ltr}
+#s10 .core span{font-size:28px;font-weight:700;color:var(--gold2)}
+#s10 .node{position:absolute;padding:18px 34px;border-radius:999px;font-size:36px;font-weight:800;direction:ltr;transform:translate(-50%,-50%)}
+#s10 .cap{position:absolute;bottom:110px;font-size:52px;font-weight:800;text-align:center;width:1600px;line-height:1.5}
+#s10 .ttl{position:absolute;top:120px;font-size:66px;font-weight:900}
+
+/* S11 transformation */
+#s11 .from,#s11 .to{font-size:96px;font-weight:900;text-align:center;line-height:1.35;position:absolute;width:1700px}
+#s11 .from{color:var(--mute)}
+#s11 .lbl{position:absolute;top:190px;font-size:40px;font-weight:800;color:var(--gold)}
+#s11 .impact{position:absolute;bottom:170px;font-size:60px;font-weight:900}
+
+/* S12 community */
+#s12 .t{font-size:130px;font-weight:900;direction:ltr}
+#s12 .ar{font-size:72px;font-weight:900;margin-top:10px}
+#s12 .d{font-size:44px;font-weight:700;color:var(--mute);margin-top:30px;text-align:center;width:1400px;line-height:1.6}
+
+/* S13 CTA */
+#s13 .sara{right:120px;height:1040px}
+#s13 .halo{right:-80px;top:60px;width:1000px;height:1000px}
+#s13 .panel{position:absolute;left:110px;top:70px;width:1050px;direction:rtl}
+#s13 .title{font-size:150px;font-weight:900;direction:ltr;text-align:right;line-height:1}
+#s13 .meta{display:flex;gap:22px;margin-top:30px}
+#s13 .meta .chip{font-size:36px;padding:14px 32px}
+#s13 .feats{display:grid;grid-template-columns:1.15fr 1fr;gap:20px 30px;margin-top:44px;direction:ltr}
+#s13 .f{display:flex;align-items:center;gap:18px;font-size:33px;white-space:nowrap;font-weight:800}
+#s13 .f i{width:44px;height:44px;border-radius:50%;background:var(--gold);color:var(--navy);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:28px;font-weight:900;flex:none}
+#s13 .cta{margin-top:48px;display:inline-flex;align-items:center;gap:20px;padding:24px 64px;border-radius:999px;background:linear-gradient(90deg,var(--gold),var(--gold2));color:var(--navy);font-size:52px;font-weight:900;box-shadow:0 0 60px rgba(226,184,74,.5)}
+#s13 .by{margin-top:28px;font-size:40px;font-weight:800}
+#s13 .by span{color:var(--mute);font-weight:600}
+</style>
+</head>
+<body>
+<canvas id="bg" width="1920" height="1080"></canvas>
+
+<div id="bug"><div class="dot"></div><b>AI for Finance</b><span>| Sara Salem</span></div>
+
+<!-- S1 -->
+<section class="scene" id="s1">
+  <div class="kicker" id="s1k">The Journey</div>
+  <div class="title goldtxt" id="s1t">AI for Finance</div>
+  <div class="line" id="s1l"></div>
+  <div class="sub split">رحلة بدأت العام الماضي… الحمد لله</div>
+</section>
+
+<!-- S2 -->
+<section class="scene" id="s2">
+  <div class="badge"><div class="n goldtxt"><span id="s2n">1</span></div><div class="t">الأول</div></div>
+  <h2 class="split">أول <span class="en bluetxt">Workshop</span> في مصر والشرق الأوسط</h2>
+  <p class="split">للتدريب على <span class="en gold">AI for Finance</span></p>
+</section>
+
+<!-- S3 -->
+<section class="scene" id="s3">
+  <div class="halo"></div><div class="ring"></div>
+  <img class="sara" src="sara.png">
+  <div class="txt">
+    <div class="hello">أنا</div>
+    <div class="name goldtxt">سارة سالم</div>
+    <div class="role">مؤسِّسة ومدرِّبة برنامج <span class="en bluetxt">AI for Finance</span></div>
+    <div class="quote split">الذكاء الاصطناعي مش مجرد أداة جديدة… ده تحوّل حقيقي في طريقة عمل وتفكير الـ <span class="en gold">Finance Professionals</span></div>
+  </div>
+</section>
+
+<!-- S4 -->
+<section class="scene" id="s4">
+  <div class="kicker">Created from Scratch</div>
+  <h2 class="split" style="margin-top:20px">برنامج متصمّم من الصفر</h2>
+  <div class="chips">
+    <div class="chip">المحتوى المالي كله بالـ <span class="en">AI</span></div>
+    <div class="chip b en">AI Tools</div>
+    <div class="chip en">AI Workflows</div>
+    <div class="chip b en">Real-World Cases</div>
+    <div class="chip">تطبيقات عملية</div>
+    <div class="chip b en">Automation</div>
+  </div>
+  <div class="foot split">مش هتتعلم تستخدم نماذج جاهزة وبس…<br><span class="gold">هتبني الحل والنموذج والمشروع بنفسك من البداية للنهاية</span></div>
+</section>
+
+<!-- S5 questions -->
+<section class="scene" id="s5">
+  <div class="k">هتتعلم…</div>
+  <div class="q">إزاي تفهم البيانات و<span class="gold">ما وراء الأرقام</span><span class="qm">؟</span></div>
+  <div class="q">إزاي تعمل <span class="en bluetxt">Financial Mapping</span><span class="qm">؟</span></div>
+  <div class="q">إزاي تحدد الـ <span class="en bluetxt">KPIs</span><span class="qm">؟</span></div>
+  <div class="q">إزاي تبني الـ <span class="en bluetxt">Financial Model</span><span class="qm">؟</span></div>
+  <div class="q">إزاي <span class="gold">تربط البيانات</span><span class="qm">؟</span></div>
+  <div class="q">إزاي تستخدم <span class="en bluetxt">Excel + AI</span><span class="qm">؟</span></div>
+  <div class="q">إزاي تبني <span class="en bluetxt">Project</span> و <span class="en bluetxt">Artifact</span><span class="qm">؟</span></div>
+  <div class="q">وإزاي تخلّي الـ <span class="en gold">AI</span> جزء فعلي من الـ <span class="en bluetxt">Finance Workflow</span><span class="qm">؟</span></div>
+  <div class="counter"><span id="qn">01</span> / 08</div>
+</section>
+
+<!-- S6 mindset -->
+<section class="scene" id="s6">
+  <div class="kicker">Philosophy of AI</div>
+  <div class="big"><span class="w">It’s</span> <span class="w">All</span> <span class="w">About</span> <span class="w goldtxt">Mindset</span></div>
+  <div class="ar split">الأهم مش إنك تتعلم <span class="en">Tool</span> جديدة… الأهم إنك <span class="gold">تغيّر طريقة تفكيرك</span></div>
+</section>
+<section class="scene" id="s6b">
+  <div class="en1"><span class="w">AI</span> <span class="w">is</span> <span class="w">your</span> <span class="w bluetxt">assistant.</span></div>
+  <div class="en2"><span class="w">You</span> <span class="w">are</span> <span class="w">still</span> <span class="w">the</span> <span class="w goldtxt">decision-maker.</span></div>
+  <div class="ar split">العقل البشري هيفضل دايمًا صاحب الفكرة والرؤية والإبداع… وإنت اللي بتوجّه الـ <span class="en">AI</span> مش العكس</div>
+</section>
+
+<!-- S7 context -->
+<section class="scene" id="s7">
+  <div class="how">HOW TO TALK TO AI</div>
+  <div class="ce goldtxt">Context Engineering</div>
+  <div class="tag split">السياق هو <span class="gold">كل شيء</span></div>
+  <div class="eq">
+    <div class="card">جودة النتيجة</div>
+    <div class="op">=</div>
+    <div class="card" style="border-color:var(--blue2)">جودة السياق</div>
+  </div>
+</section>
+
+<!-- S8 curriculum A -->
+<section class="scene cur" id="s8">
+  <h2 class="split">ماذا ستتعلم في <span class="en goldtxt">AI for Finance</span>؟</h2>
+  <div class="grid">
+    <div class="card mod"><div class="num goldtxt">01</div><div class="t">Generative AI for Finance</div><div class="d">توظيف الـ GenAI في شغلك المالي اليومي</div></div>
+    <div class="card mod"><div class="num goldtxt">02</div><div class="t">Prompt Engineering for Finance</div><div class="d">Prompts احترافية للمهام المالية</div></div>
+    <div class="card mod"><div class="num goldtxt">03</div><div class="t">Financial Statement Analysis</div><div class="d">مؤشرات و Insights وتطبيق عملي على FMVA</div></div>
+    <div class="card mod"><div class="num goldtxt">04</div><div class="t">FP&amp;A with AI</div><div class="d">تخطيط وتوقعات وسيناريوهات ودعم القرار</div></div>
+    <div class="card mod"><div class="num goldtxt">05</div><div class="t">Treasury Management &amp; Forecasting</div><div class="d">Cash Position والبنوك وسعر الصرف</div></div>
+    <div class="card mod"><div class="num goldtxt">06</div><div class="t">Liquidity Management</div><div class="d">التنبؤ بالاحتياجات النقدية وتحليل كشف الحساب</div></div>
+    <div class="card mod"><div class="num goldtxt">07</div><div class="t">Budget Preparation</div><div class="d">إعداد الموازنة وربطها بالفعلي</div></div>
+    <div class="card mod"><div class="num goldtxt">08</div><div class="t">Cash Flow Forecasting</div><div class="d">تحليل الاتجاهات وسيناريوهات مستقبلية</div></div>
+  </div>
+</section>
+<!-- S8 curriculum B -->
+<section class="scene cur" id="s8b">
+  <h2 class="split">ومن الأساسيات… <span class="gold">لحلول متقدمة</span></h2>
+  <div class="grid">
+    <div class="card mod"><div class="num goldtxt">09</div><div class="t">Financial Modeling</div><div class="d">ربط البيانات والافتراضات والحسابات بالـ AI</div></div>
+    <div class="card mod"><div class="num goldtxt">10</div><div class="t">Variance Analysis</div><div class="d">Actual vs Budget vs Forecast وتوصيات</div></div>
+    <div class="card mod"><div class="num goldtxt">11</div><div class="t">Financial Reporting Automation</div><div class="d">تقارير أسرع وربط البيانات والعمليات</div></div>
+    <div class="card mod"><div class="num goldtxt">12</div><div class="t">Presentations &amp; Executive Reports</div><div class="d">تقارير تساعد الإدارة تاخد القرار</div></div>
+    <div class="card mod"><div class="num goldtxt">13</div><div class="t">Excel + AI</div><div class="d">تحليل ونمذجة وتقارير وأتمتة</div></div>
+    <div class="card mod"><div class="num goldtxt">14</div><div class="t">Risk Management &amp; Cost Reduction</div><div class="d">توصيات تخفيض التكاليف + Build an Agent</div></div>
+    <div class="card mod"><div class="num goldtxt">15</div><div class="t">Financial Valuation</div><div class="d">من التحليل المالي إلى تقييم الشركات</div></div>
+    <div class="card mod" style="border-color:var(--gold)"><div class="num bluetxt">+</div><div class="t">Business Intelligence</div><div class="d">تطبيق عملي مكثف لمهارات النمذجة والتحليل والتقييم</div></div>
+  </div>
+</section>
+
+<!-- S9 -->
+<section class="scene" id="s9">
+  <div class="row">
+    <div class="card">Financial Analysis</div>
+    <div class="arrow"></div>
+    <div class="card" style="border-color:var(--gold)"><span class="goldtxt">Financial Valuation</span></div>
+  </div>
+  <div class="ar split">من التحليل المالي… <span class="gold">لتقييم الشركات</span></div>
+  <div class="pills"><div class="chip b">Financial Modeling</div><div class="chip">Business Intelligence</div><div class="chip b">Analysis &amp; Valuation</div></div>
+</section>
+
+<!-- S10 LLMs -->
+<section class="scene" id="s10">
+  <svg width="1920" height="1080" id="s10svg"></svg>
+  <div class="ttl split">أكتر من <span class="en bluetxt">LLM</span>… وأكتر من <span class="en goldtxt">Skill</span></div>
+  <div class="core" style="left:795px;top:375px"><b>YOU</b><span>صاحب القرار</span></div>
+  <div class="cap split">عالم الـ <span class="en">AI</span> بيتغير بسرعة… فبنتعلم بمرونة تنفع في أي بيئة عمل</div>
+</section>
+
+<!-- S11 transformation -->
+<section class="scene" id="s11">
+  <div class="lbl">مع كل Wave… المشاركين بينتقلوا من</div>
+  <div class="from">“إيه اللي ممكن أعمله بالـ <span class="en">AI</span>؟”</div>
+  <div class="to">“أنا عندي فكرة… <span class="goldtxt">ونفّذتها بالـ <span class="en">AI</span></span>”</div>
+  <div class="impact split">وهنا بيحصل <span class="gold">التغيير والأثر الحقيقي</span></div>
+</section>
+
+<!-- S12 community -->
+<section class="scene" id="s12">
+  <div class="t goldtxt">AI Community</div>
+  <div class="ar">عيلة الـ <span class="en bluetxt">AI</span></div>
+  <div class="d split">الرحلة مش بتخلص بانتهاء الكورس… بنكمل سوا نشارك الأفكار والتجارب وكل جديد في عالم الـ <span class="en">AI</span></div>
+</section>
+
+<!-- S13 CTA -->
+<section class="scene" id="s13">
+  <div class="halo"></div>
+  <img class="sara" src="sara.png">
+  <div class="panel">
+    <div class="kicker" style="text-align:right">Online Course</div>
+    <div class="title goldtxt">AI for Finance</div>
+    <div class="meta"><div class="chip"><b class="gold">8</b> محاضرات</div><div class="chip b"><b class="gold">3</b> ساعات للمحاضرة</div><div class="chip">السبت والأربعاء</div></div>
+    <div class="feats">
+      <div class="f"><i>✓</i>Online Course</div>
+      <div class="f"><i>✓</i>Practical Learning</div>
+      <div class="f"><i>✓</i>Real-World Finance Use Cases</div>
+      <div class="f"><i>✓</i>Multiple LLMs &amp; AI Tools</div>
+      <div class="f"><i>✓</i>Projects &amp; Artifacts</div>
+      <div class="f"><i>✓</i>Certificates</div>
+    </div>
+    <div class="cta">احجز مكانك دلوقتي</div>
+    <div class="by">سارة سالم <span>| AI for Finance</span></div>
+  </div>
+</section>
+
+<div class="vignette"></div>
+<div id="prog"></div>
+
+<script src="gsap.min.js"></script>
+<script>
+// ---------- word splitter (keeps Arabic words intact) ----------
+document.querySelectorAll('.split').forEach(el=>{
+  const walk=(node)=>{
+    [...node.childNodes].forEach(c=>{
+      if(c.nodeType===3){
+        const parts=c.textContent.split(/(\s+)/);const frag=document.createDocumentFragment();
+        parts.forEach(p=>{ if(!p) return; if(/^\s+$/.test(p)){frag.appendChild(document.createTextNode(p));}
+          else{const s=document.createElement('span');s.className='w';s.textContent=p;frag.appendChild(s);} });
+        c.replaceWith(frag);
+      } else if(c.nodeType===1 && c.tagName!=='BR'){
+        if(c.classList.contains('en')||c.classList.contains('goldtxt')||c.classList.contains('bluetxt')){c.classList.add('w');}
+        else walk(c);
+      }
+    });
+  };
+  walk(el);
+});
+
+// ---------- background canvas (deterministic) ----------
+const cv=document.getElementById('bg'),cx=cv.getContext('2d');
+function rnd(i){const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x);}
+const P=[...Array(90)].map((_,i)=>({x:rnd(i)*1920,y:rnd(i+99)*1080,r:1+rnd(i+7)*2.6,s:6+rnd(i+3)*22,g:rnd(i+11)>.7}));
+const SYM=['%','$','∑','Δ','↗','KPI','ROI','EBITDA','NPV','IRR','CF','P&L'];
+const S=[...Array(26)].map((_,i)=>({x:rnd(i+300)*1920,y:rnd(i+400)*1080,t:SYM[i%SYM.length],sz:22+rnd(i+500)*30,s:8+rnd(i+600)*14}));
+function drawBG(t){
+  const g=cx.createLinearGradient(0,0,1920,1080);g.addColorStop(0,'#040a1f');g.addColorStop(.55,'#081538');g.addColorStop(1,'#050d26');
+  cx.fillStyle=g;cx.fillRect(0,0,1920,1080);
+  const blob=(x,y,r,c)=>{const rg=cx.createRadialGradient(x,y,0,x,y,r);rg.addColorStop(0,c);rg.addColorStop(1,'rgba(0,0,0,0)');cx.fillStyle=rg;cx.fillRect(0,0,1920,1080);};
+  blob(1500+Math.sin(t*.21)*220,260+Math.cos(t*.17)*120,760,'rgba(31,95,224,.34)');
+  blob(360+Math.cos(t*.15)*200,860+Math.sin(t*.23)*90,700,'rgba(226,184,74,.13)');
+  blob(960+Math.sin(t*.11)*300,540,560,'rgba(61,139,255,.10)');
+  // perspective grid
+  cx.save();cx.strokeStyle='rgba(120,160,255,.07)';cx.lineWidth=1;
+  const off=(t*40)%80;
+  for(let x=-off;x<1920;x+=80){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,1080);cx.stroke();}
+  for(let y=-off;y<1080;y+=80){cx.beginPath();cx.moveTo(0,y);cx.lineTo(1920,y);cx.stroke();}
+  cx.restore();
+  // rising chart line
+  cx.save();cx.lineWidth=3;cx.strokeStyle='rgba(226,184,74,.16)';cx.beginPath();
+  for(let x=0;x<=1920;x+=12){const y=900-x*.22+Math.sin(x*.012+t*.8)*40+Math.sin(x*.031+t*1.3)*18;x?cx.lineTo(x,y):cx.moveTo(x,y);}cx.stroke();
+  cx.strokeStyle='rgba(61,139,255,.14)';cx.beginPath();
+  for(let x=0;x<=1920;x+=12){const y=980-x*.16+Math.cos(x*.01+t*.6)*50;x?cx.lineTo(x,y):cx.moveTo(x,y);}cx.stroke();cx.restore();
+  // symbols
+  cx.save();cx.textAlign='center';
+  S.forEach(s=>{const y=((s.y-t*s.s)%1180+1180)%1180-50;cx.font=`700 ${s.sz}px Cairo`;cx.fillStyle='rgba(160,190,255,.07)';cx.fillText(s.t,s.x,y);});
+  cx.restore();
+  // particles
+  P.forEach(p=>{const y=((p.y-t*p.s)%1100+1100)%1100-10;const x=p.x+Math.sin(t*.5+p.y)*20;
+    cx.beginPath();cx.arc(x,y,p.r,0,7);cx.fillStyle=p.g?'rgba(246,220,138,.55)':'rgba(160,200,255,.45)';cx.fill();});
+}
+
+// ---------- S10 network nodes ----------
+const nodes=[['LLM · 1',520,300,'b'],['LLM · 2',1400,300,'b'],['LLM · 3',380,620,''],['Skills',1540,620,''],['Agents',600,790,'b'],['Artifacts',1320,790,'b'],['Projects',960,288,''],['Automation',960,800,'']];
+const s10=document.getElementById('s10'),svg=document.getElementById('s10svg');
+nodes.forEach(([t,x,y,c],i)=>{
+  const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+  l.setAttribute('x1',960);l.setAttribute('y1',540);l.setAttribute('x2',x);l.setAttribute('y2',y);
+  l.setAttribute('stroke',c?'#3d8bff':'#e2b84a');l.setAttribute('stroke-width',3);l.setAttribute('stroke-opacity',.6);
+  const len=Math.hypot(x-960,y-540);l.setAttribute('stroke-dasharray',len);l.setAttribute('stroke-dashoffset',len);l.classList.add('lk');svg.appendChild(l);
+  const d=document.createElement('div');d.className='node chip'+(c?' b':'');d.textContent=t;d.style.left=x+'px';d.style.top=y+'px';s10.appendChild(d);
+});
+
+// ---------- timeline ----------
+const tl=gsap.timeline({paused:true,defaults:{ease:'power3.out'}});
+const IN=(sel,at,o={})=>tl.fromTo(sel,{opacity:0,y:o.y??40,scale:o.s??1,filter:'blur(10px)'},{opacity:1,y:0,scale:1,filter:'blur(0px)',duration:o.d??.8,stagger:o.st??0,ease:o.e??'power3.out'},at);
+const words=(scene,at,st=.06)=>tl.fromTo(`${scene} .split .w, ${scene}.split .w`,{opacity:0,y:30,filter:'blur(8px)'},{opacity:1,y:0,filter:'blur(0px)',duration:.6,stagger:st},at);
+const show=(sel,a,b)=>{tl.set(sel,{opacity:1},a);tl.to(sel,{opacity:0,scale:1.04,filter:'blur(12px)',duration:.6,ease:'power2.in'},b-.6);tl.set(sel,{scale:1,filter:'none'},b);};
+
+let T=0;
+// S1 0-6.5
+show('#s1',0,6.5);
+IN('#s1k',.3,{y:20});
+tl.fromTo('#s1t',{opacity:0,scale:1.35,letterSpacing:'40px',filter:'blur(20px)'},{opacity:1,scale:1,letterSpacing:'-2px',filter:'blur(0px)',duration:1.6,ease:'expo.out'},.5);
+tl.fromTo('#s1t',{backgroundPosition:'0% 0'},{backgroundPosition:'100% 0',duration:3},.8);
+tl.fromTo('#s1l',{scaleX:0},{scaleX:1,duration:1.2,ease:'power2.inOut'},1.4);
+words('#s1',2.2,.12);
+tl.fromTo('#bug',{opacity:0,x:-30},{opacity:1,x:0,duration:.8},3);
+// S2 6.5-13
+show('#s2',6.5,13);
+tl.fromTo('#s2 .badge',{scale:0,rotation:-180,opacity:0},{scale:1,rotation:0,opacity:1,duration:1.2,ease:'back.out(1.6)'},6.7);
+words('#s2',7.6,.09);
+// S3 13-22
+show('#s3',13,22);
+tl.to('#bug',{opacity:0,duration:.4},12.8);tl.to('#bug',{opacity:1,duration:.5},22);
+tl.fromTo('#s3 .halo',{scale:.4,opacity:0},{scale:1,opacity:1,duration:1.5},13);
+tl.fromTo('#s3 .ring',{rotation:0,opacity:0},{rotation:120,opacity:1,duration:9,ease:'none'},13);
+tl.fromTo('#s3 .sara',{x:-260,opacity:0},{x:0,opacity:1,duration:1.3,ease:'power4.out'},13.2);
+tl.to('#s3 .sara',{scale:1.04,duration:7.5,ease:'none',transformOrigin:'50% 100%'},14.5);
+IN('#s3 .hello',13.8,{y:20});
+tl.fromTo('#s3 .name',{opacity:0,x:120,filter:'blur(14px)'},{opacity:1,x:0,filter:'blur(0px)',duration:1.1,ease:'expo.out'},14.1);
+IN('#s3 .role',14.9,{y:20});
+tl.fromTo('#s3 .quote',{borderRightColor:'rgba(226,184,74,0)'},{borderRightColor:'rgba(226,184,74,1)',duration:.6},15.8);
+words('#s3',16,.08);
+// S4 22-31
+show('#s4',22,31);
+IN('#s4 .kicker',22.2,{y:20});
+words('#s4 h2',22.5,.1);
+tl.fromTo('#s4 .chip',{opacity:0,scale:.5,y:30},{opacity:1,scale:1,y:0,duration:.6,stagger:.28,ease:'back.out(2)'},23.6);
+tl.fromTo('#s4 .foot .w',{opacity:0,y:30,filter:'blur(8px)'},{opacity:1,y:0,filter:'blur(0px)',duration:.55,stagger:.07},26);
+// S5 questions 31-46 (8 x 1.8s)
+show('#s5',31,46);
+IN('#s5 .k',31.1,{y:20});IN('#s5 .counter',31.1,{y:20});
+document.querySelectorAll('#s5 .q').forEach((q,i)=>{
+  const a=31.4+i*1.8;
+  tl.fromTo(q,{opacity:0,y:80,rotationX:-50,filter:'blur(14px)'},{opacity:1,y:0,rotationX:0,filter:'blur(0px)',duration:.55,ease:'power3.out'},a);
+  tl.call(()=>{document.getElementById('qn').textContent=String(i+1).padStart(2,'0')},null,a);
+  if(i<7) tl.to(q,{opacity:0,y:-70,filter:'blur(14px)',duration:.4,ease:'power2.in'},a+1.45);
+});
+// S6 46-53.5
+show('#s6',46,53.5);
+IN('#s6 .kicker',46.2,{y:20});
+tl.fromTo('#s6 .big .w',{opacity:0,y:90,scale:.8},{opacity:1,y:0,scale:1,duration:.7,stagger:.22,ease:'back.out(1.7)'},46.5);
+words('#s6',48.6,.09);
+// S6b 53.5-61
+show('#s6b',53.5,61);
+tl.fromTo('#s6b .en1 .w',{opacity:0,y:60},{opacity:1,y:0,duration:.6,stagger:.15},53.7);
+tl.fromTo('#s6b .en2 .w',{opacity:0,y:60},{opacity:1,y:0,duration:.6,stagger:.15},54.8);
+words('#s6b',56.3,.07);
+// S7 61-68.5
+show('#s7',61,68.5);
+IN('#s7 .how',61.1,{y:-20});
+tl.fromTo('#s7 .ce',{opacity:0,scale:.7,filter:'blur(20px)'},{opacity:1,scale:1,filter:'blur(0px)',duration:1.1,ease:'expo.out'},61.4);
+words('#s7',62.4,.12);
+tl.fromTo('#s7 .eq > *',{opacity:0,y:40,scale:.8},{opacity:1,y:0,scale:1,duration:.6,stagger:.3,ease:'back.out(1.8)'},63.6);
+tl.to('#s7 .eq .op',{scale:1.25,duration:.4,yoyo:true,repeat:3,ease:'sine.inOut'},65);
+// S8 68.5-78
+show('#s8',68.5,78);
+words('#s8',68.7,.08);
+tl.fromTo('#s8 .mod',{opacity:0,y:60,rotationY:30},{opacity:1,y:0,rotationY:0,duration:.6,stagger:.3,ease:'power3.out'},69.6);
+// S8b 78-87.5
+show('#s8b',78,87.5);
+words('#s8b',78.2,.08);
+tl.fromTo('#s8b .mod',{opacity:0,y:60,rotationY:30},{opacity:1,y:0,rotationY:0,duration:.6,stagger:.3,ease:'power3.out'},79.1);
+// S9 87.5-94.5
+show('#s9',87.5,94.5);
+IN('#s9 .row .card:first-child',87.7,{y:0,s:.8});
+tl.fromTo('#s9 .arrow',{scaleX:0},{scaleX:1,duration:.8,ease:'power2.inOut'},88.4);
+IN('#s9 .row .card:last-child',89.1,{y:0,s:.8});
+words('#s9',89.9,.1);
+tl.fromTo('#s9 .pills .chip',{opacity:0,y:30},{opacity:1,y:0,duration:.5,stagger:.2},91.2);
+// S10 94.5-102.5
+show('#s10',94.5,102.5);
+words('#s10 .ttl',94.6,.1);
+tl.fromTo('#s10 .core',{scale:0,opacity:0},{scale:1,opacity:1,duration:.9,ease:'back.out(1.6)'},95);
+tl.to('#s10 .lk',{attr:{'stroke-dashoffset':0},duration:.6,stagger:.12,ease:'power2.out'},95.6);
+tl.fromTo('#s10 .node',{opacity:0,scale:0},{opacity:1,scale:1,duration:.5,stagger:.12,ease:'back.out(2)'},95.9);
+tl.to('#s10 .core',{boxShadow:'0 0 160px rgba(61,139,255,.9)',duration:.8,yoyo:true,repeat:5,ease:'sine.inOut'},96.5);
+tl.fromTo('#s10 .cap .w',{opacity:0,y:30},{opacity:1,y:0,duration:.5,stagger:.07},97.8);
+// S11 102.5-111
+show('#s11',102.5,111);
+IN('#s11 .lbl',102.6,{y:-20});
+tl.fromTo('#s11 .from',{opacity:0,scale:.9},{opacity:1,scale:1,duration:.8},103);
+tl.to('#s11 .from',{opacity:0,y:-120,scale:.8,filter:'blur(10px)',duration:.7,ease:'power2.in'},105.4);
+tl.fromTo('#s11 .to',{opacity:0,y:120,scale:.9},{opacity:1,y:-40,scale:1.05,duration:.9,ease:'back.out(1.6)'},105.9);
+words('#s11',107.4,.1);
+// S12 111-117.5
+show('#s12',111,117.5);
+tl.fromTo('#s12 .t',{opacity:0,letterSpacing:'30px',filter:'blur(16px)'},{opacity:1,letterSpacing:'0px',filter:'blur(0px)',duration:1.2,ease:'expo.out'},111.2);
+IN('#s12 .ar',112.1,{y:30,s:.8});
+words('#s12',113,.07);
+// S13 CTA 117.5-130
+tl.set('#s13',{opacity:1},117.5);
+tl.to('#bug',{opacity:0,duration:.5},117.5);
+tl.fromTo('#s13 .halo',{scale:.4,opacity:0},{scale:1,opacity:1,duration:1.5},117.5);
+tl.fromTo('#s13 .sara',{x:240,opacity:0},{x:0,opacity:1,duration:1.3,ease:'power4.out'},117.6);
+IN('#s13 .kicker',118.1,{y:20});
+tl.fromTo('#s13 .title',{opacity:0,x:-120,filter:'blur(16px)'},{opacity:1,x:0,filter:'blur(0px)',duration:1.1,ease:'expo.out'},118.3);
+tl.fromTo('#s13 .meta .chip',{opacity:0,y:30,scale:.7},{opacity:1,y:0,scale:1,duration:.5,stagger:.2,ease:'back.out(2)'},119.2);
+tl.fromTo('#s13 .f',{opacity:0,x:-40},{opacity:1,x:0,duration:.45,stagger:.18},120.1);
+tl.fromTo('#s13 .cta',{opacity:0,scale:.6},{opacity:1,scale:1,duration:.7,ease:'back.out(2)'},121.6);
+tl.to('#s13 .cta',{scale:1.06,duration:.6,yoyo:true,repeat:7,ease:'sine.inOut'},122.4);
+IN('#s13 .by',122.3,{y:20});
+tl.to({}, {duration:.01},130);
+
+const DUR=130;
+tl.fromTo('#prog',{width:'0%'},{width:'100%',duration:DUR,ease:'none'},0);
+window.DUR=DUR;
+window.seek=(t)=>{drawBG(t);tl.seek(t,false);};
+seek(0);
+if(location.hash==='#play'){const t0=performance.now();(function f(){const t=(performance.now()-t0)/1000%DUR;seek(t);requestAnimationFrame(f)})();}
+</script>
+</body>
+</html>
