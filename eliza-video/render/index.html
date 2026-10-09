@@ -1,0 +1,65 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>ELIZA renderer</title>
+<style>
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: #03050d; }
+  body { font-family: 'Inter', 'DejaVu Sans', sans-serif; color: #eef4ff; }
+  #c { position: absolute; inset: 0; width: 1920px; height: 1080px; }
+  .layer { position: absolute; inset: 0; pointer-events: none; }
+  #vignette { background: radial-gradient(ellipse at 50% 48%, rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%); }
+  #grain { opacity: .055; mix-blend-mode: overlay; }
+  #fade { background: #000; opacity: 0; }
+  #flash { background: radial-gradient(circle at 50% 50%, rgba(160,240,255,.9), rgba(60,120,255,0) 70%); opacity: 0; mix-blend-mode: screen; }
+
+  /* chapter badge */
+  #chapter { position: absolute; left: 72px; top: 60px; display: flex; align-items: center; gap: 18px; opacity: 0; }
+  #chapter .bar { width: 6px; height: 54px; border-radius: 3px; background: linear-gradient(#3de8ff, #8b5cf6); box-shadow: 0 0 18px #3de8ff; }
+  #chapter .num { font: 600 20px 'Inter'; letter-spacing: .28em; color: #7fdcff; text-transform: uppercase; }
+  #chapter .name { font: 700 34px 'Inter'; letter-spacing: .01em; color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,.6); }
+
+  /* brand */
+  #brand { position: absolute; right: 72px; top: 64px; font: 600 18px 'Inter'; letter-spacing: .3em; color: rgba(200,230,255,.6); text-transform: uppercase; }
+  #brand b { color: #3de8ff; font-weight: 800; }
+
+  /* captions */
+  #cap { position: absolute; left: 50%; bottom: 74px; transform: translateX(-50%); max-width: 1500px; text-align: center; }
+  #cap .spk { display: inline-block; font: 800 17px 'Inter'; letter-spacing: .3em; padding: 6px 14px; border-radius: 6px; margin-bottom: 10px; }
+  #cap .spk.E { color: #02140a; background: #5dff9d; box-shadow: 0 0 18px rgba(93,255,157,.6); }
+  #cap .spk.U { color: #fff; background: #8b5cf6; box-shadow: 0 0 18px rgba(139,92,246,.6); }
+  #cap .txt { font: 600 40px/1.32 'Inter'; color: rgba(255,255,255,.5);
+    background: rgba(4,8,20,.62); padding: 10px 26px 14px; border-radius: 14px; box-decoration-break: clone; -webkit-box-decoration-break: clone;
+    text-shadow: 0 2px 10px rgba(0,0,0,.7); }
+  #cap .txt .on { color: #fff; }
+  #cap .txt .now { color: #7fe9ff; }
+  #cap.E .txt { font-family: 'DejaVu Sans Mono', monospace; font-weight: 700; letter-spacing: .02em; }
+
+  /* progress */
+  #prog { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; background: rgba(255,255,255,.07); }
+  #prog .fill { height: 100%; width: 0; background: linear-gradient(90deg, #3de8ff, #8b5cf6); box-shadow: 0 0 12px #3de8ff; }
+  #prog .tick { position: absolute; top: -3px; width: 2px; height: 12px; background: rgba(255,255,255,.35); }
+
+  /* lower-third for big statements */
+  #big { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); text-align: center; opacity: 0;
+    font: 800 76px/1.15 'Inter'; letter-spacing: -.01em; text-shadow: 0 6px 40px rgba(0,0,0,.8); padding: 0 160px; }
+  #big .hl { background: linear-gradient(90deg, #3de8ff, #b18cff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<div class="layer" id="vignette"></div>
+<canvas class="layer" id="grain" width="960" height="540"></canvas>
+<div class="layer">
+  <div id="chapter"><div class="bar"></div><div><div class="num"></div><div class="name"></div></div></div>
+  <div id="brand"><b>ELIZA</b> · The Machine That Listened</div>
+  <div id="big"></div>
+  <div id="cap"><div class="spk"></div><div><span class="txt"></span></div></div>
+  <div id="prog"><div class="fill"></div></div>
+</div>
+<div class="layer" id="flash"></div>
+<div class="layer" id="fade"></div>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
