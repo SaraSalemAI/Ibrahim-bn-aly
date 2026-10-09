@@ -358,26 +358,26 @@ document.querySelectorAll('.split').forEach(el=>{
   });};walk(el);
 });
 // background (same as v1)
-const cv=document.getElementById('bg'),cx=cv.getContext('2d');
+const cv=document.getElementById('bg'),cx=cv.getContext('2d');const W=window.innerWidth||1920,H=window.innerHeight||1080;cv.width=W;cv.height=H;
 function rnd(i){const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x);}
-const P=[...Array(90)].map((_,i)=>({x:rnd(i)*1920,y:rnd(i+99)*1080,r:1+rnd(i+7)*2.6,s:6+rnd(i+3)*22,g:rnd(i+11)>.7}));
+const P=[...Array(90)].map((_,i)=>({x:rnd(i)*W,y:rnd(i+99)*H,r:1+rnd(i+7)*2.6,s:6+rnd(i+3)*22,g:rnd(i+11)>.7}));
 const SYM=['%','$','∑','Δ','↗','KPI','ROI','EBITDA','NPV','IRR','CF','P&L'];
-const S=[...Array(26)].map((_,i)=>({x:rnd(i+300)*1920,y:rnd(i+400)*1080,t:SYM[i%SYM.length],sz:22+rnd(i+500)*30,s:8+rnd(i+600)*14}));
+const S=[...Array(26)].map((_,i)=>({x:rnd(i+300)*W,y:rnd(i+400)*H,t:SYM[i%SYM.length],sz:22+rnd(i+500)*30,s:8+rnd(i+600)*14}));
 function drawBG(t){
-  const g=cx.createLinearGradient(0,0,1920,1080);g.addColorStop(0,'#040a1f');g.addColorStop(.55,'#081538');g.addColorStop(1,'#050d26');cx.fillStyle=g;cx.fillRect(0,0,1920,1080);
-  const blob=(x,y,r,c)=>{const rg=cx.createRadialGradient(x,y,0,x,y,r);rg.addColorStop(0,c);rg.addColorStop(1,'rgba(0,0,0,0)');cx.fillStyle=rg;cx.fillRect(0,0,1920,1080);};
+  const g=cx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#040a1f');g.addColorStop(.55,'#081538');g.addColorStop(1,'#050d26');cx.fillStyle=g;cx.fillRect(0,0,W,H);
+  const blob=(x,y,r,c)=>{const rg=cx.createRadialGradient(x,y,0,x,y,r);rg.addColorStop(0,c);rg.addColorStop(1,'rgba(0,0,0,0)');cx.fillStyle=rg;cx.fillRect(0,0,W,H);};
   blob(1500+Math.sin(t*.21)*220,260+Math.cos(t*.17)*120,760,'rgba(31,95,224,.34)');
   blob(360+Math.cos(t*.15)*200,860+Math.sin(t*.23)*90,700,'rgba(226,184,74,.13)');
   blob(960+Math.sin(t*.11)*300,540,560,'rgba(61,139,255,.10)');
   cx.save();cx.strokeStyle='rgba(120,160,255,.07)';cx.lineWidth=1;const off=(t*40)%80;
-  for(let x=-off;x<1920;x+=80){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,1080);cx.stroke();}
-  for(let y=-off;y<1080;y+=80){cx.beginPath();cx.moveTo(0,y);cx.lineTo(1920,y);cx.stroke();}cx.restore();
+  for(let x=-off;x<W;x+=80){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,H);cx.stroke();}
+  for(let y=-off;y<H;y+=80){cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);cx.stroke();}cx.restore();
   cx.save();cx.lineWidth=3;cx.strokeStyle='rgba(226,184,74,.16)';cx.beginPath();
-  for(let x=0;x<=1920;x+=12){const y=900-x*.22+Math.sin(x*.012+t*.8)*40+Math.sin(x*.031+t*1.3)*18;x?cx.lineTo(x,y):cx.moveTo(x,y);}cx.stroke();
+  for(let x=0;x<=W;x+=12){const y=H*.83-x*.22*(1080/H)+Math.sin(x*.012+t*.8)*40+Math.sin(x*.031+t*1.3)*18;x?cx.lineTo(x,y):cx.moveTo(x,y);}cx.stroke();
   cx.strokeStyle='rgba(61,139,255,.14)';cx.beginPath();
-  for(let x=0;x<=1920;x+=12){const y=980-x*.16+Math.cos(x*.01+t*.6)*50;x?cx.lineTo(x,y):cx.moveTo(x,y);}cx.stroke();cx.restore();
-  cx.save();cx.textAlign='center';S.forEach(s=>{const y=((s.y-t*s.s)%1180+1180)%1180-50;cx.font=`700 ${s.sz}px Cairo`;cx.fillStyle='rgba(160,190,255,.07)';cx.fillText(s.t,s.x,y);});cx.restore();
-  P.forEach(p=>{const y=((p.y-t*p.s)%1100+1100)%1100-10;const x=p.x+Math.sin(t*.5+p.y)*20;cx.beginPath();cx.arc(x,y,p.r,0,7);cx.fillStyle=p.g?'rgba(246,220,138,.55)':'rgba(160,200,255,.45)';cx.fill();});
+  for(let x=0;x<=W;x+=12){const y=H*.9-x*.16+Math.cos(x*.01+t*.6)*50;x?cx.lineTo(x,y):cx.moveTo(x,y);}cx.stroke();cx.restore();
+  cx.save();cx.textAlign='center';S.forEach(s=>{const y=((s.y-t*s.s)%(H+100)+(H+100))%(H+100)-50;cx.font=`700 ${s.sz}px Cairo`;cx.fillStyle='rgba(160,190,255,.07)';cx.fillText(s.t,s.x,y);});cx.restore();
+  P.forEach(p=>{const y=((p.y-t*p.s)%(H+20)+(H+20))%(H+20)-10;const x=p.x+Math.sin(t*.5+p.y)*20;cx.beginPath();cx.arc(x,y,p.r,0,7);cx.fillStyle=p.g?'rgba(246,220,138,.55)':'rgba(160,200,255,.45)';cx.fill();});
 }
 // s10 network
 const nodes=[['LLM · 1',520,300,'b'],['LLM · 2',1400,300,'b'],['LLM · 3',380,620,''],['Skills',1540,620,''],['Agents',600,790,'b'],['Artifacts',1320,790,'b'],['Projects',960,288,''],['Automation',960,800,'']];
