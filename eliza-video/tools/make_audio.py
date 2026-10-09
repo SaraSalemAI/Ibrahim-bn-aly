@@ -22,6 +22,13 @@ def bp(x, a, b, o=2): return sosfilt(butter(o, [a, b], "band", fs=SR, output="so
 def note(m): return 440 * 2 ** ((m - 69) / 12)
 
 
+def smooth(x, k):
+    """Centered moving average via cumulative sum (O(N))."""
+    c = np.concatenate([[0], np.cumsum(x)])
+    i = np.arange(len(x)); a = np.clip(i - k // 2, 0, len(x)); b = np.clip(i + k - k // 2, 0, len(x))
+    return (c[b] - c[a]) / k
+
+
 # ---------------- score ----------------
 # A minor family progression, 8 s per chord: Am - Fmaj7 - C - G(add6) / Dm9 colour in the future section
 CH = [[57, 60, 64, 71], [53, 57, 60, 64], [48, 55, 60, 64], [55, 59, 62, 67]]
@@ -40,8 +47,7 @@ for s in tl["scenes"]:
     p, ar, pu = INT.get(s["id"], (.8, .4, .2))
     env_pad[a:b], env_arp[a:b], env_pulse[a:b] = p, ar, pu
 k = int(1.5 * SR)
-sm = np.ones(k) / k
-env_pad, env_arp, env_pulse = (np.convolve(e, sm, "same") for e in (env_pad, env_arp, env_pulse))
+env_pad, env_arp, env_pulse = (smooth(e, k) for e in (env_pad, env_arp, env_pulse))
 
 pad = np.zeros(N)
 nch = int(np.ceil(D / CHORD_LEN)) + 1
@@ -168,10 +174,10 @@ add(impact() * .5, outro["start"] + .4, .35)
 v, vsr = sf.read(B + "/voice.wav")
 v = resample_poly(v, SR, vsr)[:N]
 voice = np.zeros(N); voice[:len(v)] = v
-lvl = np.sqrt(np.convolve(voice ** 2, np.ones(int(.05 * SR)) / int(.05 * SR), "same"))
+lvl = np.sqrt(smooth(voice ** 2, int(.05 * SR)))
 act = (lvl > .01).astype(float)
 att = int(.4 * SR)
-act = np.convolve(act, np.ones(att) / att, "same")
+act = smooth(act, att)
 duck = 1 - .55 * np.clip(act * 1.5, 0, 1)
 music *= .5 * duck / max(1e-9, np.abs(music).max())
 
