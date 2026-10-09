@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<title>AI for Finance Ad</title>
+<!--BASECSS-->
+<style>
+.scene{justify-content:center}
+.grp{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.L{opacity:0}
+/* captions */
+#cap{position:absolute;left:50%;bottom:56px;transform:translateX(-50%);z-index:45;width:1640px;display:flex;justify-content:center;pointer-events:none}
+#cap .c{position:absolute;bottom:0;max-width:1640px;padding:14px 40px 18px;border-radius:18px;background:rgba(3,8,26,.72);border:1px solid rgba(226,184,74,.28);font-size:38px;font-weight:700;line-height:1.5;text-align:center;opacity:0;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+#cap .c .en{color:var(--gold2)}
+/* s3 */
+#s3 .txt{top:150px}
+#s3 .q2{margin-top:26px}
+/* s4 */
+#s4 .chips{margin-top:50px}
+/* s4b */
+#s4b .ready{font-size:56px;font-weight:800;padding:26px 60px;color:var(--mute);position:relative}
+#s4b .ready:after{content:"";position:absolute;left:40px;right:40px;top:52%;height:6px;background:#e25555;transform-origin:right;transform:scaleX(var(--x,0))}
+#s4b .flow{display:flex;align-items:center;gap:30px;margin-top:60px}
+#s4b .step{padding:34px 46px;font-size:46px;font-weight:900;text-align:center;min-width:300px}
+#s4b .step small{display:block;font-size:26px;color:var(--gold2);font-weight:700;direction:ltr}
+#s4b .arr{font-size:70px;color:var(--gold);font-weight:900}
+#s4b .note{font-size:50px;font-weight:800;margin-top:60px;text-align:center;line-height:1.5}
+/* s5 */
+#s5 .counter{bottom:230px}
+#s5 .k{top:170px}
+/* s6 */
+#s6 .mind{display:flex;gap:26px;margin-top:56px;align-items:center}
+#s6 .mind .lbl{font-size:44px;font-weight:900;margin-left:20px}
+#s6 .ar{font-size:52px}
+/* s6b */
+#s6b .a1{font-size:110px;font-weight:900;text-align:center}
+#s6b .chips{display:flex;gap:26px;margin-top:30px}
+#s6b .a2{font-size:66px;font-weight:900;margin-top:50px}
+#s6b .a3{font-size:60px;font-weight:800;margin-top:40px;color:var(--blue2)}
+/* s7 */
+#s7 .how{top:150px}
+/* s8i */
+#s8i h2{font-size:96px;font-weight:900;text-align:center}
+#s8i .path{display:flex;align-items:center;gap:40px;margin-top:70px;direction:rtl}
+#s8i .path .chip{font-size:44px;padding:22px 50px}
+#s8i .bar{width:420px;height:8px;border-radius:8px;background:linear-gradient(270deg,var(--blue2),var(--gold));transform-origin:right}
+#s8i .count{font-size:40px;font-weight:800;color:var(--mute);margin-top:50px}
+/* s8 grids */
+.cur h2{top:96px;font-size:66px}
+.cur .grid{top:250px}
+#s8b .grid{grid-template-columns:repeat(3,520px)}
+.mod{height:270px;transition:none}
+.mod.on{border-color:var(--gold);box-shadow:0 0 50px rgba(226,184,74,.35),0 20px 60px rgba(0,0,0,.35)}
+/* s10 */
+#s10 .ttl{top:110px}
+/* s11 */
+#s11 .lbl{top:170px;font-size:44px;width:1500px;text-align:center;line-height:1.5}
+#s11 .impact{bottom:240px}
+/* s12 */
+#s12 .ring3{position:absolute;width:900px;height:900px;border-radius:50%;border:2px dashed rgba(61,139,255,.35)}
+/* s13 */
+#s13 .meta .chip{font-size:34px}
+
+/* ===== motion graphics layer ===== */
+#wipe{position:absolute;inset:0;z-index:60;pointer-events:none;overflow:hidden}
+#wipe .p{position:absolute;top:-20%;height:140%;width:70%;transform:skewX(-18deg)}
+#wipe .p1{background:linear-gradient(90deg,#0b1a45,#1f5fe0)}
+#wipe .p2{background:linear-gradient(90deg,#b98a22,#f6dc8a,#e2b84a)}
+#wipe .p3{background:#050d26}
+#flare{position:absolute;left:0;top:50%;width:100%;height:4px;z-index:61;pointer-events:none;opacity:0;
+  background:linear-gradient(90deg,transparent,rgba(255,240,200,.0) 20%,#fff6d8 50%,rgba(255,240,200,0) 80%,transparent);filter:blur(1px);box-shadow:0 0 40px 10px rgba(246,220,138,.55)}
+#hud{position:absolute;inset:26px;z-index:41;pointer-events:none}
+#hud i{position:absolute;width:46px;height:46px;border-color:rgba(226,184,74,.55);border-style:solid}
+#hud .a{left:0;top:0;border-width:3px 0 0 3px}#hud .b{right:0;top:0;border-width:3px 3px 0 0}
+#hud .c{left:0;bottom:0;border-width:0 0 3px 3px}#hud .d{right:0;bottom:0;border-width:0 3px 3px 0}
+#hud .scan{position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(61,139,255,.35),transparent)}
+#hud .tc{position:absolute;right:70px;top:12px;font:700 18px Cairo;color:rgba(159,176,216,.6);direction:ltr;letter-spacing:3px}
+.shine{position:relative;overflow:visible}
+.pulse{position:absolute;border-radius:50%;border:3px solid var(--gold);width:300px;height:300px;opacity:0}
+#s2 .bw{position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:50px}
+#s2 .bw .badge{margin-bottom:0}
+#prompt{width:1000px;margin-top:26px;padding:20px 30px;direction:ltr;text-align:left;font:600 27px/1.55 'DejaVu Sans Mono',monospace;color:#cfe0ff;background:rgba(3,8,26,.75);border:1px solid rgba(61,139,255,.5);border-radius:16px;box-shadow:0 0 40px rgba(61,139,255,.25)}
+#prompt b{color:var(--gold)} #prompt .cur{display:inline-block;width:14px;height:30px;background:var(--gold);vertical-align:middle}
+#s7 .eq{margin-top:28px}
+#s7{justify-content:flex-start;padding-top:150px}
+#s7 .how{position:static;margin-bottom:6px;font-size:34px}
+#s7 .ce{font-size:118px;line-height:1.15}
+#s7 .tag{font-size:54px;margin-top:0}
+#s7 .eq .card{padding:20px 44px;font-size:40px}
+#s7 .eq .op{font-size:70px}
+#s8i .chart{display:flex;align-items:flex-end;gap:22px;height:130px;margin-top:36px;direction:ltr}
+#s8i .chart div{width:56px;border-radius:10px 10px 0 0;background:linear-gradient(0deg,var(--blue),var(--blue2));transform-origin:bottom}
+#s8i .chart div:nth-child(even){background:linear-gradient(0deg,#b98a22,var(--gold2))}
+#s8i h2{font-size:84px}
+#s8i .path{margin-top:40px}
+#s8i .count{margin-top:26px}
+#s8i .count b{font-size:56px;color:var(--gold);vertical-align:middle}
+#s9 svg.lc{margin-top:30px}
+#s12 .orb{position:absolute;width:20px;height:20px;border-radius:50%;background:var(--gold);box-shadow:0 0 20px var(--gold);left:50%;top:50%;margin:-10px}
+#s12 .orb.b{background:var(--blue2);box-shadow:0 0 20px var(--blue2)}
+
+/* ===== English / LTR overrides ===== */
+body{direction:ltr}
+#s3 .txt{right:110px;width:1000px;text-align:left}
+#s3 .name{font-size:140px}
+#s3 .quote{border-right:none;border-left:6px solid var(--gold);padding-right:0;padding-left:34px;font-size:44px}
+.cur .grid{direction:ltr}
+.mod .t{text-align:left}
+.mod .d{text-align:left;font-size:23px}
+#s8i .path{direction:ltr}
+#s13 .panel{direction:ltr}
+#s13 .title{text-align:left}
+#s13 .kicker{text-align:left !important}
+#s6 .mind .lbl{margin-left:0;margin-right:20px}
+#s6 .ar{font-size:50px}
+#s6b .a1{font-size:100px}
+#s5 .q{font-size:96px}
+#s11 .from,#s11 .to{font-size:88px}
+#cap .c{direction:ltr;font-size:36px}
+#viz{position:absolute;right:66px;top:44px;z-index:46;opacity:0;width:220px;height:52px}
+#hud .tc{top:100px;right:70px}
+#s7 .eq{direction:ltr}
+.mod{height:285px}
+.mod .d{font-size:21px;line-height:1.45}
+.mod .t{font-size:31px}
+#s9 svg.lc{margin-top:10px;height:110px}
+#s9 .pills{margin-top:24px}
+#s9 .ar{margin-top:36px}
+#s9 .row .card{padding:40px 60px}
+.kicker{direction:ltr}
+</style>
+</head>
+<body>
+<canvas id="bg" width="1920" height="1080"></canvas>
+<div id="bug"><div class="dot"></div><b>AI for Finance</b><span>| Sara Salem</span></div>
+
+<section class="scene" id="s1">
+  <div class="kicker L" data-in="-1" data-a="up">The Journey</div>
+  <div class="title goldtxt L" id="s1t" data-in="0" data-a="title">AI for Finance</div>
+  <div class="line L" id="s1l" data-in="0" data-a="bar" data-d=".6"></div>
+  <div class="sub split L" data-in="1" data-a="words">A journey that started <span class="gold">just last year</span></div>
+</section>
+
+<section class="scene" id="s2">
+  <div class="bw"><div class="pulse"></div><div class="pulse"></div><div class="pulse"></div><div class="badge L" data-in="-1" data-a="spin"><div class="n goldtxt">1<sup style="font-size:60px">st</sup></div><div class="t">THE FIRST</div></div></div>
+  <h2 class="split L" data-in="0" data-a="words">The first <span class="bluetxt">AI for Finance</span> workshop</h2>
+  <p class="split L" data-in="0" data-a="words" data-d="2.6">in <span class="gold">Egypt</span> &amp; <span class="gold">the Middle East</span></p>
+</section>
+
+<section class="scene" id="s3">
+  <div class="halo L" data-in="-1" data-a="zoom"></div><div class="ring L" data-in="-1" data-a="fade"></div>
+  <img class="sara L" src="sara.png" data-in="-1" data-a="left">
+  <div class="txt">
+    <div class="hello L" data-in="0" data-a="up">I'm</div>
+    <div class="name goldtxt L" data-in="0" data-a="right">Sara Salem</div>
+    <div class="role L" data-in="0" data-a="up" data-d=".7">Founder &amp; Lead Trainer · <span class="bluetxt">AI for Finance</span></div>
+    <div class="quote split L" data-in="1" data-a="words">AI is not just another new tool…</div>
+    <div class="quote q2 split L" data-in="2" data-a="words">It's a real transformation in how <span class="gold">finance professionals</span> work and think.</div>
+  </div>
+</section>
+
+<section class="scene" id="s4">
+  <div class="kicker L" data-in="-1" data-a="up">Created from Scratch</div>
+  <h2 class="split L" style="margin-top:20px" data-in="0" data-a="words">Designed &amp; built <span class="gold">from scratch</span></h2>
+  <div class="chips">
+    <div class="chip L" data-in="1" data-a="pop">Full Finance Content with AI</div>
+    <div class="chip b L" data-in="1" data-a="pop" data-d="2.2">AI Tools</div>
+    <div class="chip L" data-in="1" data-a="pop" data-d="3.2">AI Workflows</div>
+    <div class="chip b L" data-in="2" data-a="pop">Real-World Cases</div>
+    <div class="chip L" data-in="2" data-a="pop" data-d="1.2">Hands-on Applications</div>
+    <div class="chip b L" data-in="2" data-a="pop" data-d="2.6">Automation</div>
+  </div>
+</section>
+
+<section class="scene" id="s4b">
+  <div class="card ready L" id="ready" data-in="0" data-a="up">Ready-made tools &amp; templates only</div>
+  <div class="flow">
+    <div class="card step L" data-in="1" data-a="pop">Solution<small>Build it</small></div><div class="arr L" data-in="1" data-a="fade" data-d=".8">→</div>
+    <div class="card step L" data-in="1" data-a="pop" data-d="1.4">Models<small>Own it</small></div><div class="arr L" data-in="1" data-a="fade" data-d="2.2">→</div>
+    <div class="card step L" data-in="1" data-a="pop" data-d="2.8" style="border-color:var(--gold)">Projects<small>Ship it</small></div>
+  </div>
+  <div class="note split L" data-in="2" data-a="words"><span class="bluetxt">AI</span> has restructured every profession… <span class="gold">including finance &amp; economics</span></div>
+</section>
+
+<section class="scene" id="s5">
+  <div class="k L" data-in="-1" data-a="up">You will learn…</div>
+  <div class="q L" data-in="0" data-out="1" data-a="q">How to understand data &amp; <span class="gold">what's behind the numbers</span><span class="qm">?</span></div>
+  <div class="q L" data-in="1" data-out="2" data-a="q">How to do <span class="bluetxt">Financial Mapping</span><span class="qm">?</span></div>
+  <div class="q L" data-in="2" data-out="3" data-a="q">How to define the right <span class="bluetxt">KPIs</span><span class="qm">?</span></div>
+  <div class="q L" data-in="3" data-out="4" data-a="q">How to build a <span class="bluetxt">Financial Model</span><span class="qm">?</span></div>
+  <div class="q L" data-in="4" data-out="5" data-a="q">How to <span class="gold">connect your data</span><span class="qm">?</span></div>
+  <div class="q L" data-in="5" data-out="6" data-a="q">How to use <span class="bluetxt">Excel</span> with <span class="gold">AI</span><span class="qm">?</span></div>
+  <div class="q L" data-in="6" data-out="7" data-a="q">How to build a <span class="bluetxt">Project</span> &amp; an <span class="bluetxt">Artifact</span><span class="qm">?</span></div>
+  <div class="q L" data-in="7" data-a="q" style="font-size:96px">How to make <span class="gold">AI</span> part of your <span class="bluetxt">Finance Workflow</span><span class="qm">?</span></div>
+  <div class="counter L" data-in="-1" data-a="up"><span id="qn">01</span> / 08</div>
+</section>
+
+<section class="scene" id="s6">
+  <div class="kicker L" data-in="-1" data-a="up">Philosophy of AI</div>
+  <div class="big L" data-in="0" data-a="zoom"><span>It’s</span> <span>All</span> <span>About</span> <span class="goldtxt">Mindset</span></div>
+  <div class="ar split L" data-in="1" data-a="words">Not a new tool… <span class="gold">a new way of thinking</span> and the philosophy of AI</div>
+  <div class="mind">
+    <div class="lbl L" data-in="3" data-a="up">The human mind owns:</div>
+    <div class="chip L" data-in="3" data-a="pop" data-d="2.2">The Idea</div>
+    <div class="chip b L" data-in="3" data-a="pop" data-d="2.9">The Vision</div>
+    <div class="chip L" data-in="3" data-a="pop" data-d="3.6">The Creativity</div>
+  </div>
+</section>
+
+<section class="scene" id="s6b">
+  <div class="grp L" data-in="-1" data-out="3" data-a="fade">
+    <div class="a1 L" data-in="0" data-a="zoom"><span class="bluetxt">AI</span> = a powerful assistant</div>
+    <div class="chips">
+      <div class="chip L" data-in="0" data-a="pop" data-d="3.2">Faster</div>
+      <div class="chip b L" data-in="0" data-a="pop" data-d="3.9">More Efficient</div>
+    </div>
+    <div class="a2 L" data-in="1" data-a="up">You direct the <span class="goldtxt">AI</span>… <span class="gold">not the other way around</span></div>
+    <div class="a3 L" data-in="2" data-a="up" data-d="4">✦ See the magic of AI ✦</div>
+  </div>
+  <div class="grp L" data-in="3" data-a="fade">
+    <div class="en1"><span class="w2">AI</span> <span class="w2">is</span> <span class="w2">your</span> <span class="w2 bluetxt">assistant.</span></div>
+    <div class="en2"><span class="w2">You</span> <span class="w2">are</span> <span class="w2">still</span> <span class="w2">the</span> <span class="w2 goldtxt">decision-maker.</span></div>
+  </div>
+</section>
+
+<section class="scene" id="s7">
+  <div class="how L" data-in="1" data-a="up">HOW TO TALK TO AI</div>
+  <div class="ce goldtxt L" data-in="0" data-a="zoom">Context Engineering</div>
+  <div class="tag split L" data-in="0" data-a="words" data-d="1.6">Context is <span class="gold">everything</span></div>
+  <div id="prompt" class="L" data-in="1" data-a="up"><span id="ptxt"></span><span class="cur"></span></div>
+  <div class="eq">
+    <div class="card L" data-in="2" data-a="pop">Quality of Output</div>
+    <div class="op L" data-in="2" data-a="pop" data-d="3">=</div>
+    <div class="card L" data-in="2" data-a="pop" data-d="4.6" style="border-color:var(--blue2)">Quality of Context</div>
+  </div>
+</section>
+
+<section class="scene" id="s8i">
+  <div class="kicker L" data-in="-1" data-a="up">The Curriculum</div>
+  <h2 class="split L" data-in="0" data-a="words">What will you learn in <span class="goldtxt">AI for Finance</span>?</h2>
+  <div class="path">
+    <div class="chip L" data-in="1" data-a="pop" data-d="5">Fundamentals</div>
+    <div class="bar L" data-in="1" data-a="bar" data-d="6"></div>
+    <div class="chip b L" data-in="1" data-a="pop" data-d="7.5">Advanced Solutions</div>
+  </div>
+  <div class="chart L" data-in="0" data-a="fade" data-d=".8"><div style="height:30%"></div><div style="height:42%"></div><div style="height:38%"></div><div style="height:55%"></div><div style="height:63%"></div><div style="height:58%"></div><div style="height:74%"></div><div style="height:86%"></div><div style="height:100%"></div></div>
+  <div class="count L" data-in="1" data-a="up" data-d="2"><b id="modn">0</b> modules · finance skills + practical AI applications</div>
+</section>
+
+<section class="scene cur" id="s8">
+  <h2 class="L" data-in="-1" data-a="up">The Curriculum <span class="gold">1/2</span></h2>
+  <div class="grid">
+    <div class="card mod L" data-in="0" data-a="card"><div class="num goldtxt">01</div><div class="t">Generative AI for Finance</div><div class="d">Apply GenAI across finance &amp; your daily work</div></div>
+    <div class="card mod L" data-in="1" data-a="card"><div class="num goldtxt">02</div><div class="t">Prompt Engineering for Finance</div><div class="d">Professional prompts for financial problems &amp; tasks</div></div>
+    <div class="card mod L" data-in="2" data-a="card"><div class="num goldtxt">03</div><div class="t">Financial Statement Analysis</div><div class="d">Ratios, insights &amp; hands-on FMVA practice</div></div>
+    <div class="card mod L" data-in="3" data-a="card"><div class="num goldtxt">04</div><div class="t">FP&amp;A with AI</div><div class="d">Planning, forecasting, scenarios &amp; decision support</div></div>
+    <div class="card mod L" data-in="4" data-a="card"><div class="num goldtxt">05</div><div class="t">Treasury Management &amp; Forecasting</div><div class="d">Cash position, banks, FX, suppliers &amp; customers</div></div>
+    <div class="card mod L" data-in="5" data-a="card"><div class="num goldtxt">06</div><div class="t">Liquidity Management</div><div class="d">Cash needs, risk monitoring &amp; bank statements</div></div>
+    <div class="card mod L" data-in="6" data-a="card"><div class="num goldtxt">07</div><div class="t">Budget Preparation</div><div class="d">Multiple methods, linked to actual data</div></div>
+    <div class="card mod L" data-in="7" data-a="card"><div class="num goldtxt">08</div><div class="t">Cash Flow Forecasting</div><div class="d">Trends &amp; future scenarios</div></div>
+  </div>
+</section>
+
+<section class="scene cur" id="s8b">
+  <h2 class="L" data-in="-1" data-a="up">The Curriculum <span class="gold">2/2</span></h2>
+  <div class="grid">
+    <div class="card mod L" data-in="0" data-a="card"><div class="num goldtxt">09</div><div class="t">Financial Modeling</div><div class="d">Link data, assumptions &amp; calculations with AI</div></div>
+    <div class="card mod L" data-in="1" data-a="card"><div class="num goldtxt">10</div><div class="t">Variance Analysis</div><div class="d">Actual vs Budget vs Forecast → recommendations</div></div>
+    <div class="card mod L" data-in="2" data-a="card"><div class="num goldtxt">11</div><div class="t">Financial Reporting Automation</div><div class="d">Faster reports, connected data &amp; processes</div></div>
+    <div class="card mod L" data-in="3" data-a="card"><div class="num goldtxt">12</div><div class="t">Presentations &amp; Executive Reports</div><div class="d">Reports that help management decide</div></div>
+    <div class="card mod L" data-in="4" data-a="card"><div class="num goldtxt">13</div><div class="t">Excel + AI</div><div class="d">Analysis, modeling, reporting &amp; automation</div></div>
+    <div class="card mod L" data-in="5" data-a="card"><div class="num goldtxt">14</div><div class="t">Risk Management &amp; Cost Reduction</div><div class="d">Cost-cutting recommendations + build an AI agent</div></div>
+  </div>
+</section>
+
+<section class="scene" id="s9">
+  <div class="row">
+    <div class="card L" data-in="0" data-a="pop">Financial Analysis</div>
+    <div class="arrow L" data-in="0" data-a="barx" data-d="1.4"></div>
+    <div class="card L" data-in="0" data-a="pop" data-d="2.4" style="border-color:var(--gold)"><span class="goldtxt">Financial Valuation</span></div>
+  </div>
+  <div class="ar L" data-in="0" data-a="up" data-d="3.6">&amp; valuing companies</div>
+  <svg class="lc L" data-in="1" data-a="fade" width="1000" height="150" viewBox="0 0 1000 150"><defs><linearGradient id="lg" x1="0" x2="1"><stop offset="0" stop-color="#3d8bff"/><stop offset="1" stop-color="#e2b84a"/></linearGradient></defs><path id="lcp" d="M0 130 L90 118 L170 124 L260 96 L350 104 L440 76 L540 82 L630 52 L720 60 L820 30 L910 34 L1000 8" fill="none" stroke="url(#lg)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  <div class="pills"><div class="chip b L" data-in="1" data-a="pop" data-d="2.6">Financial Modeling</div><div class="chip L" data-in="1" data-a="pop" data-d="3.6">Business Intelligence</div><div class="chip b L" data-in="1" data-a="pop" data-d="4.8">Analysis &amp; Valuation</div></div>
+</section>
+
+<section class="scene" id="s10">
+  <svg width="1920" height="1080" id="s10svg"></svg>
+  <div class="ttl split L" data-in="0" data-a="words">More than one <span class="bluetxt">LLM</span>… more than one <span class="goldtxt">Skill</span></div>
+  <div class="core L" style="left:795px;top:375px" data-in="0" data-a="pop" data-d=".8"><b>YOU</b><span>The decision-maker</span></div>
+</section>
+
+<section class="scene" id="s11">
+  <div class="lbl split L" data-in="0" data-a="words">With every <span class="gold">wave</span>, participants move from…</div>
+  <div class="from L" data-in="1" data-out="2" data-a="zoom">“What can I do with <span class="bluetxt">AI</span>?”</div>
+  <div class="to L" data-in="2" data-a="rise">“I had an idea… <span class="goldtxt">and built it with AI</span>”</div>
+  <div class="impact split L" data-in="3" data-a="words">That's where <span class="gold">real change &amp; real impact</span> happen</div>
+</section>
+
+<section class="scene" id="s12">
+  <div class="ring3 L" data-in="-1" data-a="fade"><div class="orb" style="transform:rotate(0deg) translate(450px)"></div><div class="orb b" style="transform:rotate(45deg) translate(450px)"></div><div class="orb" style="transform:rotate(90deg) translate(450px)"></div><div class="orb b" style="transform:rotate(135deg) translate(450px)"></div><div class="orb" style="transform:rotate(180deg) translate(450px)"></div><div class="orb b" style="transform:rotate(225deg) translate(450px)"></div><div class="orb" style="transform:rotate(270deg) translate(450px)"></div><div class="orb b" style="transform:rotate(315deg) translate(450px)"></div></div>
+  <div class="t goldtxt L" data-in="1" data-a="title">AI Community</div>
+  <div class="ar L" data-in="1" data-a="up" data-d="3">The <span class="bluetxt">AI</span> Family</div>
+  <div class="d split L" data-in="0" data-a="words">The journey doesn't end when the course does…</div>
+</section>
+
+<section class="scene" id="s13">
+  <div class="halo L" data-in="-1" data-a="zoom"></div>
+  <img class="sara L" src="sara.png" data-in="-1" data-a="right">
+  <div class="panel">
+    <div class="kicker L" data-in="-1" data-a="up">Online Course</div>
+    <div class="title goldtxt L" data-in="0" data-a="right">AI for Finance</div>
+    <div class="meta"><div class="chip L" data-in="0" data-a="pop" data-d="1.4"><b class="gold">8</b> Sessions</div><div class="chip b L" data-in="0" data-a="pop" data-d="2.2"><b class="gold">3</b> Hours Each</div><div class="chip L" data-in="0" data-a="pop" data-d="3.2">Sat &amp; Wed</div></div>
+    <div class="feats">
+      <div class="f L" data-in="1" data-a="ltr"><i>✓</i>Online Course</div>
+      <div class="f L" data-in="1" data-a="ltr" data-d="1"><i>✓</i>Practical Learning</div>
+      <div class="f L" data-in="1" data-a="ltr" data-d="2"><i>✓</i>Real-World Finance Use Cases</div>
+      <div class="f L" data-in="2" data-a="ltr"><i>✓</i>Multiple LLMs &amp; AI Tools</div>
+      <div class="f L" data-in="2" data-a="ltr" data-d="1.6"><i>✓</i>Projects &amp; Artifacts</div>
+      <div class="f L" data-in="2" data-a="ltr" data-d="3"><i>✓</i>Certificates</div>
+    </div>
+    <div class="cta L" data-in="3" data-a="pop">Book Your Seat Now</div>
+    <div class="by L" data-in="3" data-a="up" data-d=".6">Sara Salem <span>| AI for Finance</span></div>
+  </div>
+</section>
+
+<canvas id="viz" width="300" height="70"></canvas>
+
+<div id="cap"></div>
+<div id="hud"><i class="a"></i><i class="b"></i><i class="c"></i><i class="d"></i><div class="scan"></div><div class="tc">AI FOR FINANCE · <span id="tc">00:00</span></div></div>
+<div id="wipe"><div class="p p1"></div><div class="p p2"></div><div class="p p3"></div></div>
+<div id="flare"></div>
+<div class="vignette"></div>
+<div id="prog"></div>
+
+<script src="timing.js"></script>
+<script src="env.js"></script>
+<script src="gsap.min.js"></script>
+<script>
+// word splitter
+document.querySelectorAll('.split').forEach(el=>{
+  const walk=(node)=>{[...node.childNodes].forEach(c=>{
+    if(c.nodeType===3){const frag=document.createDocumentFragment();
+      c.textContent.split(/(\s+)/).forEach(p=>{if(!p)return;if(/^\s+$/.test(p))frag.appendChild(document.createTextNode(p));else{const s=document.createElement('span');s.className='w';s.textContent=p;frag.appendChild(s);}});
+      c.replaceWith(frag);}
+    else if(c.nodeType===1&&c.tagName!=='BR'){if(c.classList.contains('en')||c.classList.contains('goldtxt')||c.classList.contains('bluetxt'))c.classList.add('w');else walk(c);}
+  });};walk(el);
+});
+// background (same as v1)
+const cv=document.getElementById('bg'),cx=cv.getContext('2d');
+function rnd(i){const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x);}
+const P=[...Array(90)].map((_,i)=>({x:rnd(i)*1920,y:rnd(i+99)*1080,r:1+rnd(i+7)*2.6,s:6+rnd(i+3)*22,g:rnd(i+11)>.7}));
+const SYM=['%','$','∑','Δ','↗','KPI','ROI','EBITDA','NPV','IRR','CF','P&L'];
+const S=[...Array(26)].map((_,i)=>({x:rnd(i+300)*1920,y:rnd(i+400)*1080,t:SYM[i%SYM.length],sz:22+rnd(i+500)*30,s:8+rnd(i+600)*14}));
+function drawBG(t){
+  const g=cx.createLinearGradient(0,0,1920,1080);g.addColorStop(0,'#040a1f');g.addColorStop(.55,'#081538');g.addColorStop(1,'#050d26');cx.fillStyle=g;cx.fillRect(0,0,1920,1080);
+  const blob=(x,y,r,c)=>{const rg=cx.createRadialGradient(x,y,0,x,y,r);rg.addColorStop(0,c);rg.addColorStop(1,'rgba(0,0,0,0)');cx.fillStyle=rg;cx.fillRect(0,0,1920,1080);};
+  blob(1500+Math.sin(t*.21)*220,260+Math.cos(t*.17)*120,760,'rgba(31,95,224,.34)');
+  blob(360+Math.cos(t*.15)*200,860+Math.sin(t*.23)*90,700,'rgba(226,184,74,.13)');
+  blob(960+Math.sin(t*.11)*300,540,560,'rgba(61,139,255,.10)');
+  cx.save();cx.strokeStyle='rgba(120,160,255,.07)';cx.lineWidth=1;const off=(t*40)%80;
+  for(let x=-off;x<1920;x+=80){cx.beginPath();cx.moveTo(x,0);cx.lineTo(x,1080);cx.stroke();}
+  for(let y=-off;y<1080;y+=80){cx.beginPath();cx.moveTo(0,y);cx.lineTo(1920,y);cx.stroke();}cx.restore();
+  cx.save();cx.lineWidth=3;cx.strokeStyle='rgba(226,184,74,.16)';cx.beginPath();
+  for(let x=0;x<=1920;x+=12){const y=900-x*.22+Math.sin(x*.012+t*.8)*40+Math.sin(x*.031+t*1.3)*18;x?cx.lineTo(x,y):cx.moveTo(x,y);}cx.stroke();
+  cx.strokeStyle='rgba(61,139,255,.14)';cx.beginPath();
+  for(let x=0;x<=1920;x+=12){const y=980-x*.16+Math.cos(x*.01+t*.6)*50;x?cx.lineTo(x,y):cx.moveTo(x,y);}cx.stroke();cx.restore();
+  cx.save();cx.textAlign='center';S.forEach(s=>{const y=((s.y-t*s.s)%1180+1180)%1180-50;cx.font=`700 ${s.sz}px Cairo`;cx.fillStyle='rgba(160,190,255,.07)';cx.fillText(s.t,s.x,y);});cx.restore();
+  P.forEach(p=>{const y=((p.y-t*p.s)%1100+1100)%1100-10;const x=p.x+Math.sin(t*.5+p.y)*20;cx.beginPath();cx.arc(x,y,p.r,0,7);cx.fillStyle=p.g?'rgba(246,220,138,.55)':'rgba(160,200,255,.45)';cx.fill();});
+}
+// s10 network
+const nodes=[['LLM · 1',520,300,'b'],['LLM · 2',1400,300,'b'],['LLM · 3',380,620,''],['Skills',1540,620,''],['Agents',600,790,'b'],['Artifacts',1320,790,'b'],['Projects',960,288,''],['Automation',960,800,'']];
+const s10=document.getElementById('s10'),svg=document.getElementById('s10svg');
+nodes.forEach(([t,x,y,c],i)=>{
+  const l=document.createElementNS('http://www.w3.org/2000/svg','line');
+  l.setAttribute('x1',960);l.setAttribute('y1',540);l.setAttribute('x2',x);l.setAttribute('y2',y);
+  l.setAttribute('stroke',c?'#3d8bff':'#e2b84a');l.setAttribute('stroke-width',3);l.setAttribute('stroke-opacity',.6);
+  const len=Math.hypot(x-960,y-540);l.setAttribute('stroke-dasharray',len);l.setAttribute('stroke-dashoffset',len);l.classList.add('lk');svg.appendChild(l);
+  const d=document.createElement('div');d.className='node chip'+(c?' b':'');d.textContent=t;d.style.left=x+'px';d.style.top=y+'px';s10.appendChild(d);
+});
+// captions
+const capBox=document.getElementById('cap');
+const fmtCap=s=>s.replace(/&/g,'&amp;');
+
+// ---------- timeline ----------
+const TM=window.TIMING, DUR=TM.duration;
+const tl=gsap.timeline({paused:true,defaults:{ease:'power3.out'}});
+const A={
+  up:  (e,t)=>tl.fromTo(e,{opacity:0,y:40,filter:'blur(10px)'},{opacity:1,y:0,filter:'blur(0px)',duration:.8},t),
+  fade:(e,t)=>tl.fromTo(e,{opacity:0},{opacity:1,duration:.8},t),
+  zoom:(e,t)=>tl.fromTo(e,{opacity:0,scale:.7,filter:'blur(18px)'},{opacity:1,scale:1,filter:'blur(0px)',duration:1.1,ease:'expo.out'},t),
+  title:(e,t)=>tl.fromTo(e,{opacity:0,scale:1.3,letterSpacing:'40px',filter:'blur(20px)'},{opacity:1,scale:1,letterSpacing:'0px',filter:'blur(0px)',duration:1.6,ease:'expo.out'},t),
+  left:(e,t)=>tl.fromTo(e,{opacity:0,x:-260},{opacity:1,x:0,duration:1.3,ease:'power4.out'},t),
+  right:(e,t)=>tl.fromTo(e,{opacity:0,x:200,filter:'blur(14px)'},{opacity:1,x:0,filter:'blur(0px)',duration:1.1,ease:'expo.out'},t),
+  ltr:(e,t)=>tl.fromTo(e,{opacity:0,x:-40},{opacity:1,x:0,duration:.5},t),
+  pop:(e,t)=>tl.fromTo(e,{opacity:0,scale:.5,y:30},{opacity:1,scale:1,y:0,duration:.6,ease:'back.out(2)'},t),
+  spin:(e,t)=>tl.fromTo(e,{scale:0,rotation:-180,opacity:0},{scale:1,rotation:0,opacity:1,duration:1.2,ease:'back.out(1.6)'},t),
+  bar:(e,t)=>tl.fromTo(e,{opacity:0,scaleX:0},{opacity:1,scaleX:1,duration:1.1,ease:'power2.inOut'},t),
+  barx:(e,t)=>tl.fromTo(e,{opacity:0,scaleX:0},{opacity:1,scaleX:1,duration:.8,ease:'power2.inOut'},t),
+  q:(e,t)=>tl.fromTo(e,{opacity:0,y:80,rotationX:-50,filter:'blur(14px)'},{opacity:1,y:0,rotationX:0,filter:'blur(0px)',duration:.55},t),
+  rise:(e,t)=>tl.fromTo(e,{opacity:0,y:120,scale:.9},{opacity:1,y:-20,scale:1.05,duration:.9,ease:'back.out(1.6)'},t),
+  card:(e,t)=>tl.fromTo(e,{opacity:0,y:60,rotationY:30},{opacity:1,y:0,rotationY:0,duration:.6},t),
+  words:(e,t)=>{tl.set(e,{opacity:1},t);const w=e.querySelectorAll('.w');tl.fromTo(w,{opacity:0,y:30,filter:'blur(8px)'},{opacity:1,y:0,filter:'blur(0px)',duration:.55,stagger:Math.min(.12,1.6/w.length)},t);},
+};
+TM.scenes.forEach((sc,si)=>{
+  const el=document.getElementById(sc.id); if(!el) return;
+  const LS=i=>i<0?sc.start+.15:sc.lines[i].start-.15;
+  tl.set(el,{opacity:1},sc.start);
+  if(si<TM.scenes.length-1){tl.to(el,{opacity:0,filter:'blur(12px)',duration:.55,ease:'power2.in'},sc.end-.55);tl.set(el,{scale:1,filter:'none'},sc.end);}
+  el.querySelectorAll('.L').forEach(e=>{
+    const i=+e.dataset.in, d=+(e.dataset.d||0);
+    A[e.dataset.a||'up'](e,LS(i)+d);
+    if(e.dataset.out!==undefined){tl.to(e,{opacity:0,y:-70,filter:'blur(14px)',duration:.4,ease:'power2.in'},LS(+e.dataset.out)-.3);}
+  });
+  // captions
+  if(!['s1','s13'].includes(sc.id)) sc.lines.forEach((ln,i)=>{
+    const c=document.createElement('div');c.className='c';c.innerHTML=fmtCap(ln.text);capBox.appendChild(c);
+    tl.fromTo(c,{opacity:0,y:16},{opacity:1,y:0,duration:.3,ease:'power2.out'},ln.start-.1);
+    tl.to(c,{opacity:0,duration:.25},ln.end+.25);
+  });
+});
+// scene-specific extras
+const sc=id=>TM.scenes.find(s=>s.id===id);
+(()=>{const s=sc('s1');tl.fromTo('#s1t',{backgroundPosition:'0% 0'},{backgroundPosition:'100% 0',duration:3},s.lines[0].start);
+  tl.fromTo('#bug',{opacity:0,x:-30},{opacity:1,x:0,duration:.8},s.lines[1].end);})();
+(()=>{const s=sc('s3');tl.to('#bug',{opacity:0,duration:.4},s.start-.2);tl.to('#bug',{opacity:1,duration:.5},s.end);
+  tl.fromTo('#s3 .ring',{rotation:0},{rotation:140,duration:s.end-s.start,ease:'none'},s.start);
+  tl.to('#s3 .sara',{scale:1.04,duration:s.end-s.start-1.5,ease:'none',transformOrigin:'50% 100%'},s.start+1.4);})();
+(()=>{const s=sc('s4b');tl.fromTo('#ready',{'--x':0},{'--x':1,duration:.6,ease:'power2.out'},s.lines[0].end-.8);
+  tl.to('#ready',{opacity:.45,scale:.85,duration:.6},s.lines[1].start);})();
+(()=>{const s=sc('s5');s.lines.forEach((l,i)=>tl.call(()=>{document.getElementById('qn').textContent=String(i+1).padStart(2,'0')},null,l.start));})();
+(()=>{const s=sc('s6b');const w=document.querySelectorAll('#s6b .w2');tl.fromTo(w,{opacity:0,y:60},{opacity:1,y:0,duration:.5,stagger:.17},s.lines[3].start-.1);})();
+(()=>{const s=sc('s7');tl.to('#s7 .eq .op',{scale:1.25,duration:.4,yoyo:true,repeat:3,ease:'sine.inOut'},s.lines[2].start+6);})();
+['s8','s8b'].forEach(id=>{const s=sc(id);const cards=document.querySelectorAll('#'+id+' .mod');
+  cards.forEach((c,i)=>{const l=s.lines[i];tl.call(()=>c.classList.add('on'),null,l.start);tl.call(()=>c.classList.remove('on'),null,l.end+.4);
+    tl.call(()=>c.classList.remove('on'),null,s.start);tl.to(c,{scale:1.05,duration:.5,ease:'power2.out'},l.start+.3);tl.to(c,{scale:1,duration:.5},l.end+.2);});});
+(()=>{const s=sc('s10');tl.to('#s10 .lk',{attr:{'stroke-dashoffset':0},duration:.6,stagger:.25,ease:'power2.out'},s.lines[1].start);
+  const n=document.querySelectorAll('#s10 .node');tl.fromTo(n,{opacity:0,scale:0},{opacity:1,scale:1,duration:.5,stagger:.25,ease:'back.out(2)'},s.lines[1].start+.3);
+  tl.to('#s10 .core',{boxShadow:'0 0 160px rgba(61,139,255,.9)',duration:.9,yoyo:true,repeat:11,ease:'sine.inOut'},s.lines[2].start);
+  tl.to('#s10 .node',{scale:1.12,duration:.5,yoyo:true,repeat:1,stagger:.1},s.lines[3].start+1);})();
+(()=>{const s=sc('s12');tl.fromTo('#s12 .ring3',{rotation:0,scale:.8},{rotation:90,scale:1.1,duration:s.end-s.start,ease:'none'},s.start);})();
+(()=>{const s=sc('s13');tl.to('#bug',{opacity:0,duration:.5},s.start);
+  tl.to('#s13 .cta',{scale:1.06,duration:.6,yoyo:true,repeat:9,ease:'sine.inOut'},s.lines[3].start+.8);})();
+
+// ===== motion graphics layer =====
+tl.set('#wipe .p',{xPercent:-200},0);
+TM.scenes.forEach((sc,si)=>{
+  const el=document.getElementById(sc.id);
+  // slow camera push-in
+  tl.fromTo(el,{scale:1},{scale:1.035,duration:Math.max(.5,sc.end-sc.start-.6),ease:'none',immediateRender:false},sc.start);
+  if(si===0) return;
+  const t=sc.start-.45;
+  const dir=si%2?1:-1;
+  ['.p1','.p2','.p3'].forEach((p,k)=>tl.fromTo('#wipe '+p,{xPercent:dir>0?-160:160},{xPercent:dir>0?160:-160,duration:.95,ease:'power3.inOut',immediateRender:false},t+k*.07));
+  tl.fromTo('#flare',{opacity:0,scaleX:.2},{opacity:1,scaleX:1,duration:.25,immediateRender:false},sc.start-.05);
+  tl.to('#flare',{opacity:0,duration:.45},sc.start+.2);
+});
+tl.fromTo('#hud .scan',{top:'0%'},{top:'100%',duration:6,ease:'none',repeat:Math.ceil(DUR/6)},0);
+tl.fromTo('#hud',{opacity:0},{opacity:1,duration:1},1);
+tl.to('#hud',{opacity:0,duration:.6},DUR-3);
+const tcEl=document.getElementById('tc');let lastS=-1;
+const _seek=t=>{const s=Math.floor(t);if(s!==lastS){lastS=s;tcEl.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}};
+// shine on big gold titles
+['#s1t','#s7 .ce','#s12 .t','#s13 .title','#s3 .name'].forEach(q=>{const e=document.querySelector(q);if(!e)return;
+  e.style.backgroundSize='250% 100%';
+  e.style.backgroundImage='linear-gradient(100deg,#b98a22 0%,#e2b84a 35%,#fff3c8 47%,#e2b84a 59%,#b98a22 100%)';
+  tl.fromTo(e,{backgroundPosition:'100% 0'},{backgroundPosition:'0% 0',duration:2.2,ease:'power1.inOut',repeat:Math.floor(DUR/7),repeatDelay:4.8,immediateRender:false},0);});
+// s2 pulse rings
+(()=>{const s=sc('s2');document.querySelectorAll('#s2 .pulse').forEach((p,i)=>tl.fromTo(p,{scale:1,opacity:.8},{scale:2.3,opacity:0,duration:2.4,ease:'power1.out',repeat:Math.ceil((s.end-s.start)/2.4),immediateRender:false},s.start+.8+i*.8));})();
+// s7 prompt typing
+(()=>{const s=sc('s7');const P='<b>Role:</b> Senior FP&amp;A Analyst\n<b>Data:</b> Q3 Actual vs Budget\n<b>Goal:</b> explain variances + 3 actions';
+  const plain=P.replace(/<[^>]+>/g,'').replace(/&amp;/g,'&');const pt=document.getElementById('ptxt');const o={n:0};
+  const render=()=>{let n=Math.round(o.n),out='',vis=0,i=0;while(i<P.length&&vis<n){if(P[i]==='<'){const j=P.indexOf('>',i);out+=P.slice(i,j+1);i=j+1;continue;}
+    if(P.startsWith('&amp;',i)){out+='&amp;';i+=5;vis++;continue;} if(P[i]==='\n'){out+='<br>';i+=1;vis++;continue;} out+=P[i];i++;vis++;}
+    if(out.split('<b>').length>out.split('</b>').length) out+='</b>'; pt.innerHTML=out;};
+  tl.fromTo(o,{n:0},{n:plain.length,duration:3.2,ease:'none',onUpdate:render,immediateRender:false},s.lines[1].start+.3);
+  tl.set(o,{n:0,onComplete:render},s.start);})();
+// s8i chart + counter
+(()=>{const s=sc('s8i');tl.fromTo('#s8i .chart div',{scaleY:0},{scaleY:1,duration:.7,stagger:.12,ease:'back.out(1.4)',immediateRender:false},s.lines[0].start+.8);
+  const o={v:0},m=document.getElementById('modn');tl.fromTo(o,{v:0},{v:14,duration:1.6,ease:'power2.out',onUpdate:()=>m.textContent=Math.round(o.v),immediateRender:false},s.lines[1].start+2);})();
+// s9 line chart draw
+(()=>{const s=sc('s9');const p=document.getElementById('lcp');const L=p.getTotalLength();p.style.strokeDasharray=L;
+  tl.fromTo(p,{strokeDashoffset:L},{strokeDashoffset:0,duration:2.5,ease:'power2.inOut',immediateRender:false},s.lines[1].start+.2);})();
+// s12 orbit is driven by ring rotation; add twinkle
+tl.to('#s12 .orb',{opacity:.25,duration:.6,yoyo:true,repeat:9,stagger:.15,ease:'sine.inOut'},sc('s12').start+1);
+tl.fromTo('#prog',{width:'0%'},{width:'100%',duration:DUR,ease:'none'},0);
+tl.to({}, {duration:.01},DUR);
+window.DUR=DUR;
+const vz=document.getElementById('viz'),vx=vz.getContext('2d');
+function drawViz(t){const E=window.ENV||[],fps=30;vx.clearRect(0,0,300,70);
+  for(let i=0;i<24;i++){const f=Math.max(0,Math.round(t*fps)-i);const a=E[f]||0;const h=4+Math.min(62,a*62*(0.6+0.4*Math.abs(Math.sin(i*1.7+t*3))));
+    const g=vx.createLinearGradient(0,70,0,0);g.addColorStop(0,'#1f5fe0');g.addColorStop(1,'#f6dc8a');vx.fillStyle=g;vx.fillRect(i*12.5,(70-h)/2,7,h);}}
+tl.fromTo('#viz',{opacity:0},{opacity:.9,duration:1},TM.scenes[1].start);tl.to('#viz',{opacity:0,duration:.6},TM.scenes[TM.scenes.length-1].start);
+window.seek=(t)=>{drawBG(t);tl.seek(t,false);_seek(t);drawViz(t);};
+seek(0);
+if(location.hash==='#play'){const au=new Audio('final_audio.m4a');document.body.onclick=()=>{au.play();const t0=performance.now();(function f(){seek((performance.now()-t0)/1000);requestAnimationFrame(f)})();};}
+</script>
+</body>
+</html>
