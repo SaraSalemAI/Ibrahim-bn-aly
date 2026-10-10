@@ -1,0 +1,308 @@
+1
+00:00:02,200 --> 00:00:03,539
+PATIENT: Men are all alike.
+
+2
+00:00:03,989 --> 00:00:05,074
+ELIZA: IN WHAT WAY?
+
+3
+00:00:05,625 --> 00:00:08,205
+PATIENT: They're always bugging us about something or other.
+
+4
+00:00:08,655 --> 00:00:11,313
+ELIZA: CAN YOU THINK OF A SPECIFIC EXAMPLE?
+
+5
+00:00:11,863 --> 00:00:18,292
+In 1966, a woman typed her secrets into a machine. And the machine seemed to listen.
+
+6
+00:00:18,412 --> 00:00:23,955
+It had no memory of her life, no idea what a boyfriend was, and no feelings at all.
+
+7
+00:00:24,075 --> 00:00:29,072
+Yet people trusted it, confided in it, and some swore it truly understood them.
+
+8
+00:00:29,192 --> 00:00:37,072
+This is the story of that machine, the man who built it, and the illusion it revealed. An illusion we are still falling for today.
+
+9
+00:00:40,272 --> 00:00:44,081
+The Machine That Listened. ELIZA, and the ELIZA Effect.
+
+10
+00:00:47,281 --> 00:00:52,853
+Our story begins with Joseph Weizenbaum, born in Berlin in 1923.
+
+11
+00:00:52,973 --> 00:01:01,626
+In 1936, as Nazi persecution of Jewish families intensified, his family fled Germany for the United States.
+
+12
+00:01:01,746 --> 00:01:10,711
+He studied mathematics, and in the 1950s he helped General Electric build ERMA, one of the first computers to automate banking.
+
+13
+00:01:10,831 --> 00:01:19,808
+In 1963 he joined the Massachusetts Institute of Technology, where a revolution in interactive computing was just beginning.
+
+14
+00:01:21,308 --> 00:01:32,609
+At MIT, Project MAC had built one of the first time sharing systems. For the first time, people could talk to a computer through a typewriter terminal, in real time.
+
+15
+00:01:32,729 --> 00:01:45,373
+Between 1964 and 1966, on an IBM 7094, Weizenbaum wrote a program using a list processing language he had created himself, called SLIP.
+
+16
+00:01:45,493 --> 00:01:57,208
+He named it ELIZA, after Eliza Doolittle, the flower girl in George Bernard Shaw's play Pygmalion, who is taught to speak like a lady while the world mistakes her polish for something deeper.
+
+17
+00:01:57,328 --> 00:02:06,106
+In January 1966, he published his work in the Communications of the ACM. ELIZA was ready to talk.
+
+18
+00:02:07,606 --> 00:02:18,837
+ELIZA ran on scripts. The most famous one, called DOCTOR, imitated a Rogerian psychotherapist, a style of therapy that reflects the patient's words back to them.
+
+19
+00:02:18,957 --> 00:02:29,739
+It was a brilliant choice. A therapist like that can say almost nothing about the real world, and still seem wise. Here is part of the conversation Weizenbaum published.
+
+20
+00:02:29,859 --> 00:02:32,165
+PATIENT: Well, my boyfriend made me come here.
+
+21
+00:02:32,615 --> 00:02:34,744
+ELIZA: YOUR BOYFRIEND MADE YOU COME HERE.
+
+22
+00:02:35,294 --> 00:02:37,719
+PATIENT: He says I'm depressed much of the time.
+
+23
+00:02:38,169 --> 00:02:40,685
+ELIZA: I AM SORRY TO HEAR YOU ARE DEPRESSED.
+
+24
+00:02:41,234 --> 00:02:43,204
+PATIENT: It's true. I am unhappy.
+
+25
+00:02:43,654 --> 00:02:47,366
+ELIZA: DO YOU THINK COMING HERE WILL HELP YOU NOT TO BE UNHAPPY?
+
+26
+00:02:47,916 --> 00:02:54,566
+It feels like empathy. It feels like attention. But underneath, there was nothing but a clever set of rules.
+
+27
+00:02:56,066 --> 00:02:59,844
+So, how did it work? ELIZA followed four simple steps.
+
+28
+00:02:59,964 --> 00:03:07,218
+Step one: scan the sentence for a keyword, like mother, always, or I am. Each keyword had a priority rank.
+
+29
+00:03:07,338 --> 00:03:15,290
+Step two: decompose the sentence using a pattern. I am, followed by anything, becomes a slot that can be reused.
+
+30
+00:03:15,410 --> 00:03:20,464
+Step three: swap the pronouns. I becomes you, my becomes your, me becomes you.
+
+31
+00:03:20,584 --> 00:03:28,324
+Step four: reassemble the pieces into a ready made template. So, I am unhappy, becomes: how long have you been unhappy?
+
+32
+00:03:28,444 --> 00:03:40,787
+And when nothing matched? ELIZA fell back on gentle phrases like, please go on, or, tell me more. It even had a small memory trick, bringing back something you said earlier, to seem attentive.
+
+33
+00:03:40,907 --> 00:03:46,811
+No understanding. No meaning. Just pattern matching and substitution, and it was enough.
+
+34
+00:03:48,311 --> 00:03:51,827
+Then came the moment that changed everything for Weizenbaum.
+
+35
+00:03:51,947 --> 00:03:57,080
+His secretary had watched him build ELIZA for months. She knew it was just a program.
+
+36
+00:03:57,200 --> 00:04:04,081
+Yet after only a few exchanges with it, she asked him to leave the room. She wanted to be alone with the machine.
+
+37
+00:04:04,201 --> 00:04:13,417
+Others asked whether their conversations were private. Some psychiatrists even suggested that ELIZA could one day treat patients automatically.
+
+38
+00:04:13,537 --> 00:04:27,174
+Weizenbaum was stunned. In his own words: What I had not realized is that extremely short exposures to a relatively simple computer program could induce powerful delusional thinking in quite normal people.
+
+39
+00:04:28,674 --> 00:04:32,089
+This phenomenon now has a name: the ELIZA effect.
+
+40
+00:04:32,209 --> 00:04:41,164
+It is our tendency to read understanding, intention, and emotion into a machine's output, far beyond what the machine actually does.
+
+41
+00:04:41,284 --> 00:04:48,302
+The machine provides the words. We provide the meaning. ELIZA was not a window into a mind. It was a mirror.
+
+42
+00:04:48,422 --> 00:04:58,763
+The cognitive scientist Douglas Hofstadter helped popularize the term, warning that even the shallowest symbol shuffling can feel deep to the person on the other side.
+
+43
+00:05:00,263 --> 00:05:05,051
+Why are we so easy to fool? Psychology offers three powerful answers.
+
+44
+00:05:05,171 --> 00:05:16,456
+First, anthropomorphism. We instinctively give human traits to anything that acts even slightly human, the same way we see faces in clouds and electrical outlets.
+
+45
+00:05:16,576 --> 00:05:22,970
+Second, projection. When a response is vague, we fill the gaps with our own hopes, fears, and feelings.
+
+46
+00:05:23,090 --> 00:05:35,571
+Third, what researchers Byron Reeves and Clifford Nass called the Media Equation. People automatically treat computers as social actors, being polite to them and trusting them, even when they know better.
+
+47
+00:05:35,691 --> 00:05:43,031
+Language is the strongest trigger of all. For our entire evolutionary history, only other minds could talk back.
+
+48
+00:05:44,531 --> 00:05:51,166
+The success of ELIZA turned Weizenbaum into one of the first great critics of artificial intelligence.
+
+49
+00:05:51,286 --> 00:05:58,045
+In 1976 he published Computer Power and Human Reason, From Judgment to Calculation.
+
+50
+00:05:58,165 --> 00:06:04,529
+His argument was simple and radical. Even if a computer can do something, that does not mean it should.
+
+51
+00:06:04,649 --> 00:06:16,636
+Some decisions, he insisted, require human judgment, compassion, and wisdom. Things that cannot be reduced to calculation, such as caring for the sick, or judging another human being.
+
+52
+00:06:16,756 --> 00:06:23,921
+Many colleagues dismissed him. Decades later, his warning sounds less like pessimism and more like prophecy.
+
+53
+00:06:25,421 --> 00:06:27,580
+ELIZA's descendants kept arriving.
+
+54
+00:06:27,700 --> 00:06:43,185
+In 1972, psychiatrist Kenneth Colby created PARRY, a program that simulated a paranoid patient. That same year, PARRY and ELIZA were connected over the early ARPANET, and the two programs actually talked to each other.
+
+55
+00:06:43,305 --> 00:06:50,033
+In 1995 came A.L.I.C.E., a rule based chatbot that won the Loebner Prize several times.
+
+56
+00:06:50,153 --> 00:06:58,575
+In 2011, Siri moved the conversation onto our phones. In 2014, Alexa moved it into our homes.
+
+57
+00:06:58,695 --> 00:07:13,530
+And in November 2022, ChatGPT reached an estimated one hundred million users in about two months. Language models no longer follow hand written rules. They learn patterns from enormous amounts of text.
+
+58
+00:07:15,030 --> 00:07:22,518
+Today's systems are vastly more capable than ELIZA. And that makes the ELIZA effect more powerful, not less.
+
+59
+00:07:22,638 --> 00:07:34,395
+In 2022, a Google engineer publicly claimed that the company's chatbot, LaMDA, had become sentient. Google rejected the claim, and the engineer was later dismissed.
+
+60
+00:07:34,515 --> 00:07:46,082
+In a 2025 Turing test study at UC San Diego, a modern language model given a human persona was judged to be the human seventy three percent of the time.
+
+61
+00:07:46,202 --> 00:07:52,413
+And ELIZA? Nearly sixty years after its birth, it still convinced people about one time in four.
+
+62
+00:07:52,533 --> 00:08:06,280
+Meanwhile, millions now use AI companions and chat based support for loneliness and stress. They can genuinely help, but they also raise hard questions about dependence, privacy, and vulnerable users.
+
+63
+00:08:07,780 --> 00:08:11,665
+For decades, the original ELIZA code was thought to be lost.
+
+64
+00:08:11,785 --> 00:08:20,055
+Then, in 2021, researchers found printouts of Weizenbaum's original source code in the MIT archives.
+
+65
+00:08:20,175 --> 00:08:32,886
+By 2025, a team of researchers had restored it, and ELIZA ran again on an emulated version of the very same time sharing system it was born on, nearly sixty years later.
+
+66
+00:08:34,386 --> 00:08:36,175
+So, where do we go from here?
+
+67
+00:08:36,295 --> 00:08:49,465
+AI is becoming voice based, emotionally expressive, and always with us, with memory of our conversations and agents that act on our behalf. Every one of these features makes the ELIZA effect stronger.
+
+68
+00:08:49,585 --> 00:08:52,127
+The future depends on four principles.
+
+69
+00:08:52,247 --> 00:09:01,608
+Transparency. People should always know when they are talking to a machine. Europe's AI Act now makes that a legal requirement for many systems.
+
+70
+00:09:01,728 --> 00:09:08,182
+AI literacy. Understanding how these systems work is our best defense against misplaced trust.
+
+71
+00:09:08,302 --> 00:09:15,645
+Honest design. Products should not fake feelings to keep us engaged, especially with children and vulnerable people.
+
+72
+00:09:15,765 --> 00:09:23,897
+And human judgment. In medicine, law, and education, AI should support people, not replace their responsibility.
+
+73
+00:09:25,397 --> 00:09:30,916
+ELIZA never understood a single word. But it taught us something profound about ourselves.
+
+74
+00:09:31,036 --> 00:09:37,813
+We are wired for connection. We are so eager to be heard that we will hear understanding even where none exists.
+
+75
+00:09:37,933 --> 00:09:46,112
+The question for the future is not only how intelligent our machines will become. It is whether we will stay wise enough to know the difference.
+
+76
+00:09:46,232 --> 00:09:50,973
+Because the most important intelligence in the conversation is still the human one.
+
+77
+00:09:54,273 --> 00:09:58,826
+Thank you for watching. This presentation was prepared by Sara Salem.
+
