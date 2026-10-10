@@ -150,7 +150,7 @@ pre.json{margin:0;font-family:var(--f-mono);font-size:.78rem;white-space:pre;ove
 .drawer{position:fixed;inset-block:0;inset-inline-end:0;width:min(440px,100%);background:var(--surface);border-inline-start:1px solid var(--line);box-shadow:0 0 30px var(--shade);z-index:20;display:grid;grid-template-rows:auto 1fr auto;padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px)}
 .dh{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
 .msgs{overflow-y:auto;padding:14px 16px;display:grid;gap:10px;align-content:start}
-.msg{padding:10px 12px;border-radius:10px;font-size:.9rem;max-width:92%;white-space:pre-wrap;line-height:1.55}
+.msg{padding:10px 12px;border-radius:10px;font-size:.9rem;max-width:92%;white-space:pre-wrap;line-height:1.55;unicode-bidi:plaintext;text-align:start}
 .msg.u{background:var(--green-soft);justify-self:end}
 .msg.a{background:var(--surface2);justify-self:start}
 .compose{border-top:1px solid var(--line);padding:12px 16px;display:grid;gap:8px}
@@ -261,7 +261,7 @@ const UI={
  lang:tr("العربية","English"), light:tr("Light","فاتح"), dark:tr("Dark","داكن"),
  ask:tr("Ask the assistant","المساعد الذكي"), pres:tr("Present","وضع العرض"),
  foot:[tr("Prepared by Dr. Sara Salem. Practical companion to the paper “The Transition to Digital Accounting and Financial Reporting and the Institutionalisation of Green Accounting for Digital Sustainability in Egypt” (Alexandria University, 2026).","إعداد: د. سارة سالم. تطبيق عملي مرافق لبحث «التحول إلى المحاسبة والتقارير المالية الرقمية ومأسسة المحاسبة الخضراء لتحقيق الاستدامة الرقمية في مصر» (جامعة الإسكندرية، 2026)."),
-       tr("The demo company and every number in it are fictitious. Emission factors are illustrative defaults to be replaced with documented factors. The assurability index and the governance alignment levels are the author's analytical operationalisation for discussion, not validated instruments; check legal texts against their official versions. Workbench data stays in this browser.","الشركة التجريبية وكل أرقامها افتراضية. معاملات الانبعاث قيم توضيحية يجب استبدالها بمعاملات موثقة. مؤشر القابلية للتأكيد ومستويات التوافق في الحوكمة ترجمة تحليلية من الباحثة للنقاش وليست أدوات محكّمة، ويجب مراجعة النصوص القانونية في مصادرها الرسمية. بيانات المنصة تبقى في هذا المتصفح.")]
+       tr("The demo company and every number in it are fictitious. Emission factors are illustrative defaults to be replaced with documented factors. The assurability index and the governance alignment levels are the author's analytical operationalisation for discussion, not validated instruments; check legal texts against their official versions. Your work is saved in this browser; use “Save & export” to move it to another device.","الشركة التجريبية وكل أرقامها افتراضية. معاملات الانبعاث قيم توضيحية يجب استبدالها بمعاملات موثقة. مؤشر القابلية للتأكيد ومستويات التوافق في الحوكمة ترجمة تحليلية من الباحثة للنقاش وليست أدوات محكّمة، ويجب مراجعة النصوص القانونية في مصادرها الرسمية. عملك يُحفظ في هذا المتصفح؛ استخدمي «حفظ وتصدير» لنقله إلى جهاز آخر.")]
 };
 
 /* ---------- state ---------- */
@@ -292,12 +292,17 @@ function demo(){
 }
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){S=null}
+const D0=window.__DATA||null;
+if(D0&&D0.S&&D0.S.rows&&(!S||!S.rows||(D0.S.savedAt||0)>(S.savedAt||0)))S=D0.S;
 if(!S||!S.rows)S=demo();
 S.gov=S.gov||{};S.audit=S.audit||{};
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function save(){S.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 let PREF={url:"https://sarasalemai.github.io/Ibrahim-bn-aly/platform/",imported:[]};
 try{Object.assign(PREF,JSON.parse(localStorage.getItem("glw.pref")||"{}"))}catch(e){}
+PREF.imported=PREF.imported||[];PREF.sheetResp=PREF.sheetResp||[];
+if(D0&&D0.PREF){if(!PREF.sheetUrl&&D0.PREF.sheetUrl)PREF.sheetUrl=D0.PREF.sheetUrl;if(D0.PREF.url&&!localStorage.getItem("glw.pref"))PREF.url=D0.PREF.url;if(!PREF.imported.length&&(D0.PREF.imported||[]).length)PREF.imported=D0.PREF.imported;if(!PREF.sheetResp.length&&(D0.PREF.sheetResp||[]).length)PREF.sheetResp=D0.PREF.sheetResp}
 function savePref(){try{localStorage.setItem("glw.pref",JSON.stringify(PREF))}catch(e){}}
+const IN_CLAUDE=()=>!!(window.claude&&window.claude.use);
 
 /* ---------- computation ---------- */
 function calc(st){
@@ -422,7 +427,7 @@ const groupOf=k=>GROUPS.find(g=>g[2].includes(k))[0];
 function shell(){
   document.documentElement.lang=lang;document.documentElement.dir=AR()?"rtl":"ltr";
   $("brandT").textContent=t(UI.brandT);$("byline").textContent=t(UI.byline);$("brandS").textContent=t(UI.brandS);
-  $("langBtn").textContent=t(UI.lang);$("askBtn").textContent=t(UI.ask);$("presBtn").textContent=t(UI.pres);$("exportBtn").textContent=t(tr("Export HTML","تصدير HTML"));
+  $("langBtn").textContent=t(UI.lang);$("askBtn").textContent=t(UI.ask);$("presBtn").textContent=t(UI.pres);$("exportBtn").textContent=t(tr("Save & export","حفظ وتصدير"));
   const dk=document.documentElement.dataset.theme==="dark"||(!document.documentElement.dataset.theme&&matchMedia("(prefers-color-scheme: dark)").matches);
   $("themeBtn").textContent=dk?t(UI.light):t(UI.dark);
   const g=groupOf(tab);
@@ -858,11 +863,12 @@ VIEWS.survey=function(){
   const r=myResp||{profile:{},cond:{},gov:{},practice:{}};
   r.profile=r.profile||{};r.cond=r.cond||{};r.gov=r.gov||{};r.practice=r.practice||{};
   const L=(o,cur)=>Object.entries(o).map(([v,n])=>`<option value="${v}"${v===cur?" selected":""}>${esc(t(n))}</option>`).join("");
-  const status=dbState==="ready"?(myResp&&myResp.submittedAt?`<span class="pill p-ok">${esc(t(tr("Your response is saved. You can update it.","تم حفظ ردك، ويمكنك تعديله.")))}</span>`:`<span class="pill p-warn">${esc(t(tr("Not submitted yet","لم يُرسل بعد")))}</span>`):dbState==="loading"?`<span class="pill p-warn">${esc(t(tr("Connecting…","جارٍ الاتصال…")))}</span>`:`<span class="pill p-bad">${esc(t(tr("Online saving is not available here. Use “Copy my answers” and send them to the researcher.","الحفظ المباشر غير متاح هنا. استخدم «نسخ إجاباتي» وأرسلها للباحثة.")))}</span>`;
+  const sent=myResp&&myResp.submittedAt;
+  const status=sent?`<span class="pill p-ok">${esc(t(tr(`Your response was submitted on ${myResp.submittedAt.slice(0,10)}. You can update it.`,`تم إرسال ردك بتاريخ ${myResp.submittedAt.slice(0,10)}، ويمكنك تعديله.`)))}</span>`:dbState==="loading"?`<span class="pill p-warn">${esc(t(tr("Connecting…","جارٍ الاتصال…")))}</span>`:`<span class="pill p-ok">${esc(t(submitRoute()==="db"?tr("Your answers are saved directly for the researcher.","تُحفظ إجاباتك مباشرة لدى الباحثة."):submitRoute()==="sheet"?tr("Your answers are sent directly to the researcher.","تُرسل إجاباتك مباشرة إلى الباحثة."):tr("When you submit, your answers are saved as a small file for you to send to the researcher.","عند الإرسال تُحفظ إجاباتك في ملف صغير ترسله إلى الباحثة.")))}</span>`;
   return `
   <section class="intro"><h2>${esc(t(tr("Research survey: digital green accounting in Egyptian companies","استبيان بحثي: المحاسبة الخضراء الرقمية في الشركات المصرية")))}</h2>
   <p class="muted">${esc(t(tr("Prepared by Dr. Sara Salem for academic research. The paper's claims about internal practice are theoretical expectations; this survey collects the primary evidence it calls for (§10.2). It takes about 5 minutes. Company name is optional; results are reported only in aggregate.","إعداد: د. سارة سالم لأغراض البحث العلمي. ادعاءات البحث عن الممارسات الداخلية توقعات نظرية، وهذا الاستبيان يجمع الأدلة الأولية التي يدعو إليها (§10.2). يستغرق نحو 5 دقائق. اسم الشركة اختياري، والنتائج تُعرض مجمعة فقط.")))}</p>${status}</section>
-  ${isOwner?ownerPanel():""}
+  ${researcherBlock()}
   <form class="panel" id="survForm">
     <div class="head"><h3>${esc(t(tr("A · Company profile","أ · بيانات الشركة")))}</h3></div>
     <div class="form">
@@ -884,27 +890,77 @@ VIEWS.survey=function(){
     <textarea class="prose" id="sv_barrier" placeholder="${esc(t(tr("In one or two sentences: what most prevents sustainability data being treated like financial data in your company?","في جملة أو اثنتين: ما أكثر ما يمنع معاملة بيانات الاستدامة مثل البيانات المالية في شركتك؟")))}">${esc(r.barrier||"")}</textarea>
     <label class="cb" style="margin-block-start:10px"><input type="checkbox" id="sv_consent"${r.consent?" checked":""}> ${esc(t(tr("I agree that my answers are used, anonymised and in aggregate, for academic research by Dr. Sara Salem.","أوافق على استخدام إجاباتي بشكل مجهول ومجمع لأغراض البحث العلمي للدكتورة سارة سالم.")))}</label>
     <div class="row" style="margin-block-start:12px">
-      <button class="btn pri" type="button" data-act="survSubmit"${dbState==="ready"?"":" disabled"}>${esc(t(myResp&&myResp.submittedAt?tr("Update my response","تحديث ردي"):tr("Submit response","إرسال الرد")))}</button>
+      <button class="btn pri" type="button" data-act="survSubmit"${dbState==="loading"?" disabled":""}>${esc(t(myResp&&myResp.submittedAt?tr("Update my response","تحديث ردي"):tr("Submit response","إرسال الرد")))}</button>
       <button class="btn" type="button" data-act="survCopy">${esc(t(tr("Copy my answers","نسخ إجاباتي")))}</button>
       <button class="btn" type="button" data-act="cert">${esc(t(tr("Download participation certificate","تنزيل شهادة المشاركة")))}</button>
     </div>
   </section>`;
 };
+let dbWriteBlocked=false;
+const rid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36);
+function submitRoute(){if(dbState==="ready"&&!dbWriteBlocked&&!isOwner)return "db";if(dbState==="ready"&&isOwner)return "db";if(PREF.sheetUrl&&!IN_CLAUDE())return "sheet";return "file"}
+function keepMine(r){try{localStorage.setItem("glw.myresp",JSON.stringify(r))}catch(e){}}
+async function fallbackSubmit(r){
+  myResp=r;keepMine(r);
+  if(submitRoute()==="sheet"){
+    try{await fetch(PREF.sheetUrl,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(r)});toast(t(tr("Thank you. Your answers were sent to the researcher.","شكراً لك. تم إرسال إجاباتك إلى الباحثة.")));render();return}
+    catch(e){toast(t(tr("No connection, so your answers were saved as a file instead.","لا يوجد اتصال، لذا حُفظت إجاباتك في ملف.")))}
+  }
+  const nm=((r.profile&&r.profile.company)||"company").replace(/[^\w؀-ۿ-]+/g,"_").slice(0,40);
+  await saveFile(`survey-answers-${nm}.json`,JSON.stringify(r,null,1),"application/json");
+  toast(t(tr("Thank you. Your answers file is saved. Send it to the researcher by email or WhatsApp.","شكراً لك. تم حفظ ملف إجاباتك. أرسله إلى الباحثة بالبريد أو واتساب.")));render();
+}
+function allResp(){
+  const seen=new Map();const add=(r,src)=>{if(!r||!r.cond)return;const k=r.rid||r._id||JSON.stringify(r.cond)+(r.profile&&r.profile.company||"");const o=seen.get(k);if(!o||(r.submittedAt||"")>(o.submittedAt||""))seen.set(k,{...r,_src:src})};
+  responses.forEach(r=>add(r,"db"));(PREF.sheetResp||[]).forEach(r=>add(r,"sheet"));PREF.imported.forEach(r=>add(r,"file"));
+  return [...seen.values()];
+}
 function ownerPanel(){
-  const n=responses.length;const ix=responses.map(r=>surveyIdx(r));
+  const R=allResp(),n=R.length;const ix=R.map(r=>surveyIdx(r));
   const avg=i=>n?ix.reduce((a,x)=>a+x.c[i],0)/n:0;
-  const keep=Object.keys(KEEP).map(k=>[k,responses.filter(r=>(r.practice||{}).keep===k).length]);
-  return `<section class="panel"><div class="head"><div><h2>${esc(t(tr("Researcher view (only you see this)","عرض الباحثة (يظهر لكِ فقط)")))}</h2><p class="muted small">${esc(t(tr("Live results from everyone who submitted. Respondents cannot see each other's answers.","نتائج مباشرة من كل من أرسل. لا يرى المشاركون إجابات بعضهم.")))}</p></div>
-    <div class="row"><button class="btn" type="button" data-act="survCsv">${esc(t(tr("Copy responses as CSV","نسخ الردود كـ CSV")))}</button><button class="btn" type="button" data-act="survDl">${esc(t(tr("Download CSV","تنزيل CSV")))}</button></div></div>
-    <div class="kpis">
-      ${kpi(tr("Responses","الردود"),String(n),"",tr("Each response is one company. Around 30 or more allows basic statistical comparison between groups.","كل رد يمثل شركة. نحو 30 رداً فأكثر يسمح بمقارنة إحصائية أولية بين المجموعات."))}
+  const keep=Object.keys(KEEP).map(k=>[k,R.filter(r=>(r.practice||{}).keep===k).length]);
+  const src=k=>R.filter(r=>r._src===k).length;
+  return `<div class="kpis">
+      ${kpi(tr("Responses","الردود"),String(n),t(tr(`online ${src("db")} · sheet ${src("sheet")} · files ${src("file")}`,`أونلاين ${src("db")} · جدول ${src("sheet")} · ملفات ${src("file")}`)),tr("Each response is one company, counted once even if it arrived by more than one route. Around 30 or more allows basic statistical comparison between groups.","كل رد يمثل شركة واحدة ويُحتسب مرة واحدة حتى لو وصل بأكثر من طريقة. نحو 30 رداً فأكثر يسمح بمقارنة إحصائية أولية بين المجموعات."))}
       ${COND.map((c,i)=>kpi(c.n,nf(avg(i),0),t(tr("mean, 0–100","المتوسط، 0–100")),tr("Average agreement converted to 0–100. Below 50 means most companies do not yet meet this condition, which would support the paper's outside-in expectation.","متوسط الموافقة محولاً إلى 0–100. أقل من 50 يعني أن معظم الشركات لا تستوفي هذا الشرط بعد، وهو ما يدعم توقع البحث (من الخارج للداخل)."))).join("")}
     </div>
     <h3 style="margin-block:14px 8px">${esc(t(tr("Where ESG data are kept","أين تُحفظ بيانات ESG")))}</h3>
     <div class="tw"><table><tbody>${keep.map(([k,c])=>`<tr><td>${esc(t(KEEP[k]))}</td><td><div class="ib"><i style="width:${n?c/n*160:0}px"></i><span class="num">${c}</span></div></td></tr>`).join("")}</tbody></table></div>
     ${mean(tr("If most answers are “spreadsheets”, that is direct evidence for the paper's third finding: green accounting is compiled outside the accounting system.","إذا كانت معظم الإجابات «جداول بيانات» فهذا دليل مباشر على النتيجة الثالثة في البحث: المحاسبة الخضراء تُجمع خارج النظام المحاسبي."))}
-  </section>`;
+    <div class="row" style="margin-block-start:12px"><button class="btn" type="button" data-act="survCsv">${esc(t(tr("Copy responses as CSV","نسخ الردود كـ CSV")))}</button><button class="btn" type="button" data-act="survDl">${esc(t(tr("Download CSV","تنزيل CSV")))}</button></div>`;
 }
+const GAS=`// Google Apps Script — paste into Extensions > Apps Script of a new Google Sheet
+const SECRET = "CHANGE-ME-TO-A-LONG-PASSWORD"; // needed only to READ responses
+function doPost(e) {
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  if (sh.getLastRow() === 0) sh.appendRow(["received", "company", "response_json"]);
+  const d = JSON.parse(e.postData.contents);
+  sh.appendRow([new Date(), (d.profile && d.profile.company) || "", JSON.stringify(d)]);
+  return ContentService.createTextOutput("ok");
+}
+function doGet(e) {
+  const out = (o) => ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+  if (!e.parameter.key || e.parameter.key !== SECRET) return out({ error: "wrong key" });
+  const rows = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0].getDataRange().getValues().slice(1);
+  return out({ responses: rows.map(r => { try { return JSON.parse(r[2]); } catch (x) { return null; } }).filter(Boolean) });
+}`;
+function collectTools(){
+  const inC=IN_CLAUDE();
+  return `<h3 style="margin-block:16px 6px">${esc(t(tr("Collect answers from anyone, anywhere (Google Sheets)","اجمعي الإجابات من أي شخص وفي أي مكان (Google Sheets)")))}</h3>
+  <p class="small muted" style="max-width:90ch">${esc(t(tr("Optional. People outside your organisation, and anyone using the offline HTML file or GitHub Pages, can send answers straight into a Google Sheet you own. Steps: 1) create a Google Sheet; 2) Extensions → Apps Script, paste the code below, change the password; 3) Deploy → New deployment → Web app, Execute as: Me, Who has access: Anyone; 4) paste the web-app link here; 5) press “Save platform as HTML” so the copy you share carries the link (the password is never included).","اختياري. يستطيع من هم خارج مؤسستك، ومن يستخدم ملف HTML أو GitHub Pages، إرسال الإجابات مباشرة إلى جدول Google تملكينه. الخطوات: 1) أنشئي جدول Google؛ 2) الإضافات ← Apps Script والصقي الكود بالأسفل وغيّري كلمة السر؛ 3) نشر ← نشر جديد ← تطبيق ويب، التنفيذ باسمي، والوصول: أي شخص؛ 4) الصقي رابط تطبيق الويب هنا؛ 5) اضغطي «حفظ المنصة كـ HTML» لتحمل النسخة التي تشاركينها الرابط (كلمة السر لا تُضمّن أبداً).")))}</p>
+  <div class="row"><button class="btn" type="button" data-act="gasCopy">${esc(t(tr("Copy Apps Script code","نسخ كود Apps Script")))}</button></div>
+  <div class="form" style="margin-block-start:10px"><label class="f">${esc(t(tr("Web-app link","رابط تطبيق الويب")))}<input id="sheetUrl" dir="ltr" value="${esc(PREF.sheetUrl||"")}" placeholder="https://script.google.com/macros/s/…/exec"></label><label class="f">${esc(t(tr("Password (stays on this device)","كلمة السر (تبقى على هذا الجهاز)")))}<input id="sheetKey" type="password" dir="ltr" value="${esc(localGet("glw.sheetkey"))}"></label><div class="row"><button class="btn pri" type="button" data-act="sheetSave">${esc(t(tr("Save link","حفظ الرابط")))}</button><button class="btn" type="button" data-act="sheetLoad"${inC?" disabled":""}>${esc(t(tr("Load responses from the sheet","تحميل الردود من الجدول")))}</button></div></div>
+  ${inC?`<p class="small muted">${esc(t(tr("Inside Claude the page cannot reach Google, so the sheet works in the HTML file and on GitHub Pages. Inside Claude, answers from people in your organisation save online automatically.","داخل Claude لا تستطيع الصفحة الاتصال بـ Google، لذا يعمل الجدول في ملف HTML وعلى GitHub Pages. وداخل Claude تُحفظ إجابات أعضاء مؤسستك أونلاين تلقائياً.")))}</p>`:""}
+  <h3 style="margin-block:16px 6px">${esc(t(tr("Add answer files you received","إضافة ملفات الإجابات التي وصلتك")))}</h3>
+  <div class="row"><label class="btn" for="respFiles" style="cursor:pointer">${esc(t(tr("Choose answer files (.json)…","اختاري ملفات الإجابات (‎.json)…")))}</label><input type="file" id="respFiles" accept=".json,application/json" multiple hidden>${PREF.imported.some(o=>o.cond)||(PREF.sheetResp||[]).length?`<button class="btn danger" type="button" data-act="respClear">${esc(t(tr("Remove added answers","حذف الإجابات المضافة")))}</button>`:""}</div>`;
+}
+function localGet(k){try{return localStorage.getItem(k)||""}catch(e){return ""}}
+function researcherBlock(){
+  const body=ownerPanel()+collectTools();
+  if(isOwner)return `<section class="panel"><div class="head"><div><h2>${esc(t(tr("Researcher view (only you see this)","عرض الباحثة (يظهر لكِ فقط)")))}</h2><p class="muted small">${esc(t(tr("All answers in one place: online, from your Google Sheet and from files people sent you. Respondents cannot see each other's answers.","كل الإجابات في مكان واحد: أونلاين، ومن جدول Google، ومن الملفات المرسلة إليك. لا يرى المشاركون إجابات بعضهم.")))}</p></div></div>${body}</section>`;
+  return `<details class="panel"><summary style="cursor:pointer;font-family:var(--f-display);font-weight:700">${esc(t(tr("For the researcher: collect and analyse answers","للباحثة: جمع الإجابات وتحليلها")))}</summary><div style="margin-block-start:12px">${body}</div></details>`;
+}
+
 function readSurvey(){
   const r={profile:{company:$("sv_company").value.trim(),sector:$("sv_sector").value.trim(),size:$("sv_size").value,tier:$("sv_tier").value,role:$("sv_role").value.trim()},practice:{keep:$("sv_keep").value},cond:{},gov:{},barrier:$("sv_barrier").value.trim(),consent:$("sv_consent").checked,lang};
   document.querySelectorAll("[data-sq]:checked").forEach(i=>r.cond[i.dataset.sq]=+i.value);
@@ -914,10 +970,11 @@ function readSurvey(){
 function respCSV(){
   const head=["company","sector","size","tier","role","keep",...SQ.map(q=>q.id),...THEMES.map(x=>"gov_"+x.id),"idx","barrier","submitted"];
   const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;
-  return head.join(",")+"\n"+responses.map(r=>{const ix=surveyIdx(r);return [r.profile?.company,r.profile?.sector,r.profile?.size,r.profile?.tier,r.profile?.role,r.practice?.keep,...SQ.map(s=>(r.cond||{})[s.id]??""),...THEMES.map(x=>(r.gov||{})[x.id]??""),Math.round(ix.idx),r.barrier,r.submittedAt].map(q).join(",")}).join("\n");
+  return head.join(",")+"\n"+allResp().map(r=>{const ix=surveyIdx(r);return [r.profile?.company,r.profile?.sector,r.profile?.size,r.profile?.tier,r.profile?.role,r.practice?.keep,...SQ.map(s=>(r.cond||{})[s.id]??""),...THEMES.map(x=>(r.gov||{})[x.id]??""),Math.round(ix.idx),r.barrier,r.submittedAt].map(q).join(",")}).join("\n");
 }
 async function initDb(){
   try{
+    try{myResp=JSON.parse(localGet("glw.myresp")||"null")}catch(e){}
     const cl=window.claude;if(!cl||!cl.use){dbState="off";if(tab==="survey")render();return}
     const [db,user]=await Promise.all([cl.use("db"),cl.use("user")]);
     DB=db;
@@ -925,7 +982,7 @@ async function initDb(){
     myId=await user.id();isOwner=await user.isOwner();
     if(!myId){dbState="off";if(tab==="survey")render();return}
     const snap=await db.doc("responses/"+myId).get();
-    if(snap.exists)myResp=JSON.parse(JSON.stringify(snap.data()));
+    if(snap.exists)myResp=JSON.parse(JSON.stringify(snap.data()));else{try{myResp=JSON.parse(localGet("glw.myresp")||"null")}catch(e){}}
     dbState="ready";
     if(isOwner){db.collection("responses").onSnapshot(s=>{responses=s.docs.filter(d=>d.exists).map(d=>({...d.data(),_id:d.id}));if(tab==="survey"||tab==="compare")render()},()=>{})}
     if(tab==="survey")render();
@@ -937,8 +994,8 @@ function companies(){
   const list=[];const C=calc();
   const gl=g=>govScores({gov:Object.fromEntries(Object.entries(g||{}).map(([k,v])=>[k,{gl:v}]))}).glP;
   list.push({name:S.entity.name,src:tr("This workbench","هذه المنصة"),idx:C.idx,c:C.c,gov:govScores().glP});
-  PREF.imported.forEach(st=>{if(st.rows){const c=calc(st);list.push({name:(st.entity||{}).name||"—",src:tr("Imported workbench","منصة مستوردة"),idx:c.idx,c:c.c,gov:govScores(st).glP})}else if(st.cond){const s=surveyIdx(st);list.push({name:(st.profile||{}).company||t(tr("Survey respondent","مشارك في الاستبيان")),src:tr("Imported survey answer","إجابة استبيان مستوردة"),idx:s.idx,c:s.c,gov:gl(st.gov)})}});
-  responses.forEach((r,i)=>{const s=surveyIdx(r);list.push({name:(r.profile||{}).company||(t(tr("Respondent ","مشارك "))+(i+1)),src:tr("Survey","الاستبيان"),idx:s.idx,c:s.c,gov:gl(r.gov)})});
+  PREF.imported.forEach(st=>{if(st.rows){const c=calc(st);list.push({name:(st.entity||{}).name||"—",src:tr("Imported workbench","منصة مستوردة"),idx:c.idx,c:c.c,gov:govScores(st).glP})}});
+  allResp().forEach((r,i)=>{const s=surveyIdx(r);list.push({name:(r.profile||{}).company||(t(tr("Respondent ","مشارك "))+(i+1)),src:tr("Survey","الاستبيان"),idx:s.idx,c:s.c,gov:gl(r.gov)})});
   return list.sort((a,b)=>b.idx-a.idx);
 }
 VIEWS.compare=function(){
@@ -1058,17 +1115,28 @@ const FAQ=[
  {k:["survey","questionnaire","استبيان"],a:tr("The Research survey tab collects primary data from companies on the four conditions and governance. Responses are private to the researcher and feed the Compare tab: the evidence §10.2 calls the most pressing gap.","تبويب «استبيان البحث» يجمع بيانات أولية من الشركات عن الشروط الأربعة والحوكمة. الردود خاصة بالباحثة وتغذي تبويب المقارنة: وهي الأدلة التي يعدها §10.2 أهم فجوة.")},
  {k:["carbon price","shadow","سعر الكربون","ظلي"],f:()=>{const C=calc();return tr(`At your internal price of EGP ${nf(S.price)} per tonne, the hidden carbon cost is EGP ${nf(C.tot*S.price/1e6,2)} million a year, ${C.cost?nf(C.tot*S.price/C.cost*100,1):0}% on top of the environmental cost actually paid.`,`بسعرك الداخلي ${nf(S.price)} جنيه للطن، تبلغ تكلفة الكربون الخفية ${nf(C.tot*S.price/1e6,2)} مليون جنيه سنوياً، أي ${C.cost?nf(C.tot*S.price/C.cost*100,1):0}٪ فوق التكلفة البيئية المدفوعة فعلاً.`)}}
 ];
+const AR2EN={"فاتور":"invoic","حوكم":"governance","تأكيد":"assurance","مراجع":"audit","قياس":"measur","انبعاث":"emission","إفصاح":"disclos","افصاح":"disclos","رقمن":"digital","رقمي":"digital","خضراء":"green","استدام":"sustainab","رؤية":"Vision 2030","مهار":"competence","كفاء":"competence","سيبران":"cyber","أمن":"security","مورد":"supplier","صغير":"smaller","سندات":"green bond","معوق":"constraint","توصي":"recommend","نتائج":"finding","منهج":"methodolog","شرعي":"legitimacy","مؤسسي":"institutional","إشار":"signalling","مجلس":"board","عداد":"meter","حساس":"sensor","إنترنت الأشياء":"internet-of-things","ضريب":"tax","فجوة":"gap","الخارج":"outside-in","الداخل":"inside-out","تصنيف":"taxonomy","جامع":"universit","تعليم":"curricul","مخاطر":"risk","مستثمر":"investor","تكلفة":"cost","طاقة":"energy","مياه":"water","نفايات":"waste","بنية":"architecture","نظري":"theor","أصحاب المصالح":"stakeholder","الرقابة المالية":"Financial Regulatory Authority","قرار":"Decree"};
+const STOP=new Set("the and for with that this what does how why are was were from into about which their there have has had not but can its our your you who whom when where will would should could".split(" "));
+function paperHits(q){
+  const terms=new Set();const low=q.toLowerCase();
+  low.replace(/[^a-z0-9؀-ۿ\- ]+/g," ").split(/\s+/).forEach(w=>{if(/^[a-z0-9-]{3,}$/.test(w)&&!STOP.has(w))terms.add(w.replace(/(ing|ed|es|s)$/,""))});
+  Object.entries(AR2EN).forEach(([a,e])=>{if(q.includes(a))terms.add(e.toLowerCase())});
+  if(!terms.size)return [];
+  return PAPER_FULL.filter(p=>!p.s.startsWith("References")).map(p=>{const tl=p.t.toLowerCase();let sc=0;terms.forEach(tm=>{if(tl.includes(tm))sc+=1+(p.s.toLowerCase().includes(tm)?1:0)});return {p,sc}}).filter(x=>x.sc>0).sort((a,b)=>b.sc-a.sc).slice(0,2).map(x=>x.p);
+}
 function offlineAnswer(q){
   const s=q.toLowerCase();let best=null,bs=0;
   FAQ.forEach(f=>{const sc=f.k.filter(k=>s.includes(k.toLowerCase())).length;if(sc>bs){bs=sc;best=f}});
-  if(!best)return t(tr("I can answer from the paper and this platform on: the research problem, findings, the four conditions, green accounting, digital sustainability, Decrees 107/108, e-invoicing, outside-in vs inside-out, recommendations, UNESCO and governance alignment, the index, emissions, carbon price, SDGs, methodology, constraints and the survey. Try one of these words.","أستطيع الإجابة من البحث والمنصة عن: مشكلة البحث، والنتائج، والشروط الأربعة، والمحاسبة الخضراء، والاستدامة الرقمية، والقرارين 107/108، والفاتورة الإلكترونية، ومن الخارج للداخل، والتوصيات، واليونسكو وتوافق الحوكمة، والمؤشر، والانبعاثات، وسعر الكربون، وأهداف التنمية، والمنهجية، والمعوقات، والاستبيان. جرّب إحدى هذه الكلمات."));
-  return t(best.f?best.f():best.a);
+  const hits=paperHits(q);
+  const ex=hits.length?"\n\n"+t(tr("From the paper:","من نص البحث (بالإنجليزية):"))+hits.map(p=>`\n• ${p.s} — ${p.t.length>420?p.t.slice(0,420)+"…":p.t}`).join(""):"";
+  if(!best&&!hits.length)return t(tr("I can answer from the paper and this platform on: the research problem, findings, the four conditions, green accounting, digital sustainability, Decrees 107/108, e-invoicing, outside-in vs inside-out, recommendations, UNESCO and governance alignment, the index, emissions, carbon price, CBAM, SDGs, methodology, constraints and the survey. Try one of these words.","أستطيع الإجابة من البحث والمنصة عن: مشكلة البحث، والنتائج، والشروط الأربعة، والمحاسبة الخضراء، والاستدامة الرقمية، والقرارين 107/108، والفاتورة الإلكترونية، ومن الخارج للداخل، والتوصيات، واليونسكو وتوافق الحوكمة، والمؤشر، والانبعاثات، وسعر الكربون، وCBAM، وأهداف التنمية، والمنهجية، والمعوقات، والاستبيان. جرّب إحدى هذه الكلمات."));
+  return (best?t(best.f?best.f():best.a):t(tr("Here is what the paper says about this.","إليك ما يقوله البحث عن هذا.")))+ex;
 }
 function context(){
   const C=calc(),G=govScores();
   return JSON.stringify({entity:S.entity,demo:!!S.demo,total_tco2e:+C.tot.toFixed(1),scope:{1:+C.sc[1].toFixed(1),2:+C.sc[2].toFixed(1),3:+C.sc[3].toFixed(1)},env_cost_egp:Math.round(C.cost),einvoice_reconciled_pct:Math.round(C.recon),assurability_index:Math.round(C.idx),conditions:{capture:Math.round(C.c[0]),governance:Math.round(C.c[1]),structured:Math.round(C.c[2]),assurability:Math.round(C.c[3])},internal_carbon_price:S.price,scenario:{efficiency_pct:S.eff,solar_pct:S.solar},governance_self_assessment:{egypt_pct:Math.round(G.egP),global_pct:Math.round(G.glP)},current_tab:TABS[tab].en});
 }
-function rules(){
+function rulesStable(){
   const gov=THEMES.map(x=>`- ${x.n.en}: Egypt = ${x.eg.en}; Global = ${x.gl.en}; alignment = ${x.lv}; meaning = ${x.m.en}`).join("\n");
   const inst=[...EG,...GL].map(x=>`- ${x.n.en}: ${x.d.en}`).join("\n");
   return `You are the research assistant on the "Green Ledger Workbench" platform, prepared by Dr. Sara Salem (Alexandria University Faculty of Business, Digital Sustainability Conference 2026). Answer questions about her paper, green and digital accounting, sustainability disclosure, governance in Egypt and globally (UNESCO, G20/OECD, ISSB, GRI), Egypt Vision 2030, the SDGs, and the numbers on this platform.
@@ -1089,21 +1157,28 @@ ${gov}
 
 UNESCO values: ${UNESCO_V.map(v=>v.en).join("; ")}. UNESCO principles: ${UNESCO_P.map(v=>v.en).join("; ")}.
 
-CURRENT DATA ON THE PLATFORM (JSON):
-${context()}
-
 PAPER (selected sections, verbatim):
 ${PAPER_KB}`;
 }
+function rules(){return rulesStable()+"\n\nCURRENT DATA ON THE PLATFORM (JSON):\n"+context()}
 async function getSample(){
   if(SAMPLE!==undefined)return SAMPLE;
   try{SAMPLE=window.claude&&window.claude.use?await window.claude.use("sample"):null}catch(e){SAMPLE=null}
   return SAMPLE;
 }
 const SUGG=[tr("What are the four findings?","ما النتائج الأربع للبحث؟"),tr("Explain the assurability index for this company","اشرح مؤشر القابلية للتأكيد لهذه الشركة"),tr("How does Egyptian governance align with UNESCO?","كيف تتوافق الحوكمة المصرية مع اليونسكو؟"),tr("What should regulators do next?","ما الذي يجب أن تفعله الجهات الرقابية؟"),tr("What is the difference between outside-in and inside-out?","ما الفرق بين من الخارج للداخل ومن الداخل للخارج؟")];
+const apiKey=()=>localGet("glw.apikey");
+async function askAPI(turns,signal){
+  const r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",signal,headers:{"content-type":"application/json","x-api-key":apiKey(),"anthropic-version":"2023-06-01","anthropic-beta":"server-side-fallback-2026-07-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-opus-5-5",max_tokens:4000,fallbacks:"default",system:[{type:"text",text:rulesStable(),cache_control:{type:"ephemeral"}},{type:"text",text:"CURRENT DATA ON THE PLATFORM (JSON):\n"+context()}],messages:turns.map(m=>({role:m.role,content:m.content}))})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){const e=new Error((j.error&&j.error.message)||("HTTP "+r.status));e.status=r.status;throw e}
+  if(j.stop_reason==="refusal")return t(tr("Claude declined to answer this question. Try rephrasing it.","امتنع Claude عن الإجابة على هذا السؤال. جرّب صياغته بطريقة أخرى."));
+  return (j.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("").trim()||"…";
+}
 function renderDrawer(){
-  const d=$("drawer");const live=!!SAMPLE;
-  d.innerHTML=`<div class="dh"><div><b style="font-family:var(--f-display)">${esc(t(tr("Research assistant","المساعد البحثي")))}</b><div class="small muted">${esc(t(tr("Prepared by Dr. Sara Salem · answers from the paper, governance frameworks and your data","إعداد: د. سارة سالم · يجيب من البحث وأطر الحوكمة وبياناتك")))}</div><span class="pill ${live?"p-ok":"p-warn"}" style="margin-block-start:6px">${esc(t(live?tr("Live AI","ذكاء اصطناعي مباشر"):SAMPLE===undefined?tr("Checking AI…","جارٍ التحقق…"):tr("Offline answers","إجابات بدون اتصال")))}</span></div><button class="btn" type="button" data-act="closeAsk" aria-label="close">✕</button></div>
+  const d=$("drawer");const live=!!SAMPLE||!!apiKey();
+  d.innerHTML=`<div class="dh"><div><b style="font-family:var(--f-display)">${esc(t(tr("Research assistant","المساعد البحثي")))}</b><div class="small muted">${esc(t(tr("Prepared by Dr. Sara Salem · answers from the paper, governance frameworks and your data","إعداد: د. سارة سالم · يجيب من البحث وأطر الحوكمة وبياناتك")))}</div><span class="pill ${live?"p-ok":"p-warn"}" style="margin-block-start:6px">${esc(t(SAMPLE?tr("Live AI · Claude","ذكاء اصطناعي مباشر · Claude"):apiKey()?tr("Live AI · your API key","ذكاء اصطناعي مباشر · مفتاحك"):SAMPLE===undefined?tr("Checking AI…","جارٍ التحقق…"):tr("Answers + paper search, no internet needed","إجابات وبحث في نص البحث بدون إنترنت")))}</span>${SAMPLE===null?`<details style="margin-block-start:8px"><summary class="small" style="cursor:pointer;color:var(--green);font-weight:600">${esc(t(apiKey()?tr("Claude is connected with your API key","Claude متصل بمفتاحك"):tr("Connect full AI (Claude API key)","تفعيل الذكاء الاصطناعي الكامل (مفتاح Claude API)")))}</summary><div style="display:grid;gap:6px;margin-block-start:6px"><input class="inp" id="apiKeyIn" type="password" dir="ltr" placeholder="sk-ant-…" value="${apiKey()?"••••••••":""}" autocomplete="off"><div class="row"><button class="btn pri" type="button" data-act="keySave">${esc(t(tr("Save key","حفظ المفتاح")))}</button>${apiKey()?`<button class="btn danger" type="button" data-act="keyDel">${esc(t(tr("Remove key","حذف المفتاح")))}</button>`:""}</div><p class="small muted">${esc(t(tr("Get a key at console.anthropic.com. It is stored only in this browser on this device, is never put into files you save or share, and usage is billed to your Anthropic account. Needs internet.","احصلي على مفتاح من console.anthropic.com. يُحفظ في هذا المتصفح على هذا الجهاز فقط، ولا يُضمّن أبداً في الملفات التي تحفظينها أو تشاركينها، والاستخدام يُحاسب على حسابك في Anthropic. يحتاج إنترنت.")))}</p></div></details>`:""}</div><button class="btn" type="button" data-act="closeAsk" aria-label="close">✕</button></div>
   <div class="msgs" id="msgs">${chat.length?"":`<div class="msg a">${esc(t(tr("Ask me anything about the research, green accounting, governance in Egypt and globally, or any number on this platform.","اسألني عن أي شيء في البحث أو المحاسبة الخضراء أو الحوكمة في مصر وعالمياً أو أي رقم في المنصة.")))}</div>`}${chat.map(m=>`<div class="msg ${m.role==="user"?"u":"a"}">${esc(m.content)}</div>`).join("")}</div>
   <div class="compose"><div class="chips">${SUGG.map((s,i)=>`<button class="chip" type="button" data-sugg="${i}" style="font-size:.78rem">${esc(t(s))}</button>`).join("")}</div>
   <form id="askForm"><input class="inp" id="askIn" autocomplete="off" placeholder="${esc(t(tr("Type your question…","اكتب سؤالك…")))}" ${asking?"disabled":""}><button class="btn pri" type="submit" ${asking?"disabled":""}>${esc(t(tr("Ask","اسأل")))}</button>${asking?`<button class="btn" type="button" data-act="stopAsk">${esc(t(tr("Stop","إيقاف")))}</button>`:""}</form></div>`;
@@ -1114,6 +1189,9 @@ function renderDrawer(){
 async function ask_(q){
   chat.push({role:"user",content:q});asking=true;renderDrawer();
   const sm=await getSample();
+  if(!sm&&apiKey()){const msg={role:"assistant",content:"…"};const turns=chat.slice(-10);chat.push(msg);renderDrawer();abortCtl=new AbortController();
+    try{msg.content=await askAPI(turns,abortCtl.signal)}catch(e){msg.content=e.name==="AbortError"?"…":e.status===401?t(tr("The API key was rejected. Check it in the settings above.","تم رفض مفتاح API. راجعيه في الإعدادات بالأعلى.")):e.status===429?t(tr("Too many questions in a short time. Wait a minute and try again.","أسئلة كثيرة في وقت قصير. انتظر دقيقة وحاول مجدداً.")):(t(tr("Could not reach Claude (","تعذر الاتصال بـ Claude ("))+e.message+").\n\n"+offlineAnswer(q))}
+    asking=false;abortCtl=null;renderDrawer();return}
   if(!sm){chat.push({role:"assistant",content:offlineAnswer(q)});asking=false;renderDrawer();return}
   const turns=chat.slice(-10);
   const msg={role:"assistant",content:"…"};chat.push(msg);renderDrawer();
@@ -1233,9 +1311,9 @@ document.addEventListener("click",async e=>{
     const r=readSurvey();
     if(!r.consent){toast(t(tr("Please tick the consent box first.","يرجى التأشير على الموافقة أولاً.")));return}
     if(Object.keys(r.cond).length<SQ.length){toast(t(tr("Please answer all eight statements in section B.","يرجى الإجابة على العبارات الثماني في القسم ب.")));return}
-    r.submittedAt=new Date().toISOString();a.disabled=true;
-    try{await DB.doc("responses/"+myId).set(r);myResp=r;toast(t(tr("Thank you. Your response is saved.","شكراً لك. تم حفظ ردك.")));render()}
-    catch(err){a.disabled=false;toast(t(err&&err.code==="invalid_argument"?tr("Your access level cannot save answers. Use “Copy my answers” and send them to the researcher.","مستوى وصولك لا يسمح بالحفظ. استخدم «نسخ إجاباتي» وأرسلها للباحثة."):tr("Saving failed. Try again in a moment.","فشل الحفظ. حاول بعد قليل.")))}
+    r.submittedAt=new Date().toISOString();r.rid=(myResp&&myResp.rid)||rid();a.disabled=true;
+    if(submitRoute()==="db"){try{await DB.doc("responses/"+myId).set(r);myResp=r;keepMine(r);toast(t(tr("Thank you. Your response is saved.","شكراً لك. تم حفظ ردك.")));render();return}catch(err){if(!(err&&err.code==="invalid_argument")){a.disabled=false;toast(t(tr("Saving failed. Try again in a moment.","فشل الحفظ. حاول بعد قليل.")));return}dbWriteBlocked=true}}
+    await fallbackSubmit(r);a.disabled=false;
   }
   if(act==="survCsv")copy(respCSV(),t(tr("Responses copied as CSV","تم نسخ الردود كـ CSV")));
   if(act==="survDl")saveFile("survey-responses.csv","﻿"+respCSV(),"text/csv");
@@ -1368,7 +1446,7 @@ const POLICIES=[
 let POL={on:{meas:true,assure:true},str:60,base:"wb"};
 try{Object.assign(POL,JSON.parse(localStorage.getItem("glw.pol")||"{}"))}catch(e){}
 function polBase(){
-  if(POL.base==="survey"&&responses.length){const ix=responses.map(surveyIdx);return [0,1,2,3].map(i=>ix.reduce((a,x)=>a+x.c[i],0)/ix.length)}
+  if(POL.base==="survey"&&allResp().length){const ix=allResp().map(surveyIdx);return [0,1,2,3].map(i=>ix.reduce((a,x)=>a+x.c[i],0)/ix.length)}
   return calc().c.slice();
 }
 function polProject(b){return b.map((v,i)=>{let gap=100-v;POLICIES.forEach(p=>{if(POL.on[p.id])gap*=1-(p.u[i]/100)*(POL.str/100)});return 100-gap})}
@@ -1376,7 +1454,7 @@ VIEWS.policysim=function(){
   const b=polBase(),p=polProject(b),bi=b.reduce((a,v)=>a+v,0)/4,pi=p.reduce((a,v)=>a+v,0)/4,B=band(bi),P=band(pi);
   return `<section class="intro"><h2>${esc(t(tr("Regulatory policy simulator","محاكي السياسات الرقابية")))}</h2><p class="muted">${esc(t(tr("What could happen to the four conditions if the FRA and the profession adopted the paper's recommendations? Switch policies on and set how strongly they are enforced. The effects are illustrative assumptions drawn from the paper's reasoning, not forecasts; each policy closes a share of the remaining gap on each condition.","ماذا قد يحدث للشروط الأربعة لو تبنت الرقابة المالية والمهنة توصيات البحث؟ فعّل السياسات وحدد قوة تطبيقها. الآثار افتراضات توضيحية مستمدة من منطق البحث وليست تنبؤات؛ كل سياسة تغلق جزءاً من الفجوة المتبقية في كل شرط.")))}</p></section>
   <section class="grid2"><div class="panel"><div class="head"><h3>${esc(t(tr("Policies","السياسات")))}</h3>
-   <select class="btn" id="polBase"><option value="wb"${POL.base==="wb"?" selected":""}>${esc(t(tr("Baseline: this workbench","الأساس: هذه المنصة")))}</option><option value="survey"${POL.base==="survey"?" selected":""}${responses.length?"":" disabled"}>${esc(t(tr("Baseline: survey average","الأساس: متوسط الاستبيان")))}</option></select></div>
+   <select class="btn" id="polBase"><option value="wb"${POL.base==="wb"?" selected":""}>${esc(t(tr("Baseline: this workbench","الأساس: هذه المنصة")))}</option><option value="survey"${POL.base==="survey"?" selected":""}${allResp().length?"":" disabled"}>${esc(t(tr("Baseline: survey average","الأساس: متوسط الاستبيان")))}</option></select></div>
    ${POLICIES.map(x=>`<label class="ck" style="cursor:pointer"><input type="checkbox" data-pol="${x.id}"${POL.on[x.id]?" checked":""}><span class="body"><b>${esc(t(x.n))}</b><span class="small muted">${esc(t(x.d))}</span><span class="small mono muted" dir="ltr">${x.u.map((v,i)=>["C","G","S","A"][i]+" "+v+"%").join(" · ")}</span></span></label>`).join("")}
    <div class="slider" style="margin-block-start:12px"><div class="mh"><label for="polStr">${esc(t(tr("Enforcement strength","قوة التطبيق")))}</label><b class="mono">${POL.str}%</b></div><input type="range" id="polStr" min="0" max="100" step="5" value="${POL.str}"></div>
    ${howto(tr("the small codes show how much of the remaining gap each policy is assumed to close at full strength: C capture, G governance, S structured, A assurability.","الرموز الصغيرة توضح نسبة الفجوة المتبقية التي يُفترض أن تغلقها كل سياسة بكامل قوتها: C الرصد، G الحوكمة، S الهيكلة، A قابلية التأكيد."))}
@@ -1502,7 +1580,7 @@ function simResponses(){let s=7;const rnd=()=>{s=(s*16807)%2147483647;return s/2
   for(let i=0;i<48;i++){const keep=keeps[Math.floor(rnd()*keeps.length)],tier=tiers[Math.floor(rnd()*3)];const gov=Math.floor(rnd()*4);const base=1+gov*.6+(keep==="erp"?1:0)+rnd()*1.4;const cl=v=>Math.max(1,Math.min(5,Math.round(v)));
    const cond={};SQ.forEach(q=>cond[q.id]=cl(base+(rnd()-.5)*1.6+(q.c===2&&keep==="erp"?.6:0)));out.push({profile:{company:"Simulated firm "+(i+1),tier},practice:{keep},cond,gov:Object.fromEntries(THEMES.map(x=>[x.id,Math.max(0,Math.min(3,gov+Math.round((rnd()-.5)*1.4)))]))})}
   return out;}
-function hypoData(){const imp=PREF.imported.filter(o=>o.cond);return SIM?{src:"sim",rows:SIM}:{src:"real",rows:[...responses,...imp]}}
+function hypoData(){return SIM?{src:"sim",rows:SIM}:{src:"real",rows:allResp()}}
 VIEWS.hypo=function(){
   const D=hypoData(),R=D.rows,ix=R.map(surveyIdx);
   const glp=r=>govScores({gov:Object.fromEntries(Object.entries(r.gov||{}).map(([k,v])=>[k,{gl:v}]))}).glP;
@@ -1566,14 +1644,14 @@ const BRIEF={
  ar:{t:"موجز سياسات: من إلزام الإفصاح إلى بنية القياس",to:"إلى الهيئة العامة للرقابة المالية والمهنة المحاسبية في مصر",p:"منح القراران 107 و108 لسنة 2021 مصر إفصاحاً قابلاً للمقارنة عن ESG وإفصاحاً مناخياً وفق TCFD، لكنهما يحددان النموذج لا النظام الذي ينتجه. لذا لا تُنتج أرقام الاستدامة في التقارير السنوية تحت الضوابط والمعايير والتحقق المطبقة على الأرقام المالية المجاورة لها.",e:["الفاتورة الإلكترونية تسجل المبلغ المدفوع لا الكيلوواط ساعة أو المتر المكعب أو الانبعاثات خلفه (§8.1).","لا يوجد متطلب يغطي منهجية القياس أو حوكمة البيانات أو التأكيد المستقل لبيانات ESG (§8.2).","القيد الحاسم مؤسسي وبشري لا تقني (§9)."],r:[["وضع حد أدنى لمتطلبات القياس","منهجية موثقة وحدود محددة وحفظ الأدلة لكل مؤشر مفصح عنه."],["إعلان مسار مرحلي للتأكيد المحدود","إعلان الجدول الزمني الآن ليبني المُعِدّون ومكاتب المراجعة قدراتهم وفقه."],["اعتماد تصنيف وطني قابل للقراءة آلياً","وسم كل قيمة مفصح عنها لتحلل الرقابة المالية التقارير منهجياً، مع مسار مبسط للموردين الصغار."]]}
 };
 VIEWS.posterbrief=function(){
-  const B=BRIEF[AR()?"ar":"en"];const off=!!window.__STANDALONE;
+  const B=BRIEF[AR()?"ar":"en"];const off=false;const F=window.__FILES||{};
   return `<section class="intro"><h2>${esc(t(tr("Poster & policy brief","الملصق البحثي وموجز السياسات")))}</h2><p class="muted">${esc(t(tr("Print-ready files for the conference: an A0 bilingual research poster with a QR code to the platform, and a one-page bilingual policy brief for the FRA.","ملفات جاهزة للطباعة للمؤتمر: ملصق بحثي A0 ثنائي اللغة برمز QR للمنصة، وموجز سياسات من صفحة واحدة ثنائي اللغة للرقابة المالية.")))}</p></section>
-  <section class="grid2"><div class="panel"><div class="head"><h3>${esc(t(tr("Research poster (A0)","الملصق البحثي (A0)")))}</h3>${off?"":`<button class="btn pri" type="button" data-dl="docs/Research_Poster_A0.pdf">${esc(t(tr("Download PDF","تنزيل PDF")))}</button>`}</div>${off?`<p class="small muted">${esc(t(tr("The poster PDF is in the online platform and in the repository's docs folder.","ملف الملصق موجود في المنصة الأونلاين وفي مجلد docs بالمستودع.")))}</p>`:`<img src="docs/Research_Poster_A0.png" alt="poster" style="width:100%;border:1px solid var(--line);border-radius:8px">`}</div>
+  <section class="grid2"><div class="panel"><div class="head"><h3>${esc(t(tr("Research poster (A0)","الملصق البحثي (A0)")))}</h3>${off?"":`<button class="btn pri" type="button" data-dl="docs/Research_Poster_A0.pdf">${esc(t(tr("Download PDF","تنزيل PDF")))}</button>`}</div>${off?`<p class="small muted">${esc(t(tr("The poster PDF is in the online platform and in the repository's docs folder.","ملف الملصق موجود في المنصة الأونلاين وفي مجلد docs بالمستودع.")))}</p>`:`<img src="${F["docs/Research_Poster_A0.png"]||"docs/Research_Poster_A0.png"}" alt="poster" style="width:100%;border:1px solid var(--line);border-radius:8px">`}</div>
   <div class="panel"><div class="head"><h3>${esc(t(tr("Policy brief (A4)","موجز السياسات (A4)")))}</h3>${off?"":`<button class="btn pri" type="button" data-dl="docs/Policy_Brief_FRA.pdf">${esc(t(tr("Download PDF","تنزيل PDF")))}</button>`}</div>
    <div class="out" style="max-height:none"><h3>${esc(B.t)}</h3><p class="small muted">${esc(B.to)} · ${esc(t(UI.byline))}</p><p>${esc(B.p)}</p><b>${esc(AR()?"الأدلة":"Evidence")}</b><ul>${B.e.map(x=>`<li>${esc(x)}</li>`).join("")}</ul><b>${esc(AR()?"ثلاث توصيات":"Three recommendations")}</b><ol style="margin:0;padding-inline-start:20px">${B.r.map(([h,b])=>`<li><b>${esc(h)}.</b> ${esc(b)}</li>`).join("")}</ol></div></div></section>`;
 };
 async function dlPublished(path){
-  try{const r=await fetch(path);if(!r.ok)throw 0;const b=await r.blob();await saveFile(path.split("/").pop(),b,b.type||"application/octet-stream")}catch(e){toast(t(tr("This file is not available in this copy.","الملف غير متاح في هذه النسخة.")))}
+  try{const F=window.__FILES||{};const r=await fetch(F[path]||path);if(!r.ok)throw 0;const b=await r.blob();await saveFile(path.split("/").pop(),b,b.type||"application/octet-stream")}catch(e){toast(t(tr("This file is not available in this copy.","الملف غير متاح في هذه النسخة.")))}
 }
 
 /* ---------- participation certificate ---------- */
@@ -1598,10 +1676,49 @@ async function certificate(r){
 }
 
 /* ---------- export whole platform ---------- */
-async function exportPlatform(){
-  try{if(window.__STANDALONE){await saveFile("Green-Ledger-Platform.html","<!doctype html>\n"+document.documentElement.outerHTML,"text/html");return}
-    const r=await fetch("Green-Ledger-Platform.html");if(!r.ok)throw 0;await saveFile("Green-Ledger-Platform.html",await r.blob(),"text/html");
+function exportData(withResp){
+  return {glw:3,savedAt:Date.now(),lang,S,PREF:{url:PREF.url,sheetUrl:PREF.sheetUrl||"",imported:withResp?PREF.imported:PREF.imported.filter(o=>o.rows),sheetResp:withResp?(PREF.sheetResp||[]):[]}};
+}
+function injectData(html,data){
+  const OPEN='<scr'+'ipt id="glw-data">window.__DATA=',CLOSE='</'+'script>',MARK='<scr'+'ipt>window.__STANDALONE=1';
+  for(let a=html.indexOf(OPEN);a>=0;a=html.indexOf(OPEN)){const b=html.indexOf(CLOSE,a);if(b<0)break;let e=b+CLOSE.length;if(html[e]==="\n")e++;html=html.slice(0,a)+html.slice(e)}
+  const k=html.indexOf(MARK);if(k<0)throw new Error("marker");
+  return html.slice(0,k)+OPEN+JSON.stringify(data.S?data:{}).replace(/<\//g,"<\\/")+";"+CLOSE+"\n"+html.slice(k);
+}
+function cleanShell(){
+  const c=document.documentElement.cloneNode(true);
+  const q=s=>c.querySelector(s);["#main","#drawer","#cue","#modal"].forEach(x=>{const el=q(x);if(el)el.innerHTML=""});
+  ["#drawer","#cue","#modal","#toast"].forEach(x=>{const el=q(x);if(el)el.setAttribute("hidden","")});
+  c.removeAttribute("data-theme");const b=c.querySelector("body");if(b)b.classList.remove("presenting");
+  return "<!doctype html>\n"+c.outerHTML;
+}
+async function exportPlatform(withData,withResp){
+  try{
+    let html;
+    if(window.__STANDALONE)html=cleanShell();
+    else{const r=await fetch("Green-Ledger-Platform.html");if(!r.ok)throw 0;html=await r.text()}
+    html=injectData(html,withData?exportData(withResp):{});
+    await saveFile("Green-Ledger-Platform.html",html,"text/html");
   }catch(e){toast(t(tr("Export file not found in this copy.","ملف التصدير غير موجود في هذه النسخة.")))}
+}
+function exportDialog(){
+  const m=$("modal");m.hidden=false;const ago=S.savedAt?new Date(S.savedAt).toLocaleString(AR()?"ar-EG":"en-GB"):"—";
+  m.innerHTML=`<div class="panel" role="dialog" aria-label="save"><div class="row" style="justify-content:space-between"><h3>${esc(t(tr("Save & move your work","حفظ عملك ونقله")))}</h3><button class="btn" type="button" data-act="qrClose">✕</button></div>
+  <p class="small muted">${esc(t(tr(`Your work is saved automatically in this browser (last change: ${ago}). To open it on another device or send it to someone, save it as a file.`,`عملك يُحفظ تلقائياً في هذا المتصفح (آخر تعديل: ${ago}). لفتحه على جهاز آخر أو إرساله لشخص، احفظيه كملف.`)))}</p>
+  <div class="step"><b>${esc(t(tr("1 · Platform as one HTML file, with your data inside","1 · المنصة كملف HTML واحد وبياناتك بداخله")))}</b><p class="small muted">${esc(t(tr("Opens offline on any computer or phone and continues exactly where you left off.","يفتح بدون إنترنت على أي كمبيوتر أو موبايل ويكمل من حيث توقفتِ.")))}</p>
+   <label class="cb small"><input type="checkbox" id="exWith" checked> ${esc(t(tr("Include my workbench data","تضمين بيانات المنصة الخاصة بي")))}</label>
+   <label class="cb small"><input type="checkbox" id="exResp"> ${esc(t(tr("Also include other companies' survey answers (only for your own devices, not for sharing)","تضمين إجابات الشركات الأخرى أيضاً (لأجهزتك فقط، وليس للمشاركة)")))}</label>
+   <div class="row"><button class="btn pri" type="button" data-act="exHtml">${esc(t(tr("Save platform as HTML","حفظ المنصة كـ HTML")))}</button></div></div>
+  <div class="step"><b>${esc(t(tr("2 · Data file only (.json)","2 · ملف البيانات فقط (‎.json)")))}</b><p class="small muted">${esc(t(tr("Small file you can open in any copy of the platform: online, GitHub Pages or HTML.","ملف صغير تفتحينه في أي نسخة من المنصة: أونلاين أو GitHub Pages أو HTML.")))}</p>
+   <div class="row"><button class="btn" type="button" data-act="exJson">${esc(t(tr("Save data file","حفظ ملف البيانات")))}</button><label class="btn" for="exOpen" style="cursor:pointer">${esc(t(tr("Open a data file…","فتح ملف بيانات…")))}</label><input type="file" id="exOpen" accept=".json,application/json" hidden></div></div>
+  <p class="small muted">${esc(t(tr("API keys and the Google Sheet password are never put into saved files.","مفاتيح API وكلمة سر جدول Google لا تُضمّن أبداً في الملفات المحفوظة.")))}</p></div>`;
+  $("exOpen").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{loadDataObj(JSON.parse(String(rd.result)));m.hidden=true}catch(err){toast(t(tr("That is not a platform data file.","هذا ليس ملف بيانات للمنصة.")))}};rd.readAsText(f)});
+}
+function loadDataObj(o){
+  const st=o&&o.S?o.S:o;if(!st||!st.rows||!st.factors)throw 0;
+  S=st;S.gov=S.gov||{};S.audit=S.audit||{};S.demo=!!S.demo;save();
+  if(o.PREF){if(o.PREF.sheetUrl)PREF.sheetUrl=o.PREF.sheetUrl;(o.PREF.imported||[]).forEach(x=>{if(!PREF.imported.some(y=>JSON.stringify(y)===JSON.stringify(x)))PREF.imported.push(x)});if((o.PREF.sheetResp||[]).length)PREF.sheetResp=o.PREF.sheetResp;savePref()}
+  render();toast(t(tr("Your data is loaded.","تم تحميل بياناتك.")));
 }
 
 /* ---------- v3 events ---------- */
@@ -1628,6 +1745,7 @@ function afterExt(C){
     $("roiForm").addEventListener("submit",e=>e.preventDefault());
     document.querySelectorAll("[data-roicat]").forEach(i=>i.addEventListener("change",e=>{ROI.cats[e.target.dataset.roicat]=e.target.checked;savePrefs("glw.roi",ROI);const y=scrollY;render();scrollTo(0,y)}));
   }
+  if(tab==="survey"){const f=$("respFiles");if(f)f.addEventListener("change",e=>{let n=0;const fs=[...e.target.files];let left=fs.length;fs.forEach(file=>{const rd=new FileReader();rd.onload=()=>{try{const o=JSON.parse(String(rd.result));(Array.isArray(o)?o:[o]).forEach(x=>{if(x&&x.cond&&!PREF.imported.some(y=>JSON.stringify(y)===JSON.stringify(x))){PREF.imported.push(x);n++}})}catch(err){}if(--left===0){savePref();render();toast(t(tr(`${n} answer file(s) added`,`تمت إضافة ${n} ملف إجابات`)))}};rd.readAsText(file)})})}
   if(tab==="plan"){$("planStart").addEventListener("change",e=>{PLAN.start=+e.target.value;savePrefs("glw.plan",PLAN);render()})}
 }
 document.addEventListener("click",e=>{
@@ -1638,6 +1756,15 @@ document.addEventListener("click",e=>{
   const gl=e.target.closest("dfn.gl");if(gl){toast(gl.textContent+": "+t(GLOSS[+gl.dataset.g].d));return}
   const a=e.target.closest("[data-act]");if(!a)return;const act=a.dataset.act;
   if(act==="simToggle"){SIM=SIM?null:simResponses();render()}
+  if(act==="exHtml"){exportPlatform($("exWith").checked,$("exResp").checked);$("modal").hidden=true}
+  if(act==="exJson"){saveFile(`green-ledger-data-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(exportData(false)),"application/json")}
+  if(act==="keySave"){const v=$("apiKeyIn").value.trim();if(v&&!v.startsWith("•")){try{localStorage.setItem("glw.apikey",v)}catch(e){}toast(t(tr("Key saved on this device.","تم حفظ المفتاح على هذا الجهاز.")))}renderDrawer()}
+  if(act==="keyDel"){try{localStorage.removeItem("glw.apikey")}catch(e){}renderDrawer()}
+  if(act==="gasCopy")copy(GAS,t(tr("Apps Script code copied","تم نسخ كود Apps Script")));
+  if(act==="sheetSave"){PREF.sheetUrl=$("sheetUrl").value.trim();savePref();try{localStorage.setItem("glw.sheetkey",$("sheetKey").value)}catch(e){}toast(t(tr("Link saved. Use “Save & export” so shared copies carry it.","تم حفظ الرابط. استخدمي «حفظ وتصدير» لتحمله النسخ التي تشاركينها.")));render()}
+  if(act==="sheetLoad"){const u=$("sheetUrl").value.trim(),k=$("sheetKey").value;if(!u||!k){toast(t(tr("Enter the link and the password first.","أدخلي الرابط وكلمة السر أولاً.")));return}
+    fetch(u+(u.includes("?")?"&":"?")+"key="+encodeURIComponent(k)).then(r=>r.json()).then(j=>{if(!j.responses)throw new Error(j.error||"no data");PREF.sheetResp=j.responses;savePref();render();toast(t(tr(`${j.responses.length} responses loaded from the sheet`,`تم تحميل ${j.responses.length} رداً من الجدول`)))}).catch(e=>toast(t(tr("Could not read the sheet: ","تعذرت قراءة الجدول: "))+e.message))}
+  if(act==="respClear"){PREF.imported=PREF.imported.filter(o=>!o.cond);PREF.sheetResp=[];savePref();render()}
   if(act==="refApa")copy(PAPER_FULL.filter(p=>p.s.startsWith("References (APA")).map(p=>p.t).join("\n"));
   if(act==="refMla")copy(PAPER_FULL.filter(p=>p.s.startsWith("References (MLA")).map(p=>p.t).join("\n"));
   if(act==="absCopy")copy(absText(AR()?"ar":"en"));
@@ -1647,7 +1774,7 @@ document.addEventListener("click",e=>{
   if(act==="cert"){const r=(myResp&&myResp.submittedAt)?myResp:readSurvey();if(Object.keys(r.cond||{}).length<SQ.length){toast(t(tr("Please answer all eight statements in section B first.","يرجى الإجابة على العبارات الثماني في القسم ب أولاً.")));return}certificate(r)}
 });
 document.addEventListener("keydown",e=>{const gl=e.target.closest&&e.target.closest("dfn.gl");if(gl&&(e.key==="Enter"||e.key===" ")){e.preventDefault();toast(gl.textContent+": "+t(GLOSS[+gl.dataset.g].d))}});
-$("exportBtn").addEventListener("click",exportPlatform);
+$("exportBtn").addEventListener("click",exportDialog);
 
 try{const l=localStorage.getItem("glw.lang");if(l==="ar"||l==="en")lang=l}catch(e){}
 render();
