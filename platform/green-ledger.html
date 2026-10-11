@@ -3336,9 +3336,9 @@ async function esgPdf(){const [J,H]=await Promise.all([loadLib("pdf"),loadLib("h
   document.body.appendChild(box);
   try{const pdf=new J.jsPDF({unit:"pt",format:"a4"});const PW=pdf.internal.pageSize.getWidth(),PH=pdf.internal.pageSize.getHeight(),M=28,W=PW-2*M,maxH=PH-2*M-14;let y=M,first=true,page=1;
    const blocks=[...box.children].reduce((acc,c)=>{if(c.classList.contains("rsec"))acc.push(...c.children);else acc.push(c);return acc},[]);
-   for(const blk of blocks){const cv=await H(blk,{scale:2,backgroundColor:"#ffffff",logging:false,useCORS:true});const sc=W/cv.width;let hPt=cv.height*sc;let sy=0;
+   for(const blk of blocks){const cv=await H(blk,{scale:1.6,backgroundColor:"#ffffff",logging:false,useCORS:true});const sc=W/cv.width;let hPt=cv.height*sc;let sy=0;
     while(sy<cv.height){let room=(PH-M-14)-y;if(room<40){pdf.addPage();page++;y=M;room=maxH}const sliceH=Math.min(cv.height-sy,Math.floor(room/sc));const c2=document.createElement("canvas");c2.width=cv.width;c2.height=sliceH;c2.getContext("2d").drawImage(cv,0,sy,cv.width,sliceH,0,0,cv.width,sliceH);
-     pdf.addImage(c2.toDataURL("image/jpeg",0.9),"JPEG",M,y,W,sliceH*sc);y+=sliceH*sc+4;sy+=sliceH;if(sy<cv.height){pdf.addPage();page++;y=M}}}
+     pdf.addImage(c2.toDataURL("image/jpeg",0.82),"JPEG",M,y,W,sliceH*sc);y+=sliceH*sc+4;sy+=sliceH;if(sy<cv.height){pdf.addPage();page++;y=M}}}
    const n=pdf.getNumberOfPages();for(let i=1;i<=n;i++){pdf.setPage(i);pdf.setFontSize(8);pdf.setTextColor(120);pdf.text(`${i} / ${n}  ·  Green Ledger Workbench · Dr. Sara Salem`,PW/2,PH-14,{align:"center"})}
    return pdf.output("blob")}finally{box.remove()}}
 /* PowerPoint */
