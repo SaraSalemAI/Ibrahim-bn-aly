@@ -132,6 +132,9 @@ pre.json{margin:0;font-family:var(--f-mono);font-size:.78rem;white-space:pre;ove
 .step .k{font-size:.78rem;color:var(--green);font-weight:600}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chips span{font-size:.78rem;border:1px solid var(--line);border-radius:999px;padding:2px 10px;background:var(--surface)}
+.chips.codes{gap:4px}.chips.codes span{font-size:.7rem;padding:0 7px}
+.out h4{font-size:.92rem;font-family:var(--f-display);margin-block-start:6px}
+.out .rsec{display:grid;gap:10px;padding-block-end:14px;border-bottom:1px dashed var(--line)}
 .q{display:grid;gap:6px;padding-block:10px;border-bottom:1px solid var(--line)}
 .q:last-child{border-bottom:0}
 .scale{display:flex;gap:6px;flex-wrap:wrap}
@@ -456,7 +459,7 @@ function shell(){
   $("foot").innerHTML=UI.foot.map(f=>`<p>${esc(t(f))}</p>`).join("");
 }
 const VIEWS={};
-function render(){shell();const C=calc();$("main").innerHTML=VIEWS[tab](C);after(C);afterExt(C);glossify($("main"));decorate();if(tab==="slides")afterSlides();if(tab==="compare")afterCompare();if(tab==="hub")afterHub();if(drawerOpen)renderDrawer();if(pres.on)renderCue()}
+function render(){shell();const C=calc();$("main").innerHTML=VIEWS[tab](C);after(C);afterExt(C);glossify($("main"));decorate();if(tab==="slides")afterSlides();if(tab==="compare")afterCompare();if(tab==="hub")afterHub();if(tab.slice(0,3)==="esg")afterESG();if(drawerOpen)renderDrawer();if(pres.on)renderCue()}
 function go(k){tab=k;editId=null;try{history.replaceState(null,"","#"+k)}catch(_){}render();window.scrollTo({top:0})}
 
 /* ---------- dashboard ---------- */
@@ -2290,6 +2293,683 @@ TABS.hub=tr("Research Hub","منصة الأبحاث");TABS.downloads=tr("Downloa
 GROUPS.find(g=>g[0]==="learn")[2]=["slides","hub","posterbrief","downloads","paper","glossary","about"];
 document.addEventListener("click",e=>{const a=e.target.closest("[data-act=openExport]");if(a)exportDialog()});
 
+/*ESG-START*/
+/* ================= v6: ESG & governance report studio (modelled on a full bank ESG report: pillars, material topics, GRI/SASB/TCFD/IFRS S2 indexes, six capitals, SDGs) ================= */
+const PIL={G:tr("Governance","الحوكمة"),E:tr("Environment","البيئة"),S:tr("Social","المجتمع"),D:tr("Data & digitisation","البيانات والرقمنة")};
+const CAPS={F:tr("Financial","المالي"),M:tr("Manufactured","المُصنَّع"),I:tr("Intellectual","الفكري"),H:tr("Human","البشري"),S:tr("Social & relationship","الاجتماعي والعلاقات"),N:tr("Natural","الطبيعي")};
+const CAPU={u:tr("Used","مُستخدَم"),a:tr("Affected","متأثر"),b:tr("Used & affected","مُستخدَم ومتأثر")};
+const TOP=[
+ {id:"gov",p:"G",n:tr("Governance & board oversight","الحوكمة وإشراف مجلس الإدارة"),cap:{F:"b",S:"b",I:"a"},sdg:[16,17]},
+ {id:"ethics",p:"G",n:tr("Business ethics & integrity","أخلاقيات الأعمال والنزاهة"),cap:{S:"b",H:"a",F:"a"},sdg:[16]},
+ {id:"climate",p:"E",n:tr("Environmental & climate risks","المخاطر البيئية والمناخية"),cap:{N:"b",F:"a",M:"a"},sdg:[13]},
+ {id:"sfin",p:"E",n:tr("Sustainable finance & green investment","التمويل المستدام والاستثمار الأخضر"),cap:{F:"b",N:"a",S:"a"},sdg:[7,9,13]},
+ {id:"eco",p:"E",n:tr("Ecological footprint","البصمة البيئية"),cap:{N:"b",M:"u",F:"a"},sdg:[6,7,12]},
+ {id:"cust",p:"S",n:tr("Customers & product responsibility","العملاء ومسؤولية المنتج"),cap:{S:"b",I:"u",F:"a"},sdg:[9,12]},
+ {id:"growth",p:"S",n:tr("Responsible business growth (healthy economy)","النمو المسؤول للأعمال (اقتصاد صحي)"),cap:{F:"b",S:"a",M:"u"},sdg:[8,9]},
+ {id:"incl",p:"S",n:tr("Inclusion & equality (incl. financial inclusion)","الشمول والمساواة (ومنه الشمول المالي)"),cap:{S:"b",F:"a",H:"a"},sdg:[1,5,10]},
+ {id:"emp",p:"S",n:tr("Employee well-being, diversity & development","رفاه العاملين وتنوعهم وتطويرهم"),cap:{H:"b",I:"a",F:"u"},sdg:[3,4,5,8]},
+ {id:"comm",p:"S",n:tr("Social & community investment","الاستثمار الاجتماعي والمجتمعي"),cap:{S:"b",F:"u",N:"a"},sdg:[1,3,4,11]},
+ {id:"digital",p:"D",n:tr("Digital leadership & innovation","الريادة الرقمية والابتكار"),cap:{I:"b",M:"b",F:"a"},sdg:[9]},
+ {id:"privacy",p:"D",n:tr("Data privacy & cybersecurity","خصوصية البيانات والأمن السيبراني"),cap:{I:"b",S:"a",H:"u"},sdg:[16]}
+];
+const TOPI={};TOP.forEach((x,i)=>{x.no=i+1;TOPI[x.id]=x});
+const SECT={general:tr("General / other sectors","عام / قطاعات أخرى"),mfg:tr("Manufacturing & industry","الصناعة والتصنيع"),services:tr("Services, trade & tech","الخدمات والتجارة والتكنولوجيا"),bank:tr("Bank / non-bank financial institution","بنك / مؤسسة مالية غير مصرفية")};
+const UNITS={"#":tr("number","عدد"),"%":"%","EGP m":tr("EGP million","مليون جنيه"),"tCO₂e":"tCO₂e","MWh":"MWh","m³":"m³","t":tr("tonnes","طن"),"h":tr("hours","ساعة"),"score":tr("score","درجة"),"ratio":tr("ratio","نسبة"),"tpe":tr("tCO₂e per employee","طن CO₂e لكل موظف"),"rate":tr("per million hours","لكل مليون ساعة"),"yes/no":tr("yes / no","نعم / لا"),"text":tr("text","نص")};
+const K_=(id,tp,en,ar,u,dir,o)=>Object.assign({id,tp,n:tr(en,ar),u,dir},o||{});
+const ESGK=[
+ /* governance */
+ K_("g_board_ind","gov","Independent board members","الأعضاء المستقلون في مجلس الإدارة","%",1,{gri:"2-9",sdg:[16],fra:1}),
+ K_("g_board_fem","gov","Women on the board","نسبة النساء في مجلس الإدارة","%",1,{gri:"2-9, 405-1",sdg:[5,16],fra:1}),
+ K_("g_esg_comm","gov","Board committee that oversees sustainability & climate","لجنة بمجلس الإدارة تشرف على الاستدامة والمناخ","yes/no",1,{gri:"2-12, 2-13, 2-14",tcfd:"Gov-a",s2:"6(a)",fra:1}),
+ K_("g_meet","gov","Board meetings that discussed ESG or climate","اجتماعات المجلس التي ناقشت ESG أو المناخ","#",1,{gri:"2-12",tcfd:"Gov-a",s2:"6(a)"}),
+ K_("g_esg_pay","gov","Share of executive variable pay linked to ESG targets","نسبة المكافآت المتغيرة للإدارة العليا المرتبطة بأهداف ESG","%",1,{gri:"2-19, 2-20",tcfd:"Gov-b",s2:"6(a)(v)"}),
+ K_("g_rating","gov","External ESG ratings (e.g. MSCI, CDP, Sustainalytics)","تصنيفات ESG الخارجية (مثل MSCI وCDP وSustainalytics)","text",0,{}),
+ /* ethics */
+ K_("e_coc","ethics","Employees trained on the code of conduct & anti-corruption","العاملون المدربون على ميثاق السلوك ومكافحة الفساد","%",1,{gri:"205-2",sdg:[16],fra:1}),
+ K_("e_corr","ethics","Confirmed incidents of corruption","حالات الفساد المؤكدة","#",-1,{gri:"205-3",sdg:[16],fra:1}),
+ K_("e_whistle","ethics","Whistleblowing reports investigated and closed","بلاغات الإبلاغ عن المخالفات التي حُقق فيها وأُغلقت","%",1,{gri:"2-26",sasb:"FN-CB-510a.2"}),
+ K_("e_fines","ethics","Fines & monetary losses from legal proceedings","الغرامات والخسائر النقدية من الإجراءات القانونية","EGP m",-1,{gri:"2-27",sasb:"FN-CB-510a.1",fra:1}),
+ K_("e_anti","ethics","Legal actions for anti-competitive behaviour","الدعاوى القانونية بسبب السلوك المانع للمنافسة","#",-1,{gri:"206-1"}),
+ /* climate */
+ K_("c_s1","climate","Scope 1 emissions","انبعاثات النطاق 1","tCO₂e",-1,{gri:"305-1",tcfd:"M&T-b",s2:"29(a)",sdg:[13],fra:1,auto:C=>C.sc[1]}),
+ K_("c_s2","climate","Scope 2 emissions (location-based)","انبعاثات النطاق 2 (على أساس الموقع)","tCO₂e",-1,{gri:"305-2",tcfd:"M&T-b",s2:"29(a)",sdg:[13],fra:1,auto:C=>C.sc[2]}),
+ K_("c_s3","climate","Scope 3 emissions (categories measured)","انبعاثات النطاق 3 (الفئات المقاسة)","tCO₂e",-1,{gri:"305-3",tcfd:"M&T-b",s2:"29(a)",sdg:[13],fra:1,auto:C=>C.sc[3]}),
+ K_("c_int","climate","Carbon intensity (Scope 1+2 per employee)","كثافة الكربون (النطاق 1+2 لكل موظف)","tpe",-1,{gri:"305-4",tcfd:"M&T-a",s2:"29(a)",sdg:[13],auto:C=>{const e=numv(kv(KI.h_emp,"c").v);return e>0?(C.sc[1]+C.sc[2])/e:null},dp:2}),
+ K_("c_red","climate","GHG emissions reduced by initiatives","خفض الانبعاثات بفعل المبادرات","tCO₂e",1,{gri:"305-5",tcfd:"M&T-c",sdg:[13]}),
+ K_("c_target","climate","Emissions-reduction target (% vs base year)","مستهدف خفض الانبعاثات (٪ مقارنة بسنة الأساس)","%",0,{tcfd:"M&T-c",s2:"33-36",sdg:[13],fra:1}),
+ K_("c_price","climate","Internal carbon price","السعر الداخلي للكربون","#",0,{tcfd:"M&T-a",s2:"29(f)",auto:()=>S.price,ux:tr("EGP per tCO₂e","جنيه لكل طن CO₂e")}),
+ K_("c_trans","climate","Revenue or portfolio exposed to transition risk","الإيرادات أو المحفظة المعرضة لمخاطر التحول","%",-1,{gri:"201-2",tcfd:"Str-a",s2:"29(b)",sdg:[13],fra:1}),
+ K_("c_phys","climate","Assets or portfolio exposed to physical climate risk","الأصول أو المحفظة المعرضة لمخاطر المناخ المادية","%",-1,{gri:"201-2",tcfd:"Str-a",s2:"29(c)",sdg:[13]}),
+ K_("c_esrm","climate","Credit applications screened for environmental & social risk","طلبات الائتمان التي فُحصت للمخاطر البيئية والاجتماعية","%",1,{sect:["bank"],sasb:"FN-CB-410a.2",tcfd:"RM-a"}),
+ K_("c_catA","climate","High-risk (Category A) clients in the E&S-screened portfolio","العملاء عالي المخاطر (الفئة A) في المحفظة المفحوصة","%",-1,{sect:["bank"],tcfd:"RM-b"}),
+ K_("c_esrm_tr","climate","Staff trained on environmental & social risk management","العاملون المدربون على إدارة المخاطر البيئية والاجتماعية","#",1,{sect:["bank"],tcfd:"RM-c"}),
+ K_("c_fin_em","climate","Financed emissions (Scope 3, category 15)","الانبعاثات الممولة (النطاق 3، الفئة 15)","tCO₂e",-1,{sect:["bank"],sasb:"FN-CB-410b.1",tcfd:"M&T-b",s2:"29(a)(vi)",sdg:[13]}),
+ K_("c_fin_cov","climate","Share of gross exposure covered by the financed-emissions calculation","نسبة التعرض الإجمالي المشمولة بحساب الانبعاثات الممولة","%",1,{sect:["bank"],sasb:"FN-CB-410b.3"}),
+ /* sustainable finance & green investment */
+ K_("f_green","sfin","Green & sustainable finance / green capex","التمويل الأخضر والمستدام / الإنفاق الرأسمالي الأخضر","EGP m",1,{gri:"203-1",tcfd:"Str-b",s2:"29(e)",sdg:[7,9,13],fra:1}),
+ K_("f_rev","sfin","Revenue from green products & services","الإيرادات من المنتجات والخدمات الخضراء","%",1,{sect:["general","mfg","services"],tcfd:"Str-b",sdg:[9,12]}),
+ K_("f_bond","sfin","Green / sustainability bonds and sukuk (portfolio or issued)","السندات والصكوك الخضراء والمستدامة (محفظة أو إصدار)","EGP m",1,{sdg:[13,17]}),
+ K_("f_train","sfin","Staff trained on sustainable finance / ESG","العاملون المدربون على التمويل المستدام / ESG","#",1,{gri:"404-2",sdg:[4]}),
+ K_("f_sme","sfin","Sustainable loans to SMEs","القروض المستدامة للمشروعات الصغيرة والمتوسطة","EGP m",1,{sect:["bank"],sasb:"FN-CB-240a.1",sdg:[8,9]}),
+ K_("f_co2","sfin","CO₂ avoided by financed green projects","CO₂ المتجنب بفضل المشروعات الخضراء الممولة","tCO₂e",1,{sect:["bank"],sdg:[13]}),
+ K_("f_esave","sfin","Energy saved by financed green projects","الطاقة الموفرة بفضل المشروعات الخضراء الممولة","MWh",1,{sect:["bank"],sdg:[7]}),
+ K_("f_wsave","sfin","Water saved by financed green projects","المياه الموفرة بفضل المشروعات الخضراء الممولة","m³",1,{sect:["bank"],sdg:[6]}),
+ /* ecological footprint */
+ K_("n_elec","eco","Purchased electricity","الكهرباء المشتراة","MWh",-1,{gri:"302-1",tcfd:"M&T-a",sdg:[7],fra:1,auto:C=>C.cats.electricity?C.cats.electricity.qty/1000:null}),
+ K_("n_renew","eco","Renewable share of electricity","نسبة الطاقة المتجددة من الكهرباء","%",1,{gri:"302-1",sdg:[7],fra:1}),
+ K_("n_esave","eco","Energy saved by efficiency measures","الطاقة الموفرة بإجراءات الكفاءة","MWh",1,{gri:"302-4",sdg:[7]}),
+ K_("n_water","eco","Water withdrawal","المياه المسحوبة","m³",-1,{gri:"303-3",sdg:[6],fra:1,auto:C=>C.cats.water?C.cats.water.qty:null}),
+ K_("n_waste","eco","Waste sent to landfill","النفايات المرسلة إلى المدافن","t",-1,{gri:"306-3",sdg:[12],fra:1,auto:C=>C.cats.waste?C.cats.waste.qty:null}),
+ K_("n_recyc","eco","Waste diverted from disposal (recycled or reused)","النفايات المحولة عن التخلص (معاد تدويرها أو استخدامها)","%",1,{gri:"306-4",sdg:[12]}),
+ K_("n_mat_rec","eco","Recycled input materials","المواد الخام المعاد تدويرها","%",1,{sect:["mfg"],gri:"301-2",sdg:[12]}),
+ K_("n_paper","eco","Paper consumption","استهلاك الورق","t",-1,{sect:["bank","services","general"],gri:"301-1",sdg:[12]}),
+ K_("n_env","eco","Environmental cost traced in the ledger","التكلفة البيئية المتتبعة في الدفتر","EGP m",0,{tcfd:"M&T-a",auto:C=>C.cost/1e6,dp:2}),
+ /* customers */
+ K_("u_nps","cust","Net promoter score","صافي نقاط الترويج (NPS)","score",1,{sdg:[9]}),
+ K_("u_sat","cust","Customer satisfaction","رضا العملاء","%",1,{sect:["general","mfg","services"]}),
+ K_("u_compl","cust","Customer complaints resolved within the service standard","شكاوى العملاء المغلقة في الزمن المعياري","%",1,{gri:"2-25",fra:1}),
+ K_("u_safety","cust","Product categories assessed for health & safety impacts","فئات المنتجات المقيمة لآثار الصحة والسلامة","%",1,{sect:["mfg"],gri:"416-1",sdg:[12]}),
+ K_("u_branch","cust","Branches","عدد الفروع","#",0,{sect:["bank"]}),
+ K_("u_atm","cust","ATMs","عدد ماكينات الصراف الآلي","#",0,{sect:["bank"],sdg:[8]}),
+ K_("u_accounts","cust","Retail & SME deposit accounts","حسابات الإيداع للأفراد والمشروعات الصغيرة","#",1,{sect:["bank"],sasb:"FN-CB-000.A"}),
+ /* growth */
+ K_("r_rev","growth","Revenue / operating income","الإيرادات / الدخل التشغيلي","EGP m",1,{gri:"201-1",sdg:[8],fra:1}),
+ K_("r_evd","growth","Economic value distributed (wages, suppliers, taxes, dividends, community)","القيمة الاقتصادية الموزعة (أجور، موردون، ضرائب، توزيعات، مجتمع)","EGP m",1,{gri:"201-1",sdg:[8]}),
+ K_("r_local","growth","Procurement spend with local suppliers","الإنفاق على الموردين المحليين","%",1,{sect:["general","mfg","services"],gri:"204-1",sdg:[8]}),
+ K_("r_loans","growth","Loan portfolio","محفظة القروض","EGP m",1,{sect:["bank"],sasb:"FN-CB-000.B",sdg:[8]}),
+ K_("r_ploan","growth","Personal loans portfolio","محفظة القروض الشخصية","EGP m",1,{sect:["bank"]}),
+ K_("r_mf","growth","Growth of the microfinance portfolio","نمو محفظة التمويل متناهي الصغر","%",1,{sect:["bank"],sasb:"FN-CB-240a.1",sdg:[1,8]}),
+ /* inclusion */
+ K_("i_paygap","incl","Ratio of women's to men's basic pay","نسبة أجر النساء الأساسي إلى أجر الرجال","ratio",1,{gri:"405-2",sdg:[5,10],dp:2}),
+ K_("i_access","incl","Sites / branches accessible to people with disabilities","المواقع / الفروع المهيأة لذوي الإعاقة","#",1,{sdg:[10]}),
+ K_("i_lit","incl","Beneficiaries of financial or digital literacy programmes","المستفيدون من برامج الثقافة المالية أو الرقمية","#",1,{gri:"413-1",sasb:"FN-CB-240a.4",sdg:[4]}),
+ K_("i_fem_cust","incl","Women among customers","نسبة النساء من العملاء","%",1,{sect:["bank"],sdg:[5]}),
+ K_("i_fem_sme","incl","Women-owned SMEs among SME clients","المشروعات المملوكة لنساء من عملاء المشروعات الصغيرة","%",1,{sect:["bank"],sdg:[5]}),
+ K_("i_wsme","incl","Loans to women-led SMEs","قروض المشروعات التي تقودها نساء","EGP m",1,{sect:["bank"],sdg:[5,8]}),
+ K_("i_newcust","incl","New customers onboarded (incl. previously unbanked)","العملاء الجدد (ومنهم من لم يتعاملوا مع البنوك سابقاً)","#",1,{sect:["bank"],sasb:"FN-CB-240a.3",sdg:[1,8]}),
+ K_("i_train","incl","Staff trained on inclusion & accessibility","العاملون المدربون على الشمول وإتاحة الخدمة","#",1,{sect:["bank"],sdg:[10]}),
+ /* employees */
+ K_("h_emp","emp","Employees (headcount)","عدد العاملين","#",0,{gri:"2-7",fra:1}),
+ K_("h_fem","emp","Women in the workforce","نسبة النساء من العاملين","%",1,{gri:"405-1",sdg:[5],fra:1}),
+ K_("h_fem_mgmt","emp","Women in management","نسبة النساء في المناصب الإدارية","%",1,{gri:"405-1",sdg:[5]}),
+ K_("h_dis","emp","Employees with disabilities","العاملون من ذوي الإعاقة","%",1,{gri:"405-1",sdg:[10]}),
+ K_("h_turn","emp","Employee turnover","معدل دوران العاملين","%",-1,{gri:"401-1",sdg:[8],fra:1}),
+ K_("h_train_m","emp","Average training hours: men","متوسط ساعات التدريب: الرجال","h",1,{gri:"404-1",sdg:[4]}),
+ K_("h_train_f","emp","Average training hours: women","متوسط ساعات التدريب: النساء","h",1,{gri:"404-1",sdg:[4,5]}),
+ K_("h_review","emp","Employees receiving a performance review","العاملون الحاصلون على تقييم أداء","%",1,{gri:"404-3"}),
+ K_("h_ltifr","emp","Lost-time injury frequency rate","معدل تكرار الإصابات المضيعة للوقت","rate",-1,{gri:"403-9",sdg:[3,8],fra:1}),
+ K_("h_fatal","emp","Work-related fatalities","الوفيات المرتبطة بالعمل","#",-1,{gri:"403-9",sdg:[3,8]}),
+ K_("h_eng","emp","Employee engagement score","درجة ارتباط العاملين","%",1,{}),
+ /* community */
+ K_("k_csr","comm","Community investment as % of net profit","الاستثمار المجتمعي كنسبة من صافي الربح","%",1,{gri:"201-1",sdg:[1,17],fra:1}),
+ K_("k_amt","comm","Community investment","قيمة الاستثمار المجتمعي","EGP m",1,{gri:"201-1, 203-1",sdg:[1,3,4]}),
+ K_("k_proj","comm","Community projects supported","المشروعات المجتمعية المدعومة","#",1,{gri:"413-1"}),
+ K_("k_benef","comm","Direct community beneficiaries","المستفيدون المباشرون في المجتمع","#",1,{gri:"413-1",sdg:[1,11]}),
+ K_("k_vol","comm","Employee volunteering hours","ساعات تطوع العاملين","h",1,{sdg:[17]}),
+ /* digital */
+ K_("d_share","digital","Share of transactions or sales done digitally","نسبة المعاملات أو المبيعات الرقمية","%",1,{sdg:[9]}),
+ K_("d_users","digital","Active digital / mobile users","مستخدمو القنوات الرقمية / المحمول النشطون","#",1,{sdg:[9]}),
+ K_("d_inet","digital","Internet-banking transactions","معاملات الإنترنت البنكي","#",1,{sect:["bank"],sdg:[9]}),
+ K_("d_mob","digital","Mobile-banking transactions","معاملات البنك عبر المحمول","#",1,{sect:["bank"],sdg:[9]}),
+ K_("d_inv","digital","Investment in digital & IT","الاستثمار في الرقمنة وتكنولوجيا المعلومات","EGP m",1,{sdg:[9]}),
+ K_("d_einv","digital","Environmental records reconciled to an e-invoice","السجلات البيئية المطابقة مع فاتورة إلكترونية","%",1,{auto:C=>C.recon,sdg:[9,12]}),
+ K_("d_meter","digital","Emissions measured at source (meter / IoT)","الانبعاثات المقاسة عند المصدر (عداد / إنترنت الأشياء)","%",1,{auto:C=>C.c[0],sdg:[9,13]}),
+ K_("d_assure","digital","Assurability index of sustainability data","مؤشر القابلية للتأكيد لبيانات الاستدامة","score",1,{auto:C=>C.idx}),
+ /* privacy */
+ K_("p_breach","privacy","Data breaches","حوادث اختراق البيانات","#",-1,{gri:"418-1",sasb:"FN-CB-230a.1",sdg:[16],fra:1}),
+ K_("p_compl","privacy","Substantiated complaints about customer privacy","الشكاوى المؤكدة المتعلقة بخصوصية العملاء","#",-1,{gri:"418-1"}),
+ K_("p_train","privacy","Employees trained on cybersecurity","العاملون المدربون على الأمن السيبراني","#",1,{sasb:"FN-CB-230a.2"}),
+ K_("p_iso","privacy","Information-security management certified (e.g. ISO 27001)","نظام أمن المعلومات معتمد (مثل ISO 27001)","yes/no",1,{sasb:"FN-CB-230a.2"})
+];
+const KI={};ESGK.forEach(k=>{KI[k.id]=k;k.p=TOPI[k.tp].p});
+
+/* public figures (2023, 2024) from the CIB ESG & sustainability report 2024, for a bank practice copy and benchmark */
+const CIBV={g_board_fem:[18,18],g_rating:["MSCI A · CDP B- · Sustainalytics 19.8","MSCI AA · CDP C · Sustainalytics 22.6"],e_coc:[92,100],c_trans:[28,27.4],c_phys:[4,3.9],c_catA:[6.6,5.4],c_esrm_tr:[1048,1400],f_train:[755,7012],f_bond:[2257,11670],f_co2:[5509,6271],f_esave:[13769,15670],f_wsave:[36877,111977],c_s1:[7085,4577],c_s2:[26350,29110],c_s3:[33045,35445],c_int:[3.64,3.35],u_atm:[1339,1387],u_branch:[208,212],u_nps:[30.71,44.7],u_compl:[88,91],r_mf:[64,16],f_sme:["",6.5],i_wsme:[2000,2490],r_ploan:[42500,53700],i_fem_cust:[23,25],i_fem_sme:[17,14.7],i_newcust:[450563,360202],i_access:[25,33],i_train:[1427,2200],h_turn:[5.2,6.97],i_lit:[16206,18903],h_fem:[33,35],h_dis:[1,1.6],h_train_m:[91,81],h_train_f:[90,88],k_csr:[1.5,1.5],k_proj:[16,19],k_amt:[202.8,431.5],d_users:[1000000,1400000],d_inet:[1900000,2300000],d_mob:[13300000,13600000],p_breach:[0,0],p_train:[600,4311]};
+const CIB_NOTE=tr("Benchmark: public figures from the Commercial International Bank (CIB) ESG report 2024. Definitions may differ from yours; compare with care.","المقارنة المرجعية: أرقام منشورة من تقرير ESG للبنك التجاري الدولي (CIB) لعام 2024. قد تختلف التعريفات عن تعريفاتك؛ قارني بحذر.");
+
+const ROLES={
+ preparer:{n:tr("Report preparer (sustainability / finance team)","معدّ التقرير (فريق الاستدامة / المالية)"),edit:1,rep:["brief","exec","kpi","mat","score","gri","sasb","tcfd","cap","sdg","fra","prb","dq","target"]},
+ cfo:{n:tr("CFO / finance director","المدير المالي"),edit:1,rep:["brief","exec","kpi","tcfd","cap","target","dq"]},
+ board:{n:tr("Board / audit committee","مجلس الإدارة / لجنة المراجعة"),edit:0,rep:["brief","exec","mat","score","target","tcfd"]},
+ auditor:{n:tr("External auditor / assurance provider","المراجع الخارجي / مقدم خدمة التأكيد"),edit:0,ver:1,rep:["brief","dq","kpi","gri","tcfd"]},
+ regulator:{n:tr("Regulator (FRA / EGX)","الجهة الرقابية (الرقابة المالية / البورصة)"),edit:0,rep:["brief","fra","tcfd","gri","dq"]},
+ investor:{n:tr("Investor / lender / ESG analyst","المستثمر / المُقرض / محلل ESG"),edit:0,rep:["brief","score","exec","sasb","tcfd","kpi","sdg"]},
+ researcher:{n:tr("Researcher","الباحث"),edit:0,rep:["brief","exec","kpi","mat","score","gri","sasb","tcfd","cap","sdg","fra","prb","dq","target"]}
+};
+const RPT={
+ brief:tr("Role brief","موجز حسب الدور"),exec:tr("Executive summary & highlights","الملخص التنفيذي وأبرز النتائج"),kpi:tr("Value-creation KPIs by pillar and topic","مؤشرات خلق القيمة حسب الركيزة والموضوع"),
+ mat:tr("Materiality assessment","تقييم الأهمية النسبية"),score:tr("ESG scorecard","بطاقة أداء ESG"),gri:tr("GRI content index","فهرس محتوى GRI"),sasb:tr("SASB index (commercial banks)","فهرس SASB (البنوك التجارية)"),
+ tcfd:tr("TCFD & IFRS S2 index","فهرس TCFD وIFRS S2"),cap:tr("Six capitals (integrated reporting)","رؤوس الأموال الستة (التقرير المتكامل)"),sdg:tr("SDG contribution","المساهمة في أهداف التنمية المستدامة"),
+ fra:tr("FRA ESG disclosure summary (Decrees 107/108)","ملخص إفصاح ESG للرقابة المالية (القراران 107/108)"),prb:tr("UNEP FI banking principles & Equator Principles","مبادئ الأمم المتحدة للبنوك المسؤولة ومبادئ التعادل"),
+ dq:tr("Data quality & assurance readiness","جودة البيانات والجاهزية للتأكيد"),target:tr("Targets & progress","المستهدفات ومدى التقدم")
+};
+const OMIT={"":tr("— choose —","— اختاري —"),na:tr("Not applicable","لا ينطبق"),unav:tr("Information unavailable / incomplete","المعلومات غير متاحة / غير مكتملة"),conf:tr("Confidentiality constraints","قيود السرية"),legal:tr("Legal prohibitions","موانع قانونية")};
+const PRB=[["P1",tr("Alignment with the SDGs, the Paris Agreement and national frameworks","التوافق مع أهداف التنمية واتفاق باريس والأطر الوطنية")],["P2",tr("Impact analysis & target setting","تحليل الأثر ووضع المستهدفات")],["P3",tr("Clients & customers","العملاء")],["P4",tr("Stakeholders","أصحاب المصالح")],["P5",tr("Governance & culture","الحوكمة والثقافة")],["P6",tr("Transparency & accountability","الشفافية والمساءلة")]];
+const EQP=[["EP1",tr("Review & categorisation","المراجعة والتصنيف")],["EP2",tr("Environmental & social assessment","التقييم البيئي والاجتماعي")],["EP3",tr("Applicable E&S standards","المعايير البيئية والاجتماعية المطبقة")],["EP4",tr("E&S management system & action plan","نظام الإدارة البيئية والاجتماعية وخطة العمل")],["EP5",tr("Stakeholder engagement","إشراك أصحاب المصالح")],["EP6",tr("Grievance mechanism","آلية الشكاوى")],["EP7",tr("Independent review","المراجعة المستقلة")],["EP8",tr("Covenants","التعهدات التعاقدية")],["EP9",tr("Independent monitoring & reporting","الرقابة وإعداد التقارير المستقلة")],["EP10",tr("Reporting & transparency","الإفصاح والشفافية")]];
+const PSTAT=[tr("Not started","لم يبدأ"),tr("In progress","قيد التنفيذ"),tr("Implemented & reported","مطبق ومُفصح عنه")];
+
+/* GRI disclosures: [code, title, kpi ids, platform check] */
+const GRI=[
+ ["2-1",tr("Organisational details","تفاصيل المؤسسة"),[],()=>!!(S.entity&&S.entity.name)],
+ ["2-2",tr("Entities included in sustainability reporting","الجهات المشمولة في تقرير الاستدامة"),[],()=>!!(S.entity&&S.entity.boundary)],
+ ["2-3",tr("Reporting period, frequency and contact point","فترة التقرير وتكراره وجهة الاتصال"),[],()=>!!ESGD().y1],
+ ["2-4",tr("Restatements of information","إعادة عرض المعلومات"),[],()=>!!(ESGD().narr.restate||"").trim()],
+ ["2-5",tr("External assurance","التأكيد الخارجي"),[],()=>Object.values(ESGD().ver).some(Boolean)],
+ ["2-6",tr("Activities, value chain and other business relationships","الأنشطة وسلسلة القيمة والعلاقات التجارية"),[],()=>!!(S.entity&&S.entity.sector)],
+ ["2-7",tr("Employees","العاملون"),["h_emp","h_fem"]],
+ ["2-9",tr("Governance structure and composition","هيكل الحوكمة وتشكيله"),["g_board_ind","g_board_fem"]],
+ ["2-12",tr("Role of the highest governance body in overseeing impacts","دور أعلى جهة حوكمة في الإشراف على الآثار"),["g_esg_comm","g_meet"]],
+ ["2-13",tr("Delegation of responsibility for managing impacts","تفويض مسؤولية إدارة الآثار"),["g_esg_comm"]],
+ ["2-14",tr("Role of the highest governance body in sustainability reporting","دور أعلى جهة حوكمة في تقارير الاستدامة"),["g_esg_comm"]],
+ ["2-19",tr("Remuneration policies","سياسات المكافآت"),["g_esg_pay"]],
+ ["2-22",tr("Statement on sustainable development strategy","بيان استراتيجية التنمية المستدامة"),[],()=>!!(ESGD().narr.ceo||"").trim()],
+ ["2-23",tr("Policy commitments","الالتزامات بالسياسات"),["e_coc"]],
+ ["2-25",tr("Processes to remediate negative impacts","إجراءات معالجة الآثار السلبية"),["u_compl"]],
+ ["2-26",tr("Mechanisms for seeking advice and raising concerns","آليات طلب المشورة والإبلاغ عن المخاوف"),["e_whistle"]],
+ ["2-27",tr("Compliance with laws and regulations","الالتزام بالقوانين واللوائح"),["e_fines"]],
+ ["2-29",tr("Approach to stakeholder engagement","نهج إشراك أصحاب المصالح"),[],()=>matDone()],
+ ["3-1",tr("Process to determine material topics","عملية تحديد الموضوعات الجوهرية"),[],()=>matDone()],
+ ["3-2",tr("List of material topics","قائمة الموضوعات الجوهرية"),[],()=>matDone()],
+ ["3-3",tr("Management of material topics","إدارة الموضوعات الجوهرية"),[],()=>TOP.some(x=>(ESGD().narr[x.id]||"").trim())],
+ ["201-1",tr("Direct economic value generated and distributed","القيمة الاقتصادية المباشرة المولدة والموزعة"),["r_rev","r_evd","k_amt"]],
+ ["201-2",tr("Financial implications and risks & opportunities due to climate change","الآثار المالية والمخاطر والفرص الناتجة عن تغير المناخ"),["c_trans","c_phys"]],
+ ["203-1",tr("Infrastructure investments and services supported","الاستثمارات في البنية التحتية والخدمات المدعومة"),["f_green","k_amt"]],
+ ["204-1",tr("Proportion of spending on local suppliers","نسبة الإنفاق على الموردين المحليين"),["r_local"]],
+ ["205-2",tr("Communication and training about anti-corruption","التواصل والتدريب على مكافحة الفساد"),["e_coc"]],
+ ["205-3",tr("Confirmed incidents of corruption and actions taken","حالات الفساد المؤكدة والإجراءات المتخذة"),["e_corr"]],
+ ["206-1",tr("Legal actions for anti-competitive behaviour","الدعاوى القانونية بسبب السلوك المانع للمنافسة"),["e_anti"]],
+ ["301-1",tr("Materials used by weight or volume","المواد المستخدمة بالوزن أو الحجم"),["n_paper"]],
+ ["301-2",tr("Recycled input materials used","المواد المدخلة المعاد تدويرها"),["n_mat_rec"]],
+ ["302-1",tr("Energy consumption within the organisation","استهلاك الطاقة داخل المؤسسة"),["n_elec","n_renew"]],
+ ["302-4",tr("Reduction of energy consumption","خفض استهلاك الطاقة"),["n_esave"]],
+ ["303-3",tr("Water withdrawal","سحب المياه"),["n_water"]],
+ ["305-1",tr("Direct (Scope 1) GHG emissions","انبعاثات النطاق 1 المباشرة"),["c_s1"]],
+ ["305-2",tr("Energy indirect (Scope 2) GHG emissions","انبعاثات النطاق 2 غير المباشرة من الطاقة"),["c_s2"]],
+ ["305-3",tr("Other indirect (Scope 3) GHG emissions","انبعاثات النطاق 3 غير المباشرة الأخرى"),["c_s3","c_fin_em"]],
+ ["305-4",tr("GHG emissions intensity","كثافة انبعاثات غازات الاحتباس"),["c_int"]],
+ ["305-5",tr("Reduction of GHG emissions","خفض انبعاثات غازات الاحتباس"),["c_red"]],
+ ["306-3",tr("Waste generated","النفايات المتولدة"),["n_waste"]],
+ ["306-4",tr("Waste diverted from disposal","النفايات المحولة عن التخلص"),["n_recyc"]],
+ ["401-1",tr("New employee hires and employee turnover","التعيينات الجديدة ودوران العاملين"),["h_turn"]],
+ ["403-9",tr("Work-related injuries","إصابات العمل"),["h_ltifr","h_fatal"]],
+ ["404-1",tr("Average hours of training per year per employee","متوسط ساعات التدريب السنوية لكل موظف"),["h_train_m","h_train_f"]],
+ ["404-3",tr("Employees receiving regular performance reviews","العاملون الحاصلون على تقييمات أداء دورية"),["h_review"]],
+ ["405-1",tr("Diversity of governance bodies and employees","تنوع جهات الحوكمة والعاملين"),["g_board_fem","h_fem","h_fem_mgmt","h_dis"]],
+ ["405-2",tr("Ratio of basic salary and remuneration of women to men","نسبة الأجر الأساسي والمكافآت للنساء إلى الرجال"),["i_paygap"]],
+ ["413-1",tr("Operations with local community engagement and development programmes","العمليات المصحوبة بإشراك المجتمع المحلي وبرامج التنمية"),["k_benef","k_proj","i_lit"]],
+ ["416-1",tr("Assessment of health & safety impacts of product categories","تقييم آثار فئات المنتجات على الصحة والسلامة"),["u_safety"]],
+ ["418-1",tr("Substantiated complaints concerning breaches of customer privacy","الشكاوى المؤكدة بشأن انتهاك خصوصية العملاء"),["p_breach","p_compl"]]
+];
+const SASB=[
+ ["FN-CB-230a.1",tr("Data breaches, share involving personal data, account holders affected","حوادث اختراق البيانات ونسبة ما يخص البيانات الشخصية وعدد أصحاب الحسابات المتأثرين"),["p_breach"]],
+ ["FN-CB-230a.2",tr("Approach to identifying and addressing data-security risks","نهج تحديد مخاطر أمن البيانات ومعالجتها"),["p_train","p_iso"]],
+ ["FN-CB-240a.1",tr("Loans outstanding to programmes promoting small business & community development","القروض القائمة لبرامج دعم المشروعات الصغيرة وتنمية المجتمع"),["f_sme","r_mf"]],
+ ["FN-CB-240a.2",tr("Past-due and non-accrual loans in those programmes","القروض المتأخرة وغير المنتظمة في هذه البرامج"),[]],
+ ["FN-CB-240a.3",tr("No-cost retail accounts provided to previously unbanked customers","الحسابات بلا تكلفة المقدمة لعملاء لم يتعاملوا مع البنوك سابقاً"),["i_newcust"]],
+ ["FN-CB-240a.4",tr("Participants in financial-literacy initiatives","المشاركون في مبادرات الثقافة المالية"),["i_lit"]],
+ ["FN-CB-410a.1",tr("Commercial & industrial credit exposure by industry","التعرض الائتماني التجاري والصناعي حسب القطاع"),[]],
+ ["FN-CB-410a.2",tr("Incorporation of ESG factors in credit analysis","دمج عوامل ESG في التحليل الائتماني"),["c_esrm","c_catA"]],
+ ["FN-CB-410b.1",tr("Absolute gross financed emissions (Scopes 1, 2, 3)","إجمالي الانبعاثات الممولة المطلقة (النطاقات 1 و2 و3)"),["c_fin_em"]],
+ ["FN-CB-410b.2",tr("Gross exposure for each industry by asset class","التعرض الإجمالي لكل قطاع حسب فئة الأصول"),[]],
+ ["FN-CB-410b.3",tr("Share of gross exposure included in the financed-emissions calculation","نسبة التعرض الإجمالي المشمولة بحساب الانبعاثات الممولة"),["c_fin_cov"]],
+ ["FN-CB-410b.4",tr("Methodology used to calculate financed emissions","منهجية حساب الانبعاثات الممولة"),[]],
+ ["FN-CB-510a.1",tr("Monetary losses from legal proceedings (fraud, insider trading, antitrust, market manipulation, malpractice)","الخسائر النقدية من الإجراءات القانونية (احتيال، تداول بمعلومات داخلية، احتكار، تلاعب، سوء ممارسة)"),["e_fines"]],
+ ["FN-CB-510a.2",tr("Whistleblower policies and procedures","سياسات وإجراءات الإبلاغ عن المخالفات"),["e_whistle"]],
+ ["FN-CB-550a.1",tr("Global systemically important bank (G-SIB) score","درجة البنك ذي الأهمية النظامية العالمية (G-SIB)"),[]],
+ ["FN-CB-550a.2",tr("Integration of stress-test results into capital planning and strategy","دمج نتائج اختبارات الضغط في تخطيط رأس المال والاستراتيجية"),["c_trans"]],
+ ["FN-CB-000.A",tr("Number and value of checking and savings accounts by segment","عدد وقيمة الحسابات الجارية وحسابات التوفير حسب الشريحة"),["u_accounts"]],
+ ["FN-CB-000.B",tr("Number and value of loans by segment","عدد وقيمة القروض حسب الشريحة"),["r_loans","r_ploan"]]
+];
+const TCFD=[
+ ["Gov-a",tr("Governance a · Board oversight of climate-related risks and opportunities","الحوكمة (أ) · إشراف المجلس على مخاطر وفرص المناخ"),"IFRS S2 6(a)",["g_esg_comm","g_meet"]],
+ ["Gov-b",tr("Governance b · Management's role in assessing and managing them","الحوكمة (ب) · دور الإدارة في تقييمها وإدارتها"),"IFRS S2 6(b)",["g_esg_pay"],()=>!!(ESGD().narr.climate||"").trim()],
+ ["Str-a",tr("Strategy a · Climate risks & opportunities over the short, medium and long term","الاستراتيجية (أ) · مخاطر وفرص المناخ على المدى القصير والمتوسط والطويل"),"IFRS S2 10–12",["c_trans","c_phys"]],
+ ["Str-b",tr("Strategy b · Impact on business, strategy and financial planning","الاستراتيجية (ب) · الأثر على الأعمال والاستراتيجية والتخطيط المالي"),"IFRS S2 13–21",["f_green","f_rev"],()=>S.price>0],
+ ["Str-c",tr("Strategy c · Resilience under different climate scenarios","الاستراتيجية (ج) · المرونة في ظل سيناريوهات مناخية مختلفة"),"IFRS S2 22",[],()=>(+S.eff||0)+(+S.solar||0)>0],
+ ["RM-a",tr("Risk management a · Processes for identifying and assessing climate risks","إدارة المخاطر (أ) · إجراءات تحديد مخاطر المناخ وتقييمها"),"IFRS S2 25(a)",["c_esrm"],()=>matDone()],
+ ["RM-b",tr("Risk management b · Processes for managing climate risks","إدارة المخاطر (ب) · إجراءات إدارة مخاطر المناخ"),"IFRS S2 25(b)",["c_catA"],()=>!!(ESGD().narr.climate||"").trim()],
+ ["RM-c",tr("Risk management c · Integration into overall risk management","إدارة المخاطر (ج) · الدمج في الإدارة الشاملة للمخاطر"),"IFRS S2 25(c)",["c_esrm_tr","g_esg_comm"]],
+ ["M&T-a",tr("Metrics & targets a · Metrics used to assess climate risks and opportunities","المقاييس والمستهدفات (أ) · المقاييس المستخدمة لتقييم المخاطر والفرص"),"IFRS S2 29(b)–(g)",["c_price","c_int","n_elec","n_env"]],
+ ["M&T-b",tr("Metrics & targets b · Scope 1, 2 and 3 emissions","المقاييس والمستهدفات (ب) · انبعاثات النطاقات 1 و2 و3"),"IFRS S2 29(a)",["c_s1","c_s2","c_s3","c_fin_em"]],
+ ["M&T-c",tr("Metrics & targets c · Targets and performance against them","المقاييس والمستهدفات (ج) · المستهدفات والأداء مقابلها"),"IFRS S2 33–36",["c_target","c_red"]]
+];
+
+/* ---------- state ---------- */
+let ESGF={p:"",tp:"",fw:"",st:"",q:"",ix:"gri"};try{Object.assign(ESGF,JSON.parse(localStorage.getItem("glw.esgf")||"{}"))}catch(e){}
+const saveF=()=>savePrefs("glw.esgf",ESGF);
+const numv=x=>{if(x===""||x==null)return NaN;if(typeof x==="number")return x;let s=String(x).trim().replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/٫/g,".").replace(/[,٬\s%]/g,"");if(/^(yes|y|نعم|true|1)$/i.test(s))return 1;if(/^(no|n|لا|false|0)$/i.test(s))return 0;const n=parseFloat(s);return /^[-+]?\d*\.?\d+(e[-+]?\d+)?$/i.test(s)?n:NaN};
+function guessSector(){const s=String((S.entity&&S.entity.sector)||"").toLowerCase();if(/bank|financ|بنك|مصرف|تمويل/.test(s))return "bank";if(/manufact|industr|packag|cement|steel|chemical|صناع|تصنيع|مصنع/.test(s))return "mfg";if(/servic|trade|retail|tech|خدم|تجار|تكنولوج/.test(s))return "services";return "general"}
+function matDefault(sec){const d={gov:[4,4],ethics:[4,3],climate:[5,5],sfin:[3,4],eco:[5,4],cust:[3,4],growth:[3,5],incl:[3,2],emp:[4,3],comm:[3,2],digital:[3,4],privacy:[3,4]};
+  if(sec==="bank")Object.assign(d,{sfin:[5,5],eco:[3,2],incl:[5,4],privacy:[5,5],digital:[4,5],cust:[4,5],climate:[4,5]});
+  if(sec==="mfg")Object.assign(d,{eco:[5,5],emp:[5,3],cust:[4,4]});
+  const o={};Object.keys(d).forEach(k=>o[k]={imp:d[k][0],fin:d[k][1]});return o}
+function esgDemoValues(){
+  const D={g_board_ind:[22,30,33],g_board_fem:[11,18,25],g_esg_comm:[0,1,1],g_esg_pay:[0,10,15],g_meet:[1,3,4],e_coc:[64,82,100],e_corr:[0,0,0],e_whistle:[70,85,100],e_fines:[0.1,0.4,0],
+   c_trans:[35,33,25],c_phys:[12,14,10],c_red:[0,410,1500],c_target:["",30,30],f_green:[4.5,12.8,20],f_rev:[6,9,15],f_train:[12,40,80],
+   n_renew:[0,4,15],n_esave:[0,520,1500],n_recyc:[46,43,60],u_sat:[81,79,85],u_compl:[84,90,95],
+   r_rev:[1450,1720,""],r_evd:[1210,1390,""],r_local:[63,60,70],i_paygap:[0.86,0.9,1],i_lit:[0,350,1000],
+   h_emp:[612,640,""],h_fem:[14,17,25],h_fem_mgmt:[9,12,20],h_dis:[3.1,4.2,5],h_turn:[11.2,9.5,8],h_train_m:[14,18,24],h_train_f:[12,19,24],h_review:[60,72,90],h_ltifr:[1.3,1.6,1],h_fatal:[0,0,0],h_eng:[66,63,75],
+   k_csr:[0.8,1,1.5],k_amt:[3.2,4.6,""],k_proj:[3,5,6],k_benef:[1200,2100,3000],d_share:[35,48,70],d_users:[2100,3400,5000],p_breach:[1,0,0],p_compl:[0,2,0],p_train:[180,420,640],p_iso:["","",1]};
+  const v={};Object.entries(D).forEach(([id,a])=>{v[id]={p:a[0],c:a[1],tg:a[2],src:t(tr("Fictitious demo value","قيمة تجريبية افتراضية")),ev:false}});
+  const C=calc();const PF={c_s1:1.04,c_s2:1.09,c_s3:0.93,n_elec:1.08,n_water:0.94,n_waste:1.02,n_env:0.9};Object.keys(PF).forEach(id=>{const a=KI[id].auto(C);if(a!=null)v[id]={p:+(a*PF[id]).toFixed(id==="n_env"?2:1),c:"",tg:+(a*0.85).toFixed(id==="n_env"?2:0),src:"",ev:false}});
+  v.c_int={p:4.2,c:"",tg:3.5,src:"",ev:false};v.d_einv={p:48,c:"",tg:95};v.d_meter={p:0,c:"",tg:80};v.d_assure={p:41,c:"",tg:70};v.c_price={p:"",c:"",tg:""};
+  v.n_esave.src=v.c_red.src=t(tr("Fictitious demo value","قيمة تجريبية افتراضية"));
+  return v;
+}
+function ESGD(){
+  if(!S.esg){const sec=guessSector();S.esg={sector:sec,y0:String((+(S.entity&&S.entity.year)||2025)-1),y1:String((S.entity&&S.entity.year)||2025),v:{},mat:matDefault(sec),omit:{},narr:{},ver:{},prb:{},role:"preparer",sel:null,seed:""};
+    if(S.demo){S.esg.v=esgDemoValues();S.esg.seed="demo"}}
+  const e=S.esg;["v","mat","omit","narr","ver","prb"].forEach(k=>e[k]=e[k]||{});if(!ROLES[e.role])e.role="preparer";if(!SECT[e.sector])e.sector="general";return e}
+let _EC=null;const EC=()=>_EC||(_EC=calc());const esgReset=()=>{_EC=null};
+function kv(k,y){const e=S.esg||ESGD();const r=e.v[k.id]||{};const raw=r[y];if(raw!==undefined&&raw!==null&&String(raw).trim()!=="")return {v:raw,src:"in"};
+  if(y==="c"&&k.auto&&!(e.seed==="cib")){let a=null;try{a=k.auto(EC())}catch(_){}if(a!=null&&isFinite(a)&&(a!==0||k.id.startsWith("d_")))return {v:+(+a).toFixed(k.dp??1),src:"auto"}}
+  return {v:"",src:""}}
+const has=(k,y)=>kv(k,y).v!=="";
+function aplK(){const e=ESGD();return ESGK.filter(k=>!k.sect||k.sect.includes(e.sector))}
+function fwOf(k){const a=[];if(k.gri)a.push("gri");if(k.sasb)a.push("sasb");if(k.tcfd)a.push("tcfd");if(k.s2)a.push("s2");if(k.fra)a.push("fra");if(k.sdg&&k.sdg.length)a.push("sdg");return a}
+function filtK(opt){opt=opt||{};const e=ESGD();const q=(ESGF.q||"").trim().toLowerCase();
+  return aplK().filter(k=>(!ESGF.p||k.p===ESGF.p)&&(!ESGF.tp||k.tp===ESGF.tp)&&(!ESGF.fw||fwOf(k).includes(ESGF.fw))&&
+   (opt.nost||!ESGF.st||(ESGF.st==="missing"&&!has(k,"c"))||(ESGF.st==="reported"&&has(k,"c"))||(ESGF.st==="auto"&&kv(k,"c").src==="auto")||(ESGF.st==="noev"&&has(k,"c")&&kv(k,"c").src!=="auto"&&!((e.v[k.id]||{}).src||"").trim())||(ESGF.st==="target"&&has(k,"tg")))&&
+   (!q||(k.n.en+" "+k.n.ar+" "+(k.gri||"")+" "+(k.sasb||"")+" "+k.id).toLowerCase().includes(q)))}
+function unitL(k){return k.ux?t(k.ux):k.u==="%"?"%":t(UNITS[k.u]||tr(k.u,k.u))}
+function fmtV(k,v){if(v===""||v==null)return "—";if(k.u==="yes/no"){const n=numv(v);return isFinite(n)?t(n?tr("Yes","نعم"):tr("No","لا")):String(v)}
+  const n=numv(v);if(k.u==="text"||!isFinite(n))return String(v);const a=Math.abs(n);const d=k.dp??(a<10&&n%1?2:a<1000&&n%1?1:0);return nf(n,d)+(k.u==="%"?"%":"")}
+function chg(k){if(k.u==="text"||k.u==="yes/no"&&false)return null;const p=numv(kv(k,"p").v),c=numv(kv(k,"c").v);if(!isFinite(p)||!isFinite(c))return null;const d=c-p;const pct=(k.u==="%"||p===0)?null:d/Math.abs(p)*100;const s=(!k.dir||Math.abs(d)<1e-9)?0:Math.sign(d)*k.dir;return {d,pct,s}}
+function chgHtml(k){const x=chg(k);if(!x)return `<span class="muted">—</span>`;if(k.u==="yes/no"&&Math.abs(x.d)>1e-9)return `<span class="tag ${x.s>0?"ok":x.s<0?"bad":""}">${esc(fmtV(k,kv(k,"p").v)+" → "+fmtV(k,kv(k,"c").v))}</span>`;if(Math.abs(x.d)<1e-9)return `<span class="tag">${esc(t(tr("no change","بلا تغيير")))}</span>`;
+  const txt=(x.d>0?"▲ ":"▼ ")+(x.pct!=null?nf(Math.abs(x.pct),1)+"%":nf(Math.abs(x.d),k.u==="ratio"?2:Math.abs(x.d)<10?1:0)+(k.u==="%"?" pp":""));
+  return `<span class="tag ${x.s>0?"ok":x.s<0?"bad":""}">${esc(txt)}</span>`}
+function chgWord(k){const x=chg(k);if(!x)return "—";if(Math.abs(x.d)<1e-9)return t(tr("no change","بلا تغيير"));return (x.d>0?"+":"−")+(x.pct!=null?nf(Math.abs(x.pct),1)+"%":nf(Math.abs(x.d),1)+(k.u==="%"?" pp":""))+(x.s>0?" ✓":x.s<0?" ✗":"")}
+function codesHtml(k){const c=[];if(k.gri)c.push("GRI "+k.gri);if(k.sasb)c.push("SASB "+k.sasb);if(k.tcfd)c.push("TCFD "+k.tcfd);if(k.s2)c.push("IFRS S2 "+k.s2);if(k.fra)c.push(t(tr("FRA 107/108","الرقابة المالية 107/108")));if(k.sdg)c.push(t(tr("SDG ","هدف "))+k.sdg.join(", "));return c.length?`<div class="chips codes" style="margin-block-start:4px">${c.map(x=>`<span>${esc(x)}</span>`).join("")}</div>`:""}
+function kMean(k){const e=ESGD();const d=k.dir>0?tr("Higher is better.","الأعلى أفضل."):k.dir<0?tr("Lower is better.","الأقل أفضل."):tr("Context figure: neither higher nor lower is better by itself.","رقم سياقي: لا يُعد الارتفاع أو الانخفاض أفضل في ذاته.");
+  const parts=[t(d)];const c=kv(k,"c");if(c.src==="auto")parts.push(t(tr("Calculated live from the activity ledger, so it carries the ledger's evidence and assurability.","محسوب مباشرة من سجل الأنشطة، فيحمل أدلة الدفتر وقابليته للتأكيد.")));
+  const x=chg(k);if(x&&Math.abs(x.d)>1e-9)parts.push(t(x.s>0?tr("It improved from last year.","تحسن مقارنة بالعام السابق."):x.s<0?tr("It worsened from last year; explain why in the report.","تراجع مقارنة بالعام السابق؛ اشرحي السبب في التقرير."):tr("It changed from last year.","تغير مقارنة بالعام السابق.")));
+  const tg=numv(kv(k,"tg").v),cv=numv(c.v);if(isFinite(tg)&&isFinite(cv)&&k.dir)parts.push(t((k.dir>0?cv>=tg:cv<=tg)?tr("The target is met.","المستهدف متحقق."):tr("The target is not yet met.","المستهدف لم يتحقق بعد.")));
+  const f=[];if(k.gri)f.push("GRI "+k.gri);if(k.sasb)f.push("SASB "+k.sasb);if(k.tcfd)f.push("TCFD "+k.tcfd);if(k.s2)f.push("IFRS S2 "+k.s2);
+  if(f.length)parts.push(t(tr("Reported under ","يُفصح عنه وفق "))+f.join(" · ")+".");if(k.sdg)parts.push(t(tr("Contributes to SDG ","يساهم في الهدف "))+k.sdg.join(", ")+".");
+  parts.push(t(tr("Topic: ","الموضوع: "))+t(TOPI[k.tp].n)+" · "+t(PIL[k.p])+".");return parts.join(" ")}
+function matDone(){const e=ESGD();return Object.keys(e.mat).length>=TOP.length&&!!e.matOk}
+function esgScore(){const ks=aplK();const out={};
+  Object.keys(PIL).forEach(p=>{const a=ks.filter(k=>k.p===p);const rep=a.filter(k=>has(k,"c")).length;const cov=a.length?rep/a.length*100:0;
+    const pf=a.map(chg).filter(x=>x&&a.length).map((x,i)=>x);const sc=a.filter(k=>k.dir).map(k=>chg(k)).filter(Boolean);const perf=sc.length?sc.reduce((s,x)=>s+(x.s>0?100:x.s<0?0:50),0)/sc.length:null;
+    const tgs=a.filter(k=>k.dir&&has(k,"tg")&&has(k,"c"));const met=tgs.filter(k=>{const c=numv(kv(k,"c").v),g=numv(kv(k,"tg").v);return isFinite(c)&&isFinite(g)&&(k.dir>0?c>=g:c<=g)}).length;
+    out[p]={n:a.length,rep,cov,perf,score:perf==null?cov*0.5:cov*0.5+perf*0.5,imp:sc.filter(x=>x.s>0).length,wor:sc.filter(x=>x.s<0).length,tg:tgs.length,met}});
+  const ps=Object.values(out);out.all={score:ps.reduce((s,x)=>s+x.score,0)/ps.length,cov:ps.reduce((s,x)=>s+x.rep,0)/Math.max(1,ps.reduce((s,x)=>s+x.n,0))*100,n:ps.reduce((s,x)=>s+x.n,0),rep:ps.reduce((s,x)=>s+x.rep,0),imp:ps.reduce((s,x)=>s+x.imp,0),wor:ps.reduce((s,x)=>s+x.wor,0),tg:ps.reduce((s,x)=>s+x.tg,0),met:ps.reduce((s,x)=>s+x.met,0)};
+  return out}
+function dqStats(){const e=ESGD();const r=aplK().filter(k=>has(k,"c"));const auto=r.filter(k=>kv(k,"c").src==="auto");const man=r.filter(k=>kv(k,"c").src!=="auto");
+  const src=man.filter(k=>((e.v[k.id]||{}).src||"").trim()&&!/fictitious|افتراضية/i.test((e.v[k.id]||{}).src));const ev=man.filter(k=>(e.v[k.id]||{}).ev);const ver=r.filter(k=>e.ver[k.id]);
+  return {r,auto,man,src,ev,ver,idx:EC().idx,srcP:man.length?src.length/man.length*100:0,evP:man.length?ev.length/man.length*100:0,verP:r.length?ver.length/r.length*100:0}}
+function idxStatus(ks,fn){const ap=ks.map(id=>KI[id]).filter(k=>k&&(!k.sect||k.sect.includes(ESGD().sector)));const rep=ap.filter(k=>has(k,"c"));const okFn=fn?!!fn():false;
+  if(!ap.length)return okFn?"full":"none";if(rep.length===ap.length||(rep.length&&okFn))return "full";if(rep.length||okFn)return "part";return "none"}
+const STL={full:tr("Reported","مُفصح عنه"),part:tr("Partly reported","مُفصح جزئياً"),none:tr("Not reported","غير مُفصح"),omit:tr("Omitted","محذوف مع ذكر السبب")};
+const stTag=s=>`<span class="tag ${s==="full"?"ok":s==="part"?"warn":s==="omit"?"":"bad"}">${esc(t(STL[s]))}</span>`;
+function idxCov(list,kpos,fpos){let f=0,p=0;list.forEach(r=>{const s=idxStatus(r[kpos],r[fpos]);if(s==="full")f++;else if(s==="part")p++});return {f,p,n:list.length,pct:(f+p*0.5)/list.length*100}}
+const roleOf=()=>ROLES[ESGD().role];
+const canEdit=()=>!!roleOf().edit;
+
+/* ---------- report builders ---------- */
+const SDGN=[null,tr("No poverty","القضاء على الفقر"),tr("Zero hunger","القضاء التام على الجوع"),tr("Good health & well-being","الصحة الجيدة والرفاه"),tr("Quality education","التعليم الجيد"),tr("Gender equality","المساواة بين الجنسين"),tr("Clean water & sanitation","المياه النظيفة والنظافة الصحية"),tr("Affordable & clean energy","طاقة نظيفة وبأسعار معقولة"),tr("Decent work & economic growth","العمل اللائق ونمو الاقتصاد"),tr("Industry, innovation & infrastructure","الصناعة والابتكار والهياكل الأساسية"),tr("Reduced inequalities","الحد من أوجه عدم المساواة"),tr("Sustainable cities & communities","مدن ومجتمعات محلية مستدامة"),tr("Responsible consumption & production","الاستهلاك والإنتاج المسؤولان"),tr("Climate action","العمل المناخي"),tr("Life below water","الحياة تحت الماء"),tr("Life on land","الحياة في البر"),tr("Peace, justice & strong institutions","السلام والعدل والمؤسسات القوية"),tr("Partnerships for the goals","عقد الشراكات لتحقيق الأهداف")];
+const RH=x=>`<h3>${esc(t(x))}</h3>`;const RP=x=>`<p>${esc(t(x))}</p>`;
+const RT=(heads,rows)=>`<div class="tw"><table><thead><tr>${heads.map(h=>`<th>${esc(t(h))}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>typeof c==="object"&&c&&c.h!=null?`<td${c.a||""}>${c.h}</td>`:`<td>${esc(c)}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+const KX=k=>({h:`<b>${esc(t(k.n))}</b>`,a:` data-kx="${k.id}" class="w"`});
+const entName=()=>{const e=ESGD();return e.ent||((S.entity&&S.entity.name)||t(tr("Your company","شركتك")))};
+const yrs=()=>{const e=ESGD();return [e.y0||"Y-1",e.y1||"Y"]};
+const HY=[tr("Indicator","المؤشر"),tr("Unit","الوحدة")];
+function kRow(k){const [a,b]=yrs();return [KX(k),unitL(k),fmtV(k,kv(k,"p").v),{h:esc(fmtV(k,kv(k,"c").v))+(kv(k,"c").src==="auto"?` <span class="tag ok">${esc(t(tr("ledger","الدفتر")))}</span>`:"")},{h:chgHtml(k)},fmtV(k,kv(k,"tg").v),[k.gri&&"GRI "+k.gri,k.sasb&&k.sasb,k.tcfd&&"TCFD "+k.tcfd,k.s2&&"S2 "+k.s2].filter(Boolean).join(" · ")||"—",(k.sdg||[]).join(", ")||"—"]}
+const kHead=()=>{const [a,b]=yrs();return [...HY,tr(a,a),tr(b,b),tr("Change","التغير"),tr("Target","المستهدف"),tr("Frameworks","الأطر"),tr("SDGs","الأهداف")]};
+function topList(dirS,n){return aplK().filter(k=>k.dir).map(k=>({k,x:chg(k)})).filter(o=>o.x&&o.x.s===dirS).sort((a,b)=>Math.abs(b.x.pct??b.x.d)-Math.abs(a.x.pct??a.x.d)).slice(0,n)}
+function matList(){const e=ESGD();return TOP.map(x=>({x,imp:+(e.mat[x.id]||{}).imp||0,fin:+(e.mat[x.id]||{}).fin||0})).map(o=>({...o,lvl:o.imp>=4&&o.fin>=4?2:(o.imp>=4||o.fin>=4)?1:0,sum:o.imp+o.fin})).sort((a,b)=>b.lvl-a.lvl||b.sum-a.sum)}
+const MATL=[tr("Monitor","للمتابعة"),tr("Material (impact or financial)","جوهري (أثراً أو مالياً)"),tr("Priority (double material)","أولوية (جوهري مزدوج)")];
+function gWhere(code){const e=ESGD();const m={"2-1":entName(),"2-2":S.entity&&S.entity.boundary?t(tr("Boundary: ","الحدود: "))+S.entity.boundary:"","2-3":(e.y1||"")+" · "+t(tr("annual","سنوي")),"2-4":(e.narr.restate||"").slice(0,90),"2-5":t(tr(`${Object.values(e.ver).filter(Boolean).length} KPIs marked verified by the auditor role`,`${Object.values(e.ver).filter(Boolean).length} مؤشراً معتمداً من دور المراجع`)),"2-6":t(SECT[e.sector])+(S.entity&&S.entity.sector?" · "+S.entity.sector:""),"2-22":t(tr("CEO / chair statement","بيان الرئيس التنفيذي / رئيس المجلس")),"2-29":t(TABS.esgmat),"3-1":t(TABS.esgmat),"3-2":t(TABS.esgmat),"3-3":t(tr("Management approach per topic","نهج الإدارة لكل موضوع"))};return m[code]||""}
+function kVals(ids){return ids.map(id=>KI[id]).filter(k=>k&&(!k.sect||k.sect.includes(ESGD().sector))&&has(k,"c")).map(k=>`${t(k.n)}: ${fmtV(k,kv(k,"c").v)}`).join(" · ")}
+function roleBrief(role){
+  const e=ESGD(),Sc=esgScore(),dq=dqStats(),C=EC(),ks=aplK();const b=[];const miss=ks.filter(k=>!has(k,"c"));
+  const matT=matList().filter(o=>o.lvl).map(o=>o.x.id);const missMat=miss.filter(k=>matT.includes(k.tp));
+  const g=idxCov(GRI,2,3),tc=idxCov(TCFD,3,4),sa=idxCov(SASB,2,99);
+  const L=(en,ar)=>b.push(t(tr(en,ar)));
+  if(role==="preparer"){L(`${Sc.all.rep} of ${Sc.all.n} indicators are filled for ${e.y1}; ${miss.length} are missing, ${missMat.length} of them in material topics.`,`تم ملء ${Sc.all.rep} من ${Sc.all.n} مؤشراً لعام ${e.y1}؛ ينقص ${miss.length}، منها ${missMat.length} في موضوعات جوهرية.`);
+    if(missMat.length)L("Fill first: "+missMat.slice(0,6).map(k=>k.n.en).join("; ")+".","ابدئي بـ: "+missMat.slice(0,6).map(k=>k.n.ar).join("؛ ")+".");
+    L(`${dq.man.length-dq.src.length} manually entered figures have no documented source. Add the source so the auditor can trace them.`,`${dq.man.length-dq.src.length} رقماً مُدخلاً يدوياً بلا مصدر موثق. أضيفي المصدر ليتمكن المراجع من تتبعها.`);
+    L(`GRI index coverage ${nf(g.pct,0)}% and TCFD/IFRS S2 coverage ${nf(tc.pct,0)}%. Give an omission reason for each GRI disclosure you will not report.`,`تغطية فهرس GRI ‏${nf(g.pct,0)}٪ وتغطية TCFD/IFRS S2 ‏${nf(tc.pct,0)}٪. اذكري سبب الحذف لكل إفصاح GRI لن تفصحي عنه.`)}
+  if(role==="cfo"){const cc=C.tot*S.price;L(`Environmental cost traced in the ledger: EGP ${nf(C.cost/1e6,2)} million. At the internal carbon price of EGP ${nf(S.price)} per tonne the hidden carbon cost is EGP ${nf(cc/1e6,2)} million.`,`التكلفة البيئية المتتبعة في الدفتر: ${nf(C.cost/1e6,2)} مليون جنيه. وبسعر الكربون الداخلي ${nf(S.price)} جنيه للطن تبلغ تكلفة الكربون الخفية ${nf(cc/1e6,2)} مليون جنيه.`);
+    const tr_=KI.c_trans;if(has(tr_,"c"))L(`Exposure to transition risk: ${fmtV(tr_,kv(tr_,"c").v)} (${chgWord(tr_)} vs ${e.y0}). This is the figure lenders and IFRS S2 ask about first.`,`التعرض لمخاطر التحول: ${fmtV(tr_,kv(tr_,"c").v)} (${chgWord(tr_)} مقارنة بـ ${e.y0}). وهذا أول ما يسأل عنه المقرضون ومعيار IFRS S2.`);
+    const fg=KI.f_green;if(has(fg,"c"))L(`Green finance / green capex: EGP ${fmtV(fg,kv(fg,"c").v)} million (${chgWord(fg)}).`,`التمويل / الإنفاق الرأسمالي الأخضر: ${fmtV(fg,kv(fg,"c").v)} مليون جنيه (${chgWord(fg)}).`);
+    L(`Assurability index ${nf(C.idx,0)}/100: ${t(band(C.idx).n)}. Before limited assurance, move the largest sources onto meters under finance ownership.`,`مؤشر القابلية للتأكيد ${nf(C.idx,0)}/100: ${t(band(C.idx).n)}. قبل التأكيد المحدود انقلي أكبر المصادر إلى العدادات وتحت ملكية الإدارة المالية.`)}
+  if(role==="board"){const w=Object.keys(PIL).sort((a,c)=>Sc[a].score-Sc[c].score)[0];L(`Overall ESG score ${nf(Sc.all.score,0)}/100 (author's illustrative method). Weakest pillar: ${PIL[w].en} (${nf(Sc[w].score,0)}).`,`درجة ESG الإجمالية ${nf(Sc.all.score,0)}/100 (منهج توضيحي من الباحثة). أضعف ركيزة: ${PIL[w].ar} (${nf(Sc[w].score,0)}).`);
+    const wr=topList(-1,3);if(wr.length)L("Indicators that worsened: "+wr.map(o=>`${o.k.n.en} (${chgWord(o.k)})`).join("; ")+".","مؤشرات تراجعت: "+wr.map(o=>`${o.k.n.ar} (${chgWord(o.k)})`).join("؛ ")+".");
+    L(`Targets met: ${Sc.all.met} of ${Sc.all.tg}. Priority material topics: ${matList().filter(o=>o.lvl===2).map(o=>o.x.n.en).join(", ")||"none set"}.`,`المستهدفات المتحققة: ${Sc.all.met} من ${Sc.all.tg}. الموضوعات ذات الأولوية: ${matList().filter(o=>o.lvl===2).map(o=>o.x.n.ar).join("، ")||"لم تُحدد"}.`);
+    L("Under the Egyptian Code of Corporate Governance the board is accountable for what the company discloses; the paper argues that this accountability must cover sustainability data too (§8.2).","وفق الدليل المصري لحوكمة الشركات يُسأل المجلس عما تفصح عنه الشركة، ويرى البحث أن هذه المساءلة يجب أن تشمل بيانات الاستدامة (§8.2).")}
+  if(role==="auditor"){L(`${dq.r.length} indicators are reported: ${dq.auto.length} are calculated from the ledger and ${dq.man.length} were typed in.`,`${dq.r.length} مؤشراً مُفصح عنه: ${dq.auto.length} محسوبة من الدفتر و${dq.man.length} أُدخلت يدوياً.`);
+    L(`Of the typed-in figures, ${nf(dq.srcP,0)}% have a documented source and ${nf(dq.evP,0)}% have evidence on file. ${dq.ver.length} indicators are marked verified (${nf(dq.verP,0)}%).`,`من الأرقام اليدوية، ${nf(dq.srcP,0)}٪ لها مصدر موثق و${nf(dq.evP,0)}٪ لها أدلة محفوظة. ${dq.ver.length} مؤشراً معتمداً (${nf(dq.verP,0)}٪).`);
+    L(`Ledger-based figures inherit an assurability index of ${nf(C.idx,0)}/100 (${t(band(C.idx).n)}). Test the meter-to-ledger interfaces and e-invoice links (see Auditor checklist).`,`الأرقام المبنية على الدفتر ترث مؤشر قابلية للتأكيد ${nf(C.idx,0)}/100 (${t(band(C.idx).n)}). اختبر واجهات العداد-الدفتر وروابط الفواتير الإلكترونية (انظر قائمة فحص المراجع).`);
+    L("Tick “verified” on the input page for each indicator you have tested; the report then lists the scope of your work.","ضع علامة «تم التحقق» في صفحة الإدخال على كل مؤشر اختبرته؛ وسيعرض التقرير نطاق عملك.")}
+  if(role==="regulator"){const fr=ks.filter(k=>k.fra);const fe=fr.filter(k=>has(k,"c"));L(`${fe.length} of ${fr.length} indicators linked to the FRA ESG disclosure themes are reported.`,`تم الإفصاح عن ${fe.length} من ${fr.length} مؤشراً مرتبطاً بمحاور إفصاح ESG للرقابة المالية.`);
+    L(`TCFD / IFRS S2 coverage ${nf(tc.pct,0)}% (Decree 108 asks larger entities for TCFD-structured climate disclosure). GRI coverage ${nf(g.pct,0)}%.`,`تغطية TCFD / IFRS S2 ‏${nf(tc.pct,0)}٪ (القرار 108 يطلب من الجهات الأكبر إفصاحاً مناخياً وفق TCFD). تغطية GRI ‏${nf(g.pct,0)}٪.`);
+    L("The disclosure is computed from a ledger with an assurability index; the paper's recommendation is to require the measurement system and phased assurance, not only the form (§10).","الإفصاح محسوب من دفتر له مؤشر قابلية للتأكيد؛ وتوصية البحث هي إلزام نظام القياس والتأكيد المرحلي لا النموذج فقط (§10).")}
+  if(role==="investor"){L(`ESG score ${nf(Sc.all.score,0)}/100; ${Sc.all.imp} indicators improved and ${Sc.all.wor} worsened since ${e.y0}.`,`درجة ESG ‏${nf(Sc.all.score,0)}/100؛ تحسن ${Sc.all.imp} مؤشراً وتراجع ${Sc.all.wor} منذ ${e.y0}.`);
+    ["c_int","c_s1","c_s2","g_board_ind","g_board_fem","p_breach"].map(id=>KI[id]).filter(k=>has(k,"c")).forEach(k=>L(`${k.n.en}: ${fmtV(k,kv(k,"c").v)} (${chgWord(k)}).`,`${k.n.ar}: ${fmtV(k,kv(k,"c").v)} (${chgWord(k)}).`));
+    if(e.sector==="bank")L(`SASB Commercial Banks coverage: ${nf(sa.pct,0)}%.`,`تغطية SASB للبنوك التجارية: ${nf(sa.pct,0)}٪.`)}
+  if(role==="researcher"){L(`The dataset has ${Sc.all.n} indicators over two years (${e.y0}, ${e.y1}), each tagged by pillar, topic, GRI, SASB, TCFD, IFRS S2, SDG and capital.`,`تضم البيانات ${Sc.all.n} مؤشراً لسنتين (${e.y0}، ${e.y1})، كلٌّ منها مصنف حسب الركيزة والموضوع وGRI وSASB وTCFD وIFRS S2 والأهداف ورأس المال.`);
+    L("Export the KPI CSV from several companies to build a panel; the assurability index and e-invoice share are ready explanatory variables for H1–H4.","صدّري ملف CSV للمؤشرات من عدة شركات لبناء بيانات مقطعية؛ ومؤشر القابلية للتأكيد ونسبة الفاتورة الإلكترونية متغيرات تفسيرية جاهزة للفرضيات ف1–ف4.");
+    L(`Framework coverage: GRI ${nf(g.pct,0)}%, TCFD/IFRS S2 ${nf(tc.pct,0)}%.`,`تغطية الأطر: GRI ‏${nf(g.pct,0)}٪، TCFD/IFRS S2 ‏${nf(tc.pct,0)}٪.`)}
+  return b}
+const RB={
+ brief(){const r=ESGD().role;return RH(tr("Role brief","موجز حسب الدور"))+`<p class="small muted">${esc(t(ROLES[r].n))}</p><ul>${roleBrief(r).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`},
+ exec(){const e=ESGD(),Sc=esgScore(),C=EC();const [a,b]=yrs();
+  const im=topList(1,5),wo=topList(-1,5);
+  return RH(tr("Executive summary & highlights","الملخص التنفيذي وأبرز النتائج"))+RP(tr(`${entName()} · ${SECT[e.sector].en} · reporting year ${b} compared with ${a}.`,`${entName()} · ${SECT[e.sector].ar} · سنة التقرير ${b} مقارنة بـ ${a}.`))+
+  RT([tr("Measure","المقياس"),tr("Result","النتيجة"),tr("What this means","المعنى")],[
+   [t(tr("ESG score","درجة ESG")),nf(Sc.all.score,0)+"/100",t(tr("Half coverage of the indicator set, half year-on-year direction. The author's illustrative method, not a rating.","نصفها تغطية مجموعة المؤشرات ونصفها اتجاه التغير السنوي. منهج توضيحي من الباحثة وليس تصنيفاً."))],
+   [t(tr("Indicators reported","المؤشرات المُفصح عنها")),`${Sc.all.rep}/${Sc.all.n}`,t(tr("How complete the report is for this sector's indicator set.","مدى اكتمال التقرير لمجموعة مؤشرات هذا القطاع."))],
+   [t(tr("Improved / worsened","تحسن / تراجع")),`↑${Sc.all.imp} · ↓${Sc.all.wor}`,t(tr("Indicators with a clear better-or-worse direction that moved since last year.","المؤشرات ذات الاتجاه الواضح التي تغيرت منذ العام السابق."))],
+   [t(tr("Targets met","المستهدفات المتحققة")),`${Sc.all.met}/${Sc.all.tg}`,t(tr("Indicators where the current value already meets the target set.","المؤشرات التي بلغت قيمتها الحالية المستهدف."))],
+   [t(tr("Assurability index","مؤشر القابلية للتأكيد")),nf(C.idx,0)+"/100",t(band(C.idx).n)]])+
+  (im.length?`<h4>${esc(t(tr("Biggest improvements","أكبر التحسنات")))}</h4>`+RT([tr("Indicator","المؤشر"),tr(a,a),tr(b,b),tr("Change","التغير")],im.map(o=>[KX(o.k),fmtV(o.k,kv(o.k,"p").v),fmtV(o.k,kv(o.k,"c").v),{h:chgHtml(o.k)}])):"")+
+  (wo.length?`<h4>${esc(t(tr("Indicators that worsened","المؤشرات التي تراجعت")))}</h4>`+RT([tr("Indicator","المؤشر"),tr(a,a),tr(b,b),tr("Change","التغير")],wo.map(o=>[KX(o.k),fmtV(o.k,kv(o.k,"p").v),fmtV(o.k,kv(o.k,"c").v),{h:chgHtml(o.k)}])):"")+
+  ((e.narr.ceo||"").trim()?`<h4>${esc(t(tr("Statement from leadership","بيان القيادة")))}</h4><p>${esc(e.narr.ceo)}</p>`:"")},
+ kpi(){const e=ESGD();let h=RH(tr("Value-creation KPIs by pillar and topic","مؤشرات خلق القيمة حسب الركيزة والموضوع"));
+  const ks=filtK({nost:1});if(ESGF.p||ESGF.tp||ESGF.fw||ESGF.q)h+=`<p class="small muted">${esc(t(tr("Filtered view: ","عرض مُرشَّح: ")))}${esc([ESGF.p&&t(PIL[ESGF.p]),ESGF.tp&&t(TOPI[ESGF.tp].n),ESGF.fw&&ESGF.fw.toUpperCase(),ESGF.q].filter(Boolean).join(" · "))}</p>`;
+  Object.keys(PIL).forEach(p=>{const tps=TOP.filter(x=>x.p===p&&ks.some(k=>k.tp===x.id));if(!tps.length)return;h+=`<h4>${esc(t(PIL[p]))}</h4>`;
+   tps.forEach(x=>{h+=`<p><b>${esc(x.no+". "+t(x.n))}</b> <span class="small muted">· ${esc(t(tr("SDG ","هدف ")))}${x.sdg.join(", ")} · ${esc(Object.keys(x.cap).map(c=>t(CAPS[c])).join(", "))}</span></p>`;
+    if((e.narr[x.id]||"").trim())h+=`<p class="small">${esc(e.narr[x.id])}</p>`;h+=RT(kHead(),ks.filter(k=>k.tp===x.id).map(kRow))})});return h},
+ mat(){const L=matList();return RH(tr("Materiality assessment","تقييم الأهمية النسبية"))+RP(tr("Double materiality: a topic is material when its impact on people and the environment is high (inside-out) or when it can change the company's financial position (outside-in). Scores 1–5 set by the preparer.","الأهمية المزدوجة: يكون الموضوع جوهرياً إذا كان أثره على الناس والبيئة مرتفعاً (من الداخل للخارج) أو إذا كان قادراً على تغيير المركز المالي للشركة (من الخارج للداخل). الدرجات من 1 إلى 5 يحددها معدّ التقرير."))+
+  `<div class="chart" style="max-width:420px">${matSvg()}</div>`+RT(["#",tr("Material topic","الموضوع الجوهري"),tr("Pillar","الركيزة"),tr("Impact","الأثر"),tr("Financial","المالي"),tr("Result","النتيجة")],L.map(o=>[String(o.x.no),t(o.x.n),t(PIL[o.x.p]),String(o.imp),String(o.fin),{h:`<span class="tag ${o.lvl===2?"ok":o.lvl?"warn":""}">${esc(t(MATL[o.lvl]))}</span>`}]))},
+ score(){const Sc=esgScore();return RH(tr("ESG scorecard","بطاقة أداء ESG"))+RT([tr("Pillar","الركيزة"),tr("Indicators","المؤشرات"),tr("Reported","المُفصح عنها"),tr("Coverage","التغطية"),tr("Improved","تحسن"),tr("Worsened","تراجع"),tr("Score","الدرجة")],Object.keys(PIL).map(p=>{const x=Sc[p];return [t(PIL[p]),String(x.n),String(x.rep),nf(x.cov,0)+"%",String(x.imp),String(x.wor),nf(x.score,0)]}))+
+  RP(tr("Score = 50% coverage + 50% direction (improved = 100, unchanged = 50, worsened = 0, over indicators with a clear direction). An analytical device for discussion; it is not an ESG rating.","الدرجة = 50٪ تغطية + 50٪ اتجاه (تحسن = 100، ثبات = 50، تراجع = 0، على المؤشرات ذات الاتجاه الواضح). أداة تحليلية للنقاش وليست تصنيف ESG."))},
+ gri(){const e=ESGD();return RH(tr("GRI content index","فهرس محتوى GRI"))+RP(tr(`${entName()} has reported with reference to the GRI Standards for ${e.y1}. Statuses are computed from the indicators filled on the platform.`,`أعدت ${entName()} التقرير بالرجوع إلى معايير GRI لعام ${e.y1}. الحالات محسوبة من المؤشرات المملوءة على المنصة.`))+
+  RT([tr("GRI","GRI"),tr("Disclosure","الإفصاح"),tr("Status","الحالة"),tr("Location / value","الموقع / القيمة"),tr("Omission reason","سبب الحذف")],GRI.map(r=>{let s=idxStatus(r[2],r[3]);const om=e.omit[r[0]];if(s==="none"&&om)s="omit";return [r[0],{h:esc(t(r[1])),a:' class="w"'},{h:stTag(s)},{h:esc(kVals(r[2])||gWhere(r[0])||"—"),a:' class="w"'},om?t(OMIT[om]):"—"]}))},
+ sasb(){const e=ESGD();if(e.sector!=="bank")return RH(tr("SASB index","فهرس SASB"))+RP(tr("SASB standards are industry-specific. The platform maps the Commercial Banks standard only; for other sectors choose your industry standard (via the ISSB / IFRS Foundation) and map its metrics to the indicators here. No codes are invented for other industries.","معايير SASB خاصة بكل صناعة. تربط المنصة معيار البنوك التجارية فقط؛ أما القطاعات الأخرى فاختاري معيار صناعتك (من ISSB / مؤسسة IFRS) واربطي مقاييسه بالمؤشرات هنا. لا تُخترع رموز لصناعات أخرى."));
+  return RH(tr("SASB index (commercial banks)","فهرس SASB (البنوك التجارية)"))+RT([tr("Code","الرمز"),tr("Metric","المقياس"),tr("Status","الحالة"),tr("Value","القيمة")],SASB.map(r=>[r[0],{h:esc(t(r[1])),a:' class="w"'},{h:stTag(idxStatus(r[2]))},{h:esc(kVals(r[2])||"—"),a:' class="w"'}]))},
+ tcfd(){return RH(tr("TCFD & IFRS S2 index","فهرس TCFD وIFRS S2"))+RP(tr("The eleven TCFD recommended disclosures with the matching IFRS S2 paragraphs. Evidence comes from the indicators, the scenario on the Green cost page and the management-approach text.","الإفصاحات الإحدى عشرة الموصى بها في TCFD مع الفقرات المقابلة في IFRS S2. الأدلة من المؤشرات وسيناريو صفحة التكلفة الخضراء ونص نهج الإدارة."))+
+  RT([tr("Ref","المرجع"),tr("Recommended disclosure","الإفصاح الموصى به"),"IFRS S2",tr("Status","الحالة"),tr("Evidence","الأدلة")],TCFD.map(r=>[r[0],{h:esc(t(r[1])),a:' class="w"'},r[2],{h:stTag(idxStatus(r[3],r[4]))},{h:esc(kVals(r[3])||(r[4]&&r[4]()?t(tr("Platform: scenario / narrative / materiality","المنصة: السيناريو / النص / الأهمية النسبية")):"—")),a:' class="w"'}]))},
+ cap(){return RH(tr("Six capitals (integrated reporting)","رؤوس الأموال الستة (التقرير المتكامل)"))+RP(tr("How each material topic uses or affects the six capitals of the <IR> Framework. Mapping by the author, modelled on bank integrated reports.","كيف يستخدم كل موضوع جوهري رؤوس الأموال الستة في إطار التقرير المتكامل أو يؤثر فيها. الربط من إعداد الباحثة على غرار التقارير المتكاملة للبنوك."))+
+  RT([tr("Material topic","الموضوع الجوهري"),...Object.values(CAPS)],TOP.map(x=>[t(x.n),...Object.keys(CAPS).map(c=>x.cap[c]?{h:`<span class="tag ${x.cap[c]==="b"?"ok":x.cap[c]==="a"?"warn":""}">${esc(t(CAPU[x.cap[c]]))}</span>`}:"·")]))},
+ sdg(){const ks=aplK().filter(k=>has(k,"c"));return RH(tr("SDG contribution","المساهمة في أهداف التنمية المستدامة"))+RT([tr("SDG","الهدف"),tr("Indicators reported","المؤشرات المُفصح عنها"),tr("Examples","أمثلة")],SDGN.map((n,i)=>i&&{i,n,a:ks.filter(k=>(k.sdg||[]).includes(i))}).filter(o=>o&&o.a.length).map(o=>[`${o.i} · ${t(o.n)}`,String(o.a.length),{h:esc(o.a.slice(0,3).map(k=>t(k.n)+": "+fmtV(k,kv(k,"c").v)).join(" · ")),a:' class="w"'}]))},
+ fra(){const ks=aplK().filter(k=>k.fra);const [a,b]=yrs();let h=RH(tr("FRA ESG disclosure summary (Decrees 107/108)","ملخص إفصاح ESG للرقابة المالية (القراران 107/108)"))+`<p class="small"><b>${esc(t(tr("Draft working summary organised by the E, S and G themes of FRA Decrees 107 and 108 of 2021. It is not the official FRA form; transfer the figures to the form issued by the Authority.","ملخص عمل مبدئي منظم حسب محاور البيئة والمجتمع والحوكمة في قراري الرقابة المالية 107 و108 لسنة 2021. ليس النموذج الرسمي للهيئة؛ انقلي الأرقام إلى النموذج الصادر عنها.")))}</b></p>`;
+  [["E",tr("Environment","البيئة")],["S",tr("Social","المجتمع")],["G",tr("Governance","الحوكمة")],["D",tr("Data & digitisation","البيانات والرقمنة")]].forEach(([p,n])=>{const a_=ks.filter(k=>k.p===p);if(!a_.length)return;h+=`<h4>${esc(t(n))}</h4>`+RT([tr("Indicator","المؤشر"),tr(a,a),tr(b,b),tr("Status","الحالة")],a_.map(k=>[KX(k),fmtV(k,kv(k,"p").v),fmtV(k,kv(k,"c").v),{h:stTag(has(k,"c")?"full":"none")}]))});
+  const tc=idxCov(TCFD,3,4);h+=RP(tr(`Climate-related disclosure (TCFD structure, Decree 108): ${tc.f} of ${tc.n} recommendations fully and ${tc.p} partly covered.`,`الإفصاح المناخي (هيكل TCFD، القرار 108): ${tc.f} من ${tc.n} توصية مغطاة كلياً و${tc.p} جزئياً.`));return h},
+ prb(){const e=ESGD();if(e.sector!=="bank")return RH(tr("UNEP FI banking principles & Equator Principles","مبادئ الأمم المتحدة للبنوك المسؤولة ومبادئ التعادل"))+RP(tr("These frameworks apply to banks and project-finance lenders. Switch the sector to “Bank / NBFI” to use them.","تنطبق هذه الأطر على البنوك وجهات تمويل المشروعات. غيّري القطاع إلى «بنك / مؤسسة مالية غير مصرفية» لاستخدامها."));
+  const rows=a=>a.map(([c,n])=>[c,{h:esc(t(n)),a:' class="w"'},{h:`<span class="tag ${(+e.prb[c]||0)===2?"ok":(+e.prb[c]||0)===1?"warn":"bad"}">${esc(t(PSTAT[+e.prb[c]||0]))}</span>`}]);
+  return RH(tr("UNEP FI banking principles & Equator Principles","مبادئ الأمم المتحدة للبنوك المسؤولة ومبادئ التعادل"))+`<h4>${esc(t(tr("Principles for Responsible Banking","مبادئ البنوك المسؤولة")))}</h4>`+RT([tr("Principle","المبدأ"),tr("Content","المحتوى"),tr("Status","الحالة")],rows(PRB))+`<h4>${esc(t(tr("Equator Principles","مبادئ التعادل")))}</h4>`+RT([tr("Principle","المبدأ"),tr("Content","المحتوى"),tr("Status","الحالة")],rows(EQP))},
+ dq(){const d=dqStats(),e=ESGD();const ns=d.man.filter(k=>!d.src.includes(k));return RH(tr("Data quality & assurance readiness","جودة البيانات والجاهزية للتأكيد"))+
+  RT([tr("Measure","المقياس"),tr("Result","النتيجة"),tr("What this means","المعنى")],[
+   [t(tr("Calculated from the ledger","محسوبة من الدفتر")),String(d.auto.length),t(tr("System-generated figures: the auditor tests the controls once instead of every number.","أرقام مولدة آلياً: يختبر المراجع الضوابط مرة بدلاً من كل رقم."))],
+   [t(tr("Typed in","مُدخلة يدوياً")),String(d.man.length),t(tr("Figures compiled outside the ledger; each needs a source and evidence.","أرقام تُجمع خارج الدفتر؛ كلٌّ منها يحتاج مصدراً وأدلة."))],
+   [t(tr("With a documented source","لها مصدر موثق")),nf(d.srcP,0)+"%",t(tr("Share of typed-in figures that name where they come from.","نسبة الأرقام اليدوية التي تذكر مصدرها."))],
+   [t(tr("With evidence on file","لها أدلة محفوظة")),nf(d.evP,0)+"%",t(tr("Share of typed-in figures whose evidence is retained.","نسبة الأرقام اليدوية المحفوظة أدلتها."))],
+   [t(tr("Verified by the auditor role","معتمدة من دور المراجع")),nf(d.verP,0)+"%",t(tr("Indicators an assurance provider marked as tested.","المؤشرات التي أشار مقدم التأكيد إلى اختبارها."))],
+   [t(tr("Assurability index","مؤشر القابلية للتأكيد")),nf(d.idx,0)+"/100",t(band(d.idx).n)]])+
+  (ns.length?`<h4>${esc(t(tr("Typed-in figures without a documented source","أرقام يدوية بلا مصدر موثق")))}</h4>`+RT([tr("Indicator","المؤشر"),tr("Value","القيمة"),tr("Source","المصدر")],ns.slice(0,20).map(k=>[KX(k),fmtV(k,kv(k,"c").v),(e.v[k.id]||{}).src||"—"])):"")},
+ target(){const ks=aplK().filter(k=>has(k,"tg"));return RH(tr("Targets & progress","المستهدفات ومدى التقدم"))+(ks.length?RT([tr("Indicator","المؤشر"),tr("Current","الحالي"),tr("Target","المستهدف"),tr("Gap","الفجوة"),tr("Status","الحالة")],ks.map(k=>{const c=numv(kv(k,"c").v),g=numv(kv(k,"tg").v);const ok=isFinite(c)&&isFinite(g)&&k.dir?(k.dir>0?c>=g:c<=g):null;return [KX(k),fmtV(k,kv(k,"c").v),fmtV(k,kv(k,"tg").v),isFinite(c)&&isFinite(g)?nf(g-c,Math.abs(g-c)<10?1:0):"—",{h:ok==null?`<span class="tag">${esc(t(tr("context","سياقي")))}</span>`:`<span class="tag ${ok?"ok":"warn"}">${esc(t(ok?tr("Met","متحقق"):tr("Not yet","لم يتحقق بعد")))}</span>`}]})):RP(tr("No targets entered yet. Add them in the Target column of the ESG data page.","لم تُدخل مستهدفات بعد. أضيفيها في عمود المستهدف بصفحة بيانات ESG.")))}
+};
+function selList(){const e=ESGD();return (e.sel&&e.sel.length?e.sel:roleOf().rep).filter(x=>RB[x])}
+function esgReportBody(){return selList().map(id=>`<section class="rsec">${RB[id]()}</section>`).join("")}
+function esgDoc(){const e=ESGD(),L=AR();const body=esgReportBody().replace(/<div class="chart"[^>]*>[\s\S]*?<\/svg><\/div>/g,"").replace(/<div class="tw">|<\/div>/g,"").replace(/<span class="tag( ok| warn| bad)?">/g,"<span>");
+  return `<!doctype html><html lang="${lang}" dir="${L?"rtl":"ltr"}"><head><meta charset="utf-8"><title>${esc(entName())} ESG ${esc(e.y1)}</title><style>body{font-family:${L?"'Sakkal Majalla',Arial":"Calibri,Arial"},sans-serif;font-size:11pt;color:#10242c;max-width:960px;margin:auto;padding:16px}h1{color:#12303d;font-size:20pt}h3{color:#0f7a45;font-size:14pt;border-bottom:2px solid #0f7a45;padding-bottom:3px;margin-top:22px}h4{color:#12303d;font-size:12pt;margin:14px 0 4px}table{border-collapse:collapse;width:100%;margin:6px 0 12px}th,td{border:1px solid #9fb4ab;padding:4px 6px;font-size:9.5pt;text-align:${L?"right":"left"};vertical-align:top}th{background:#d8eee2}.m,.small,.muted{color:#506068;font-size:9pt}ul{margin:4px 0}</style></head><body>
+  <h1>${esc(entName())} — ${esc(t(tr("Sustainability & governance (ESG) report","تقرير الاستدامة والحوكمة (ESG)")))} ${esc(e.y1)}</h1>
+  <p><b>${esc(t(tr("Generated with the Green Ledger Workbench · Prepared by Dr. Sara Salem","مولّد بمنصة الدفتر الأخضر · إعداد: د. سارة سالم")))}</b></p>
+  <p class="m">${esc(t(tr("Audience: ","الجمهور: ")))}${esc(t(roleOf().n))} · ${esc(t(SECT[e.sector]))} · ${esc(e.y0)}–${esc(e.y1)}</p>
+  ${e.seed==="demo"?`<p class="m">${esc(t(tr("Note: fictitious demo values.","ملاحظة: قيم تجريبية افتراضية.")))}</p>`:e.seed==="cib"?`<p class="m">${esc(t(CIB_NOTE))}</p>`:""}
+  ${body}
+  <p class="m">${esc(t(tr("Structure modelled on a full bank ESG report (pillars, material topics, GRI / SASB / TCFD / UNEP FI indexes, six capitals, SDGs). Framework mappings are indicative; check each standard's current text before publishing. Not an official FRA form.","الهيكل على غرار تقرير ESG كامل لبنك (الركائز، الموضوعات الجوهرية، فهارس GRI / SASB / TCFD / UNEP FI، رؤوس الأموال الستة، الأهداف). روابط الأطر إرشادية؛ راجعي النص الحالي لكل معيار قبل النشر. ليس نموذجاً رسمياً للرقابة المالية.")))}</p></body></html>`}
+function esgCsv(){const [a,b]=yrs();const q=v=>`"${String(v??"").replace(/"/g,'""')}"`;const e=ESGD();
+  return "﻿"+["id","indicator_en","indicator_ar","pillar","topic","unit","prior_"+a,"current_"+b,"target","source","evidence","current_from","verified","gri","sasb","tcfd","ifrs_s2","sdg"].join(",")+"\n"+aplK().map(k=>{const r=e.v[k.id]||{};return [k.id,k.n.en,k.n.ar,PIL[k.p].en,TOPI[k.tp].n.en,k.u,kv(k,"p").v,kv(k,"c").v,kv(k,"tg").v,r.src||"",r.ev?"yes":"no",kv(k,"c").src==="auto"?"ledger":kv(k,"c").src?"input":"",e.ver[k.id]?"yes":"no",k.gri||"",k.sasb||"",k.tcfd||"",k.s2||"",(k.sdg||[]).join(" ")].map(q).join(",")}).join("\n")}
+function matSvg(){const L=matList();const W=420,H=420,m=46,sz=W-m-14;const X=v=>m+(v-0.5)/5*sz,Y=v=>H-m-(v-0.5)/5*sz;const g={};
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="materiality matrix"><rect x="${X(3.5)}" y="${Y(5.5)}" width="${X(5.5)-X(3.5)}" height="${Y(3.5)-Y(5.5)}" fill="var(--green-soft)"/><rect x="${X(0.5)}" y="${Y(5.5)}" width="${X(3.5)-X(0.5)}" height="${Y(3.5)-Y(5.5)}" fill="var(--warn-soft)" opacity=".6"/><rect x="${X(3.5)}" y="${Y(3.5)}" width="${X(5.5)-X(3.5)}" height="${Y(0.5)-Y(3.5)}" fill="var(--warn-soft)" opacity=".6"/>`;
+  for(let i=1;i<=5;i++){s+=`<line x1="${X(i)}" y1="${Y(0.5)}" x2="${X(i)}" y2="${Y(5.5)}" stroke="var(--grid)"/><line x1="${X(0.5)}" y1="${Y(i)}" x2="${X(5.5)}" y2="${Y(i)}" stroke="var(--grid)"/><text x="${X(i)}" y="${H-m+16}" text-anchor="middle">${i}</text><text x="${m-10}" y="${Y(i)+4}" text-anchor="end">${i}</text>`}
+  s+=`<text class="lbl" x="${X(3)}" y="${H-6}" text-anchor="middle">${esc(t(tr("Financial materiality (outside-in) →","الأهمية المالية (من الخارج للداخل) ←")))}</text><text class="lbl" transform="translate(12 ${Y(3)}) rotate(-90)" text-anchor="middle">${esc(t(tr("Impact materiality (inside-out) →","أهمية الأثر (من الداخل للخارج) ←")))}</text>`;
+  L.forEach(o=>{const key=o.imp+"_"+o.fin;const n=g[key]=(g[key]||0)+1;const ang=(n-1)*2.1+0.6,rr=n>1?19:0;const cx=X(o.fin||1)+Math.cos(ang)*rr,cy=Y(o.imp||1)+Math.sin(ang)*rr;const col=o.x.p==="G"?"var(--navy)":o.x.p==="E"?"var(--s3)":o.x.p==="S"?"var(--s2)":"var(--s1)";
+   s+=`<g><title>${esc(o.x.no+". "+t(o.x.n))}</title><circle cx="${cx}" cy="${cy}" r="10" fill="${col}" stroke="var(--surface)" stroke-width="1.5"/><text x="${cx}" y="${cy+4}" text-anchor="middle" style="fill:#fff;font-weight:600">${o.x.no}</text></g>`});
+  return s+"</svg>"}
+function radarSvg(vals,labels){const W=300,cx=150,cy=150,R=105;const n=vals.length;const pt=(i,v)=>{const a=-Math.PI/2+i*2*Math.PI/n;return [cx+Math.cos(a)*R*v/100,cy+Math.sin(a)*R*v/100]};
+  let s=`<svg viewBox="0 0 ${W} ${W}" role="img" aria-label="ESG pillars">`;[25,50,75,100].forEach(r=>{s+=`<polygon points="${vals.map((_,i)=>pt(i,r).join(",")).join(" ")}" fill="none" stroke="var(--grid)"/>`});
+  vals.forEach((_,i)=>{const [x,y]=pt(i,100),[lx,ly]=pt(i,122);s+=`<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--grid)"/><text class="lbl" x="${lx}" y="${ly+4}" text-anchor="middle">${esc(labels[i])}</text>`});
+  s+=`<polygon points="${vals.map((v,i)=>pt(i,v).join(",")).join(" ")}" fill="var(--green)" fill-opacity=".25" stroke="var(--green)" stroke-width="2"/>`;vals.forEach((v,i)=>{const [x,y]=pt(i,v);s+=`<circle cx="${x}" cy="${y}" r="4" fill="var(--green)"/><text x="${x}" y="${y-8}" text-anchor="middle">${nf(v,0)}</text>`});return s+"</svg>"}
+
+/* ---------- views ---------- */
+const RDESC={
+ preparer:tr("Fills in the data, sets materiality and omission reasons, and issues every report.","يُدخل البيانات ويحدد الأهمية النسبية وأسباب الحذف ويُصدر كل التقارير."),
+ cfo:tr("Edits the data and sees the financial side: environmental and carbon cost, climate risk exposure, green investment, data reliability.","يعدّل البيانات ويرى الجانب المالي: التكلفة البيئية والكربونية، والتعرض لمخاطر المناخ، والاستثمار الأخضر، وموثوقية البيانات."),
+ board:tr("Read-only. Sees the summary, scorecard, materiality, targets and climate governance it is accountable for.","للاطلاع فقط. يرى الملخص وبطاقة الأداء والأهمية النسبية والمستهدفات وحوكمة المناخ التي يُسأل عنها."),
+ auditor:tr("Read-only on values, but can tick each indicator as verified. Sees data quality, sources, evidence and the indexes.","للاطلاع على القيم فقط، مع إمكانية اعتماد كل مؤشر. يرى جودة البيانات والمصادر والأدلة والفهارس."),
+ regulator:tr("Read-only. Sees the FRA 107/108 summary, the TCFD/IFRS S2 index and the GRI index.","للاطلاع فقط. يرى ملخص قراري الرقابة المالية 107/108 وفهرس TCFD/IFRS S2 وفهرس GRI."),
+ investor:tr("Read-only. Sees the scorecard, highlights, SASB and TCFD indexes and the SDG contribution.","للاطلاع فقط. يرى بطاقة الأداء وأبرز النتائج وفهرسي SASB وTCFD والمساهمة في الأهداف."),
+ researcher:tr("Read-only. Sees everything and exports the indicator dataset for analysis.","للاطلاع فقط. يرى كل شيء ويصدّر بيانات المؤشرات للتحليل.")
+};
+function opt(v,cur,label){return `<option value="${esc(v)}"${String(v)===String(cur)?" selected":""}>${esc(label)}</option>`}
+function esgCtl(filters){const e=ESGD();const ed=canEdit();
+  return `<section class="panel"><div class="head"><div><h3>${esc(t(tr("Role, sector and years","الدور والقطاع والسنوات")))}</h3><p class="muted small">${esc(t(tr("Choose who is using the platform; each role sees its own reports and permissions.","اختاري من يستخدم المنصة؛ لكل دور تقاريره وصلاحياته.")))}</p></div></div>
+  <div class="form"><label class="f">${esc(t(tr("Role","الدور")))}<select id="esgRole">${Object.keys(ROLES).map(r=>opt(r,e.role,t(ROLES[r].n))).join("")}</select></label>
+  <label class="f">${esc(t(tr("Sector","القطاع")))}<select id="esgSect"${ed?"":" disabled"}>${Object.keys(SECT).map(s=>opt(s,e.sector,t(SECT[s]))).join("")}</select></label>
+  <label class="f">${esc(t(tr("Prior year","السنة السابقة")))}<input id="esgY0" value="${esc(e.y0)}"${ed?"":" disabled"}></label>
+  <label class="f">${esc(t(tr("Reporting year","سنة التقرير")))}<input id="esgY1" value="${esc(e.y1)}"${ed?"":" disabled"}></label></div>
+  ${mean(RDESC[e.role])}
+  ${ed?"":`<p class="small" style="margin-block-start:8px"><span class="tag warn">${esc(t(tr("Read-only role","دور للاطلاع فقط")))}</span> ${esc(t(tr("Switch the role to “Report preparer” or “CFO” to edit values.","غيّري الدور إلى «معدّ التقرير» أو «المدير المالي» لتعديل القيم.")))}</p>`}
+  ${filters?`<div class="form" style="margin-block-start:12px">
+   <label class="f">${esc(t(tr("Pillar","الركيزة")))}<select id="ef_p">${opt("",ESGF.p,t(tr("All pillars","كل الركائز")))}${Object.keys(PIL).map(p=>opt(p,ESGF.p,t(PIL[p]))).join("")}</select></label>
+   <label class="f">${esc(t(tr("Material topic","الموضوع الجوهري")))}<select id="ef_tp">${opt("",ESGF.tp,t(tr("All topics","كل الموضوعات")))}${TOP.filter(x=>!ESGF.p||x.p===ESGF.p).map(x=>opt(x.id,ESGF.tp,x.no+". "+t(x.n))).join("")}</select></label>
+   <label class="f">${esc(t(tr("Framework","الإطار")))}<select id="ef_fw">${opt("",ESGF.fw,t(tr("All frameworks","كل الأطر")))}${[["gri","GRI"],["sasb","SASB"],["tcfd","TCFD"],["s2","IFRS S2"],["fra",t(tr("FRA 107/108","الرقابة المالية 107/108"))],["sdg",t(tr("SDGs","أهداف التنمية"))]].map(([v,l])=>opt(v,ESGF.fw,l)).join("")}</select></label>
+   ${filters>1?`<label class="f">${esc(t(tr("Status","الحالة")))}<select id="ef_st">${[["",tr("All","الكل")],["missing",tr("Missing","ناقص")],["reported",tr("Reported","مُفصح عنه")],["auto",tr("From the ledger","من الدفتر")],["noev",tr("Typed in, no source","يدوي بلا مصدر")],["target",tr("Has a target","له مستهدف")]].map(([v,l])=>opt(v,ESGF.st,t(l))).join("")}</select></label>
+   <label class="f">${esc(t(tr("Search","بحث")))}<input id="ef_q" value="${esc(ESGF.q)}" placeholder="${esc(t(tr("e.g. scope, women, 305","مثال: النطاق، النساء، 305")))}"></label>`:""}
+   <button class="btn" type="button" data-act="esgFclear">${esc(t(tr("Clear filters","مسح المرشحات")))}</button></div>`:""}
+  </section>`}
+function covHtml(){const Sc=esgScore();return `<div class="kpis">${kpi(tr("Indicators filled","المؤشرات المملوءة"),`${Sc.all.rep}/${Sc.all.n}`,nf(Sc.all.cov,0)+"%",tr("How much of this sector's indicator set has a value for the reporting year.","نسبة مجموعة مؤشرات القطاع التي لها قيمة لسنة التقرير."))}${Object.keys(PIL).map(p=>kpi(PIL[p],`${Sc[p].rep}/${Sc[p].n}`,nf(Sc[p].cov,0)+"%",tr(`Coverage of the ${PIL[p].en} pillar.`,`تغطية ركيزة ${PIL[p].ar}.`))).join("")}</div>`}
+VIEWS.esgin=function(){esgReset();const e=ESGD(),ed=canEdit(),ver=!!roleOf().ver;const ks=filtK();
+  const seedNote=e.seed==="demo"?tr("These are fictitious demo values for the sample company. Replace them with your own.","هذه قيم تجريبية افتراضية للشركة النموذجية. استبدليها بقيمك."):e.seed==="cib"?CIB_NOTE:null;
+  return `<section class="intro"><h2>${esc(t(tr("ESG data input","إدخال بيانات ESG")))}</h2><p>${esc(t(tr("Enter your company's figures for two years. Every report on the Reports pages is generated from this one table: KPI tables, materiality, GRI, SASB, TCFD/IFRS S2, six capitals, SDGs and the FRA summary. Figures marked “ledger” are calculated live from your activity records.","أدخلي أرقام شركتك لسنتين. كل تقرير في صفحات التقارير يُولّد من هذا الجدول الواحد: جداول المؤشرات، والأهمية النسبية، وGRI، وSASB، وTCFD/IFRS S2، ورؤوس الأموال الستة، والأهداف، وملخص الرقابة المالية. الأرقام المعلّمة «الدفتر» تُحسب مباشرة من سجل أنشطتك.")))}</p>
+   ${seedNote?`<p class="demo-flag">${esc(t(seedNote))}</p>`:""}
+   <div class="row">${ed?`<button class="btn" type="button" data-act="esgDemo">${esc(t(tr("Load demo values","تحميل قيم تجريبية")))}</button><button class="btn" type="button" data-act="esgCib">${esc(t(tr("Practise with CIB 2024 public figures (bank)","تدربي بأرقام CIB المنشورة 2024 (بنك)")))}</button><button class="btn" type="button" data-act="esgLedger">${esc(t(tr("Use ledger values again","استخدام قيم الدفتر مجدداً")))}</button><button class="btn danger" type="button" data-act="esgClear">${esc(t(tr("Clear all ESG values","مسح كل قيم ESG")))}</button>`:""}<button class="btn pri" type="button" data-go="esgrep">${esc(t(tr("Open the report studio →","افتحي استوديو التقارير ←")))}</button></div></section>
+  ${esgCtl(2)}
+  <section class="panel"><div class="head"><h3>${esc(t(tr("Completeness","الاكتمال")))}</h3></div><div id="esgCov">${covHtml()}</div></section>
+  <section class="panel"><div class="head"><div><h3>${esc(t(tr("Indicators","المؤشرات")))} <span class="muted small">(${ks.length})</span></h3><p class="muted small">${esc(t(tr("Type a value and leave the field; it is saved at once. Percentages without the % sign. Click an indicator name for its meaning.","اكتبي القيمة واتركي الحقل فتُحفظ فوراً. النسب بدون علامة ٪. اضغطي اسم المؤشر لمعرفة معناه.")))}</p></div></div>
+   <div class="tw"><table><thead><tr><th>${esc(t(tr("Indicator","المؤشر")))}</th><th class="n">${esc(e.y0)}</th><th class="n">${esc(e.y1)}</th><th class="n">${esc(t(tr("Target","المستهدف")))}</th><th>${esc(t(tr("Change","التغير")))}</th><th>${esc(t(tr("Source & evidence","المصدر والأدلة")))}</th>${ver?`<th>${esc(t(tr("Verified","تم التحقق")))}</th>`:""}</tr></thead><tbody>
+   ${TOP.filter(x=>ks.some(k=>k.tp===x.id)).map(x=>`<tr><th colspan="${ver?7:6}" style="background:var(--navy-soft);color:var(--ink)">${esc(x.no+". "+t(x.n))} · <span class="small">${esc(t(PIL[x.p]))}</span></th></tr>`+ks.filter(k=>k.tp===x.id).map(k=>{const r=e.v[k.id]||{};const c=kv(k,"c");const dis=ed?"":" disabled";
+    const inp=(y,ph)=>k.u==="yes/no"?`<select class="inp" data-ek="${k.id}" data-ey="${y}"${dis} style="width:92px">${opt("",r[y]??"","—")}${opt("1",r[y]??"",t(tr("Yes","نعم")))}${opt("0",r[y]??"",t(tr("No","لا")))}</select>`:`<input class="inp" data-ek="${k.id}" data-ey="${y}" value="${esc(r[y]??"")}" placeholder="${esc(ph||"")}"${dis} style="width:${k.u==="text"?"140px":"92px"}" inputmode="${k.u==="text"?"text":"decimal"}">`;
+    return `<tr><td class="w" data-kx="${k.id}" style="min-width:290px;max-width:360px"><b>${esc(t(k.n))}</b><div class="small muted">${esc(unitL(k))}</div>${codesHtml(k)}</td><td>${inp("p")}</td><td>${inp("c",c.src==="auto"?fmtV(k,c.v):"")}${c.src==="auto"&&!(r.c!==undefined&&String(r.c).trim()!=="")?`<div><span class="tag ok">${esc(t(tr("ledger","الدفتر")))}</span></div>`:""}</td><td>${inp("tg")}</td><td id="ech-${k.id}">${chgHtml(k)}</td><td><input class="inp" data-ek="${k.id}" data-ey="src" value="${esc(r.src||"")}" placeholder="${esc(t(tr("source, e.g. HR system","المصدر، مثل نظام الموارد البشرية")))}"${dis} style="width:150px"><label class="cb small"><input type="checkbox" data-eev="${k.id}"${r.ev?" checked":""}${dis}> ${esc(t(tr("evidence kept","الأدلة محفوظة")))}</label></td>${ver?`<td><label class="cb small"><input type="checkbox" data-ever="${k.id}"${e.ver[k.id]?" checked":""}> ${esc(t(tr("verified","تم التحقق")))}</label></td>`:""}</tr>`}).join("")).join("")}
+   </tbody></table></div>
+   ${howto(tr("“Change” compares the two years; green means the move is in the good direction for that indicator, red the opposite. Codes under each name show where it is reported (GRI, SASB, TCFD, IFRS S2, FRA, SDG).","عمود «التغير» يقارن السنتين؛ الأخضر يعني أن الحركة في الاتجاه الجيد لهذا المؤشر والأحمر العكس. الرموز تحت كل اسم توضح أين يُفصح عنه (GRI، SASB، TCFD، IFRS S2، الرقابة المالية، الأهداف).")).replace("<p ","<p ")}
+  </section>
+  <section class="panel"><div class="head"><div><h3>${esc(t(tr("Import & export the indicator table","استيراد وتصدير جدول المؤشرات")))}</h3><p class="muted small">${esc(t(tr("Download the template, fill it in Excel, and upload it back. CSV, Excel and JSON are accepted. Rows are matched by id or by indicator name.","نزّلي القالب واملئيه في Excel ثم ارفعيه. يُقبل CSV وExcel وJSON. تُطابق الصفوف بالرمز أو باسم المؤشر.")))}</p></div></div>
+   <div class="row"><button class="btn" type="button" data-act="esgTplX">${esc(t(tr("Excel template","قالب Excel")))}</button><button class="btn" type="button" data-act="esgCsv">${esc(t(tr("Download indicators (CSV)","تنزيل المؤشرات (CSV)")))}</button>${ed?`<label class="btn" for="esgFile" style="cursor:pointer">${esc(t(tr("Upload a filled file","رفع ملف مملوء")))}</label><input type="file" id="esgFile" accept=".csv,.xlsx,.xls,.json,.txt" hidden>`:""}</div></section>
+  <section class="panel"><div class="head"><div><h3>${esc(t(tr("Narrative: leadership statement & management approach","السرد: بيان القيادة ونهج الإدارة")))}</h3><p class="muted small">${esc(t(tr("Short texts that the reports quote (GRI 2-22 and 3-3, TCFD governance and risk management).","نصوص قصيرة تقتبسها التقارير (GRI 2-22 و3-3، وحوكمة وإدارة مخاطر TCFD).")))}</p></div></div>
+   <label class="f">${esc(t(tr("Statement from the CEO or chair","بيان الرئيس التنفيذي أو رئيس المجلس")))}<textarea class="prose" data-en="ceo"${ed?"":" disabled"}>${esc(e.narr.ceo||"")}</textarea></label>
+   <label class="f" style="margin-block-start:8px">${esc(t(tr("Restatements of earlier figures (if any)","إعادة عرض أرقام سابقة (إن وجدت)")))}<textarea class="prose" data-en="restate"${ed?"":" disabled"}>${esc(e.narr.restate||"")}</textarea></label>
+   ${TOP.map(x=>`<details style="margin-block-start:8px"><summary>${esc(x.no+". "+t(x.n))}${(e.narr[x.id]||"").trim()?" ✓":""}</summary><textarea class="prose" data-en="${x.id}"${ed?"":" disabled"} placeholder="${esc(t(tr("How the company manages this topic: policy, responsibility, actions, targets.","كيف تدير الشركة هذا الموضوع: السياسة، والمسؤولية، والإجراءات، والمستهدفات.")))}">${esc(e.narr[x.id]||"")}</textarea></details>`).join("")}
+  </section>`};
+VIEWS.esgrep=function(){esgReset();const e=ESGD();const sel=selList();
+  return `<section class="intro"><h2>${esc(t(tr("ESG report studio","استوديو تقارير ESG")))}</h2><p>${esc(t(tr("Pick a role and the reports you need; the preview updates at once and downloads as Word or HTML. Every number comes from the ESG data page and the ledger.","اختاري الدور والتقارير المطلوبة؛ تتحدث المعاينة فوراً ويمكن تنزيلها Word أو HTML. كل رقم يأتي من صفحة بيانات ESG والدفتر.")))}</p></section>
+  ${esgCtl(1)}
+  <section class="panel"><div class="head"><div><h3>${esc(t(tr("Reports to include","التقارير المطلوب تضمينها")))}</h3><p class="muted small">${esc(t(tr("Defaults follow the role. Tick or untick to build your own pack.","الافتراضي حسب الدور. أضيفي أو احذفي لبناء حزمتك.")))}</p></div>
+   <div class="row"><button class="btn" type="button" data-act="esgSelRole">${esc(t(tr("Role defaults","افتراضي الدور")))}</button><button class="btn" type="button" data-act="esgSelAll">${esc(t(tr("All","الكل")))}</button><button class="btn" type="button" data-act="esgSelNone">${esc(t(tr("None","لا شيء")))}</button></div></div>
+   <div class="steps">${Object.keys(RPT).map(id=>`<label class="cb step" style="display:flex"><input type="checkbox" data-rsel="${id}"${sel.includes(id)?" checked":""}> ${esc(t(RPT[id]))}${(id==="sasb"||id==="prb")&&e.sector!=="bank"?` <span class="tag">${esc(t(tr("banks","للبنوك")))}</span>`:""}</label>`).join("")}</div></section>
+  <section class="panel"><div class="head"><div><h3>${esc(t(tr("Download the report","تنزيل التقرير")))}</h3><p class="muted small">${esc(t(tr(`${sel.length} report(s) · ${t(roleOf().n)} · ${e.y0}–${e.y1}`,`${sel.length} تقرير · ${t(roleOf().n)} · ${e.y0}–${e.y1}`)))}</p></div>
+   <div class="row"><button class="btn pri" type="button" data-act="esgWord">${esc(t(tr("Word report","تقرير Word")))}</button><button class="btn" type="button" data-act="esgHtml">${esc(t(tr("HTML (print to PDF)","HTML (للطباعة PDF)")))}</button><button class="btn" type="button" data-act="esgCsv">${esc(t(tr("Indicators CSV","المؤشرات CSV")))}</button><button class="btn" type="button" data-act="esgCopy">${esc(t(tr("Copy text","نسخ النص")))}</button></div></div>
+   <div class="out" id="esgOut">${esgReportBody()||`<p class="muted">${esc(t(tr("Tick at least one report.","اختاري تقريراً واحداً على الأقل.")))}</p>`}</div></section>`};
+VIEWS.esgmat=function(){esgReset();const e=ESGD(),ed=canEdit();const sc=[1,2,3,4,5];
+  return `<section class="intro"><h2>${esc(t(tr("Materiality assessment","تقييم الأهمية النسبية")))}</h2><p>${esc(t(tr("Score each of the twelve material topics twice: its impact on people and the environment, and its effect on the company's finances. The matrix and the ranking update as you score.","قيّمي كل موضوع من الموضوعات الاثني عشر مرتين: أثره على الناس والبيئة، وتأثيره على مالية الشركة. تتحدث المصفوفة والترتيب أثناء التقييم.")))}</p>
+  <div class="row">${ed?`<button class="btn pri" type="button" data-act="esgMatOk">${esc(t(e.matOk?tr("Assessment confirmed ✓","تم اعتماد التقييم ✓"):tr("Confirm the assessment","اعتماد التقييم")))}</button><button class="btn" type="button" data-act="esgMatReset">${esc(t(tr("Sector defaults","افتراضي القطاع")))}</button>`:""}</div></section>
+  ${esgCtl(0)}
+  <section class="grid2"><div class="panel"><div class="head"><h3>${esc(t(tr("Materiality matrix","مصفوفة الأهمية النسبية")))}</h3></div><div class="chart" id="matSvg">${matSvg()}</div>
+   <div class="legend">${Object.keys(PIL).map(p=>`<span><i style="background:${p==="G"?"var(--navy)":p==="E"?"var(--s3)":p==="S"?"var(--s2)":"var(--s1)"}"></i>${esc(t(PIL[p]))}</span>`).join("")}</div>
+   ${howto(tr("Right = financially material, top = high impact. Green corner: priority topics (both ≥ 4). Amber bands: material on one side only, still reported under double materiality.","اليمين = جوهري مالياً، الأعلى = أثر مرتفع. الركن الأخضر: موضوعات ذات أولوية (كلاهما ≥ 4). الشرائط الصفراء: جوهري من جانب واحد ويُفصح عنه أيضاً وفق الأهمية المزدوجة."))}</div>
+  <div class="panel"><div class="head"><h3>${esc(t(tr("Score the topics","تقييم الموضوعات")))}</h3></div><div class="tw"><table><thead><tr><th>#</th><th>${esc(t(tr("Material topic","الموضوع الجوهري")))}</th><th>${esc(t(tr("Impact","الأثر")))}</th><th>${esc(t(tr("Financial","المالي")))}</th></tr></thead><tbody>
+   ${TOP.map(x=>`<tr><td>${x.no}</td><td class="w">${esc(t(x.n))}<div class="small muted">${esc(t(PIL[x.p]))}</div></td><td><select class="inp" data-mi="${x.id}"${ed?"":" disabled"}>${sc.map(v=>opt(v,(e.mat[x.id]||{}).imp||3,String(v))).join("")}</select></td><td><select class="inp" data-mf="${x.id}"${ed?"":" disabled"}>${sc.map(v=>opt(v,(e.mat[x.id]||{}).fin||3,String(v))).join("")}</select></td></tr>`).join("")}</tbody></table></div></div></section>
+  <section class="panel"><div class="head"><h3>${esc(t(tr("Ranking of material topics","ترتيب الموضوعات الجوهرية")))}</h3></div><div id="matRank">${matRankHtml()}</div></section>`};
+function matRankHtml(){return RT(["#",tr("Material topic","الموضوع الجوهري"),tr("Impact","الأثر"),tr("Financial","المالي"),tr("Result","النتيجة"),tr("Indicators reported","المؤشرات المُفصح عنها")],matList().map(o=>{const a=aplK().filter(k=>k.tp===o.x.id);return [String(o.x.no),t(o.x.n),String(o.imp),String(o.fin),{h:`<span class="tag ${o.lvl===2?"ok":o.lvl?"warn":""}">${esc(t(MATL[o.lvl]))}</span>`},`${a.filter(k=>has(k,"c")).length}/${a.length}`]}))}
+VIEWS.esgidx=function(){esgReset();const e=ESGD(),ed=canEdit();const ix=ESGF.ix||"gri";const g=idxCov(GRI,2,3),tc=idxCov(TCFD,3,4),sa=idxCov(SASB,2,99);
+  let body="";
+  if(ix==="gri")body=`<div class="tw"><table><thead><tr><th>GRI</th><th>${esc(t(tr("Disclosure","الإفصاح")))}</th><th>${esc(t(tr("Status","الحالة")))}</th><th>${esc(t(tr("Location / value","الموقع / القيمة")))}</th><th>${esc(t(tr("Omission reason","سبب الحذف")))}</th></tr></thead><tbody>${GRI.map(r=>{let s=idxStatus(r[2],r[3]);const om=e.omit[r[0]]||"";if(s==="none"&&om)s="omit";return `<tr><td class="mono">${r[0]}</td><td class="w">${esc(t(r[1]))}</td><td>${stTag(s)}</td><td class="w">${esc(kVals(r[2])||gWhere(r[0])||"—")}</td><td>${s==="full"?"—":`<select class="inp" data-omit="${r[0]}"${ed?"":" disabled"}>${Object.keys(OMIT).map(o=>opt(o,om,t(OMIT[o]))).join("")}</select>`}</td></tr>`}).join("")}</tbody></table></div>`;
+  if(ix==="sasb")body=RB.sasb();
+  if(ix==="tcfd")body=RB.tcfd();
+  if(ix==="prb")body=e.sector!=="bank"?RB.prb():[["P",PRB,tr("Principles for Responsible Banking","مبادئ البنوك المسؤولة")],["E",EQP,tr("Equator Principles","مبادئ التعادل")]].map(([_,L,n])=>`<h4>${esc(t(n))}</h4><div class="tw"><table><thead><tr><th>${esc(t(tr("Principle","المبدأ")))}</th><th>${esc(t(tr("Content","المحتوى")))}</th><th>${esc(t(tr("Status","الحالة")))}</th></tr></thead><tbody>${L.map(([c,n2])=>`<tr><td class="mono">${c}</td><td class="w">${esc(t(n2))}</td><td><select class="inp" data-prb="${c}"${ed?"":" disabled"}>${PSTAT.map((p,i)=>opt(i,+e.prb[c]||0,t(p))).join("")}</select></td></tr>`).join("")}</tbody></table></div>`).join("");
+  return `<section class="intro"><h2>${esc(t(tr("Framework indexes","فهارس الأطر")))}</h2><p>${esc(t(tr("The content indexes that close a full ESG report, generated from your data: where each required disclosure is answered, and why it is omitted when it is not.","فهارس المحتوى التي تختم تقرير ESG الكامل، مولدة من بياناتك: أين أُجيب عن كل إفصاح مطلوب، ولماذا حُذف إن لم يُفصح عنه.")))}</p></section>
+  ${esgCtl(0)}
+  <section class="kpis">${kpi(tr("GRI coverage","تغطية GRI"),nf(g.pct,0)+"%",`${g.f}/${g.n}`,tr(`${g.f} disclosures fully and ${g.p} partly reported. Partial counts as half.`,`${g.f} إفصاحاً كاملاً و${g.p} جزئياً. الجزئي يُحتسب نصفاً.`))}${kpi(tr("TCFD / IFRS S2 coverage","تغطية TCFD / IFRS S2"),nf(tc.pct,0)+"%",`${tc.f}/${tc.n}`,tr("Share of the eleven recommended climate disclosures covered.","نسبة الإفصاحات المناخية الإحدى عشرة الموصى بها المغطاة."))}${kpi(tr("SASB coverage (banks)","تغطية SASB (البنوك)"),e.sector==="bank"?nf(sa.pct,0)+"%":"—",e.sector==="bank"?`${sa.f}/${sa.n}`:t(tr("bank sector only","لقطاع البنوك فقط")),tr("Commercial Banks standard metrics covered.","مقاييس معيار البنوك التجارية المغطاة."))}</section>
+  <section class="panel"><div class="head"><div class="row" role="tablist">${[["gri","GRI"],["sasb","SASB"],["tcfd","TCFD · IFRS S2"],["prb",t(tr("UNEP FI PRB · Equator","مبادئ البنوك · التعادل"))]].map(([v,l])=>`<button class="chip${ix===v?" hl":""}" type="button" data-ix="${v}" aria-pressed="${ix===v}">${esc(l)}</button>`).join("")}</div></div>${body}</section>`};
+VIEWS.esgcap=function(){esgReset();const ks=aplK().filter(k=>has(k,"c"));const by={};ks.forEach(k=>(k.sdg||[]).forEach(s=>by[s]=(by[s]||0)+1));const mx=Math.max(1,...Object.values(by));
+  const capCount=Object.keys(CAPS).map(c=>({c,n:TOP.filter(x=>x.cap[c]).length,r:ks.filter(k=>TOPI[k.tp].cap[c]).length}));
+  return `<section class="intro"><h2>${esc(t(tr("Six capitals & SDGs","رؤوس الأموال الستة والأهداف")))}</h2><p>${esc(t(tr("How the company creates value: which capitals each topic uses or affects, and which Sustainable Development Goals the reported indicators serve.","كيف تخلق الشركة القيمة: ما رؤوس الأموال التي يستخدمها كل موضوع أو يؤثر فيها، وما أهداف التنمية المستدامة التي تخدمها المؤشرات المُفصح عنها.")))}</p></section>
+  ${esgCtl(0)}
+  <section class="kpis">${capCount.map(o=>kpi(CAPS[o.c],String(o.r),t(tr(`indicators · ${o.n} topics`,`مؤشراً · ${o.n} موضوعات`)),tr(`Reported indicators in topics that use or affect the ${CAPS[o.c].en} capital.`,`المؤشرات المُفصح عنها في موضوعات تستخدم رأس المال ${CAPS[o.c].ar} أو تؤثر فيه.`))).join("")}</section>
+  <section class="panel">${RB.cap()}</section>
+  <section class="panel"><div class="head"><h3>${esc(t(tr("SDG contribution","المساهمة في أهداف التنمية المستدامة")))}</h3></div>
+   <div class="tw"><table><thead><tr><th>${esc(t(tr("SDG","الهدف")))}</th><th>${esc(t(tr("Indicators reported","المؤشرات المُفصح عنها")))}</th></tr></thead><tbody>${SDGN.map((n,i)=>i&&by[i]?`<tr><td class="w">${i} · ${esc(t(n))}</td><td><div class="ib"><i style="width:${by[i]/mx*160}px;background:var(--green)"></i><span class="mono">${by[i]}</span></div></td></tr>`:"").join("")}</tbody></table></div>
+   ${howto(tr("Each bar counts the reported indicators tagged to that goal. A goal with no bar has no reported evidence yet.","كل شريط يعدّ المؤشرات المُفصح عنها المرتبطة بالهدف. الهدف بلا شريط ليس له دليل مُفصح عنه بعد."))}</section>`};
+VIEWS.esgscore=function(){esgReset();const e=ESGD(),Sc=esgScore();const ps=Object.keys(PIL);const bank=e.sector==="bank";
+  const bm=bank?aplK().filter(k=>CIBV[k.id]&&has(k,"c")):[];
+  return `<section class="intro"><h2>${esc(t(tr("ESG scorecard & benchmark","بطاقة أداء ESG والمقارنة المرجعية")))}</h2><p>${esc(t(tr("Where the company stands on each pillar, what improved or worsened since last year, and how it compares with a published reference.","موقف الشركة في كل ركيزة، وما تحسن أو تراجع منذ العام السابق، ومقارنتها بمرجع منشور.")))}</p></section>
+  ${esgCtl(0)}
+  <section class="kpis">${kpi(tr("ESG score","درجة ESG"),nf(Sc.all.score,0),"/100",tr("50% coverage + 50% year-on-year direction. The author's illustrative method for discussion, not a rating.","50٪ تغطية + 50٪ اتجاه التغير السنوي. منهج توضيحي من الباحثة للنقاش وليس تصنيفاً."))}${kpi(tr("Improved","تحسن"),String(Sc.all.imp),t(tr("indicators","مؤشراً")),tr("Indicators that moved in their good direction.","مؤشرات تحركت في اتجاهها الجيد."))}${kpi(tr("Worsened","تراجع"),String(Sc.all.wor),t(tr("indicators","مؤشراً")),tr("Indicators that moved the wrong way; the report should explain each.","مؤشرات تحركت في الاتجاه الخاطئ؛ ويجب أن يشرح التقرير كلاً منها."))}${kpi(tr("Targets met","المستهدفات المتحققة"),`${Sc.all.met}/${Sc.all.tg}`,"",tr("Indicators whose current value meets the target.","مؤشرات بلغت قيمتها الحالية المستهدف."))}</section>
+  <section class="grid2"><div class="panel"><div class="head"><h3>${esc(t(tr("Pillar scores","درجات الركائز")))}</h3></div><div class="meters">${ps.map(p=>{const v=Sc[p].score;const col=v>=70?"var(--ok)":v>=40?"var(--warn)":"var(--bad)";return `<div class="meter"><div class="mh"><b>${esc(t(PIL[p]))}</b><span class="mono">${nf(v,0)}</span></div><div class="track"><div class="fill" style="width:${Math.max(1,v)}%;background:${col}"></div></div><p class="small muted">${esc(t(tr(`${Sc[p].rep}/${Sc[p].n} reported · ${Sc[p].imp} improved · ${Sc[p].wor} worsened`,`${Sc[p].rep}/${Sc[p].n} مُفصح · ${Sc[p].imp} تحسن · ${Sc[p].wor} تراجع`)))}</p></div>`}).join("")}</div></div>
+   <div class="panel"><div class="head"><h3>${esc(t(tr("ESG profile","ملف ESG")))}</h3></div><div class="chart" style="max-width:320px;margin-inline:auto">${radarSvg(ps.map(p=>Sc[p].score),ps.map(p=>t(PIL[p])))}</div></div></section>
+  <section class="panel">${RB.brief()}</section>
+  <section class="panel">${RB.exec().replace(/^<h3>[^<]*<\/h3>/,`<h3>${esc(t(tr("Highlights","أبرز النتائج")))}</h3>`)}</section>
+  <section class="panel"><div class="head"><div><h3>${esc(t(tr("Benchmark","المقارنة المرجعية")))}</h3><p class="muted small">${esc(t(bank?CIB_NOTE:tr("For non-bank sectors the benchmark is your own prior year. Use “Compare companies” to rank several companies.","للقطاعات غير المصرفية تكون المقارنة مع سنتك السابقة. استخدمي «مقارنة الشركات» لترتيب عدة شركات.")))}</p></div></div>
+   ${bank?(bm.length?RT([tr("Indicator","المؤشر"),tr("Yours","قيمتك"),tr("CIB 2024","CIB 2024"),tr("Difference","الفرق")],bm.map(k=>{const y=numv(kv(k,"c").v),c=numv(CIBV[k.id][1]);const d=isFinite(y)&&isFinite(c)?y-c:null;const s=d==null||!k.dir?0:Math.sign(d)*k.dir;return [KX(k),fmtV(k,kv(k,"c").v),fmtV(k,CIBV[k.id][1]),{h:d==null?"—":`<span class="tag ${s>0?"ok":s<0?"bad":""}">${d>0?"+":""}${esc(nf(d,Math.abs(d)<10?2:0))}</span>`}]})):RP(tr("Fill some bank indicators to compare them with CIB 2024.","املئي بعض مؤشرات البنوك لمقارنتها مع CIB 2024."))):RB.kpi().replace(/^<h3>[^<]*<\/h3>/,"")}
+  </section>`};
+
+/* ---------- events ---------- */
+function esgSave(){save();esgReset()}
+function esgUpd(id){const k=KI[id];const c=$("ech-"+id);if(c&&k)c.innerHTML=chgHtml(k);const v=$("esgCov");if(v)v.innerHTML=covHtml();decorate2()}
+function decorate2(){document.querySelectorAll("#main .kpi").forEach(k=>k.classList.add("exk"))}
+function rerender(){const y=scrollY;render();scrollTo(0,y)}
+document.addEventListener("change",e=>{if(!tab.startsWith("esg"))return;const el=e.target;const E=ESGD();
+  if(el.id==="esgRole"){E.role=el.value;E.sel=null;esgSave();rerender();toast(t(tr("Role: ","الدور: "))+t(ROLES[E.role].n));return}
+  if(el.id==="esgSect"){E.sector=el.value;if(!E.matOk)E.mat=matDefault(E.sector);esgSave();rerender();return}
+  if(el.id==="esgY0"||el.id==="esgY1"){E[el.id==="esgY0"?"y0":"y1"]=el.value.trim();esgSave();rerender();return}
+  if(/^ef_(p|tp|fw|st)$/.test(el.id)){ESGF[el.id.slice(3)]=el.value;if(el.id==="ef_p")ESGF.tp="";saveF();rerender();return}
+  if(el.dataset.ek){const r=E.v[el.dataset.ek]=E.v[el.dataset.ek]||{};r[el.dataset.ey]=el.value.trim();if(E.seed&&el.dataset.ey!=="src")E.seed=E.seed;esgSave();esgUpd(el.dataset.ek);return}
+  if(el.dataset.eev){const r=E.v[el.dataset.eev]=E.v[el.dataset.eev]||{};r.ev=el.checked;esgSave();return}
+  if(el.dataset.ever){E.ver[el.dataset.ever]=el.checked;esgSave();toast(t(el.checked?tr("Marked as verified","تم الاعتماد"):tr("Verification removed","أزيل الاعتماد")));return}
+  if(el.dataset.en){E.narr[el.dataset.en]=el.value;esgSave();return}
+  if(el.dataset.mi||el.dataset.mf){const id=el.dataset.mi||el.dataset.mf;const m=E.mat[id]=E.mat[id]||{imp:3,fin:3};m[el.dataset.mi?"imp":"fin"]=+el.value;esgSave();$("matSvg").innerHTML=matSvg();$("matRank").innerHTML=matRankHtml();decorate2();return}
+  if(el.dataset.omit){E.omit[el.dataset.omit]=el.value;esgSave();rerender();return}
+  if(el.dataset.prb){E.prb[el.dataset.prb]=+el.value;esgSave();rerender();return}
+  if(el.dataset.rsel){const cur=selList();const s=new Set(cur);if(el.checked)s.add(el.dataset.rsel);else s.delete(el.dataset.rsel);E.sel=Object.keys(RPT).filter(x=>s.has(x));if(!E.sel.length)E.sel=["__none"];esgSave();rerender();return}
+  if(el.id==="esgFile"&&el.files&&el.files[0]){esgIngest(el.files[0]);el.value=""}
+});
+let efqT=null;
+document.addEventListener("input",e=>{if(e.target.id!=="ef_q")return;ESGF.q=e.target.value;saveF();clearTimeout(efqT);efqT=setTimeout(()=>{const pos=e.target.selectionStart;rerender();const q=$("ef_q");if(q){q.focus();try{q.setSelectionRange(pos,pos)}catch(_){}}},350)});
+document.addEventListener("click",e=>{const ix=e.target.closest("[data-ix]");if(ix&&tab==="esgidx"){ESGF.ix=ix.dataset.ix;saveF();rerender();return}
+  const a=e.target.closest("[data-act]");if(!a||!a.dataset.act.startsWith("esg"))return;const act=a.dataset.act;const E=ESGD();
+  if(act==="esgFclear"){Object.assign(ESGF,{p:"",tp:"",fw:"",st:"",q:""});saveF();rerender()}
+  if(act==="esgDemo")modalConfirm(t(tr("Replace the ESG values with fictitious demo values?","استبدال قيم ESG بقيم تجريبية افتراضية؟")),()=>{E.v=esgDemoValues();E.seed="demo";E.ent="";if(E.sector==="bank")E.sector=guessSector();esgSave();render();toast(t(tr("Demo values loaded","تم تحميل القيم التجريبية")))});
+  if(act==="esgCib")modalConfirm(t(tr("Load CIB's published 2023–2024 figures as a bank practice copy? Your ESG values will be replaced.","تحميل أرقام CIB المنشورة 2023–2024 كنسخة تدريب لبنك؟ ستُستبدل قيم ESG الحالية.")),()=>{E.v={};Object.entries(CIBV).forEach(([id,a])=>{E.v[id]={p:a[0],c:a[1],tg:"",src:"CIB ESG report 2024 (public)",ev:false}});E.sector="bank";E.y0="2023";E.y1="2024";E.seed="cib";E.ent=t(tr("Commercial International Bank (CIB) — public 2024 figures, practice copy","البنك التجاري الدولي (CIB) — أرقام 2024 المنشورة، نسخة تدريب"));E.mat=matDefault("bank");esgSave();render();toast(t(tr("CIB 2024 figures loaded","تم تحميل أرقام CIB 2024")))});
+  if(act==="esgLedger"){aplK().filter(k=>k.auto).forEach(k=>{if(E.v[k.id])E.v[k.id].c=""});if(E.seed==="cib"){E.seed="";E.ent=""}esgSave();rerender();toast(t(tr("Ledger values restored","تمت استعادة قيم الدفتر")))}
+  if(act==="esgClear")modalConfirm(t(tr("Clear every ESG value, target, source and narrative?","مسح كل قيم ESG والمستهدفات والمصادر والنصوص؟")),()=>{E.v={};E.narr={};E.ver={};E.omit={};E.seed="";E.ent="";esgSave();render()});
+  if(act==="esgSelRole"){E.sel=null;esgSave();rerender()}
+  if(act==="esgSelAll"){E.sel=Object.keys(RPT);esgSave();rerender()}
+  if(act==="esgSelNone"){E.sel=["__none"];esgSave();rerender()}
+  if(act==="esgWord")saveFile(`ESG-Report-${(entName()).replace(/[^\w؀-ۿ-]+/g,"_").slice(0,40)}-${E.y1}.doc`,"﻿"+esgDoc(),"application/msword");
+  if(act==="esgHtml")saveFile(`ESG-Report-${E.y1}.html`,esgDoc(),"text/html");
+  if(act==="esgCsv")saveFile(`esg-indicators-${E.y1}.csv`,esgCsv(),"text/csv");
+  if(act==="esgCopy"){const o=$("esgOut");copy(o?o.innerText:"")}
+  if(act==="esgMatOk"){E.matOk=true;esgSave();rerender();toast(t(tr("Materiality assessment confirmed; GRI 3-1, 3-2 and 2-29 now count as reported.","تم اعتماد تقييم الأهمية النسبية؛ أصبحت GRI 3-1 و3-2 و2-29 مُفصحاً عنها.")))}
+  if(act==="esgMatReset"){E.mat=matDefault(E.sector);E.matOk=false;esgSave();rerender()}
+  if(act==="esgTplX")esgTemplate();
+});
+/* indicator name → its meaning (runs after the generic cell explainer, so it refines it) */
+document.addEventListener("click",e=>{const td=e.target.closest("td[data-kx]");if(!td||e.target.closest("input,select,label,button"))return;const k=KI[td.dataset.kx];if(!k)return;
+  showExplain(td,t(k.n)+" ("+unitL(k)+")",kMean(k),`${t(tr("Explain this ESG indicator and how to improve it","اشرح مؤشر ESG هذا وكيف يمكن تحسينه"))}: ${t(k.n)} = ${fmtV(k,kv(k,"c").v)} (${ESGD().y1}), ${fmtV(k,kv(k,"p").v)} (${ESGD().y0})`)},true);
+async function esgTemplate(){const [a,b]=yrs();const head=["id","indicator_en","indicator_ar","pillar","topic","unit","prior_"+a,"current_"+b,"target","source","evidence"];
+  const rows=aplK().map(k=>{const r=ESGD().v[k.id]||{};return [k.id,k.n.en,k.n.ar,PIL[k.p].en,TOPI[k.tp].n.en,k.u,r.p??"",r.c??"",r.tg??"",r.src||"",r.ev?"yes":"no"]});
+  try{const X=await loadXLSX();const wb=X.utils.book_new();X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet([head,...rows]),"esg");X.utils.book_append_sheet(wb,X.utils.aoa_to_sheet([["column","meaning"],["id","indicator code, do not change"],["prior_/current_","values for the two years; numbers without % or commas"],["target","optional target value"],["source","where the number comes from"],["evidence","yes | no"],["yes/no indicators","1 = yes, 0 = no"]]),"how to fill");
+    saveFile(`esg-template-${b}.xlsx`,new Blob([X.write(wb,{type:"array",bookType:"xlsx"})],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+  catch(err){const q=v=>`"${String(v).replace(/"/g,'""')}"`;saveFile(`esg-template-${b}.csv`,"﻿"+[head,...rows].map(r=>r.map(q).join(",")).join("\n"),"text/csv");toast(t(tr("Excel is unavailable offline here, so a CSV template was saved.","Excel غير متاح هنا دون إنترنت، فحُفظ قالب CSV.")))}}
+async function esgIngest(file){const E=ESGD();let tbl=null;
+  try{if(/\.json$/i.test(file.name)){const o=JSON.parse(await file.text());const src=o.esg||(o.S&&o.S.esg)||o;if(src&&src.v){S.esg=Object.assign(ESGD(),src);esgSave();render();toast(t(tr("ESG data loaded from JSON","تم تحميل بيانات ESG من JSON")));return}throw new Error("no esg data")}
+    if(/\.xlsx?$/i.test(file.name)){const X=await loadXLSX();const wb=X.read(new Uint8Array(await file.arrayBuffer()),{type:"array"});tbl=X.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:false,defval:""})}
+    else tbl=parseCSVText(await file.text());
+  }catch(err){toast(t(tr("Could not read the file: ","تعذرت قراءة الملف: "))+err.message);return}
+  if(!tbl||tbl.length<2){toast(t(tr("The file has no rows.","الملف لا يحتوي صفوفاً.")));return}
+  const H=tbl[0].map(h=>String(h).trim().toLowerCase());const col=re=>H.findIndex(h=>re.test(h));
+  const ci={id:col(/^(id|code|الرمز|كود)$/),en:col(/indicator_en|^indicator$|^name$|المؤشر/),ar:col(/indicator_ar/),p:col(/^prior|السابق|^previous|^y0/),c:col(/^current|الحالي|^y1/),tg:col(/^target|المستهدف/),src:col(/^source|المصدر/),ev:col(/^evidence|الأدلة/)};
+  if(ci.p<0||ci.c<0){const yi=H.map((h,i)=>/^(19|20)\d\d$/.test(h)?i:-1).filter(i=>i>=0);if(yi.length>=2){ci.p=yi[0];ci.c=yi[1]}else if(yi.length===1)ci.c=yi[0]}
+  let n=0,skip=0;tbl.slice(1).forEach(r=>{const id=ci.id>=0?String(r[ci.id]).trim():"";const nm=String(ci.en>=0?r[ci.en]:"").trim().toLowerCase(),na=String(ci.ar>=0?r[ci.ar]:"").trim();
+    const k=KI[id]||ESGK.find(x=>x.n.en.toLowerCase()===nm||x.n.ar===na||x.n.ar===String(ci.en>=0?r[ci.en]:"").trim());if(!k){if(r.some(c=>String(c).trim()))skip++;return}
+    const v=E.v[k.id]=E.v[k.id]||{};const set=(f,i)=>{if(i>=0&&String(r[i]??"").trim()!=="")v[f]=String(r[i]).trim()};set("p",ci.p);set("c",ci.c);set("tg",ci.tg);set("src",ci.src);if(ci.ev>=0)v.ev=/^(yes|y|1|true|نعم)$/i.test(String(r[ci.ev]).trim());n++});
+  if(E.seed==="demo")E.seed="";esgSave();render();toast(t(tr(`${n} indicators imported${skip?`, ${skip} rows not matched`:""}`,`تم استيراد ${n} مؤشراً${skip?`، و${skip} صفاً لم يُطابق`:""}`)))}
+function afterESG(){}
+
+/* ---------- integration: tabs, explanations, assistant, main report ---------- */
+Object.assign(TABS,{esgin:tr("ESG data input","إدخال بيانات ESG"),esgrep:tr("Report studio","استوديو التقارير"),esgmat:tr("Materiality","الأهمية النسبية"),esgidx:tr("GRI · SASB · TCFD indexes","فهارس GRI وSASB وTCFD"),esgcap:tr("Capitals & SDGs","رؤوس الأموال والأهداف"),esgscore:tr("Scorecard & benchmark","بطاقة الأداء والمقارنة")});
+try{const h=location.hash.slice(1);if(/^esg/.test(h))tab=h}catch(e){}
+GROUPS.splice(1,0,["reports",tr("ESG reports","تقارير ESG"),["esgin","esgrep","esgmat","esgidx","esgcap","esgscore"]]);
+Object.assign(TABEX,{
+ esgin:tr("Any company enters its ESG figures for two years here (or uploads them from Excel); ledger figures fill themselves. Every ESG report is generated from this table.","أي شركة تُدخل هنا أرقام ESG لسنتين (أو ترفعها من Excel)، وأرقام الدفتر تُملأ تلقائياً. كل تقارير ESG تُولّد من هذا الجدول."),
+ esgrep:tr("Choose a role and the reports you need, preview them and download a full Word or HTML ESG report.","اختاري الدور والتقارير المطلوبة، وعايني ثم نزّلي تقرير ESG كاملاً بصيغة Word أو HTML."),
+ esgmat:tr("Double-materiality assessment of the twelve material topics, with a matrix and ranking.","تقييم الأهمية المزدوجة للموضوعات الجوهرية الاثني عشر، مع مصفوفة وترتيب."),
+ esgidx:tr("GRI, SASB, TCFD/IFRS S2, UNEP FI and Equator content indexes generated from your data, with omission reasons.","فهارس محتوى GRI وSASB وTCFD/IFRS S2 والأمم المتحدة للبنوك ومبادئ التعادل مولدة من بياناتك مع أسباب الحذف."),
+ esgcap:tr("Value creation across the six capitals and contribution to the SDGs.","خلق القيمة عبر رؤوس الأموال الستة والمساهمة في أهداف التنمية المستدامة."),
+ esgscore:tr("Pillar scores, year-on-year highlights, role brief and a benchmark against published figures.","درجات الركائز وأبرز التغيرات السنوية وموجز الدور ومقارنة بأرقام منشورة.")
+});
+Object.assign(EXPL,{
+ "ESG data input":TABEX.esgin,"ESG report studio":TABEX.esgrep,"Framework indexes":TABEX.esgidx,"Six capitals & SDGs":TABEX.esgcap,"ESG scorecard & benchmark":TABEX.esgscore,
+ "Role, sector and years":tr("The role decides which reports appear and whether values can be edited. The sector decides which indicators apply (banks get SASB, financed emissions and inclusion metrics). The two years drive every comparison.","الدور يحدد التقارير الظاهرة وإمكانية تعديل القيم. والقطاع يحدد المؤشرات المنطبقة (البنوك لها SASB والانبعاثات الممولة ومؤشرات الشمول). والسنتان أساس كل مقارنة."),
+ "Completeness":tr("How many of the applicable indicators have a value for the reporting year, overall and by pillar.","عدد المؤشرات المنطبقة التي لها قيمة لسنة التقرير، إجمالاً ولكل ركيزة."),
+ "Indicators":tr("The indicator set, grouped by the twelve material topics. Each one is tagged with its GRI, SASB, TCFD, IFRS S2, FRA and SDG references.","مجموعة المؤشرات مقسمة على الموضوعات الجوهرية الاثني عشر، وكل مؤشر موسوم بمراجعه في GRI وSASB وTCFD وIFRS S2 والرقابة المالية والأهداف."),
+ "Import & export the indicator table":tr("Move the indicator table in and out of Excel, so a company can fill it offline or send it to the researcher.","نقل جدول المؤشرات من وإلى Excel، لتملأه الشركة دون اتصال أو ترسله للباحثة."),
+ "Narrative: leadership statement & management approach":tr("The text parts of the report: leadership statement (GRI 2-22), restatements (2-4) and the management approach for each topic (3-3).","الأجزاء النصية في التقرير: بيان القيادة (GRI 2-22) وإعادة العرض (2-4) ونهج الإدارة لكل موضوع (3-3)."),
+ "Reports to include":tr("Tick the reports that make up your pack. Each role starts with the reports it usually needs.","اختاري التقارير التي تكوّن حزمتك. كل دور يبدأ بالتقارير التي يحتاجها عادة."),
+ "Download the report":tr("The preview below is the report. Word opens in Microsoft Word; HTML opens in a browser and can be printed to PDF.","المعاينة أدناه هي التقرير. ملف Word يُفتح في Microsoft Word، وملف HTML يُفتح في المتصفح ويمكن طباعته PDF."),
+ "Role brief":tr("A short note written for the selected role: what matters to them in these figures and what to do next.","ملاحظة قصيرة مكتوبة للدور المختار: ما يهمه في هذه الأرقام وما الخطوة التالية."),
+ "Executive summary & highlights":tr("The front page of the ESG report: overall score, coverage, the biggest improvements and the indicators that worsened.","الصفحة الأولى في تقرير ESG: الدرجة الإجمالية، والتغطية، وأكبر التحسنات، والمؤشرات التي تراجعت."),
+ "Highlights":tr("The front page of the ESG report: overall score, coverage, the biggest improvements and the indicators that worsened.","الصفحة الأولى في تقرير ESG: الدرجة الإجمالية، والتغطية، وأكبر التحسنات، والمؤشرات التي تراجعت."),
+ "Value-creation KPIs by pillar and topic":tr("Two-year KPI tables for each material topic, with change, target and framework codes, as in a full bank ESG report.","جداول مؤشرات لسنتين لكل موضوع جوهري، مع التغير والمستهدف ورموز الأطر، كما في تقرير ESG كامل لبنك."),
+ "Materiality assessment":TABEX.esgmat,"Materiality matrix":tr("Each dot is a material topic: further right means more financially material, higher means more impact on people and the environment.","كل نقطة موضوع جوهري: كلما اتجهت يميناً زادت أهميته المالية، وكلما ارتفعت زاد أثره على الناس والبيئة."),
+ "Score the topics":tr("Give each topic 1–5 for impact and 1–5 for financial effect. Use stakeholder input, risk registers and the sector's peers.","أعطي كل موضوع من 1 إلى 5 للأثر ومن 1 إلى 5 للتأثير المالي، بالاستناد إلى آراء أصحاب المصالح وسجلات المخاطر ونظراء القطاع."),
+ "Ranking of material topics":tr("Topics ordered by materiality, with how many of their indicators are already reported.","الموضوعات مرتبة حسب الأهمية، مع عدد مؤشراتها المُفصح عنها حالياً."),
+ "ESG scorecard":tr("Coverage and direction by pillar; the score is an illustrative device for discussion, not a rating.","التغطية والاتجاه لكل ركيزة؛ والدرجة أداة توضيحية للنقاش وليست تصنيفاً."),
+ "GRI content index":tr("Every GRI disclosure the report answers, where it is answered, and the omission reason for those it does not.","كل إفصاح GRI يجيب عنه التقرير، وأين أُجيب عنه، وسبب الحذف لما لم يُفصح عنه."),
+ "SASB index":tr("SASB is industry-specific; only the Commercial Banks standard is mapped here.","SASB خاص بكل صناعة؛ ومعيار البنوك التجارية فقط هو المربوط هنا."),
+ "SASB index (commercial banks)":tr("The SASB Commercial Banks metrics (data security, financial inclusion, ESG in credit, financed emissions, business ethics, systemic risk, activity) and where each is answered.","مقاييس SASB للبنوك التجارية (أمن البيانات، والشمول المالي، وESG في الائتمان، والانبعاثات الممولة، وأخلاقيات الأعمال، والمخاطر النظامية، والنشاط) وأين أُجيب عن كلٍّ منها."),
+ "TCFD & IFRS S2 index":tr("The eleven TCFD recommendations with the matching IFRS S2 paragraphs, and the evidence for each.","توصيات TCFD الإحدى عشرة مع فقرات IFRS S2 المقابلة والأدلة لكلٍّ منها."),
+ "Six capitals (integrated reporting)":tr("Which of the six capitals (financial, manufactured, intellectual, human, social & relationship, natural) each topic uses or affects.","أي رؤوس الأموال الستة (المالي، المُصنَّع، الفكري، البشري، الاجتماعي والعلاقات، الطبيعي) يستخدمه كل موضوع أو يؤثر فيه."),
+ "SDG contribution":tr("Reported indicators counted against each Sustainable Development Goal they serve.","المؤشرات المُفصح عنها معدودة لكل هدف من أهداف التنمية المستدامة تخدمه."),
+ "FRA ESG disclosure summary (Decrees 107/108)":tr("The indicators that feed the FRA ESG and climate disclosure, grouped E, S, G. A working draft, not the official form.","المؤشرات التي تغذي إفصاح ESG والمناخ للرقابة المالية، مقسمة إلى بيئة ومجتمع وحوكمة. مسودة عمل وليست النموذج الرسمي."),
+ "UNEP FI banking principles & Equator Principles":tr("Self-reported status against the six Principles for Responsible Banking and the ten Equator Principles (banks).","الحالة الذاتية مقابل مبادئ البنوك المسؤولة الستة ومبادئ التعادل العشرة (للبنوك)."),
+ "Data quality & assurance readiness":tr("How much of the report is system-generated, sourced, evidenced and verified: what an assurance provider looks at first.","مدى كون التقرير مولداً آلياً وموثق المصدر ومدعوماً بالأدلة ومعتمداً: أول ما ينظر إليه مقدم التأكيد."),
+ "Targets & progress":tr("Each target against the current value, with the remaining gap.","كل مستهدف مقابل القيمة الحالية مع الفجوة المتبقية."),
+ "Pillar scores":tr("Score per pillar: half coverage, half direction of change.","الدرجة لكل ركيزة: نصفها تغطية ونصفها اتجاه التغير."),
+ "ESG profile":tr("The four pillar scores on one radar; a lopsided shape shows where the report is thin.","درجات الركائز الأربع على رادار واحد؛ الشكل غير المتوازن يوضح أين يضعف التقرير."),
+ "Benchmark":tr("Banks are compared with CIB's published 2024 figures; other sectors with their own prior year.","البنوك تُقارن بأرقام CIB المنشورة لعام 2024، والقطاعات الأخرى بسنتها السابقة.")
+});
+Object.assign(COLX,{
+ "Indicator":tr("The ESG indicator. Click its name for what it measures and how to read it.","مؤشر ESG. اضغطي اسمه لمعرفة ما يقيسه وكيف يُقرأ."),
+ "Change":tr("Movement between the two years: % for amounts, percentage points (pp) for rates. Green = good direction, red = wrong direction.","الحركة بين السنتين: ٪ للمبالغ ونقاط مئوية (pp) للنسب. الأخضر = الاتجاه الجيد، الأحمر = الاتجاه الخاطئ."),
+ "Target":tr("The value the company commits to reach.","القيمة التي تلتزم الشركة ببلوغها."),
+ "Frameworks":tr("Where this indicator is reported: GRI, SASB, TCFD and IFRS S2 references.","أين يُفصح عن هذا المؤشر: مراجع GRI وSASB وTCFD وIFRS S2."),
+ "SDGs":tr("The UN Sustainable Development Goals this indicator gives evidence for.","أهداف الأمم المتحدة للتنمية المستدامة التي يقدم المؤشر دليلاً عليها."),
+ "Disclosure":tr("The GRI disclosure requirement.","متطلب الإفصاح في GRI."),
+ "Status":tr("Reported = all mapped indicators filled; partly = some; omitted = a reason is given; not reported = nothing yet.","مُفصح = كل المؤشرات المرتبطة مملوءة؛ جزئياً = بعضها؛ محذوف = مذكور سبب؛ غير مُفصح = لا شيء بعد."),
+ "Location / value":tr("Where in the report the disclosure is answered, with the value.","أين يُجاب عن الإفصاح في التقرير، مع القيمة."),
+ "Omission reason":tr("GRI allows omitting a disclosure only with a reason: not applicable, legal prohibition, confidentiality, or information unavailable.","يسمح GRI بحذف الإفصاح فقط مع ذكر السبب: لا ينطبق، أو مانع قانوني، أو السرية، أو عدم توفر المعلومات."),
+ "Material topic":tr("One of the twelve topics, modelled on a full bank ESG report and generalised to any sector.","أحد الموضوعات الاثني عشر، على غرار تقرير ESG كامل لبنك ومعمم لأي قطاع."),
+ "Impact":tr("1–5: how strongly the company affects people and the environment on this topic (inside-out).","من 1 إلى 5: مدى تأثير الشركة على الناس والبيئة في هذا الموضوع (من الداخل للخارج)."),
+ "Financial":tr("1–5: how strongly this topic can affect revenue, costs, assets or the cost of capital (outside-in).","من 1 إلى 5: مدى قدرة الموضوع على التأثير في الإيرادات أو التكاليف أو الأصول أو تكلفة رأس المال (من الخارج للداخل)."),
+ "Pillar":tr("Governance, Environment, Social, or Data & digitisation.","الحوكمة أو البيئة أو المجتمع أو البيانات والرقمنة."),
+ "Ref":tr("TCFD recommendation reference.","مرجع توصية TCFD."),"Recommended disclosure":tr("What the TCFD recommendation asks the company to disclose.","ما تطلب توصية TCFD من الشركة الإفصاح عنه."),
+ "Evidence":tr("The indicators or platform features that answer it.","المؤشرات أو خصائص المنصة التي تجيب عنه."),
+ "Code":tr("SASB metric code.","رمز مقياس SASB."),"Metric":tr("What the SASB metric asks for.","ما يطلبه مقياس SASB."),
+ "Principle":tr("Principle number.","رقم المبدأ."),"Content":tr("What the principle covers.","ما يغطيه المبدأ."),
+ "Yours":tr("Your value for the reporting year.","قيمتك لسنة التقرير."),"CIB 2024":tr("The figure published by CIB for 2024.","الرقم الذي نشره البنك التجاري الدولي لعام 2024."),"Difference":tr("Yours minus CIB. Green when the difference is in the good direction.","قيمتك ناقص قيمة CIB. أخضر إذا كان الفرق في الاتجاه الجيد."),
+ "Gap":tr("Target minus current value.","المستهدف ناقص القيمة الحالية."),"Current":tr("Value for the reporting year.","القيمة لسنة التقرير."),
+ "Indicators reported":tr("How many reported indicators fall under this item.","عدد المؤشرات المُفصح عنها تحت هذا البند."),"Examples":tr("A few of those indicators with their values.","بعض هذه المؤشرات مع قيمها."),
+ "Coverage":tr("Reported indicators as a share of the applicable ones.","المؤشرات المُفصح عنها كنسبة من المنطبقة."),"Improved":tr("Indicators that moved in the good direction.","مؤشرات تحركت في الاتجاه الجيد."),"Worsened":tr("Indicators that moved the wrong way.","مؤشرات تحركت في الاتجاه الخاطئ."),"Score":tr("Pillar score out of 100.","درجة الركيزة من 100."),
+ "Measure":tr("The summary measure.","المقياس الملخص."),"Source & evidence":tr("Where the figure comes from, and whether its evidence is kept: what the auditor asks for.","مصدر الرقم وهل أدلته محفوظة: ما يطلبه المراجع."),"Verified":tr("Ticked by the auditor role after testing the figure.","يؤشر عليه دور المراجع بعد اختبار الرقم."),
+ "SDG":tr("Sustainable Development Goal.","هدف التنمية المستدامة."),"Unit":tr("Unit of measure.","وحدة القياس.")
+});
+[
+ [tr("How does a company get its ESG reports from the platform?","كيف تحصل الشركة على تقارير ESG من المنصة؟"),tr("Open ESG reports → ESG data input, pick the sector and the two years, and fill the indicator table (or upload the Excel template). Ledger figures (emissions, energy, water, waste, e-invoice share, assurability) fill themselves. Then the Report studio builds the KPI tables, materiality, GRI, SASB (banks), TCFD/IFRS S2, six capitals, SDGs, the FRA 107/108 summary, data quality and targets, and downloads them as Word or HTML.","افتحي تقارير ESG ← إدخال بيانات ESG، واختاري القطاع والسنتين، واملئي جدول المؤشرات (أو ارفعي قالب Excel). أرقام الدفتر (الانبعاثات والطاقة والمياه والنفايات ونسبة الفاتورة الإلكترونية والقابلية للتأكيد) تُملأ تلقائياً. ثم يبني استوديو التقارير جداول المؤشرات والأهمية النسبية وGRI وSASB (للبنوك) وTCFD/IFRS S2 ورؤوس الأموال الستة والأهداف وملخص الرقابة المالية 107/108 وجودة البيانات والمستهدفات، ويُنزلها Word أو HTML."),["esg","report","تقرير","تقارير","استدامة","sustainability report"]],
+ [tr("What do the roles change?","ماذا تغير الأدوار؟"),tr("Seven roles: preparer and CFO can edit; board, auditor, regulator, investor and researcher are read-only. Each role opens with its own report pack and a role brief. The auditor role can tick each indicator as verified, which feeds GRI 2-5 and the data-quality report.","سبعة أدوار: معدّ التقرير والمدير المالي يمكنهما التعديل؛ ومجلس الإدارة والمراجع والجهة الرقابية والمستثمر والباحث للاطلاع فقط. لكل دور حزمة تقارير وموجز خاص. ودور المراجع يستطيع اعتماد كل مؤشر، فينعكس ذلك على GRI 2-5 وتقرير جودة البيانات."),["role","roles","دور","أدوار","صلاحي"]],
+ [tr("What is double materiality?","ما الأهمية المزدوجة؟"),tr("A topic is material if the company's impact on people and the environment is significant (impact materiality, inside-out) or if the topic can affect the company's finances (financial materiality, outside-in). The Materiality page scores both from 1 to 5; topics at 4 or more on both are priorities.","يكون الموضوع جوهرياً إذا كان أثر الشركة على الناس والبيئة كبيراً (أهمية الأثر، من الداخل للخارج) أو إذا كان الموضوع قادراً على التأثير في مالية الشركة (الأهمية المالية، من الخارج للداخل). صفحة الأهمية النسبية تقيّم الاثنين من 1 إلى 5، والموضوعات التي تبلغ 4 فأكثر في الاثنين لها الأولوية."),["materiality","material","أهمية نسبية","جوهري","مزدوج"]],
+ [tr("What are GRI, SASB, TCFD and IFRS S2?","ما GRI وSASB وTCFD وIFRS S2؟"),tr("GRI: impact reporting standards for all sectors (e.g. 305-1 Scope 1 emissions). SASB: industry-specific, investor-focused metrics (here Commercial Banks, e.g. FN-CB-410b.1 financed emissions). TCFD: eleven climate disclosures in four areas (governance, strategy, risk management, metrics & targets), now built into IFRS S2, the ISSB climate standard. The platform generates an index for each from your data.","GRI: معايير الإفصاح عن الأثر لكل القطاعات (مثل 305-1 انبعاثات النطاق 1). SASB: مقاييس خاصة بكل صناعة وموجهة للمستثمرين (هنا البنوك التجارية، مثل FN-CB-410b.1 الانبعاثات الممولة). TCFD: إحدى عشرة إفصاحاً مناخياً في أربعة محاور (الحوكمة، والاستراتيجية، وإدارة المخاطر، والمقاييس والمستهدفات)، أصبحت ضمن IFRS S2 معيار المناخ الصادر عن ISSB. تولد المنصة فهرساً لكلٍّ منها من بياناتك."),["gri","sasb","tcfd","ifrs","issb","s2","فهرس"]],
+ [tr("What are the six capitals?","ما رؤوس الأموال الستة؟"),tr("From the Integrated Reporting <IR> Framework: financial, manufactured, intellectual, human, social & relationship, and natural capital. The Capitals page shows which ones each material topic uses or affects, as integrated bank reports do.","من إطار التقرير المتكامل: رأس المال المالي، والمُصنَّع، والفكري، والبشري، والاجتماعي والعلاقات، والطبيعي. صفحة رؤوس الأموال توضح أيها يستخدمه كل موضوع جوهري أو يؤثر فيه، كما تفعل التقارير المتكاملة للبنوك."),["capital","capitals","رأس المال","رؤوس الأموال","integrated"]],
+ [tr("Why are some figures marked “ledger”?","لماذا بعض الأرقام معلّمة «الدفتر»؟"),tr("Emissions by scope, electricity, water, waste, environmental cost, the e-invoice share, the metered share and the assurability index are calculated from the activity ledger, not typed in. That is the paper's argument in practice: system-generated ESG data are traceable and cheaper to assure. Typing a value overrides it; “Use ledger values again” restores it.","انبعاثات النطاقات والكهرباء والمياه والنفايات والتكلفة البيئية ونسبة الفاتورة الإلكترونية ونسبة القياس بالعدادات ومؤشر القابلية للتأكيد تُحسب من سجل الأنشطة ولا تُكتب يدوياً. وهذه حجة البحث عملياً: بيانات ESG المولدة آلياً قابلة للتتبع وأقل تكلفة في التأكيد. كتابة قيمة تحل محلها، و«استخدام قيم الدفتر مجدداً» يعيدها."),["ledger","auto","الدفتر","تلقائي"]],
+ [tr("Where do the CIB figures come from?","من أين تأتي أرقام CIB؟"),tr("From the Commercial International Bank's published ESG report for 2024 (2023 and 2024 values). They are used as a practice copy for banks and as a benchmark on the Scorecard page. Definitions may differ from your bank's; compare with care.","من تقرير ESG المنشور للبنك التجاري الدولي لعام 2024 (قيم 2023 و2024). تُستخدم كنسخة تدريب للبنوك وكمقارنة مرجعية في صفحة بطاقة الأداء. قد تختلف التعريفات عن تعريفات بنكك؛ قارني بحذر."),["cib","benchmark","مقارنة","البنك التجاري"]]
+].forEach(([q,a,k])=>{QA.push([q,a,k]);FAQ.push({q,a,k})});
+{const _ctx=context;context=function(){try{const o=JSON.parse(_ctx());const e=ESGD(),Sc=esgScore();o.esg={sector:e.sector,years:[e.y0,e.y1],role:e.role,score:Math.round(Sc.all.score),reported:Sc.all.rep,applicable:Sc.all.n,improved:Sc.all.imp,worsened:Sc.all.wor,pillars:Object.fromEntries(Object.keys(PIL).map(p=>[PIL[p].en,Math.round(Sc[p].score)])),gri_coverage_pct:Math.round(idxCov(GRI,2,3).pct),tcfd_coverage_pct:Math.round(idxCov(TCFD,3,4).pct),kpis:aplK().filter(k=>has(k,"c")).slice(0,60).map(k=>[k.n.en,kv(k,"p").v,kv(k,"c").v,k.u])};return JSON.stringify(o)}catch(_){return _ctx()}}}
+{const _rep=reportHTML;reportHTML=function(){const h=_rep();try{const e=ESGD(),Sc=esgScore();const sec=`<h2>${esc(t(tr("5. ESG summary","5. ملخص ESG")))}</h2><p>${esc(t(tr(`ESG score ${nf(Sc.all.score,0)}/100 · ${Sc.all.rep} of ${Sc.all.n} indicators reported for ${e.y1} · ${Sc.all.imp} improved, ${Sc.all.wor} worsened. The full ESG report (GRI, SASB, TCFD/IFRS S2, capitals, SDGs, FRA summary) is generated in ESG reports → Report studio.`,`درجة ESG ‏${nf(Sc.all.score,0)}/100 · ${Sc.all.rep} من ${Sc.all.n} مؤشراً مُفصحاً عنه لعام ${e.y1} · تحسن ${Sc.all.imp} وتراجع ${Sc.all.wor}. تقرير ESG الكامل (GRI وSASB وTCFD/IFRS S2 ورؤوس الأموال والأهداف وملخص الرقابة المالية) يُولّد من تقارير ESG ← استوديو التقارير.`)))}</p>`;const i=h.lastIndexOf('<p class="m">');return i>0?h.slice(0,i)+sec+h.slice(i):h}catch(_){return h}}}
+/*ESG-END*/
 try{const l=localStorage.getItem("glw.lang");if(l==="ar"||l==="en")lang=l}catch(e){}
 render();
 initDb();
