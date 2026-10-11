@@ -148,7 +148,7 @@ pre.json{margin:0;font-family:var(--f-mono);font-size:.78rem;white-space:pre;ove
 .noti-pop{position:fixed;top:64px;inset-inline-end:16px;z-index:45;width:min(380px,calc(100% - 32px));max-height:70vh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:0 10px 30px var(--shade)}
 .noti-it{display:flex;gap:8px;align-items:flex-start;width:100%;text-align:start;background:none;border:0;border-bottom:1px solid var(--line);padding:8px 2px;font-size:.88rem}.noti-it:hover{background:var(--surface2)}
 .pal{max-width:640px!important;align-self:start;margin-top:10vh}.pal-r{display:grid;gap:2px;max-height:55vh;overflow:auto}.pal-it{display:grid;grid-template-columns:auto 1fr;gap:2px 8px;text-align:start;background:none;border:1px solid transparent;border-radius:8px;padding:7px 9px}.pal-it .small{grid-column:2}.pal-it.on,.pal-it:hover{background:var(--green-soft);border-color:var(--green)}
-.pmap{max-width:1000px!important;max-height:86vh;overflow:auto}
+.pal .btn.mic{justify-self:end;width:auto}.pmap{max-width:1000px!important;max-height:86vh;overflow:auto}
 .pnav{border-top:1px dashed var(--line);padding-block:14px 4px}
 .toc{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;margin-block-end:8px;font-size:.84rem}
 .linkish{background:none;border:0;padding:0;color:var(--green);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font:inherit}
@@ -159,8 +159,8 @@ pre.json{margin:0;font-family:var(--f-mono);font-size:.78rem;white-space:pre;ove
 .story{position:fixed;inset:0;z-index:65;background:radial-gradient(circle at 30% 20%,var(--c1,#0f7a45),var(--c2,#12303d) 70%);color:#fff;display:grid;grid-template-rows:1fr auto auto}
 .st-scene{display:grid;place-items:center;padding:4vh 6vw;overflow:auto}.st-c{text-align:center;display:grid;gap:14px;justify-items:center;max-width:960px}
 .st-c h1{font:800 clamp(30px,6vw,64px)/1.15 var(--f-display);margin:0}.st-c h2{font:800 clamp(24px,4vw,44px)/1.2 var(--f-display);margin:0}
-.st-big{font:800 clamp(56px,13vw,150px)/1 var(--f-mono)}.st-lab{font-size:clamp(15px,2vw,22px);opacity:.9}
-.st-bars{display:flex;gap:28px;align-items:flex-end;height:220px}.st-bars>div{display:grid;justify-items:center;gap:6px;align-content:end;height:100%}.st-bars span{display:block;width:70px;height:var(--h);border-radius:8px 8px 0 0}
+.st-big{font:800 clamp(56px,13vw,150px)/1 var(--f-display);font-variant-numeric:tabular-nums;direction:ltr}.st-lab{font-size:clamp(15px,2vw,22px);opacity:.9}
+.st-bars{display:flex;gap:28px;align-items:flex-end;height:220px}.st-bars>div{display:grid;justify-items:center;gap:6px;align-content:end;height:100%}.st-bars span{display:block;width:70px;border-radius:8px 8px 0 0}
 .st-row{display:grid;grid-template-columns:minmax(120px,240px) 1fr 50px;gap:12px;align-items:center;width:min(760px,86vw);font-size:clamp(14px,1.8vw,20px)}.st-row i{display:block;height:16px;border-radius:9px;background:#fff;width:var(--w)}
 .st-trio{display:flex;gap:40px;flex-wrap:wrap;justify-content:center}.st-trio .st-big{font-size:clamp(44px,8vw,90px)}
 .st-li{font-size:clamp(16px,2.2vw,24px)}.st-li span{opacity:.8}
@@ -4553,7 +4553,7 @@ function storyScenes(){const F=prFacts(),C=F.C,Sc=F.Sc,N=nzState?nzCalc():null;c
   return [
    `<div class="st-c">${brandLogo(80)}<h1 class="st-in">${esc(F.nm)}</h1><p class="st-in" style="animation-delay:.3s">${esc(tx("Our ESG story","قصتنا في ESG"))} · ${esc(F.e.y1)}</p></div>`,
    `<div class="st-c">${big(Math.round(Sc.all.score),"/100",tx("ESG score","درجة ESG"))}<div class="st-pop" style="margin-top:18px">${medal(F.M.L,110)}<div class="st-lab">${esc(t(F.M.L.n))}</div></div></div>`,
-   `<div class="st-c">${big(Math.round(C.tot),"",tx("tonnes of CO₂e measured from the ledger","طن CO₂e مقاسة من الدفتر"))}<div class="st-bars">${[1,2,3].map(s=>`<div><span style="--h:${Math.max(3,C.sc[s]/(Math.max(C.sc[1],C.sc[2],C.sc[3])||1)*100)}%;background:var(--s${s})"></span><small>${esc(tx("Scope ","النطاق "))}${s}<br>${nf(C.sc[s],0)}</small></div>`).join("")}</div></div>`,
+   `<div class="st-c">${big(Math.round(C.tot),"",tx("tonnes of CO₂e measured from the ledger","طن CO₂e مقاسة من الدفتر"))}<div class="st-bars">${[1,2,3].map(s=>`<div><span style="height:${Math.round(Math.max(6,C.sc[s]/(Math.max(C.sc[1],C.sc[2],C.sc[3])||1)*190))}px;background:var(--s${s})"></span><small>${esc(tx("Scope ","النطاق "))}${s}<br>${nf(C.sc[s],0)}</small></div>`).join("")}</div></div>`,
    `<div class="st-c"><h2 class="st-in">${esc(tx("Four pillars","الركائز الأربع"))}</h2>${Object.keys(PIL).map((p,i)=>`<div class="st-row st-in" style="animation-delay:${.2+i*.25}s"><span>${esc(t(PIL[p]))}</span><i style="--w:${Math.max(2,Sc[p].score)}%;animation-delay:${.4+i*.25}s"></i><b>${nf(Sc[p].score,0)}</b></div>`).join("")}</div>`,
    `<div class="st-c"><h2 class="st-in">${esc(tx("What improved","ما الذي تحسن"))}</h2>${F.im.map((o,i)=>`<p class="st-in st-li" style="animation-delay:${.3+i*.4}s">✓ ${esc(t(o.k.n))}: <b>${esc(fmtV(o.k,kv(o.k,"c").v))}</b> <span>(${esc(chgWord(o.k))})</span></p>`).join("")||`<p>${esc(tx("Baseline year: the first full measurement.","سنة الأساس: أول قياس كامل."))}</p>`}</div>`,
    N?`<div class="st-c"><h2 class="st-in">${esc(tx("Our path to net zero","طريقنا إلى صافي الصفر"))}</h2><div class="chart st-path" style="width:min(760px,90vw)">${pathSvg(N)}</div><p class="st-in" style="animation-delay:1.2s">${esc(tx(`−${nzState().ip}% by ${nzState().iy} · net zero by ${nzState().ty}`,`−${nzState().ip}٪ بحلول ${nzState().iy} · صافي الصفر بحلول ${nzState().ty}`))}</p></div>`:"",
