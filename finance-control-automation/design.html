@@ -1,0 +1,414 @@
+<title>Cedar Ridge Daily Finance Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: control-binder — sticky section index on the left, one readable column of spec on the right; tables scroll in place. */
+:root{
+  --bg:#f6f8f7; --surface:#ffffff; --ink:#15211e; --muted:#5a6964; --rule:#d8e0dd;
+  --accent:#0f6b5c; --accent-soft:#e2f0ec;
+  --high:#b42318; --high-soft:#fde8e6; --med:#a15c07; --med-soft:#fdf1dc; --low:#4d5b57; --low-soft:#eaeeed;
+  --ok:#17703f; --ok-soft:#e3f3e8; --off:#7a4a00; --off-soft:#fbefd9;
+  --font-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1514; --surface:#161e1c; --ink:#e3ebe8; --muted:#97a6a1; --rule:#2a3532;
+  --accent:#5cc4ae; --accent-soft:#163430;
+  --high:#ff8a7d; --high-soft:#3a1d1a; --med:#f0b45a; --med-soft:#36290f; --low:#b3c0bc; --low-soft:#222b29;
+  --ok:#6fd39a; --ok-soft:#14301f; --off:#f0b45a; --off-soft:#36290f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1514; --surface:#161e1c; --ink:#e3ebe8; --muted:#97a6a1; --rule:#2a3532;
+  --accent:#5cc4ae; --accent-soft:#163430;
+  --high:#ff8a7d; --high-soft:#3a1d1a; --med:#f0b45a; --med-soft:#36290f; --low:#b3c0bc; --low-soft:#222b29;
+  --ok:#6fd39a; --ok-soft:#14301f; --off:#f0b45a; --off-soft:#36290f; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.6}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:28px 64px;display:grid;grid-template-columns:220px minmax(0,1fr);gap:40px}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 20px);align-self:start;font-size:13px}
+nav.toc p{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:600}
+nav.toc ol{list-style:none;margin:0;padding:0;display:grid;gap:2px;counter-reset:s}
+nav.toc a{display:block;padding:4px 8px;border-radius:4px;color:var(--muted);text-decoration:none}
+nav.toc a:hover,nav.toc a:focus-visible{background:var(--accent-soft);color:var(--ink);outline:none}
+main{min-width:0;display:grid;gap:44px}
+header.top{display:grid;gap:10px}
+.eyebrow{font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);font-weight:700}
+h1{font-size:clamp(28px,4vw,40px);line-height:1.15;margin:0;font-weight:800;letter-spacing:-.015em;text-wrap:balance}
+h2{font-size:22px;margin:0 0 6px;font-weight:700;letter-spacing:-.01em;text-wrap:balance;display:flex;gap:10px;align-items:baseline}
+h2 .n{font-family:var(--font-mono);font-size:13px;color:var(--accent);font-weight:500}
+h3{font-size:15px;margin:18px 0 6px;font-weight:700}
+p{margin:0 0 10px;max-width:70ch}
+.lede{color:var(--muted);font-size:16px;max-width:68ch}
+section{display:grid;gap:10px;scroll-margin-top:20px}
+code,.mono{font-family:var(--font-mono);font-size:.88em}
+code{background:var(--accent-soft);padding:1px 5px;border-radius:3px}
+ul{margin:0;padding-left:20px;max-width:72ch}
+li{margin:3px 0}
+
+.status{border:1px solid var(--rule);background:var(--surface);border-radius:8px;overflow:hidden}
+.status .head{padding:12px 16px;border-bottom:1px solid var(--rule);font-weight:700;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.pill{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.off{background:var(--off-soft);color:var(--off)}
+.pill.high{background:var(--high-soft);color:var(--high)}
+.pill.med{background:var(--med-soft);color:var(--med)}
+.pill.low{background:var(--low-soft);color:var(--low)}
+
+.tbl{overflow-x:auto;border:1px solid var(--rule);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;background:var(--bg)}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;font-family:var(--font-mono);white-space:nowrap}
+td .src{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;display:grid;gap:2px}
+.kpi b{font-family:var(--font-mono);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;color:var(--muted)}
+
+.recon{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 24px;background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:16px;font-variant-numeric:tabular-nums;max-width:520px}
+.recon div:nth-child(even){font-family:var(--font-mono);text-align:right}
+.recon .tot{border-top:1px solid var(--ink);padding-top:4px;font-weight:700}
+
+.split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.box{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:14px 16px;min-width:0}
+.box h3{margin-top:0}
+.box.claude{border-top:3px solid var(--accent)}
+
+pre.mermaid{background:var(--surface);border:1px solid var(--rule);border-radius:8px;padding:16px;overflow-x:auto;margin:0}
+.checklist{list-style:none;padding:0;display:grid;gap:6px}
+.checklist li{display:flex;gap:10px;align-items:flex-start}
+.checklist li::before{content:"";flex:0 0 14px;height:14px;margin-top:4px;border:1.5px solid var(--muted);border-radius:3px}
+footer{color:var(--muted);font-size:13px;border-top:1px solid var(--rule);padding-top:16px}
+
+@media (max-width:860px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:24px;padding-inline:16px}
+  nav.toc{position:static}
+  nav.toc ol{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .split{grid-template-columns:minmax(0,1fr)}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+html{scroll-behavior:smooth}
+</style>
+
+<div class="wrap">
+<nav class="toc" aria-label="Sections">
+  <p>Contents</p>
+  <ol>
+    <li><a href="#status">Status</a></li>
+    <li><a href="#results">Sample run</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#requirements">Requirements</a></li>
+    <li><a href="#trigger">Trigger</a></li>
+    <li><a href="#platform">Platform</a></li>
+    <li><a href="#rules">Control rules</a></li>
+    <li><a href="#idempotency">Rerun safety</a></li>
+    <li><a href="#errors">Errors &amp; logs</a></li>
+    <li><a href="#permissions">Permissions</a></li>
+    <li><a href="#approval">Human approval</a></li>
+    <li><a href="#deployment">Deployment</a></li>
+    <li><a href="#split">Who does what</a></li>
+    <li><a href="#golive">Go-live gates</a></li>
+    <li><a href="#limits">Limitations</a></li>
+  </ol>
+</nav>
+
+<main>
+<header class="top">
+  <div class="eyebrow">Design specification · Cedar Ridge Supply Co. (fictional)</div>
+  <h1>Daily Finance Control Automation</h1>
+  <p class="lede">A daily control that validates finance input files, recalculates the numbers, flags duplicate invoices, approval gaps and bank-to-ledger differences, and hands each exception to a named reviewer. All company names, people, addresses and amounts are invented.</p>
+</header>
+
+<section id="status">
+  <h2><span class="n">00</span>What is real today</h2>
+  <p>The control logic is written and tested locally. Nothing runs on its own, and nothing is sent to anyone.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Capability</th><th>Status</th><th>Detail</th></tr></thead>
+    <tbody>
+      <tr><td>Validation, file identity, calculations, exception rules, register, CFO summary, routing drafts, approval queue, rerun ledger, retries, logs</td><td><span class="pill ok">Tested locally</span></td><td><code>src/daily_control.py</code>, 13 unit tests passing on sample data</td></tr>
+      <tr><td>Scheduled execution</td><td><span class="pill off">Not configured</span></td><td>The config only describes the schedule. Nothing runs on a timer.</td></tr>
+      <tr><td>File-arrival trigger</td><td><span class="pill off">Not configured</span></td><td>The runner waits for a <code>_READY</code> marker, but no storage event or watcher exists.</td></tr>
+      <tr><td>Email, Teams or Slack notifications</td><td><span class="pill off">Not configured</span></td><td>The runner writes drafts marked <code>PENDING_DELIVERY</code>. Nothing is sent.</td></tr>
+      <tr><td>Approval workflow, payment holds, journal postings</td><td><span class="pill off">Not configured</span></td><td>By design the runner only writes <code>approval_queue.csv</code>.</td></tr>
+      <tr><td>ERP, bank, identity provider, secret store</td><td><span class="pill off">Not connected</span></td><td>Inputs are local CSV files.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="results">
+  <h2><span class="n">01</span>Sample run, business date 2026-10-09</h2>
+  <p>Output of the runner on the fictional sample files. Batch <code>B-08C5978886AEBFBC</code>. A second run of the same files was skipped as a duplicate batch.</p>
+  <div class="kpis">
+    <div class="kpi"><b>8</b><span>exceptions</span></div>
+    <div class="kpi"><b>3</b><span>material (≥ 10,000.00)</span></div>
+    <div class="kpi"><b>108,980.45</b><span>AP invoices, 9 items</span></div>
+    <div class="kpi"><b>0.00</b><span>unexplained cash difference</span></div>
+  </div>
+
+  <h3>Exception register</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Severity</th><th>Rule</th><th class="num">Amount</th><th>Finding</th><th>Source</th><th>Routed to</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill high">High</span></td><td class="mono">DUP-FUZZY</td><td class="num">18,900.00</td><td>Brightline Logistics billed the same amount on INV-1002 and INV-1006, 5 days apart, under different invoice numbers.</td><td><span class="src">ap_invoices.csv#L3; #L7</span></td><td>AP lead, controller</td></tr>
+      <tr><td><span class="pill high">High</span></td><td class="mono">APR-MISSING</td><td class="num">32,500.00</td><td>INV-1005 (Delta Facilities) has no approval. Threshold is 2,500.00.</td><td><span class="src">ap_invoices.csv#L6</span></td><td>AP controls, controller</td></tr>
+      <tr><td><span class="pill high">High</span></td><td class="mono">SOD-SELF-APPROVAL</td><td class="num">12,000.00</td><td>INV-1008 was submitted and approved by the same user (u.khan).</td><td><span class="src">ap_invoices.csv#L9; approvals.csv#L7</span></td><td>Internal controls, controller</td></tr>
+      <tr><td><span class="pill med">Medium</span></td><td class="mono">APR-LIMIT</td><td class="num">9,800.00</td><td>INV-1009 exceeds approver j.park's limit of 5,000.00.</td><td><span class="src">ap_invoices.csv#L10; approvals.csv#L8</span></td><td>AP controls</td></tr>
+      <tr><td><span class="pill med">Medium</span></td><td class="mono">DUP-EXACT</td><td class="num">4,250.00</td><td>Atlas Packaging invoice AP-5531 entered twice (INV-1001, INV-1004).</td><td><span class="src">ap_invoices.csv#L2; #L5</span></td><td>AP lead</td></tr>
+      <tr><td><span class="pill med">Medium</span></td><td class="mono">REC-GL-ONLY</td><td class="num">2,400.00</td><td>Ledger payment INV-0990 (Granite Staffing) has no bank movement that day.</td><td><span class="src">gl_cash_entries.csv#L7</span></td><td>Treasury recon</td></tr>
+      <tr><td><span class="pill med">Medium</span></td><td class="mono">REC-AMOUNT</td><td class="num">−180.00</td><td>INV-1003: bank −7,200.00 vs ledger −7,020.00.</td><td><span class="src">bank_transactions.csv#L4; gl_cash_entries.csv#L4</span></td><td>Treasury recon</td></tr>
+      <tr><td><span class="pill low">Low</span></td><td class="mono">REC-BANK-ONLY</td><td class="num">−35.00</td><td>Outgoing wire fee FEE-1009 is not recorded in the ledger.</td><td><span class="src">bank_transactions.csv#L6</span></td><td>Treasury recon</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Cash reconciliation proof</h3>
+  <div class="recon">
+    <div>Bank net movement</div><div>24,434.55</div>
+    <div>Ledger net movement</div><div>22,249.55</div>
+    <div>Difference (bank − ledger)</div><div>2,185.00</div>
+    <div>Explained: ledger-only item</div><div>2,400.00</div>
+    <div>Explained: amount mismatch</div><div>−180.00</div>
+    <div>Explained: unrecorded bank fee</div><div>−35.00</div>
+    <div class="tot">Unexplained</div><div class="tot">0.00</div>
+  </div>
+
+  <h3>Input file identity</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>File</th><th class="num">Rows</th><th class="num">Control total</th><th>SHA-256 (prefix)</th></tr></thead>
+    <tbody>
+      <tr><td>ap_invoices.csv</td><td class="num">9</td><td class="num">108,980.45</td><td class="mono">3df979076defe2a2</td></tr>
+      <tr><td>approvals.csv</td><td class="num">7</td><td class="num">180,000.00</td><td class="mono">ea8e3c5f794e7515</td></tr>
+      <tr><td>bank_transactions.csv</td><td class="num">6</td><td class="num">24,434.55</td><td class="mono">1d6c225e5aa2988a</td></tr>
+      <tr><td>gl_cash_entries.csv</td><td class="num">6</td><td class="num">22,249.55</td><td class="mono">0b2990158a310075</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="architecture">
+  <h2><span class="n">02</span>Architecture</h2>
+  <p>The runner reads and reports. It never changes a system of record. Anything that moves money or changes the books goes through a human approval step run by a different identity.</p>
+<pre class="mermaid">
+flowchart TD
+  T["Trigger (external)<br/>schedule 07:15 Mon–Fri, or _READY file in approved folder"] --> L[Acquire run lock]
+  L --> V{Validate files<br/>against manifest}
+  V -- fail --> F[Failure alert draft + log<br/>exit 2, no outputs]
+  V -- pass --> B{Batch already<br/>completed?}
+  B -- yes --> S[Skip, exit 0]
+  B -- no --> C[Deterministic calculations<br/>and exception rules]
+  C --> O[Register, CFO summary,<br/>calculations, file identity]
+  O --> R[Routing drafts<br/>deduplicated per reviewer]
+  O --> Q[Approval queue<br/>deduplicated per action]
+  R --> D[Delivery service<br/>not configured]
+  Q --> A[Approval workflow<br/>not configured]
+  A --> X[Separate identity executes<br/>approved actions in ERP]
+</pre>
+</section>
+
+<section id="requirements">
+  <h2><span class="n">03</span>Requirement traceability</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>#</th><th>Requirement</th><th>How it is met</th><th>Test</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Configurable schedule or approved file-arrival trigger</td><td>Trigger block in config: cron, timezone, approved drop folder, ready marker, allowed senders. Runner exits 4 if the marker is missing. Needs an external scheduler.</td><td class="mono">file_arrival_waits_for_ready_marker</td></tr>
+      <tr><td>2</td><td>Validate each file and record its identity</td><td>Manifest required. Checks fingerprint, encoding, header, unique keys, amounts, dates, currency, row count, control total. Any error stops the run. Identity written to <code>file_identity.json</code>.</td><td class="mono">tampered_file_fails_validation_closed</td></tr>
+      <tr><td>3</td><td>Deterministic calculations</td><td>Exact decimal arithmetic, sorted inputs, parameters echoed in output. Same files give a byte-identical register.</td><td class="mono">deterministic_register</td></tr>
+      <tr><td>4</td><td>Duplicates, missing approvals, reconciliation differences</td><td>Eight rules, listed in section 06.</td><td class="mono">expected_exceptions_detected</td></tr>
+      <tr><td>5</td><td>Source-linked exception register</td><td>Every row has file and line links, record IDs and file fingerprints.</td><td class="mono">expected_exceptions_detected</td></tr>
+      <tr><td>6</td><td>Daily CFO summary</td><td><code>cfo_summary.md</code>: headline, cash, AP, exceptions, decisions needed, file identity.</td><td>sample output</td></tr>
+      <tr><td>7</td><td>Route to designated reviewers</td><td>Category to reviewer map. Material items add the controller.</td><td class="mono">material_items_escalate_to_controller</td></tr>
+      <tr><td>8</td><td>No duplicate actions on rerun</td><td>Batch ledger, stable exception, routing and action keys, run lock.</td><td class="mono">rerun_same_batch_is_skipped</td></tr>
+      <tr><td>9</td><td>Retries, error handling, notifications, logs</td><td>Backoff for temporary storage errors only, fail-closed validation, on-call alert drafts, JSON-lines log, exit codes.</td><td class="mono">retries_*</td></tr>
+      <tr><td>10</td><td>Least privilege, human approval for material actions</td><td>Read-only inputs, write-once outputs, no ERP or bank credentials. Every action queued as pending. Material ones need two approvers.</td><td class="mono">material_items_escalate_to_controller</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="trigger">
+  <h2><span class="n">04</span>Trigger</h2>
+  <div class="split">
+    <div class="box"><h3>Schedule</h3><p>Cron <code>15 7 * * 1-5</code> in America/Chicago. The scheduler passes the previous business day. If files are missing, validation fails and on-call is alerted.</p></div>
+    <div class="box"><h3>File arrival</h3><p>A storage event fires only in the approved folder and only for allowed senders. The source system writes all files and the manifest, then <code>_READY</code> last. A 09:00 check alerts if no run completed.</p></div>
+  </div>
+  <p>The business-date and holiday-calendar logic lives in the scheduler wrapper, so the runner gives the same result for the same date.</p>
+</section>
+
+<section id="platform">
+  <h2><span class="n">05</span>Platform and integrations</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Need</th><th>Recommended (Azure)</th><th>AWS alternative</th><th>Self-hosted</th></tr></thead>
+    <tbody>
+      <tr><td>Runtime</td><td>Container Apps Job</td><td>ECS Fargate / Lambda container</td><td>Docker on hardened VM</td></tr>
+      <tr><td>Schedule</td><td>Job schedule trigger</td><td>EventBridge Scheduler</td><td>Airflow / cron</td></tr>
+      <tr><td>File arrival</td><td>Event Grid on Blob created</td><td>S3 event → EventBridge</td><td>Airflow sensor</td></tr>
+      <tr><td>Output store</td><td>Blob with immutability (WORM)</td><td>S3 Object Lock</td><td>Write-once share</td></tr>
+      <tr><td>Ledger and lock</td><td>Azure SQL or blob lease</td><td>DynamoDB conditional writes</td><td>PostgreSQL</td></tr>
+      <tr><td>Secrets</td><td>Key Vault + managed identity</td><td>Secrets Manager + IAM role</td><td>Vault</td></tr>
+      <tr><td>Notifications</td><td>Logic Apps / Power Automate</td><td>Step Functions → SES / SNS</td><td>SMTP relay worker</td></tr>
+      <tr><td>Approvals</td><td>Power Automate Approvals or ServiceNow</td><td>Same</td><td>Same</td></tr>
+      <tr><td>Monitoring</td><td>Log Analytics + alerts</td><td>CloudWatch + alarms</td><td>ELK / Grafana</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Integrations</h3>
+  <ul>
+    <li><b>ERP</b> exports AP invoices, approvals and ledger cash entries as CSV with a manifest of fingerprints, row counts and control totals.</li>
+    <li><b>Bank</b> statements arrive by SFTP (BAI2 or camt.053) and a normaliser script converts them to CSV with a manifest.</li>
+    <li><b>Notification service</b> reads the outbox and must ignore repeats of the same routing key.</li>
+    <li><b>Approval workflow</b> creates one task per action key. A separate identity executes approved actions in the ERP.</li>
+  </ul>
+</section>
+
+<section id="rules">
+  <h2><span class="n">06</span>Control rules</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Rule</th><th>Logic</th><th>Proposed action</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">DUP-EXACT</td><td>Same vendor and normalised invoice number more than once</td><td>Payment hold on later invoices</td></tr>
+      <tr><td class="mono">DUP-FUZZY</td><td>Same vendor and amount, different number, within 7 days</td><td>Payment hold on later invoice</td></tr>
+      <tr><td class="mono">APR-MISSING</td><td>Amount ≥ 2,500.00 with no approval</td><td>Block from payment run</td></tr>
+      <tr><td class="mono">SOD-SELF-APPROVAL</td><td>Only approval is by the submitter. Always high severity.</td><td>Block from payment run</td></tr>
+      <tr><td class="mono">APR-LIMIT</td><td>No independent approver has a high enough limit</td><td>Block from payment run</td></tr>
+      <tr><td class="mono">REC-AMOUNT</td><td>Reference in bank and ledger with different amounts</td><td>Investigate and correct</td></tr>
+      <tr><td class="mono">REC-BANK-ONLY</td><td>Bank movement with no ledger entry</td><td>Journal entry to record</td></tr>
+      <tr><td class="mono">REC-GL-ONLY</td><td>Ledger entry with no bank movement that day</td><td>Investigate or carry as reconciling item</td></tr>
+    </tbody>
+  </table></div>
+  <p>Severity is high when the amount is at least 10,000.00 or the rule is segregation of duties, low under 100.00, otherwise medium.</p>
+</section>
+
+<section id="idempotency">
+  <h2><span class="n">07</span>Rerun safety</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Mechanism</th><th>Key</th><th>Effect</th></tr></thead>
+    <tbody>
+      <tr><td>Batch ledger</td><td>Business date + all file fingerprints</td><td>Same files run again are skipped. Nothing is written or routed.</td></tr>
+      <tr><td>Forced recompute</td><td><code>--reprocess</code></td><td>Outputs rebuilt. Routing and approvals stay deduplicated.</td></tr>
+      <tr><td>Exception ID</td><td>Date + rule + record IDs</td><td>A corrected batch keeps the same IDs for unchanged exceptions.</td></tr>
+      <tr><td>Routing key</td><td>Exception ID + recipient</td><td>No reviewer is notified twice about the same exception. A corrected batch still sends a fresh CFO summary.</td></tr>
+      <tr><td>Action key</td><td>Exception ID + proposed action</td><td>The same action is never queued twice.</td></tr>
+      <tr><td>Run lock</td><td>Exclusive lock file or lease</td><td>Two triggers cannot run at once. The second exits 3.</td></tr>
+    </tbody>
+  </table></div>
+  <p>Remaining risk: drafts are written before the ledger is saved. A crash between the two can repeat drafts on a forced recompute, so the delivery and approval services must ignore repeated keys. Production should use a transactional store.</p>
+</section>
+
+<section id="errors">
+  <h2><span class="n">08</span>Errors, notifications and logs</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Situation</th><th>Handling</th><th class="num">Exit</th><th>Alert</th></tr></thead>
+    <tbody>
+      <tr><td>Temporary storage error</td><td>Retry 3 times, waiting 2 s then 4 s</td><td class="num">1</td><td>On-call</td></tr>
+      <tr><td>Bad or tampered data</td><td>No retry. All errors listed with file and line. No outputs.</td><td class="num">2</td><td>On-call, source owner</td></tr>
+      <tr><td>Batch already completed</td><td>Skip</td><td class="num">0</td><td>None</td></tr>
+      <tr><td>Lock held</td><td>Skip</td><td class="num">3</td><td>Warn if repeated</td></tr>
+      <tr><td>Ready marker missing</td><td>Wait</td><td class="num">4</td><td>09:00 late check</td></tr>
+      <tr><td>Unexpected error</td><td>Log, alert draft, release lock</td><td class="num">1</td><td>On-call</td></tr>
+    </tbody>
+  </table></div>
+  <p>Monitoring should alert on failure events and also when no successful run is logged by the cut-off.</p>
+</section>
+
+<section id="permissions">
+  <h2><span class="n">09</span>Least-privilege permissions</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Identity</th><th>May</th><th>May not</th></tr></thead>
+    <tbody>
+      <tr><td>ERP and bank export accounts</td><td>Write to their own landing folder</td><td>Read outputs or other folders</td></tr>
+      <tr><td>Control runner</td><td>Read inputs, create outputs (no overwrite or delete), update ledger, read its own secrets</td><td>Call ERP or bank, send mail, change inputs, delete outputs</td></tr>
+      <tr><td>Notification service</td><td>Read outbox, send from one shared mailbox</td><td>Read input files, approve anything</td></tr>
+      <tr><td>Category reviewers</td><td>Read register and summary, decide their category's queue items</td><td>Approve material items alone, change config</td></tr>
+      <tr><td>Controller</td><td>Approve material actions</td><td>Approve their own submissions</td></tr>
+      <tr><td>CFO</td><td>Read everything</td><td>—</td></tr>
+      <tr><td>Finance systems admin</td><td>Change config through reviewed pull requests</td><td>Approve finance actions</td></tr>
+      <tr><td>Action executor (separate)</td><td>Run only approved action keys</td><td>Anything not approved</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="approval">
+  <h2><span class="n">10</span>Human approval for material actions</h2>
+  <ul>
+    <li>The runner never executes an action. Every proposal is queued as pending.</li>
+    <li>Non-material actions need one approver from the category's reviewer group.</li>
+    <li>Material actions (10,000.00 or more) need the category reviewer and the controller.</li>
+    <li>Approver, invoice submitter and executor must be different people or identities.</li>
+    <li>Changes to thresholds, routing or rules go through a pull request with a second reviewer.</li>
+  </ul>
+</section>
+
+<section id="deployment">
+  <h2><span class="n">11</span>Deployment environment</h2>
+  <ul>
+    <li>Python 3.10 or later, standard library only. Tested on 3.13.</li>
+    <li>Three environments: dev with synthetic data, test running real triggers and delivery to a test mailbox, and prod.</li>
+    <li>One config file per environment under version control. Secrets come only from managed identity and the secret store.</li>
+    <li>CI runs the unit tests on every change and blocks merges on failure.</li>
+    <li>Separate landing, output, ledger and log storage per environment. Retention follows the finance records policy, for example 7 years.</li>
+  </ul>
+</section>
+
+<section id="split">
+  <h2><span class="n">12</span>Who does what</h2>
+  <div class="split">
+    <div class="box claude"><h3>Claude can do</h3><ul>
+      <li>Write and revise this design, the rules, config and schemas</li>
+      <li>Write and test the runner and its tests (done, on fictional data)</li>
+      <li>Run the runner on demand on files supplied in a session and explain results</li>
+      <li>Review a register or CFO summary and draft reviewer notes</li>
+      <li>Draft notification wording, runbooks and checklists</li>
+    </ul></div>
+    <div class="box"><h3>Claude cannot do on its own</h3><ul>
+      <li>Run on a schedule or react to file arrivals unattended</li>
+      <li>Hold production credentials or connect to the ERP or bank</li>
+      <li>Send notifications as part of this design</li>
+      <li>Approve, execute or post any financial action</li>
+      <li>Act as the system of record for the ledger or audit trail</li>
+    </ul></div>
+    <div class="box"><h3>Needs scripts</h3><ul>
+      <li><code>daily_control.py</code> runner: <span class="pill ok">written and tested</span></li>
+      <li>Bank file normaliser: <span class="pill off">not written</span></li>
+      <li>Scheduler wrapper with holiday calendar: <span class="pill off">not written</span></li>
+      <li>Transactional ledger adapter: <span class="pill off">not written</span></li>
+    </ul></div>
+    <div class="box"><h3>Needs external services or people</h3><ul>
+      <li>Scheduler or storage-event trigger, container runtime</li>
+      <li>Write-once storage, secret store, monitoring and alerts</li>
+      <li>Notification delivery and approval workflow</li>
+      <li>ERP and bank export jobs</li>
+      <li>Reviewers, controller, CFO, systems admin, internal audit sign-off</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="golive">
+  <h2><span class="n">13</span>Go-live gates</h2>
+  <p>Each capability stays "designed but not active" until its gate is configured, tested and evidenced.</p>
+  <ul class="checklist">
+    <li>Source-system manifest export built and validated against the config</li>
+    <li>Bank normaliser written, tested and reconciled to statement totals</li>
+    <li>Runner image built in CI with tests green</li>
+    <li>Identities and permissions created exactly as in section 09, access review recorded</li>
+    <li>Write-once retention, ledger store and lock verified in test</li>
+    <li>Trigger configured in test and seen firing; duplicate-trigger drill passes</li>
+    <li>Delivery service configured; test message received; resend drill shows no duplicates</li>
+    <li>Approval workflow configured; material item requires two approvers; executor rejects unapproved keys</li>
+    <li>Alerts fire for run failure, validation failure and a missing successful run</li>
+    <li>Parallel run against the manual control completed and signed off by internal audit</li>
+    <li>Production enablement change approved</li>
+  </ul>
+</section>
+
+<section id="limits">
+  <h2><span class="n">14</span>Known limitations</h2>
+  <ul>
+    <li>Single currency (USD). Multi-currency needs validated FX rates as an input.</li>
+    <li>Fuzzy duplicate rule uses amount and date window only.</li>
+    <li>Reconciliation matches by reference on the business date only. Prior-day timing differences are not carried forward yet.</li>
+    <li>The file-based ledger and lock suit a single runner instance. A stale lock after a hard kill must be cleared by hand.</li>
+  </ul>
+</section>
+
+<footer>Source: <code>finance-control-automation/</code> on branch <code>claude/sweet-turing-2se0y1</code>. Fictional company and data. No scheduling, live execution or notifications are active.</footer>
+</main>
+</div>

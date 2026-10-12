@@ -6,7 +6,7 @@ Design and reference implementation of a daily finance control for **Cedar Ridge
 
 | Path | What it is |
 |---|---|
-| [`DESIGN.md`](DESIGN.md) | Full specification: platform, integrations, permissions, deployment, Claude-vs-scripts-vs-services split |
+| [`DESIGN.md`](DESIGN.md) / [`design.html`](design.html) | Full specification (Markdown and HTML): platform, integrations, permissions, deployment, Claude-vs-scripts-vs-services split |
 | `config/control_config.json` | Trigger, schemas, rule thresholds, routing, retries |
 | `src/daily_control.py` | Runner (Python standard library only) |
 | `sample_data/2026-10-09/` | Fictional input files + manifest |
