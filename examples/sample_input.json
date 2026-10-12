@@ -1,0 +1,57 @@
+{
+  "candidate_id": "CND-1001",
+  "vacancy_id": "VAC-2026-07",
+  "candidate_name": "Jordan Example",
+  "cv_text": "Jordan Example\njordan.example@mail.example | +44 20 7946 0958\n\nSummary\nData analyst with an interest in machine learning and open-source tooling.\n\nExperience\nData Analyst, Example Retail Ltd (2021-2025)\n- Built weekly reporting pipelines in Python and pandas\n- Maintained SQL queries against PostgreSQL for sales dashboards\n\nEducation\nBSc Statistics, Example University (2020)\n\nSkills\nPython, SQL, Excel, Git\n\nLanguages\nEnglish (fluent), Arabic (native)\n\nAge: 31\n",
+  "requirements": [
+    {
+      "requirement_id": "REQ-01",
+      "text": "Hands-on experience with Python",
+      "required": true,
+      "match_terms": ["Python"]
+    },
+    {
+      "requirement_id": "REQ-02",
+      "text": "Experience with SQL databases",
+      "required": true,
+      "match_terms": ["SQL", "PostgreSQL"]
+    },
+    {
+      "requirement_id": "REQ-03",
+      "text": "Bachelor's degree in a quantitative field",
+      "required": true,
+      "match_terms": ["BSc", "Bachelor"]
+    },
+    {
+      "requirement_id": "REQ-04",
+      "text": "Project management certification",
+      "required": false,
+      "match_terms": ["PMP", "Project Management Professional"]
+    },
+    {
+      "requirement_id": "REQ-05",
+      "text": "Fluent English",
+      "required": true,
+      "match_terms": ["English"]
+    },
+    {
+      "requirement_id": "REQ-06",
+      "text": "Strong collaboration skills in cross-functional teams",
+      "required": true,
+      "match_terms": []
+    },
+    {
+      "requirement_id": "REQ-07",
+      "text": "Age under 35",
+      "required": true,
+      "match_terms": []
+    }
+  ],
+  "known_candidates": [
+    {
+      "candidate_id": "CND-0412",
+      "name": "J. Example",
+      "email": "jordan.example@mail.example"
+    }
+  ]
+}
