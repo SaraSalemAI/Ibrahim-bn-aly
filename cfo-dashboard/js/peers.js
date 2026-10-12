@@ -13,7 +13,7 @@
 
   /* Ratios compared: dir 'high' = higher is better. All on closing balances so typed peers compare like for like. */
   const METRICS = [
-    { id: 'revenue_growth', unit: '%', dir: 'high', f: x => nn(x.revenue_prev) && x.revenue_prev !== 0 ? (x.revenue - x.revenue_prev) / Math.abs(x.revenue_prev) : null },
+    { id: 'revenue_growth', unit: '%', dir: 'high', f: x => nn(x.revenue) && nn(x.revenue_prev) && x.revenue_prev !== 0 ? (x.revenue - x.revenue_prev) / Math.abs(x.revenue_prev) : null },
     { id: 'ebitda_margin', unit: '%', dir: 'high', f: x => div(x.ebitda, x.revenue) },
     { id: 'net_margin', unit: '%', dir: 'high', f: x => div(x.net_income, x.revenue) },
     { id: 'roe', unit: '%', dir: 'high', f: x => x.equity > 0 ? div(x.net_income, x.equity) : null },
@@ -120,7 +120,8 @@
     const rows = [...list, ...(weighted ? [{ id: 'weighted', ...weighted }] : [])];
     if (!rows.length) return '';
     const W = 560, rowH = 30, left = 150, right = 20, top = 10, H = top + rows.length * rowH + 26;
-    const lo = Math.min(0, ...rows.map(r => r.low)), hi = Math.max(...rows.map(r => r.high)) * 1.08 || 1;
+    const lo0 = Math.min(0, ...rows.map(r => r.low)), hi0 = Math.max(0, ...rows.map(r => r.high)), padv = (hi0 - lo0) * 0.06 || 1;
+    const lo = lo0 < 0 ? lo0 - padv : 0, hi = hi0 + padv;
     const X = v => left + (v - lo) / (hi - lo) * (W - left - right);
     const ticks = [0, 0.25, 0.5, 0.75, 1].map(f => lo + (hi - lo) * f);
     const esc = CFO.esc;

@@ -60,3 +60,31 @@ test('adverse variances reach the action plan and every report format', () => {
     assert.ok(!/NaN|undefined|Infinity/.test(html + md));
   }
 });
+
+test('review cases: quarterly budget, year mismatch, budget equal to actuals, tax credit', () => {
+  const q = CFO.buildDataset(CFO.csvTables(enc('Line item,Q1,Q2,Q3,Q4\nRevenue,"15,000","16,000","17,000","17,000"\nNet profit,900,1000,1000,1000\n'), 'q.csv'));
+  const v = CFO.variance(ds, q);
+  assert.equal(v.rows.find(r => r.key === 'revenue').plan, 65000, 'quarters are added up');
+  const m = CFO.varianceModel({ A, lang: 'en', budget: q });
+  assert.ok(m.table.head[2].includes('4 columns'));
+  const y = CFO.buildDataset(CFO.csvTables(enc('Line item,2030\nRevenue,"90,000"\nNet profit,"5,000"\n'), 'y.csv'));
+  assert.ok(CFO.varianceModel({ A, lang: 'en', budget: y }).warnings[0].includes('2030'));
+  const same = CFO.buildDataset(CFO.csvTables(enc('Line item,2024\nRevenue,"61,000"\nNet profit,"1,488"\n'), 's.csv'));
+  assert.ok(CFO.varianceModel({ A, lang: 'ar', budget: same }).warnings.length === 1);
+  // A loss with a tax credit: −100 before tax, +20 credit, −80 after tax.
+  const loss = { periods: ['2024'], data: { 2024: { pretax_income: -100, tax: 20, net_income: -80 } }, derived: { 2024: new Set() }, lines: [], issues: [], sources: ['t'] };
+  assert.ok(CFO.reconcile(loss).find(c => c.id === 'profit').ok);
+});
+
+test('review cases: no cash-flow statement, zero revenue, operating loss, blank peer revenue', () => {
+  const isBs = CFO.buildDataset(CFO.sampleTables().filter(t => !/cash/i.test(t.source)));
+  const [b] = CFO.cashBridge(isBs);
+  assert.equal(b.rows.cfo, null); assert.ok(b.rows.cfo_est != null, 'estimate kept apart');
+  assert.equal(CFO.sourcesUses(isBs).length, 0, 'no sources and uses without a cash-flow statement');
+  const zero = { periods: ['2024'], data: { 2024: { revenue: 0, operating_income: -5 } }, derived: { 2024: new Set() }, lines: [], issues: [], sources: ['t'] };
+  assert.deepEqual(CFO.breakEven(zero).missing, ['revenue']);
+  const lossy = { periods: ['2024'], data: { 2024: { revenue: 100, cogs: 60, operating_income: -10, interest: 5 } }, derived: { 2024: new Set() }, lines: [], issues: [], sources: ['t'] };
+  const be = CFO.breakEven(lossy); assert.equal(be.dol, null); assert.equal(be.dcl, null); assert.ok(be.mos < 0);
+  const rows = CFO.comparePeers(CFO.companyFigures(ds), [{ name: 'X', revenue: null, revenue_prev: 100 }]);
+  assert.equal(rows.find(r => r.id === 'revenue_growth')?.peers[0] ?? null, null);
+});

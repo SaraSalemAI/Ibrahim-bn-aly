@@ -10,7 +10,8 @@
 (function (CFO) {
   const nn = v => v != null && isFinite(v);
   const or0 = v => (nn(v) ? v : 0);
-  const tol = (...vals) => Math.max(1, ...vals.map(v => Math.abs(or0(v)) * 0.005));
+  // Half a percent of the larger figure: works for statements in units, thousands or millions alike.
+  const tol = (...vals) => Math.max(1e-6, ...vals.map(v => Math.abs(or0(v)) * 0.005));
 
   /** [{ id, period, left, right, diff, ok }] for every check the statements allow. */
   function reconcile(ds) {
@@ -23,7 +24,9 @@
         out.push({ id: 'balance', period: p, left: d.total_assets, right: r, diff: d.total_assets - r });
       }
       if (read(p, 'pretax_income', 'tax', 'net_income')) {
-        const r = d.pretax_income - d.tax;
+        // Tax is stored as a positive cost; a tax credit on a loss is added back instead, so accept either reading.
+        const r1 = d.pretax_income - d.tax, r2 = d.pretax_income + d.tax;
+        const r = d.pretax_income < 0 && Math.abs(d.net_income - r2) < Math.abs(d.net_income - r1) ? r2 : r1;
         out.push({ id: 'profit', period: p, left: d.net_income, right: r, diff: d.net_income - r });
       }
       if (read(p, 'revenue', 'cogs', 'gross_profit')) {
@@ -57,10 +60,12 @@
       };
       const known = Object.values(rows).filter(nn).reduce((a, b) => a + b, 0);
       rows.cfo_other = nn(d.cfo) && nn(rows.net_income) ? d.cfo - known : null;   // tax, provisions, other working capital…
-      rows.cfo = d.cfo ?? (nn(rows.net_income) ? known : null);
+      rows.cfo = d.cfo ?? null;
+      // Without a cash-flow statement the operating cash flow is only an estimate from the other two statements.
+      rows.cfo_est = !nn(d.cfo) && nn(rows.net_income) ? known : null;
       rows.capex = nn(d.capex) ? -d.capex : null;
       rows.cfi_other = nn(d.cfi) && nn(d.capex) ? d.cfi + d.capex : null;
-      rows.cfi = d.cfi ?? rows.capex;
+      rows.cfi = d.cfi ?? null;
       rows.dividends = nn(d.dividends) ? -d.dividends : null;
       rows.net_borrowing = dDebt;
       rows.cff_other = nn(d.cff) ? d.cff - or0(rows.dividends) - or0(dDebt) : null;
@@ -75,14 +80,14 @@
 
   /** Sources and uses of cash; "other" balances the two sides to the reported change in cash. */
   function sourcesUses(ds) {
-    return cashBridge(ds).map(({ period, rows: r }) => {
+    return cashBridge(ds).filter(b => nn(b.rows.cfo)).map(({ period, rows: r }) => {
       const src = [], use = [];
       const put = (k, v) => { if (!nn(v) || v === 0) return; (v > 0 ? src : use).push([k, Math.abs(v)]); };
       put('cfo', r.cfo); put('capex', r.capex); put('cfi_other', r.cfi_other); put('dividends', r.dividends);
       put('net_borrowing', r.net_borrowing); put('cff_other', r.cff_other);
       if (nn(r.change_reported)) put('cash_used', -r.change_reported);   // cash run down is a source, cash built up a use
       const s = src.reduce((a, [, v]) => a + v, 0), u = use.reduce((a, [, v]) => a + v, 0);
-      if (Math.abs(s - u) > 0.5) (s > u ? use : src).push(['other', Math.abs(s - u)]);
+      if (Math.abs(s - u) > Math.max(s, u) * 1e-6) (s > u ? use : src).push(['other', Math.abs(s - u)]);
       return { period, sources: src, uses: use, total: Math.max(s, u) };
     }).filter(x => x.sources.length || x.uses.length);
   }
@@ -90,7 +95,7 @@
   /** Break-even for one year. opts: { cogsVar: share of cost of sales that is variable, opexVar, target: operating profit }. */
   function breakEven(ds, opts = {}, period = ds.periods[ds.periods.length - 1]) {
     const d = ds.data[period] || {};
-    if (!(d.revenue > 0) || !nn(d.operating_income)) return { period, missing: ['revenue', 'operating_income'].filter(k => !nn(d[k])) };
+    if (!(d.revenue > 0) || !nn(d.operating_income)) return { period, missing: [...(d.revenue > 0 ? [] : ['revenue']), ...(nn(d.operating_income) ? [] : ['operating_income'])] };
     const cogs = d.cogs ?? (nn(d.gross_profit) ? d.revenue - d.gross_profit : null);
     if (!nn(cogs)) return { period, missing: ['cogs'] };
     const cv = opts.cogsVar ?? 1, ov = opts.opexVar ?? 0;
@@ -106,8 +111,9 @@
       out.cashBe = Math.max(0, (fixed - or0(d.dna)) / cmr);   // depreciation is not a cash cost
     }
     const pbt = d.operating_income - or0(d.interest);
-    out.dol = d.operating_income !== 0 ? cm / d.operating_income : null;
-    out.dfl = pbt !== 0 ? d.operating_income / pbt : null;
+    // Leverage multipliers only mean something while the company is profitable at each level.
+    out.dol = d.operating_income > 0 && cm > 0 ? cm / d.operating_income : null;
+    out.dfl = d.operating_income > 0 && pbt > 0 ? d.operating_income / pbt : null;
     out.dcl = nn(out.dol) && nn(out.dfl) ? out.dol * out.dfl : null;
     // High-low method across the years: the variable cost rate implied by how total operating cost moved with revenue.
     const ys = ds.periods.filter(p => ds.data[p].revenue > 0 && nn(ds.data[p].operating_income));
@@ -130,7 +136,7 @@
       left: 'Statement', right: 'Should equal', diff: 'Difference', ok: 'Ties', off: 'Check',
       bridge: 'Cash-flow bridge (indirect method)', bridgeHint: 'From net income to the change in cash. "Other" lines are what the statements show beyond the items read (tax, provisions, other working capital, FX).',
       r: { net_income: 'Net income', dna: '+ Depreciation & amortisation', d_receivables: '− Increase in receivables', d_inventory: '− Increase in inventory', d_payables: '+ Increase in payables',
-        cfo_other: '± Other operating items', cfo: 'Cash from operations', capex: '− Capital expenditure', cfi_other: '± Other investing', cfi: 'Cash from investing',
+        cfo_other: '± Other operating items', cfo: 'Cash from operations', cfo_est: 'Estimated cash from operations (no cash-flow statement)', capex: '− Capital expenditure', cfi_other: '± Other investing', cfi: 'Cash from investing',
         dividends: '− Dividends paid', net_borrowing: '± Net borrowing (change in debt)', cff_other: '± Other financing', cff: 'Cash from financing',
         change: 'Change in cash (flows)', change_reported: 'Change in cash (balance sheet)', fcff: 'Free cash flow to the firm', fcfe: 'Free cash flow to equity' },
       su: 'Sources and uses of cash', sources: 'Sources', uses: 'Uses',
@@ -157,7 +163,7 @@
       left: 'القائمة', right: 'يجب أن يساوي', diff: 'الفرق', ok: 'متطابق', off: 'راجع',
       bridge: 'جسر التدفقات النقدية (الطريقة غير المباشرة)', bridgeHint: 'من صافي الربح إلى التغير في النقدية. بنود «أخرى» هي ما تظهره القوائم خارج البنود المقروءة (ضرائب، مخصصات، رأس مال عامل آخر، فروق عملة).',
       r: { net_income: 'صافي الربح', dna: '+ الإهلاك والاستهلاك', d_receivables: '− الزيادة في المدينين', d_inventory: '− الزيادة في المخزون', d_payables: '+ الزيادة في الدائنين',
-        cfo_other: '± بنود تشغيلية أخرى', cfo: 'التدفق النقدي التشغيلي', capex: '− الإنفاق الرأسمالي', cfi_other: '± استثمارات أخرى', cfi: 'التدفق النقدي الاستثماري',
+        cfo_other: '± بنود تشغيلية أخرى', cfo: 'التدفق النقدي التشغيلي', cfo_est: 'تدفق تشغيلي تقديري (لا توجد قائمة تدفقات نقدية)', capex: '− الإنفاق الرأسمالي', cfi_other: '± استثمارات أخرى', cfi: 'التدفق النقدي الاستثماري',
         dividends: '− توزيعات الأرباح', net_borrowing: '± صافي الاقتراض (التغير في الديون)', cff_other: '± تمويل آخر', cff: 'التدفق النقدي التمويلي',
         change: 'التغير في النقدية (من التدفقات)', change_reported: 'التغير في النقدية (من الميزانية)', fcff: 'التدفق النقدي الحر للشركة', fcfe: 'التدفق النقدي الحر للمساهمين' },
       su: 'مصادر واستخدامات النقدية', sources: 'المصادر', uses: 'الاستخدامات',

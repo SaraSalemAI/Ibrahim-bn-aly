@@ -184,7 +184,7 @@
         ${pm.compare ? `${T(pm.compare)}${pm.charts.length || pm.scatter ? `<div class="grid-2 fa-charts">${pm.charts.map(c => `<figure class="card"><figcaption><b>${esc(c.title)}</b></figcaption>${CFO.svgChart(c)}</figure>`).join('')}${pm.scatter ? `<figure class="card"><figcaption><b>${esc(PL.scatter)}</b></figcaption>${pm.scatter}</figure>` : ''}</div>` : ''}<h3>${esc(PL.name)}</h3>${T(pm.figures)}` : `<p class="muted">${esc(PL.none)}</p>`}
         <h3>${esc(PL.methods)}</h3><p class="muted small">${esc(PL.methodsHint)}</p>${pm.methodTable ? T(pm.methodTable) + pm.football : `<p>${esc(PL.noMethods)}</p>`}</section>`;
     const vm = m.variance, VR = CFO.UI[R.lang].var;
-    const varHTML = !vm?.table ? '' : `<section class="fa-sec" id="${id('variance')}"><h2>${esc(L.secVariance)}</h2><p class="muted small">${esc(vm.hint)}</p>${T(vm.table)}
+    const varHTML = !vm?.table ? '' : `<section class="fa-sec" id="${id('variance')}"><h2>${esc(L.secVariance)}</h2><p class="muted small">${esc(vm.hint)}</p>${vm.warnings.map(w => `<div class="note">${esc(w)}</div>`).join('')}${T(vm.table)}
         ${vm.walk ? `<h3>${esc(VR.walk)}</h3><p class="muted small">${esc(VR.walkHint)}</p>${T(vm.walk)}<figure class="card"><figcaption><b>${esc(VR.walk)}</b></figcaption>${CFO.svgChart(vm.chart)}</figure>` : ''}</section>`;
     const valHTML = !v ? '' : `<section class="fa-sec" id="${id('valuation')}"><h2>${esc(L.secValuation)}</h2><p class="muted small">${esc(VL.hint)}</p>
         ${v.missing ? `<p>${esc(v.missing)}</p>` : `
@@ -238,7 +238,8 @@
 
   function reportMarkdown(R) {
     const m = model(R), L = L_(R.lang);
-    const mdTable = (head, rows) => [`| ${head.join(' | ')} |`, `|${head.map((_, i) => i ? '---:' : '---').join('|')}|`, ...rows.map(r => `| ${r.join(' | ')} |`)];
+    const cellMd = c => String(c ?? '').replace(/\|/g, '\\|').replace(/\r?\n/g, ' ');
+    const mdTable = (head, rows) => [`| ${head.map(cellMd).join(' | ')} |`, `|${head.map((_, i) => i ? '---:' : '---').join('|')}|`, ...rows.map(r => `| ${r.map(cellMd).join(' | ')} |`)];
     const lines = [`# ${m.title}`, m.meta, '', `## ${L.secSummary}`, m.summary, '', ...m.kpis.map(k => `- **${k.label}**: ${k.value} ${k.delta}`), ''];
     if (m.ai) lines.push(`## ${L.aiSection}`, m.ai, '', `_${L.ai.note}_`, '');
     lines.push(`## ${L.secRatios}`);

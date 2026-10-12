@@ -39,7 +39,7 @@
   // which avoids web-worker restrictions in sandboxed frames. Otherwise fall back to the CDN worker.
   if (globalThis.pdfjsLib && !globalThis.pdfjsWorker) globalThis.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-  CFO.BUILD = '2026-10-12.1';
+  CFO.BUILD = '2026-10-12.2';
 
   /* ---------- intake ---------- */
   // What happened to each attempt, for the diagnostics box (Data review) the user can copy to support.
@@ -492,16 +492,18 @@
 
   /* ---------- peers ---------- */
   const savePeers = () => store.set('peers', JSON.stringify(state.peers));
+  // All files chosen together are one peer (e.g. its income statement and balance sheet as separate files).
   async function addPeerFiles(fileList) {
-    for (const f of [...fileList]) {
-      try {
-        const tables = await withTimeout(CFO.parseFile(f), 60000, f.name);
-        const peer = CFO.peerFromTables(f.name.replace(/\.[^.]+$/, ''), tables);
-        if (!peer) throw new Error('empty');
-        state.peers = [...state.peers, peer];
-        state.notes.push(() => T().peer.fileRead(peer.name, peer.period));
-      } catch (e) { state.errors.push(() => T().peer.fileFail(f.name)); }
+    const files = [...fileList], tables = [];
+    state.errors = []; state.notes = [];
+    for (const f of files) {
+      try { tables.push(...await withTimeout(CFO.parseFile(f), 60000, f.name)); }
+      catch (e) { state.errors.push(() => T().peer.fileFail(f.name)); }
     }
+    const name = files.length ? files[0].name.replace(/\.[^.]+$/, '') : '';
+    const peer = tables.length ? CFO.peerFromTables(name, tables) : null;
+    if (peer) { state.peers = [...state.peers, peer]; state.notes.push(() => T().peer.fileRead(peer.name, peer.period)); }
+    else if (files.length && !state.errors.length) state.errors.push(() => T().peer.fileFail(name));
     savePeers(); render();
   }
   function renderCompare() {
@@ -532,7 +534,8 @@
 
   /* ---------- budget vs actual ---------- */
   function setBudget(name, tables) {
-    const L = T().var, lines = tables.reduce((n, t) => n + t.lines.length, 0);
+    state.errors = []; state.notes = [];
+    const lines = tables.reduce((n, t) => n + t.lines.length, 0);
     if (!lines) { state.errors.push(() => T().var.fail(name)); return render(); }
     state.budgetTables = tables; state.budgetName = name;
     const b = CFO.buildDataset(tables);
@@ -554,6 +557,7 @@
         <p class="muted small">${esc(m.hint)}</p>
         <details class="paste-box"><summary>${esc(L.pasteBudget)}</summary><textarea id="budget-paste" rows="4" aria-label="${esc(L.pasteBudget)}"></textarea>
           <div class="actions"><button class="btn" type="button" data-budget-paste>${esc(L.useBudget)}</button></div></details>
+        ${(m.warnings || []).map(w => `<div class="note" role="status">${esc(w)}</div>`).join('')}
         ${table}</div>
       ${m.walk ? `<div class="grid-2"><div class="card"><h3>${esc(L.walk)}</h3><p class="muted small">${esc(L.walkHint)}</p>${dataTable(m.walk)}</div><div class="card"><h3>${esc(L.walk)}</h3>${CFO.svgChart(m.chart)}</div></div>` : ''}`;
   }
