@@ -1,0 +1,907 @@
+<title>Candidate Record Review</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,600&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a working form on the left, the review record on the right; one column on phones. */
+:root {
+  --bg: #f3f5f3;
+  --surface: #ffffff;
+  --sunken: #eaeeeb;
+  --ink: #1b2320;
+  --muted: #56625d;
+  --line: #d4dbd7;
+  --accent: #1f5468;
+  --accent-ink: #ffffff;
+  --focus: #2b7a99;
+  --ok: #276140;      --ok-bg: #e0eee5;
+  --warn: #855400;    --warn-bg: #f5e8cc;
+  --bad: #962f20;     --bad-bg: #f5dfd9;
+  --na: #574f74;      --na-bg: #e7e4f0;
+  --font-display: "Newsreader", Georgia, "Times New Roman", serif;
+  --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111614; --surface: #19201d; --sunken: #141a18; --ink: #e2e8e5; --muted: #98a59f; --line: #2c3632;
+    --accent: #86bdd2; --accent-ink: #0b1a20; --focus: #9fd3e6;
+    --ok: #8fd1a6; --ok-bg: #1b3325; --warn: #e9c47c; --warn-bg: #382c13;
+    --bad: #f1a697; --bad-bg: #3c1f19; --na: #c0b9db; --na-bg: #29273a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111614; --surface: #19201d; --sunken: #141a18; --ink: #e2e8e5; --muted: #98a59f; --line: #2c3632;
+  --accent: #86bdd2; --accent-ink: #0b1a20; --focus: #9fd3e6;
+  --ok: #8fd1a6; --ok-bg: #1b3325; --warn: #e9c47c; --warn-bg: #382c13;
+  --bad: #f1a697; --bad-bg: #3c1f19; --na: #c0b9db; --na-bg: #29273a;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1320px; margin-inline: auto; padding-inline: clamp(16px, 3vw, 32px); }
+
+.masthead { padding-block: 28px 20px; border-bottom: 1px solid var(--line); }
+.eyebrow { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+h1 { margin: 6px 0 8px; font-family: var(--font-display); font-weight: 600; font-size: clamp(28px, 4vw, 38px); line-height: 1.1; text-wrap: balance; }
+.lede { margin: 0; max-width: 68ch; color: var(--ink); }
+.privacy { margin: 10px 0 0; font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+.privacy::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none; }
+
+.layout { display: grid; gap: 24px; padding-block: 24px 48px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1000px) { .layout { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: start; } }
+
+h2 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.panel { min-width: 0; display: grid; gap: 16px; align-content: start; }
+.panel-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
+.example-note { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+
+form { display: grid; gap: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+label { display: grid; gap: 4px; font-size: 13px; font-weight: 600; min-width: 0; }
+.hint { font-weight: 400; color: var(--muted); font-size: 12.5px; }
+.field-row { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+input[type="text"], textarea {
+  width: 100%; font: inherit; font-weight: 400; font-size: 14px; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 4px; padding: 7px 9px; min-width: 0;
+}
+textarea { font-family: var(--font-mono); font-size: 13px; line-height: 1.55; resize: vertical; }
+input:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus-visible, input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--focus); outline-offset: 2px;
+}
+fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 10px; min-width: 0; }
+legend { padding: 0; margin-bottom: 4px; font-size: 13px; font-weight: 700; }
+fieldset > .hint { margin: -6px 0 0; }
+
+.row-list { display: grid; gap: 8px; }
+.item-row { display: grid; gap: 8px; padding: 10px; background: var(--sunken); border: 1px solid var(--line); border-radius: 4px; }
+.item-row .top { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: end; }
+.item-row .top label { flex: 1 1 120px; }
+.item-row .top .check { flex: 0 0 auto; display: flex; gap: 6px; align-items: center; font-weight: 500; padding-bottom: 7px; }
+.known-grid { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+
+button { font: inherit; cursor: pointer; }
+.btn { font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 4px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); justify-self: start; }
+.btn:hover { border-color: var(--accent); }
+.primary { font-size: 15px; font-weight: 600; padding: 10px 18px; border-radius: 4px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); justify-self: start; }
+.primary:hover { filter: brightness(1.08); }
+.link { background: none; border: 0; padding: 0; color: var(--accent); font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.remove { background: none; border: 0; color: var(--muted); font-size: 13px; padding: 4px 2px 7px; text-decoration: underline; text-underline-offset: 2px; }
+.remove:hover { color: var(--bad); }
+
+details { border-top: 1px solid var(--line); padding-top: 12px; }
+summary { cursor: pointer; font-size: 13px; font-weight: 700; }
+details[open] summary { margin-bottom: 10px; }
+.json-tools { display: grid; gap: 8px; }
+.json-tools .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.msg { font-size: 13px; color: var(--muted); margin: 0; }
+.msg.error { color: var(--bad); }
+
+/* Record */
+.record { display: grid; gap: 18px; }
+.summary { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 14px; }
+.ids { display: flex; flex-wrap: wrap; gap: 6px 20px; font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+.ids b { color: var(--ink); font-weight: 500; }
+.next-label { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.next-step { margin: 2px 0 0; font-family: var(--font-display); font-size: 22px; font-weight: 600; line-height: 1.25; text-wrap: balance; }
+.code { font-family: var(--font-mono); font-size: 12px; color: var(--muted); word-break: break-word; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--sunken); color: var(--ink); border: 1px solid var(--line); white-space: nowrap; }
+.chip.pending { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+.tally { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.tally span b { color: var(--ink); }
+
+.section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.req-list, .exc-list { display: grid; gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.req { display: grid; gap: 8px; padding: 14px 16px; border-top: 1px solid var(--line); min-width: 0; }
+.req:first-child { border-top: 0; }
+.req-top { display: flex; gap: 8px 12px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
+.req-title { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; min-width: 0; }
+.req-id { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.req-text { font-weight: 600; }
+.optional { font-size: 12px; color: var(--muted); }
+.status { font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+.s-documented { background: var(--ok-bg); color: var(--ok); }
+.s-weak_mention { background: var(--warn-bg); color: var(--warn); }
+.s-not_found { background: var(--bad-bg); color: var(--bad); }
+.s-not_assessable { background: var(--na-bg); color: var(--na); }
+.evidence { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.evidence li { display: grid; gap: 2px; padding-left: 12px; border-left: 2px solid var(--line); min-width: 0; }
+.evidence q { quotes: "\201C" "\201D"; overflow-wrap: anywhere; }
+.ref { font-family: var(--font-mono); font-size: 12px; color: var(--accent); }
+.sub { font-size: 12px; font-weight: 600; color: var(--muted); margin: 2px 0 0; }
+.missing { margin: 0; font-size: 14px; color: var(--muted); }
+.missing b { color: var(--ink); font-weight: 600; }
+
+.exc { display: grid; grid-template-columns: 4px minmax(0, 1fr); gap: 12px; padding: 12px 16px 12px 0; border-top: 1px solid var(--line); }
+.exc:first-child { border-top: 0; }
+.exc::before { content: ""; border-radius: 0 2px 2px 0; background: var(--na); }
+.exc.blocking::before { background: var(--bad); }
+.exc.review::before { background: var(--warn); }
+.exc-body { display: grid; gap: 3px; min-width: 0; }
+.exc-head { display: flex; gap: 6px 10px; flex-wrap: wrap; align-items: baseline; }
+.exc-code { font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; }
+.sev { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.sev.blocking { color: var(--bad); } .sev.review { color: var(--warn); } .sev.info { color: var(--na); }
+.exc p { margin: 0; font-size: 14px; }
+.empty { padding: 14px 16px; margin: 0; color: var(--muted); font-size: 14px; }
+
+.audit { margin: 0; padding: 0; list-style: none; font-family: var(--font-mono); font-size: 12px; display: grid; gap: 4px; }
+.audit li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; }
+.audit .ok { color: var(--ok); } .audit .error, .audit .rejected { color: var(--bad); }
+pre.json { margin: 0; max-height: 420px; overflow: auto; background: var(--sunken); border: 1px solid var(--line); border-radius: 4px; padding: 12px; font-family: var(--font-mono); font-size: 12px; line-height: 1.5; }
+.disclaimer { margin: 0; font-size: 13px; color: var(--muted); max-width: 68ch; }
+
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <p class="eyebrow">Recruitment department · fictional company</p>
+    <h1>Candidate Record Review</h1>
+    <p class="lede">Compare a candidate's CV with the vacancy's approved, job-related requirements. You get a record of the documented evidence, with CV line references, for a recruiter to review. It never rejects, ranks or hires anyone, and it never guesses personal characteristics.</p>
+    <p class="privacy">Runs entirely in this browser tab. Nothing you enter is saved or sent anywhere.</p>
+  </div>
+</header>
+
+<main class="wrap layout">
+  <section class="panel" aria-labelledby="input-heading">
+    <div class="panel-head">
+      <h2 id="input-heading">Input</h2>
+      <div class="example-note">
+        <span id="example-status">Filled with a fictional example candidate.</span>
+        <button type="button" class="link" id="clear-btn">Clear form</button>
+        <button type="button" class="link" id="sample-btn">Load example</button>
+      </div>
+    </div>
+
+    <form id="review-form" novalidate>
+      <div class="field-row">
+        <label for="candidate_id">Candidate ID
+          <input type="text" id="candidate_id" autocomplete="off" spellcheck="false">
+        </label>
+        <label for="vacancy_id">Vacancy ID
+          <input type="text" id="vacancy_id" autocomplete="off" spellcheck="false">
+        </label>
+      </div>
+      <label for="candidate_name">Candidate name <span class="hint">Optional. Used only to spot duplicate records.</span>
+        <input type="text" id="candidate_name" autocomplete="off">
+      </label>
+      <label for="cv_text">CV text <span class="hint">Paste the CV as plain text. Headings such as Experience, Education and Skills help. PDF and Word files are not supported yet.</span>
+        <textarea id="cv_text" rows="14" spellcheck="false"></textarea>
+      </label>
+
+      <fieldset>
+        <legend>Requirements</legend>
+        <p class="hint">Match terms are the exact words to look for, separated by commas. Leave them empty when a person has to assess the requirement.</p>
+        <div class="row-list" id="req-list"></div>
+        <button type="button" class="btn" id="add-req">Add requirement</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Existing records</legend>
+        <p class="hint">Optional. Records already on file, checked for duplicates. Nothing is merged.</p>
+        <div class="row-list" id="known-list"></div>
+        <button type="button" class="btn" id="add-known">Add existing record</button>
+      </fieldset>
+
+      <details id="json-details">
+        <summary>Input as JSON</summary>
+        <div class="json-tools">
+          <label for="json_input">Paste input JSON in the agent's input format, or copy the form as JSON.
+            <textarea id="json_input" rows="8" spellcheck="false"></textarea>
+          </label>
+          <div class="buttons">
+            <button type="button" class="btn" id="json-load">Load JSON into form</button>
+            <button type="button" class="btn" id="json-copy">Copy form as JSON</button>
+          </div>
+          <p class="msg" id="json-msg" role="status"></p>
+        </div>
+      </details>
+
+      <button type="submit" class="primary">Build review record</button>
+    </form>
+  </section>
+
+  <section class="panel" aria-labelledby="record-heading">
+    <h2 id="record-heading">Review record</h2>
+    <div id="record" aria-live="polite"></div>
+  </section>
+</main>
+
+<script id="engine">
+/* Review engine: a line-for-line port of the tested Python package candidate_review_agent.
+   Pure functions only, no page access, so it can be checked against the Python output. */
+const Engine = (() => {
+  "use strict";
+  const MIN_CV_CHARS = 40;
+  const UNREADABLE_RATIO = 0.05;
+  const MAX_EVIDENCE_ITEMS = 5;
+  const MAX_EXCERPT_CHARS = 200;
+  const NAME_SIMILARITY_THRESHOLD = 0.9;
+
+  const SECTION_HEADINGS = new Map([
+    ["experience", "experience"], ["work experience", "experience"], ["professional experience", "experience"],
+    ["employment", "experience"], ["employment history", "experience"], ["work history", "experience"],
+    ["education", "education"], ["academic background", "education"],
+    ["skills", "skills"], ["technical skills", "skills"], ["core competencies", "skills"],
+    ["certifications", "certifications"], ["certificates", "certifications"], ["licenses", "certifications"],
+    ["projects", "projects"], ["languages", "languages"],
+    ["summary", "summary"], ["profile", "summary"], ["professional summary", "summary"], ["objective", "summary"],
+    ["interests", "interests"],
+  ]);
+  const DOCUMENTED_SECTIONS = new Set(["experience", "education", "skills", "certifications", "projects", "languages"]);
+  const PROTECTED_PATTERNS = [
+    ["date_of_birth", /\bdate of birth\b|\bd\.o\.b\b/i],
+    ["age", /\bage\b/i],
+    ["gender_or_sex", /\b(gender|sex)\b/i],
+    ["marital_status", /\bmarital\b/i],
+    ["nationality_or_origin", /\b(nationality|ethnicity|ethnic origin)\b/i],
+    ["religion", /\breligio(n|us)\b/i],
+    ["disability", /\bdisabilit(y|ies)\b/i],
+    ["sexual_orientation", /\bsexual orientation\b/i],
+    ["pregnancy_or_family", /\bpregnan(t|cy)\b/i],
+  ];
+
+  // Python's whitespace set, so strip/split/splitlines behave like the Python version.
+  const WS = "\\t\\n\\v\\f\\r\\x1c-\\x1f \\x85\\xa0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000";
+  const STRIP_RE = new RegExp(`^[${WS}]+|[${WS}]+$`, "g");
+  const SPLIT_WS_RE = new RegExp(`[${WS}]+`);
+  const LINE_BREAK_RE = new RegExp("\\r\\n|[\\n\\r\\v\\f\\x1c\\x1d\\x1e\\x85\\u2028\\u2029]");
+  const NON_PRINTABLE_RE = /[\p{Cc}\p{Cf}\p{Cs}\p{Co}\p{Cn}\p{Zl}\p{Zp}\p{Zs}]/u;
+  const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+  const PHONE_RE = new RegExp(`\\+?\\p{Nd}[\\p{Nd}${WS}().\\-]{7,}\\p{Nd}`, "gu");
+
+  const strip = (s) => s.replace(STRIP_RE, "");
+  const isObject = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+  const pyStr = (v) => (v === null || v === undefined ? "None" : typeof v === "boolean" ? (v ? "True" : "False") : String(v));
+  const cpLength = (s) => Array.from(s).length;
+  const digitsOnly = (s) => s.replace(/\P{Nd}/gu, "");
+  const escapeRe = (s) => s.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&");
+  const exc = (code, severity, message, source_ref = null) => ({ code, severity, message, source_ref });
+  const uniqSorted = (items) => [...new Set(items)].sort();
+
+  // ---------- input schema ----------
+  function parseInput(payload) {
+    const errors = [];
+    if (!isObject(payload)) return [null, ["payload must be a JSON object"]];
+    for (const key of ["candidate_id", "vacancy_id"]) {
+      if (typeof payload[key] !== "string" || !strip(payload[key])) errors.push(`${key} must be a non-empty string`);
+    }
+    if (typeof payload.cv_text !== "string") errors.push("cv_text must be a string (may be empty; the CV checks handle that)");
+    const name = payload.candidate_name;
+    if (name !== undefined && name !== null && typeof name !== "string") errors.push("candidate_name must be a string or omitted");
+    const known = "known_candidates" in payload ? payload.known_candidates : [];
+    if (!Array.isArray(known) || !known.every((k) => isObject(k) && "candidate_id" in k)) {
+      errors.push("known_candidates must be a list of objects that each have candidate_id");
+    }
+    const requirements = [];
+    const rawReqs = payload.requirements;
+    if (!Array.isArray(rawReqs) || rawReqs.length === 0) {
+      errors.push("requirements must be a non-empty list");
+    } else {
+      rawReqs.forEach((raw, i) => {
+        if (!isObject(raw)) { errors.push(`requirements[${i}] must be an object`); return; }
+        const rid = raw.requirement_id, text = raw.text;
+        const terms = "match_terms" in raw ? raw.match_terms : [];
+        const required = "required" in raw ? raw.required : true;
+        let ok = true;
+        if (typeof rid !== "string" || !strip(rid)) { errors.push(`requirements[${i}].requirement_id must be a non-empty string`); ok = false; }
+        if (typeof text !== "string" || !strip(text)) { errors.push(`requirements[${i}].text must be a non-empty string`); ok = false; }
+        if (!Array.isArray(terms) || !terms.every((t) => typeof t === "string" && strip(t))) { errors.push(`requirements[${i}].match_terms must be a list of non-empty strings`); ok = false; }
+        if (typeof required !== "boolean") { errors.push(`requirements[${i}].required must be a boolean`); ok = false; }
+        if (ok) requirements.push({ requirement_id: strip(rid), text: strip(text), required, match_terms: terms.map(strip) });
+      });
+    }
+    if (errors.length) return [null, errors];
+    return [{
+      candidate_id: strip(payload.candidate_id),
+      vacancy_id: strip(payload.vacancy_id),
+      cv_text: payload.cv_text,
+      requirements,
+      candidate_name: name ? strip(name) : null,
+      known_candidates: known,
+    }, []];
+  }
+
+  // ---------- CV extraction and validation ----------
+  function headingSection(line) {
+    const cleaned = strip(line).replace(/^[#:\-= ]+|[#:\-= ]+$/g, "").toLowerCase();
+    if (cpLength(cleaned) > 40) return null;
+    return SECTION_HEADINGS.get(cleaned) ?? null;
+  }
+
+  function protectedCategories(text) {
+    return PROTECTED_PATTERNS.filter(([, re]) => re.test(text)).map(([name]) => name);
+  }
+
+  function extractCv(cvText) {
+    const exceptions = [];
+    const doc = { lines: [], emails: [], phones: [] };
+    const stripped = strip(cvText);
+    if (!stripped) {
+      exceptions.push(exc("CV_EMPTY", "blocking", "CV text is empty."));
+      return [doc, exceptions];
+    }
+    const chars = Array.from(cvText);
+    const nonPrintable = chars.filter((ch) => ch !== " " && !"\n\r\t".includes(ch) && NON_PRINTABLE_RE.test(ch)).length;
+    if (cvText.includes("\x00") || nonPrintable / chars.length > UNREADABLE_RATIO) {
+      exceptions.push(exc("CV_UNREADABLE", "blocking", "CV text appears to be binary or corrupted."));
+      return [doc, exceptions];
+    }
+    if (cpLength(stripped) < MIN_CV_CHARS) {
+      exceptions.push(exc("CV_TOO_SHORT", "blocking", `CV text has fewer than ${MIN_CV_CHARS} characters; it may be incomplete.`));
+      return [doc, exceptions];
+    }
+
+    let current = "unsectioned";
+    let sawHeading = false;
+    cvText.split(LINE_BREAK_RE).forEach((raw, index) => {
+      const number = index + 1;
+      const text = strip(raw);
+      if (!text) return;
+      const heading = headingSection(text);
+      if (heading) { current = heading; sawHeading = true; return; }
+      const hit = PROTECTED_PATTERNS.find(([, re]) => re.test(text));
+      const category = hit ? hit[0] : null;
+      doc.lines.push({ number, section: current, text, excluded_category: category });
+      if (category) {
+        exceptions.push(exc(
+          "PROTECTED_CONTENT_EXCLUDED", "review",
+          `Line excluded from matching (indicator category: ${category}). Text not stored; a human should confirm whether it belongs in the CV at all.`,
+          `cv:L${number}`,
+        ));
+      }
+    });
+
+    doc.emails = uniqSorted((cvText.match(EMAIL_RE) || []).map((m) => m.toLowerCase()));
+    doc.phones = uniqSorted((cvText.match(PHONE_RE) || []).map(digitsOnly).filter((p) => p.length >= 9));
+
+    if (!doc.emails.length && !doc.phones.length) {
+      exceptions.push(exc("MISSING_CONTACT", "review", "No email address or phone number found in the CV."));
+    }
+    if (!sawHeading) {
+      exceptions.push(exc("SECTIONS_NOT_DETECTED", "info", "No standard section headings detected; all text is treated as unsectioned (weak mentions only)."));
+    }
+    return [doc, exceptions];
+  }
+
+  // ---------- requirement-to-evidence matching ----------
+  const termPattern = (term) => new RegExp(`(?<![A-Za-z0-9])${escapeRe(term)}(?![A-Za-z0-9])`, "iu");
+  const excerpt = (text) => {
+    const cps = Array.from(text);
+    return cps.length <= MAX_EXCERPT_CHARS ? text : cps.slice(0, MAX_EXCERPT_CHARS - 1).join("") + "…";
+  };
+  const reviewOf = (req, status, missing, documented = [], weak = []) => ({
+    requirement_id: req.requirement_id,
+    requirement: req.text,
+    required: req.required,
+    evidence_status: status,
+    documented_evidence: documented,
+    weak_mentions: weak,
+    missing_information: missing,
+  });
+
+  function matchRequirement(doc, req) {
+    const exceptions = [];
+    const flagged = [...protectedCategories(req.text), ...req.match_terms.flatMap(protectedCategories)];
+    if (flagged.length) {
+      exceptions.push(exc(
+        "NON_JOB_RELATED_REQUIREMENT", "review",
+        `Requirement ${req.requirement_id} contains protected-characteristic wording (category: ${uniqSorted(flagged)[0]}) and was not matched. Rewrite it as a job-related requirement.`,
+        `requirement:${req.requirement_id}`,
+      ));
+      return [reviewOf(req, "not_assessable", "Requirement wording is not job-related and was not assessed."), exceptions];
+    }
+    if (!req.match_terms.length) {
+      exceptions.push(exc(
+        "REQUIREMENT_NOT_ASSESSABLE", req.required ? "review" : "info",
+        `Requirement ${req.requirement_id} has no match terms; a human must assess it.`,
+        `requirement:${req.requirement_id}`,
+      ));
+      return [reviewOf(req, "not_assessable", "No match terms defined; a reviewer must assess this requirement manually."), exceptions];
+    }
+
+    const patterns = req.match_terms.map(termPattern);
+    let documented = [];
+    let weak = [];
+    for (const line of doc.lines) {
+      if (line.excluded_category !== null || !line.text) continue;
+      if (!patterns.some((p) => p.test(line.text))) continue;
+      const item = { excerpt: excerpt(line.text), source_ref: `cv:L${line.number} (section: ${line.section})` };
+      (DOCUMENTED_SECTIONS.has(line.section) ? documented : weak).push(item);
+    }
+    documented = documented.slice(0, MAX_EVIDENCE_ITEMS);
+    weak = weak.slice(0, MAX_EVIDENCE_ITEMS);
+
+    if (documented.length) return [reviewOf(req, "documented", null, documented, weak), exceptions];
+
+    const termsText = req.match_terms.join(", ");
+    let status, missing;
+    if (weak.length) {
+      missing = `Terms (${termsText}) appear only in summary, interests or unsectioned text. Confirm the candidate's experience with them.`;
+      status = "weak_mention";
+    } else {
+      missing = `No CV text matches the terms: ${termsText}.`;
+      status = "not_found";
+    }
+    exceptions.push(exc(
+      "REQUIREMENT_NOT_DOCUMENTED", req.required ? "review" : "info",
+      `Requirement ${req.requirement_id} is not documented in a qualifying CV section (status: ${status}). This is a gap to confirm, not a finding against the candidate.`,
+      `requirement:${req.requirement_id}`,
+    ));
+    return [reviewOf(req, status, missing, [], weak), exceptions];
+  }
+
+  const notAssessed = (req, reason) => reviewOf(req, "not_assessable", reason);
+
+  // ---------- duplicate checks (port of difflib.SequenceMatcher.ratio) ----------
+  function similarity(a, b) {
+    const A = Array.from(a), B = Array.from(b);
+    if (!A.length && !B.length) return 1.0;
+    const b2j = new Map();
+    B.forEach((ch, j) => { if (!b2j.has(ch)) b2j.set(ch, []); b2j.get(ch).push(j); });
+    const longest = (alo, ahi, blo, bhi) => {
+      let besti = alo, bestj = blo, bestsize = 0;
+      let j2len = new Map();
+      for (let i = alo; i < ahi; i++) {
+        const next = new Map();
+        for (const j of b2j.get(A[i]) || []) {
+          if (j < blo) continue;
+          if (j >= bhi) break;
+          const k = (j2len.get(j - 1) || 0) + 1;
+          next.set(j, k);
+          if (k > bestsize) { besti = i - k + 1; bestj = j - k + 1; bestsize = k; }
+        }
+        j2len = next;
+      }
+      return [besti, bestj, bestsize];
+    };
+    let matches = 0;
+    const queue = [[0, A.length, 0, B.length]];
+    while (queue.length) {
+      const [alo, ahi, blo, bhi] = queue.pop();
+      const [i, j, k] = longest(alo, ahi, blo, bhi);
+      if (k) {
+        matches += k;
+        if (alo < i && blo < j) queue.push([alo, i, blo, j]);
+        if (i + k < ahi && j + k < bhi) queue.push([i + k, ahi, j + k, bhi]);
+      }
+    }
+    return (2 * matches) / (A.length + B.length);
+  }
+
+  const normName = (name) => name.toLowerCase().split(SPLIT_WS_RE).filter(Boolean).join(" ");
+
+  function checkDuplicates(candidateId, candidateName, doc, known) {
+    const exceptions = [];
+    const ownEmails = new Set(doc.emails);
+    const ownPhones = new Set(doc.phones);
+    const ownName = candidateName ? normName(candidateName) : null;
+
+    for (const other of known) {
+      const otherId = other.candidate_id === undefined ? "" : pyStr(other.candidate_id);
+      if (!otherId || otherId === candidateId) continue;
+
+      const otherEmails = new Set((Array.isArray(other.emails) ? other.emails : []).map((e) => strip(pyStr(e)).toLowerCase()).filter(Boolean));
+      if (other.email) otherEmails.add(strip(pyStr(other.email)).toLowerCase());
+      const otherPhones = new Set((Array.isArray(other.phones) ? other.phones : []).map((p) => digitsOnly(pyStr(p))));
+      if (other.phone) otherPhones.add(digitsOnly(pyStr(other.phone)));
+
+      const shared = [];
+      if ([...ownEmails].some((e) => otherEmails.has(e))) shared.push("email");
+      if ([...ownPhones].some((p) => p && otherPhones.has(p))) shared.push("phone");
+      if (shared.length) {
+        exceptions.push(exc(
+          "DUPLICATE_STRONG", "review",
+          `Shares ${shared.join(" and ")} with existing record ${otherId}. Not merged; a human must decide whether these are the same person.`,
+          `record:${otherId}`,
+        ));
+        continue;
+      }
+      const otherName = other.name;
+      if (ownName && otherName) {
+        if (similarity(ownName, normName(pyStr(otherName))) >= NAME_SIMILARITY_THRESHOLD) {
+          exceptions.push(exc(
+            "DUPLICATE_POSSIBLE", "review",
+            `Name is very similar to existing record ${otherId} (no shared contact details). Human check recommended.`,
+            `record:${otherId}`,
+          ));
+        }
+      }
+    }
+    return exceptions;
+  }
+
+  // ---------- task sequence ----------
+  const INPUT_CODES = new Set(["SCHEMA_INVALID", "CV_EMPTY", "CV_TOO_SHORT", "CV_UNREADABLE"]);
+  const DUPLICATE_CODES = new Set(["DUPLICATE_STRONG", "DUPLICATE_POSSIBLE"]);
+  const GAP_STATUSES = new Set(["not_found", "weak_mention", "not_assessable"]);
+
+  function checkpoints(exceptions, reviews) {
+    const codes = new Set(exceptions.map((e) => e.code));
+    const has = (set) => [...codes].some((c) => set.has(c));
+    const out = ["recruiter_review"];
+    if (has(INPUT_CODES)) out.push("input_correction");
+    if (has(DUPLICATE_CODES)) out.push("duplicate_review");
+    if (codes.has("PROTECTED_CONTENT_EXCLUDED")) out.push("protected_content_check");
+    if (codes.has("NON_JOB_RELATED_REQUIREMENT")) out.push("requirement_wording_review");
+    if (reviews.some((r) => r.required && GAP_STATUSES.has(r.evidence_status))) out.push("evidence_confirmation");
+    if (codes.has("PROCESSING_ERROR")) out.push("processing_error_review");
+    return out;
+  }
+
+  function nextStep(exceptions, reviews) {
+    const codes = new Set(exceptions.map((e) => e.code));
+    if (codes.has("PROCESSING_ERROR")) return "human_investigate_processing_error";
+    if ([...codes].some((c) => INPUT_CODES.has(c))) return "obtain_valid_input_and_rerun";
+    if (codes.has("DUPLICATE_STRONG")) return "human_resolve_duplicate_record";
+    if (reviews.some((r) => r.required && r.evidence_status !== "documented")) return "request_candidate_or_recruiter_confirmation";
+    return "recruiter_review_of_documented_evidence";
+  }
+
+  const buildRecord = (cid, vid, reviews, exceptions) => ({
+    candidate_id: cid,
+    vacancy_id: vid,
+    requirement_reviews: reviews,
+    exceptions,
+    human_review_status: "pending_human_review",
+    review_checkpoints: checkpoints(exceptions, reviews),
+    recommended_next_step: nextStep(exceptions, reviews),
+  });
+
+  function review(payload) {
+    const audit = [];
+    const log = (step, outcome, cid, vid, details = {}) =>
+      audit.push({ timestamp: new Date().toISOString(), step, outcome, candidate_id: cid, vacancy_id: vid, ...details });
+    const finish = (record) => {
+      log("build_record", "ok", record.candidate_id, record.vacancy_id, {
+        exception_codes: uniqSorted(record.exceptions.map((e) => e.code)),
+        checkpoints: record.review_checkpoints,
+        recommended_next_step: record.recommended_next_step,
+        human_review_status: record.human_review_status,
+      });
+      return { record, audit };
+    };
+
+    let cid = "UNKNOWN", vid = "UNKNOWN";
+    if (isObject(payload)) {
+      if (typeof payload.candidate_id === "string" && strip(payload.candidate_id)) cid = strip(payload.candidate_id);
+      if (typeof payload.vacancy_id === "string" && strip(payload.vacancy_id)) vid = strip(payload.vacancy_id);
+    }
+    const exceptions = [];
+    const [input, errors] = parseInput(payload);
+    if (input === null) {
+      log("validate_input", "rejected", cid, vid, { error_count: errors.length });
+      exceptions.push(exc("SCHEMA_INVALID", "blocking", "Input does not match the schema: " + errors.join("; ")));
+      return finish(buildRecord(cid, vid, [], exceptions));
+    }
+    cid = input.candidate_id; vid = input.vacancy_id;
+    log("validate_input", "ok", cid, vid, { requirement_count: input.requirements.length });
+
+    const runStep = (name, fn) => {
+      try {
+        const result = fn();
+        log(name, "ok", cid, vid);
+        return result;
+      } catch (err) {
+        const type = (err && err.name) || "Error";
+        log(name, "error", cid, vid, { error_type: type });
+        exceptions.push(exc("PROCESSING_ERROR", "blocking", `Step '${name}' failed (${type}). Human investigation required.`));
+        return null;
+      }
+    };
+    const blocked = () => finish(buildRecord(cid, vid,
+      input.requirements.map((r) => notAssessed(r, "Input or CV could not be validated; requirement was not assessed.")), exceptions));
+
+    const extraction = runStep("extract_cv", () => extractCv(input.cv_text));
+    if (extraction === null) return blocked();
+    const [doc, cvExceptions] = extraction;
+    exceptions.push(...cvExceptions);
+    if (cvExceptions.some((e) => e.severity === "blocking")) return blocked();
+
+    const dupes = runStep("duplicate_check", () => checkDuplicates(cid, input.candidate_name, doc, input.known_candidates));
+    if (dupes) exceptions.push(...dupes);
+
+    const matched = runStep("match_requirements", () => input.requirements.map((r) => matchRequirement(doc, r)));
+    let reviews;
+    if (matched === null) {
+      reviews = input.requirements.map((r) => notAssessed(r, "Matching failed; requirement was not assessed."));
+    } else {
+      reviews = [];
+      for (const [rev, revExceptions] of matched) { reviews.push(rev); exceptions.push(...revExceptions); }
+    }
+    return finish(buildRecord(cid, vid, reviews, exceptions));
+  }
+
+  return { review };
+})();
+</script>
+
+<script>
+(() => {
+  "use strict";
+  const SAMPLE = {"candidate_id": "CND-1001", "vacancy_id": "VAC-2026-07", "candidate_name": "Jordan Example", "cv_text": "Jordan Example\njordan.example@mail.example | +44 20 7946 0958\n\nSummary\nData analyst with an interest in machine learning and open-source tooling.\n\nExperience\nData Analyst, Example Retail Ltd (2021-2025)\n- Built weekly reporting pipelines in Python and pandas\n- Maintained SQL queries against PostgreSQL for sales dashboards\n\nEducation\nBSc Statistics, Example University (2020)\n\nSkills\nPython, SQL, Excel, Git\n\nLanguages\nEnglish (fluent), Arabic (native)\n\nAge: 31\n", "requirements": [{"requirement_id": "REQ-01", "text": "Hands-on experience with Python", "required": true, "match_terms": ["Python"]}, {"requirement_id": "REQ-02", "text": "Experience with SQL databases", "required": true, "match_terms": ["SQL", "PostgreSQL"]}, {"requirement_id": "REQ-03", "text": "Bachelor's degree in a quantitative field", "required": true, "match_terms": ["BSc", "Bachelor"]}, {"requirement_id": "REQ-04", "text": "Project management certification", "required": false, "match_terms": ["PMP", "Project Management Professional"]}, {"requirement_id": "REQ-05", "text": "Fluent English", "required": true, "match_terms": ["English"]}, {"requirement_id": "REQ-06", "text": "Strong collaboration skills in cross-functional teams", "required": true, "match_terms": []}, {"requirement_id": "REQ-07", "text": "Age under 35", "required": true, "match_terms": []}], "known_candidates": [{"candidate_id": "CND-0412", "name": "J. Example", "email": "jordan.example@mail.example"}]};
+
+  const NEXT_STEP_LABELS = {
+    obtain_valid_input_and_rerun: "Fix the input and run the review again",
+    human_resolve_duplicate_record: "A person checks whether this is a duplicate record",
+    request_candidate_or_recruiter_confirmation: "Confirm the missing evidence with the candidate or recruiter",
+    human_investigate_processing_error: "A person investigates the processing error",
+    recruiter_review_of_documented_evidence: "Recruiter reviews the documented evidence",
+  };
+  const CHECKPOINT_LABELS = {
+    recruiter_review: "Recruiter review",
+    input_correction: "Input correction",
+    duplicate_review: "Duplicate review",
+    protected_content_check: "Protected content check",
+    requirement_wording_review: "Requirement wording review",
+    evidence_confirmation: "Evidence confirmation",
+    processing_error_review: "Processing error review",
+  };
+  const STATUS_LABELS = {
+    documented: "Documented",
+    weak_mention: "Weak mention",
+    not_found: "Not found",
+    not_assessable: "Not assessable",
+  };
+  const SEVERITY_LABELS = { blocking: "Blocking", review: "Needs review", info: "Info" };
+
+  const $ = (id) => document.getElementById(id);
+  function h(tag, attrs = {}, ...children) {
+    const node = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v === null || v === undefined || v === false) continue;
+      if (k === "class") node.className = v;
+      else if (k === "text") node.textContent = v;
+      else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+      else node.setAttribute(k, v === true ? "" : v);
+    }
+    for (const child of children.flat()) {
+      if (child === null || child === undefined || child === false) continue;
+      node.append(child instanceof Node ? child : document.createTextNode(String(child)));
+    }
+    return node;
+  }
+
+  // ---------- form rows ----------
+  let rowCounter = 0;
+  function requirementRow(req = {}) {
+    const n = ++rowCounter;
+    const row = h("div", { class: "item-row", "data-kind": "req" },
+      h("div", { class: "top" },
+        h("label", { for: `req-id-${n}` }, "Requirement ID",
+          h("input", { type: "text", id: `req-id-${n}`, "data-field": "requirement_id", spellcheck: "false", autocomplete: "off" })),
+        h("label", { class: "check", for: `req-required-${n}` },
+          h("input", { type: "checkbox", id: `req-required-${n}`, "data-field": "required" }), "Required"),
+        h("button", { type: "button", class: "remove", onclick: () => row.remove() }, "Remove")),
+      h("label", { for: `req-text-${n}` }, "Requirement",
+        h("input", { type: "text", id: `req-text-${n}`, "data-field": "text", autocomplete: "off" })),
+      h("label", { for: `req-terms-${n}` }, "Match terms",
+        h("input", { type: "text", id: `req-terms-${n}`, "data-field": "match_terms", spellcheck: "false", autocomplete: "off", placeholder: "e.g. Python, pandas" })));
+    row.querySelector('[data-field="requirement_id"]').value = req.requirement_id ?? `REQ-${String(n).padStart(2, "0")}`;
+    row.querySelector('[data-field="text"]').value = req.text ?? "";
+    row.querySelector('[data-field="required"]').checked = req.required ?? true;
+    row.querySelector('[data-field="match_terms"]').value = (req.match_terms ?? []).join(", ");
+    return row;
+  }
+
+  function knownRow(rec = {}) {
+    const n = ++rowCounter;
+    const field = (key, label) => h("label", { for: `known-${key}-${n}` }, label,
+      h("input", { type: "text", id: `known-${key}-${n}`, "data-field": key, spellcheck: "false", autocomplete: "off" }));
+    const row = h("div", { class: "item-row", "data-kind": "known" },
+      h("div", { class: "known-grid" },
+        field("candidate_id", "Record ID"), field("name", "Name"), field("email", "Email"), field("phone", "Phone")),
+      h("button", { type: "button", class: "remove", onclick: () => row.remove() }, "Remove"));
+    for (const key of ["candidate_id", "name", "email", "phone"]) {
+      row.querySelector(`[data-field="${key}"]`).value = rec[key] ?? "";
+    }
+    return row;
+  }
+
+  function fillForm(data) {
+    $("candidate_id").value = typeof data.candidate_id === "string" ? data.candidate_id : "";
+    $("vacancy_id").value = typeof data.vacancy_id === "string" ? data.vacancy_id : "";
+    $("candidate_name").value = typeof data.candidate_name === "string" ? data.candidate_name : "";
+    $("cv_text").value = typeof data.cv_text === "string" ? data.cv_text : "";
+    $("req-list").replaceChildren(...(Array.isArray(data.requirements) ? data.requirements : []).map(requirementRow));
+    $("known-list").replaceChildren(...(Array.isArray(data.known_candidates) ? data.known_candidates : []).map(knownRow));
+  }
+
+  function readForm() {
+    const payload = {
+      candidate_id: $("candidate_id").value,
+      vacancy_id: $("vacancy_id").value,
+      cv_text: $("cv_text").value,
+      requirements: [...$("req-list").children].map((row) => ({
+        requirement_id: row.querySelector('[data-field="requirement_id"]').value,
+        text: row.querySelector('[data-field="text"]').value,
+        required: row.querySelector('[data-field="required"]').checked,
+        match_terms: row.querySelector('[data-field="match_terms"]').value.split(",").map((t) => t.trim()).filter(Boolean),
+      })),
+      known_candidates: [...$("known-list").children]
+        .map((row) => {
+          const rec = {};
+          for (const key of ["candidate_id", "name", "email", "phone"]) {
+            const v = row.querySelector(`[data-field="${key}"]`).value.trim();
+            if (v) rec[key] = v;
+          }
+          return rec;
+        })
+        .filter((rec) => Object.keys(rec).length > 0)
+        .map((rec) => ({ candidate_id: rec.candidate_id ?? "", ...rec })),
+    };
+    const name = $("candidate_name").value.trim();
+    if (name) payload.candidate_name = name;
+    return payload;
+  }
+
+  // ---------- record rendering ----------
+  function evidenceList(items) {
+    return h("ul", { class: "evidence" }, items.map((item) =>
+      h("li", {}, h("q", {}, item.excerpt), h("span", { class: "ref" }, item.source_ref))));
+  }
+
+  function renderRecord(record, audit) {
+    const reviews = record.requirement_reviews;
+    const counts = {};
+    for (const r of reviews) counts[r.evidence_status] = (counts[r.evidence_status] || 0) + 1;
+
+    const summary = h("div", { class: "summary" },
+      h("div", { class: "ids" },
+        h("span", {}, "Candidate ", h("b", {}, record.candidate_id)),
+        h("span", {}, "Vacancy ", h("b", {}, record.vacancy_id))),
+      h("div", {},
+        h("p", { class: "next-label" }, "Recommended next step"),
+        h("p", { class: "next-step" }, NEXT_STEP_LABELS[record.recommended_next_step] ?? record.recommended_next_step),
+        h("span", { class: "code" }, record.recommended_next_step)),
+      h("div", { class: "chips" },
+        h("span", { class: "chip pending" }, "Pending human review"),
+        record.review_checkpoints.map((c) => h("span", { class: "chip" }, CHECKPOINT_LABELS[c] ?? c))),
+      reviews.length
+        ? h("div", { class: "tally" }, Object.keys(STATUS_LABELS).filter((s) => counts[s]).map((s) =>
+            h("span", {}, h("b", {}, counts[s]), ` ${STATUS_LABELS[s].toLowerCase()}`)))
+        : null);
+
+    const reqSection = h("section", { class: "panel", "aria-labelledby": "req-heading" },
+      h("div", { class: "section-head" }, h("h3", { id: "req-heading" }, "Requirements")),
+      reviews.length
+        ? h("div", { class: "req-list" }, reviews.map((r) => h("article", { class: "req" },
+            h("div", { class: "req-top" },
+              h("div", { class: "req-title" },
+                h("span", { class: "req-id" }, r.requirement_id),
+                h("span", { class: "req-text" }, r.requirement),
+                r.required ? null : h("span", { class: "optional" }, "optional")),
+              h("span", { class: `status s-${r.evidence_status}` }, STATUS_LABELS[r.evidence_status] ?? r.evidence_status)),
+            r.documented_evidence.length ? evidenceList(r.documented_evidence) : null,
+            r.weak_mentions.length ? [h("p", { class: "sub" }, "Weak mentions"), evidenceList(r.weak_mentions)] : null,
+            r.missing_information ? h("p", { class: "missing" }, h("b", {}, "Missing: "), r.missing_information) : null)))
+        : h("div", { class: "req-list" }, h("p", { class: "empty" }, "No requirements were assessed. Fix the input problems listed below and run the review again.")));
+
+    const excSection = h("section", { class: "panel", "aria-labelledby": "exc-heading" },
+      h("div", { class: "section-head" }, h("h3", { id: "exc-heading" }, "Exceptions")),
+      h("div", { class: "exc-list" }, record.exceptions.length
+        ? record.exceptions.map((e) => h("div", { class: `exc ${e.severity}` },
+            h("div", { class: "exc-body" },
+              h("div", { class: "exc-head" },
+                h("span", { class: "exc-code" }, e.code),
+                h("span", { class: `sev ${e.severity}` }, SEVERITY_LABELS[e.severity] ?? e.severity),
+                e.source_ref ? h("span", { class: "ref" }, e.source_ref) : null),
+              h("p", {}, e.message))))
+        : h("p", { class: "empty" }, "No exceptions.")));
+
+    const json = JSON.stringify(record, null, 2);
+    const jsonPre = h("pre", { class: "json", tabindex: "0" }, json);
+    const copyMsg = h("span", { class: "msg", role: "status" });
+    const copyBtn = h("button", { type: "button", class: "btn", onclick: () => copyText(json, jsonPre, copyMsg) }, "Copy record JSON");
+
+    const detailsSection = h("section", { class: "panel" },
+      h("details", {},
+        h("summary", {}, "Record JSON"),
+        h("div", { class: "json-tools" }, h("div", { class: "buttons" }, copyBtn, copyMsg), jsonPre)),
+      h("details", {},
+        h("summary", {}, "Audit trail"),
+        h("ol", { class: "audit" }, audit.map((a) =>
+          h("li", {}, h("span", {}, `${a.timestamp.slice(11, 19)}  ${a.step}`), h("span", { class: a.outcome }, a.outcome))))),
+      h("p", { class: "disclaimer" }, "This record is for human review only. It contains no decision about the candidate. Evidence is quoted word for word from the CV, and every quote gives its CV line number."));
+
+    $("record").replaceChildren(h("div", { class: "record" }, summary, reqSection, excSection, detailsSection));
+  }
+
+  async function copyText(text, selectTarget, msgEl) {
+    try {
+      await navigator.clipboard.writeText(text);
+      msgEl.textContent = "Copied.";
+    } catch {
+      if (typeof selectTarget.select === "function") {
+        selectTarget.focus();
+        selectTarget.select();
+      } else {
+        const range = document.createRange();
+        range.selectNodeContents(selectTarget);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+      msgEl.textContent = "Copying is blocked here. The text is selected; copy it with your keyboard.";
+    }
+  }
+
+  function run({ scroll = false } = {}) {
+    const { record, audit } = Engine.review(readForm());
+    renderRecord(record, audit);
+    if (scroll && window.matchMedia("(max-width: 999px)").matches) {
+      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      $("record-heading").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    }
+  }
+
+  // ---------- wiring ----------
+  $("review-form").addEventListener("submit", (event) => { event.preventDefault(); run({ scroll: true }); });
+  $("add-req").addEventListener("click", () => $("req-list").append(requirementRow()));
+  $("add-known").addEventListener("click", () => $("known-list").append(knownRow()));
+  $("clear-btn").addEventListener("click", () => {
+    fillForm({ requirements: [{ requirement_id: "REQ-01", text: "", required: true, match_terms: [] }] });
+    $("example-status").textContent = "Form cleared. Enter your candidate's details.";
+    $("record").replaceChildren(h("p", { class: "empty" }, "Fill in the form and choose Build review record."));
+  });
+  $("sample-btn").addEventListener("click", () => {
+    fillForm(SAMPLE);
+    $("example-status").textContent = "Filled with a fictional example candidate.";
+    run();
+  });
+  $("json-load").addEventListener("click", () => {
+    const msg = $("json-msg");
+    msg.classList.remove("error");
+    let data;
+    try {
+      data = JSON.parse($("json_input").value);
+    } catch (err) {
+      msg.textContent = `That is not valid JSON (${err.message}). Check for missing quotes or commas.`;
+      msg.classList.add("error");
+      return;
+    }
+    if (data === null || typeof data !== "object" || Array.isArray(data)) {
+      msg.textContent = "The JSON must be one object with candidate_id, vacancy_id, cv_text and requirements.";
+      msg.classList.add("error");
+      return;
+    }
+    fillForm(data);
+    $("example-status").textContent = "Filled from your JSON.";
+    msg.textContent = "Loaded into the form.";
+    run();
+  });
+  $("json-copy").addEventListener("click", () => {
+    const text = JSON.stringify(readForm(), null, 2);
+    $("json_input").value = text;
+    copyText(text, $("json_input"), $("json-msg"));
+  });
+
+  fillForm(SAMPLE);
+  run();
+})();
+</script>
