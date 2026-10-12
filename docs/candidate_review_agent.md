@@ -22,7 +22,9 @@ Design and reference implementation for the fictional company's recruitment depa
 | Error isolation per step, blocking PROCESSING_ERROR | **Implemented, tested** via injected faults | TC-17, TC-18 |
 | JSONL audit log (no CV content) | **Implemented, tested** | `audit.py` (TC-19) |
 | CLI for one candidate record | **Implemented, tested** | `__main__.py` (TC-20) |
-| PDF and DOCX CV parsing | **Proposed, not built, not tested** | Section 9 |
+| Browser page (`web/candidate_review.html`): form, JSON input, record view | **Implemented, tested** in headless Chromium. Its JavaScript engine matched the Python package on 33 shared inputs | `web/` |
+| Browser file upload: CV from PDF, .docx, .txt or .md; requirements from CSV or JSON | **Implemented, tested** in headless Chromium with generated files. Not tested on real-world CVs | `web/` |
+| PDF and DOCX CV parsing in the Python package, and OCR for scanned CVs anywhere | **Proposed, not built, not tested** | Section 9 |
 | Semantic (non-literal) matching, e.g. "k8s" = "Kubernetes" | **Proposed, not built, not tested** | Section 9 |
 | Storage of records, batch processing, ATS integration | **Proposed, not built, not tested** | Section 9 |
 | Access control, retention policy, bias review of matching terms | **Proposed, requires organisational sign-off** | Section 9 |

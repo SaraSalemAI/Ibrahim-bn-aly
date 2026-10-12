@@ -95,6 +95,22 @@ button { font: inherit; cursor: pointer; }
 details { border-top: 1px solid var(--line); padding-top: 12px; }
 summary { cursor: pointer; font-size: 13px; font-weight: 700; }
 details[open] summary { margin-bottom: 10px; }
+.uploads { gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.drop-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.drop { position: relative; display: grid; gap: 4px; align-content: start; padding: 14px; border: 1.5px dashed var(--line); border-radius: var(--radius); background: var(--bg); cursor: pointer; font-weight: 400; }
+.drop:hover, .drop.dragover { border-color: var(--accent); background: var(--sunken); }
+.drop:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.drop.busy { opacity: 0.7; cursor: progress; }
+.drop input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.drop-title { font-weight: 700; font-size: 14px; }
+.drop-action { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.drop-status { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.drop-status:empty { display: none; }
+.drop-status.ok { color: var(--ok); }
+.drop-status.error { color: var(--bad); }
+.csv-help { border-top: 0; padding-top: 0; }
+.csv-help pre { margin: 0; overflow-x: auto; background: var(--sunken); border: 1px solid var(--line); border-radius: 4px; padding: 10px; font-family: var(--font-mono); font-size: 12px; }
+.csv-help p { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
 .json-tools { display: grid; gap: 8px; }
 .json-tools .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
 .msg { font-size: 13px; color: var(--muted); margin: 0; }
@@ -179,6 +195,35 @@ pre.json { margin: 0; max-height: 420px; overflow: auto; background: var(--sunke
     </div>
 
     <form id="review-form" novalidate>
+      <fieldset class="uploads">
+        <legend>Upload files</legend>
+        <p class="hint">Start here, or type into the form below. Files are read inside this browser tab and are not sent to any server.</p>
+        <div class="drop-grid">
+          <label class="drop" id="cv-drop" for="cv_file">
+            <span class="drop-title">CV file</span>
+            <span class="hint">PDF, Word (.docx), or text (.txt, .md)</span>
+            <span class="drop-action">Choose a file or drop it here</span>
+            <input type="file" id="cv_file" accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown">
+            <span class="drop-status" id="cv-file-status" role="status"></span>
+          </label>
+          <label class="drop" id="req-drop" for="req_file">
+            <span class="drop-title">Requirements file</span>
+            <span class="hint">CSV or JSON. A full review input JSON also works.</span>
+            <span class="drop-action">Choose a file or drop it here</span>
+            <input type="file" id="req_file" accept=".csv,.json,text/csv,application/json">
+            <span class="drop-status" id="req-file-status" role="status"></span>
+          </label>
+        </div>
+        <details class="csv-help">
+          <summary>Requirements CSV format</summary>
+          <p>One requirement per row. Only <code>text</code> is required. <code>required</code> accepts yes or no and defaults to yes. Separate match terms with semicolons.</p>
+          <pre>requirement_id,text,required,match_terms
+REQ-01,Hands-on experience with Python,yes,Python
+REQ-02,Experience with SQL databases,yes,SQL;PostgreSQL
+REQ-03,Project management certification,no,PMP;Project Management Professional</pre>
+        </details>
+      </fieldset>
+
       <div class="field-row">
         <label for="candidate_id">Candidate ID
           <input type="text" id="candidate_id" autocomplete="off" spellcheck="false">
@@ -190,7 +235,7 @@ pre.json { margin: 0; max-height: 420px; overflow: auto; background: var(--sunke
       <label for="candidate_name">Candidate name <span class="hint">Optional. Used only to spot duplicate records.</span>
         <input type="text" id="candidate_name" autocomplete="off">
       </label>
-      <label for="cv_text">CV text <span class="hint">Paste the CV as plain text. Headings such as Experience, Education and Skills help. PDF and Word files are not supported yet.</span>
+      <label for="cv_text">CV text <span class="hint">Filled in from your uploaded CV, or paste the text. Check it before building the record: the record's line numbers refer to this text. Headings such as Experience, Education and Skills help.</span>
         <textarea id="cv_text" rows="14" spellcheck="false"></textarea>
       </label>
 
@@ -860,16 +905,252 @@ const Engine = (() => {
     }
   }
 
+  // ---------- file uploads ----------
+  const PDFJS_BASE = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
+  const MAMMOTH_SRC = "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js";
+  const MAX_FILE_BYTES = 10 * 1024 * 1024;
+  class UserError extends Error {}
+
+  let showingExample = true;
+  const BLANK_FORM = { requirements: [{ requirement_id: "REQ-01", text: "", required: true, match_terms: [] }] };
+  const emptyRecord = () => h("div", { class: "req-list" },
+    h("p", { class: "empty" }, "Add the candidate and vacancy IDs, check the CV text and requirements, then choose Build review record."));
+
+  function leaveExample() {
+    if (!showingExample) return;
+    showingExample = false;
+    fillForm(BLANK_FORM);
+    $("record").replaceChildren(emptyRecord());
+    $("example-status").textContent = "Using your files. Example data cleared.";
+  }
+
+  function setStatus(el, message, kind = "") {
+    el.textContent = message;
+    el.className = `drop-status${kind ? " " + kind : ""}`;
+  }
+
+  const scriptLoads = {};
+  function loadScript(src) {
+    if (!scriptLoads[src]) {
+      scriptLoads[src] = new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = () => { delete scriptLoads[src]; s.remove(); reject(new UserError("The file reader could not be downloaded. Check your connection and try again, or paste the text instead.")); };
+        document.head.append(s);
+      });
+    }
+    return scriptLoads[src];
+  }
+
+  async function pdfToText(buffer) {
+    // Loading the worker script on the page lets pdf.js run without a separate worker file.
+    await loadScript(PDFJS_BASE + "pdf.worker.min.js");
+    await loadScript(PDFJS_BASE + "pdf.min.js");
+    const pdf = await window.pdfjsLib.getDocument({ data: buffer, isEvalSupported: false }).promise;
+    const pages = [];
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const content = await (await pdf.getPage(p)).getTextContent();
+      const lines = [];
+      let line = "";
+      let lastY = null;
+      for (const item of content.items) {
+        if (typeof item.str !== "string") continue;
+        const y = item.transform[5];
+        if (lastY !== null && Math.abs(y - lastY) > 2 && line.trim()) { lines.push(line); line = ""; }
+        line += item.str;
+        lastY = y;
+        if (item.hasEOL) { lines.push(line); line = ""; lastY = null; }
+      }
+      if (line.trim()) lines.push(line);
+      pages.push(lines.map((l) => l.replace(/\s+$/, "")).join("\n"));
+    }
+    return pages.join("\n\n");
+  }
+
+  async function docxToText(buffer) {
+    await loadScript(MAMMOTH_SRC);
+    const result = await window.mammoth.extractRawText({ arrayBuffer: buffer });
+    return result.value.replace(/\n\n/g, "\n");
+  }
+
+  const extensionOf = (name) => (name.match(/\.([^.]+)$/)?.[1] || "").toLowerCase();
+
+  async function handleCvFile(file) {
+    const status = $("cv-file-status");
+    const drop = $("cv-drop");
+    if (!file) return;
+    drop.classList.add("busy");
+    setStatus(status, `Reading ${file.name}…`);
+    try {
+      if (file.size > MAX_FILE_BYTES) throw new UserError(`${file.name} is larger than 10 MB. Use a smaller file or paste the text.`);
+      const ext = extensionOf(file.name);
+      let text;
+      if (ext === "pdf") text = await pdfToText(await file.arrayBuffer());
+      else if (ext === "docx") text = await docxToText(await file.arrayBuffer());
+      else if (ext === "txt" || ext === "md" || file.type.startsWith("text/")) text = await file.text();
+      else if (ext === "doc") throw new UserError("Older Word .doc files can't be read here. Save the CV as .docx or PDF and upload it again.");
+      else throw new UserError(`${file.name} isn't a supported CV format. Use PDF, .docx, .txt or .md.`);
+
+      leaveExample();
+      $("cv_text").value = text;
+      const chars = text.trim().length;
+      if (chars < 40) {
+        setStatus(status, `${file.name}: only ${chars} characters of text found. A scanned CV is an image, which this page can't read. Paste the text instead.`, "error");
+      } else {
+        setStatus(status, `${file.name}: ${chars.toLocaleString()} characters of text extracted into the CV box below. Check it before building the record.`, "ok");
+      }
+    } catch (err) {
+      setStatus(status, err instanceof UserError ? err.message : `Couldn't read ${file.name}. The file may be damaged or password-protected. Try another format or paste the text.`, "error");
+    } finally {
+      drop.classList.remove("busy");
+      $("cv_file").value = "";
+    }
+  }
+
+  // Minimal RFC 4180 reader; also accepts semicolon-delimited files from spreadsheet exports.
+  function parseCsv(text) {
+    text = text.replace(/^﻿/, "");
+    const firstLine = text.split(/\r?\n/, 1)[0];
+    const delimiter = firstLine.includes(",") || !firstLine.includes(";") ? "," : ";";
+    const rows = [];
+    let row = [], field = "", quoted = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i];
+      if (quoted) {
+        if (ch === '"' && text[i + 1] === '"') { field += '"'; i++; }
+        else if (ch === '"') quoted = false;
+        else field += ch;
+      } else if (ch === '"') quoted = true;
+      else if (ch === delimiter) { row.push(field); field = ""; }
+      else if (ch === "\n" || ch === "\r") {
+        if (ch === "\r" && text[i + 1] === "\n") i++;
+        row.push(field); rows.push(row); row = []; field = "";
+      } else field += ch;
+    }
+    if (field || row.length) { row.push(field); rows.push(row); }
+    return rows.filter((r) => r.some((c) => c.trim()));
+  }
+
+  const HEADER_ALIASES = {
+    requirement_id: ["requirement_id", "requirement id", "id", "req_id"],
+    text: ["text", "requirement", "description"],
+    required: ["required", "mandatory"],
+    match_terms: ["match_terms", "match terms", "terms", "keywords"],
+  };
+  const splitTerms = (value) => value.split(/[;,|]/).map((t) => t.trim()).filter(Boolean);
+  function parseRequired(value, where) {
+    const v = String(value ?? "").trim().toLowerCase();
+    if (!v || ["yes", "y", "true", "1", "required", "mandatory"].includes(v)) return true;
+    if (["no", "n", "false", "0", "optional"].includes(v)) return false;
+    throw new UserError(`${where}: "required" must be yes or no, not "${value}".`);
+  }
+
+  function requirementsFromCsv(text) {
+    const rows = parseCsv(text);
+    if (rows.length < 2) throw new UserError("The CSV needs a header row and at least one requirement row.");
+    const header = rows[0].map((c) => c.trim().toLowerCase());
+    const col = {};
+    for (const [key, aliases] of Object.entries(HEADER_ALIASES)) {
+      const index = header.findIndex((c) => aliases.includes(c));
+      if (index >= 0) col[key] = index;
+    }
+    if (col.text === undefined) throw new UserError('The CSV header needs a "text" column (the requirement). See the format example below.');
+    return rows.slice(1).map((r, i) => {
+      const cell = (key) => (col[key] === undefined ? "" : (r[col[key]] ?? "").trim());
+      return {
+        requirement_id: cell("requirement_id") || `REQ-${String(i + 1).padStart(2, "0")}`,
+        text: cell("text"),
+        required: parseRequired(cell("required"), `Row ${i + 2}`),
+        match_terms: splitTerms(cell("match_terms")),
+      };
+    });
+  }
+
+  function normaliseJsonRequirement(r, i) {
+    if (r === null || typeof r !== "object" || Array.isArray(r)) throw new UserError(`Requirement ${i + 1} in the JSON is not an object.`);
+    return {
+      requirement_id: typeof r.requirement_id === "string" && r.requirement_id.trim() ? r.requirement_id : `REQ-${String(i + 1).padStart(2, "0")}`,
+      text: typeof r.text === "string" ? r.text : "",
+      required: typeof r.required === "boolean" ? r.required : parseRequired(r.required, `Requirement ${i + 1}`),
+      match_terms: Array.isArray(r.match_terms) ? r.match_terms.map(String) : typeof r.match_terms === "string" ? splitTerms(r.match_terms) : [],
+    };
+  }
+
+  async function handleRequirementsFile(file) {
+    const status = $("req-file-status");
+    const drop = $("req-drop");
+    if (!file) return;
+    drop.classList.add("busy");
+    setStatus(status, `Reading ${file.name}…`);
+    try {
+      if (file.size > MAX_FILE_BYTES) throw new UserError(`${file.name} is larger than 10 MB.`);
+      const ext = extensionOf(file.name);
+      const text = await file.text();
+      let reqs;
+      let vacancyId = null;
+      if (ext === "json" || file.type === "application/json") {
+        let data;
+        try { data = JSON.parse(text); } catch (err) { throw new UserError(`${file.name} is not valid JSON (${err.message}).`); }
+        if (data && typeof data === "object" && !Array.isArray(data) && "cv_text" in data) {
+          showingExample = false;
+          fillForm(data);
+          $("example-status").textContent = `Filled from ${file.name}.`;
+          $("record").replaceChildren(emptyRecord());
+          setStatus(status, `${file.name}: full review input loaded (IDs, CV and requirements). Check the form, then build the record.`, "ok");
+          return;
+        }
+        const list = Array.isArray(data) ? data : data && Array.isArray(data.requirements) ? data.requirements : null;
+        if (!list) throw new UserError("The JSON must be a list of requirements, or an object with a requirements list.");
+        reqs = list.map(normaliseJsonRequirement);
+        if (data && typeof data.vacancy_id === "string") vacancyId = data.vacancy_id;
+      } else if (ext === "csv" || file.type === "text/csv") {
+        reqs = requirementsFromCsv(text);
+      } else {
+        throw new UserError(`${file.name} isn't a requirements file. Use .csv or .json.`);
+      }
+      if (!reqs.length) throw new UserError(`No requirements found in ${file.name}.`);
+
+      leaveExample();
+      $("req-list").replaceChildren(...reqs.map(requirementRow));
+      if (vacancyId) $("vacancy_id").value = vacancyId;
+      const noTerms = reqs.filter((r) => !r.match_terms.length).length;
+      setStatus(status, `${file.name}: ${reqs.length} requirement${reqs.length === 1 ? "" : "s"} loaded${noTerms ? `, ${noTerms} without match terms (a person will assess those)` : ""}. Check them below.`, "ok");
+    } catch (err) {
+      setStatus(status, err instanceof UserError ? err.message : `Couldn't read ${file.name}. Check that it is a .csv or .json file.`, "error");
+    } finally {
+      drop.classList.remove("busy");
+      $("req_file").value = "";
+    }
+  }
+
+  for (const [dropId, inputId, handler] of [["cv-drop", "cv_file", handleCvFile], ["req-drop", "req_file", handleRequirementsFile]]) {
+    const drop = $(dropId);
+    $(inputId).addEventListener("change", (event) => handler(event.target.files[0]));
+    drop.addEventListener("dragover", (event) => { event.preventDefault(); drop.classList.add("dragover"); });
+    drop.addEventListener("dragleave", () => drop.classList.remove("dragover"));
+    drop.addEventListener("drop", (event) => {
+      event.preventDefault();
+      drop.classList.remove("dragover");
+      handler(event.dataTransfer.files[0]);
+    });
+  }
+  // A file dropped outside the upload boxes should not replace the page.
+  window.addEventListener("dragover", (event) => event.preventDefault());
+  window.addEventListener("drop", (event) => event.preventDefault());
+
   // ---------- wiring ----------
   $("review-form").addEventListener("submit", (event) => { event.preventDefault(); run({ scroll: true }); });
   $("add-req").addEventListener("click", () => $("req-list").append(requirementRow()));
   $("add-known").addEventListener("click", () => $("known-list").append(knownRow()));
   $("clear-btn").addEventListener("click", () => {
-    fillForm({ requirements: [{ requirement_id: "REQ-01", text: "", required: true, match_terms: [] }] });
-    $("example-status").textContent = "Form cleared. Enter your candidate's details.";
-    $("record").replaceChildren(h("p", { class: "empty" }, "Fill in the form and choose Build review record."));
+    showingExample = false;
+    fillForm(BLANK_FORM);
+    $("example-status").textContent = "Form cleared. Upload files or enter the candidate's details.";
+    $("record").replaceChildren(emptyRecord());
   });
   $("sample-btn").addEventListener("click", () => {
+    showingExample = true;
     fillForm(SAMPLE);
     $("example-status").textContent = "Filled with a fictional example candidate.";
     run();
@@ -890,6 +1171,7 @@ const Engine = (() => {
       msg.classList.add("error");
       return;
     }
+    showingExample = false;
     fillForm(data);
     $("example-status").textContent = "Filled from your JSON.";
     msg.textContent = "Loaded into the form.";
