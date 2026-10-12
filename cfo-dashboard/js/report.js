@@ -115,6 +115,7 @@
         rows: A.dupont.map(r => [r.period, CFO.fmtVal('x', r.tax_burden, lang), CFO.fmtVal('x', r.interest_burden, lang), CFO.fmtPct(r.ebit_margin, lang),
           CFO.fmtVal('x', r.asset_turnover, lang), CFO.fmtVal('x', r.equity_multiplier, lang), CFO.fmtPct(r.roe, lang)]) },
       val: CFO.valuationModel ? CFO.valuationModel(R) : null,
+      cash: CFO.cashModel ? CFO.cashModel(R) : null,
       altman: { value: CFO.fmtVal('score', z, lang), meaning: z != null ? CFO.meaning('altman_z', z, lang) : L.notAvail, zones: L.zZones,
         status: z == null ? 'na' : A.ratios.altman_z[p].status },
       vertical: byStatement(A.vertical, r => P.map(q => r.pct[q] == null ? '—' : `${CFO.fmtPct(r.pct[q], lang)}`), st => [L.item, ...P.map(q => `${q} · ${st === 'BS' ? L.ofAssets : L.ofRevenue}`)]),
@@ -166,6 +167,15 @@
         ${v.plan.rows.length ? `<div class="table-wrap"><table class="plan"><thead><tr>${v.plan.head.map((h, i) => `<th${i >= 6 ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${v.plan.items.map(it =>
           `<tr><td>${it.n}</td><td><span class="pill ${it.sev}">${esc(it.sevText)}</span></td><td>${esc(it.horizon)}</td><td>${esc(it.areaText)}</td><td><b>${esc(it.title)}</b><div class="meaning">${esc(it.action)}</div></td><td>${esc(it.kpi)}</td><td class="n">${esc(it.current)}</td><td class="n">${esc(it.target)}</td></tr>`).join('')}</tbody></table></div>` : `<p>${esc(L.noFlags)}</p>`}
         ${v.levers?.rows.length ? `<h3>${esc(VL.levers)}</h3><p class="muted small">${esc(VL.leversHint)}</p>${T(v.levers)}` : ''}</section>`;
+    const c = m.cash, CL = CFO.UI[R.lang].cf;
+    const cashHTML = !c ? '' : `<section class="fa-sec" id="${id('cash')}"><h2>${esc(L.secCash)}</h2>
+        <h3>${esc(CL.recon)}</h3><p class="muted small">${esc(CL.reconHint)}</p>${c.recon.rows.length ? T(c.recon) : '<p>—</p>'}
+        ${c.bridge ? `<h3>${esc(CL.bridge)}</h3><p class="muted small">${esc(CL.bridgeHint)}</p>${T(c.bridge)}` : ''}
+        ${c.su.map(x => `<h3>${esc(CL.su)} · ${esc(x.period)}</h3>${T(x)}`).join('')}
+        ${c.ratios.rows.length ? `<h3>${esc(CL.cfr)}</h3>${T(c.ratios)}` : ''}
+        <h3>${esc(CL.be)}</h3><p class="muted small">${esc(CL.beHint)}</p>
+        ${c.beMissing ? `<p>${esc(c.beMissing)}</p>` : `${T(c.be)}<ul>${li(c.beMeaning)}</ul>${c.cvp ? `<figure class="card"><figcaption><b>${esc(c.cvp.title)}</b></figcaption>${CFO.svgChart(c.cvp)}</figure>` : ''}
+          ${c.highLow?.usable ? `<h3>${esc(c.highLow.title)}</h3>${T({ head: ['', ''], rows: c.highLow.rows })}` : ''}`}</section>`;
     const valHTML = !v ? '' : `<section class="fa-sec" id="${id('valuation')}"><h2>${esc(L.secValuation)}</h2><p class="muted small">${esc(VL.hint)}</p>
         ${v.missing ? `<p>${esc(v.missing)}</p>` : `
         ${v.headline ? `<div class="kpis"><div class="kpi"><span class="kpi-label">${esc(VL.ev)}</span><span class="kpi-value">${esc(v.headline.ev)}</span></div><div class="kpi"><span class="kpi-label">${esc(VL.equity)}</span><span class="kpi-value">${esc(v.headline.equity)}</span></div><div class="kpi"><span class="kpi-label">WACC</span><span class="kpi-value">${esc(v.headline.wacc)}</span></div>${v.headline.perShare ? `<div class="kpi"><span class="kpi-label">${esc(VL.perShare)}</span><span class="kpi-value">${esc(v.headline.perShare)}</span></div>` : ''}</div>` : ''}
@@ -180,7 +190,7 @@
     const sections = [
       ['summary', L.secSummary], ...(m.ai ? [['ai', L.aiSection]] : []), ['ratios', L.secRatios], ['dupont', L.secDupont],
       ['vertical', L.tabs.vertical], ['horizontal', L.tabs.horizontal], ['flags', L.flagsRecs],
-      ...(m.val ? [['plan', L.secPlan]] : []), ...(m.forecast ? [['forecast', L.fcSection]] : []), ...(m.val ? [['valuation', L.secValuation]] : []), ['checks', L.needsReview],
+      ...(m.val ? [['plan', L.secPlan]] : []), ...(m.forecast ? [['forecast', L.fcSection]] : []), ...(m.val ? [['valuation', L.secValuation]] : []), ...(m.cash ? [['cash', L.secCash]] : []), ['checks', L.needsReview],
     ];
     const h = m.health;
     const hColor = h.score == null ? 'var(--muted)' : h.score >= 65 ? 'var(--good)' : h.score >= 45 ? 'var(--warn)' : 'var(--bad)';
@@ -208,6 +218,7 @@
       ${m.forecast ? `<section class="fa-sec" id="${id('forecast')}"><h2>${esc(L.fcSection)}</h2>${tbl(m.forecast.head, plainRows(m.forecast.rows))}
         <h3>${esc(L.fc.detail)}</h3>${tbl(m.forecastDetail.head, plainRows(m.forecastDetail.rows))}<p class="muted small">${esc(m.forecast.note)}</p></section>` : ''}
       ${valHTML}
+      ${cashHTML}
       <section class="fa-sec" id="${id('checks')}"><h2>${esc(L.needsReview)}</h2>
         ${m.checks.length ? `<h3>${esc(L.issues)}</h3><ul>${li(m.checks)}</ul>` : ''}
         <ul>${li(m.review)}</ul><h3>${esc(L.assumptions)}</h3><ul>${li(m.assumptions)}</ul><h3>${esc(L.nextSteps)}</h3><ol>${li(m.next)}</ol></section>`;
@@ -245,6 +256,14 @@
         if (v.scen) lines.push('', `### ${VL.scen}`, ...mdTable(v.scen.head, v.scen.rows));
         lines.push('', `### ${VL.evaTitle}`, ...mdTable(v.eva.head, v.eva.rows), '', `_${v.assumptions}_`);
       }
+    }
+    const c = m.cash, CL = CFO.UI[R.lang].cf;
+    if (c) {
+      lines.push('', `## ${L.secCash}`, '', `### ${CL.recon}`, ...(c.recon.rows.length ? mdTable(c.recon.head, c.recon.rows) : ['—']));
+      if (c.bridge) lines.push('', `### ${CL.bridge}`, ...mdTable(c.bridge.head, c.bridge.rows));
+      c.su.forEach(x => lines.push('', `### ${CL.su} · ${x.period}`, ...mdTable(x.head, x.rows)));
+      if (c.ratios.rows.length) lines.push('', `### ${CL.cfr}`, ...mdTable(c.ratios.head, c.ratios.rows));
+      lines.push('', `### ${CL.be}`, `_${CL.beHint}_`, ...(c.beMissing ? [c.beMissing] : [...mdTable(c.be.head, c.be.rows), '', ...c.beMeaning.map(t => `- ${t}`)]));
     }
     lines.push('', `## ${L.needsReview}`, ...m.checks.map(t => `- ${t}`), ...m.review.map(t => `- ${t}`), '', `## ${L.assumptions}`, ...m.assumptions.map(t => `- ${t}`),
       '', `## ${L.nextSteps}`, ...m.next.map((t, i) => `${i + 1}. ${t}`));
@@ -348,6 +367,10 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
         ...v.warnings.map(w => para(w, { color: '9A6500' })), tbl(v.wacc), ...(v.bridge ? [tbl(v.bridge), tbl(v.multiples)] : []),
         H2(VL.fcffTitle), tbl(v.fcff), ...(v.sens ? [H2(VL.sens), muted(VL.sensHint), tbl(v.sens)] : []), ...(v.scen ? [H2(VL.scen), tbl(v.scen)] : []),
         H2(VL.evaTitle), muted(VL.evaHint), tbl(v.eva), muted(v.assumptions)])] : []),
+      ...(m.cash ? [H1(L.secCash), H2(CFO.UI[R.lang].cf.recon), ...(m.cash.recon.rows.length ? [tbl({ ...m.cash.recon, textCols: 1 })] : []),
+        ...(m.cash.bridge ? [H2(CFO.UI[R.lang].cf.bridge), tbl(m.cash.bridge)] : []), ...m.cash.su.flatMap(x => [H2(`${CFO.UI[R.lang].cf.su} · ${x.period}`), tbl(x)]),
+        ...(m.cash.ratios.rows.length ? [H2(CFO.UI[R.lang].cf.cfr), tbl(m.cash.ratios)] : []),
+        H2(CFO.UI[R.lang].cf.be), muted(CFO.UI[R.lang].cf.beHint), ...(m.cash.beMissing ? [para(m.cash.beMissing)] : [tbl(m.cash.be), ...list(m.cash.beMeaning)])] : []),
       H1(L.needsReview), ...(m.checks.length ? [H2(L.issues), ...list(m.checks)] : []), ...list(m.review),
       H1(L.assumptions), ...list(m.assumptions),
       H1(L.nextSteps), ...list(m.next, true),
@@ -442,6 +465,15 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       }
       rows.push([], [VL.evaTitle], v.eva.head, ...V.eva.map(e => [e.period, e.nopat ?? '', e.ic ?? '', e.roic ?? '', V.wacc, e.roic == null ? '' : e.roic - V.wacc, e.eva ?? '']));
       add('Valuation', rows);
+    }
+    if (m.cash) {
+      const c = m.cash, CL = CFO.UI[lang].cf, rows = [[CL.recon], c.recon.head, ...c.recon.items.map(x => [CL.check[x.id], x.period, x.left, x.right, x.diff, x.ok ? CL.ok : CL.off])];
+      const br = CFO.cashBridge(ds);
+      if (br.length) rows.push([], [CL.bridge], ['', ...br.map(b => b.period)], ...Object.keys(CL.r).filter(k => br.some(b => b.rows[k] != null)).map(k => [CL.r[k], ...br.map(b => b.rows[k] ?? '')]));
+      const be = c.beData;
+      if (be) rows.push([], [CL.be], [CL.cogsVar, be.cogsVar], [CL.opexVar, be.opexVar], [CFO.itemName('revenue', lang), be.revenue], [CL.variable, be.variable], [CL.cm, be.cm], [CL.cmr, be.cmr],
+        [CL.fixed, be.fixed], [CL.beRevenue, be.beRevenue ?? ''], [CL.cashBe, be.cashBe ?? ''], [CL.mos, be.mos ?? ''], [CL.targetRevenue, be.targetRevenue ?? ''], [CL.dol, be.dol ?? ''], [CL.dfl, be.dfl ?? ''], [CL.dcl, be.dcl ?? '']);
+      add('Cash flow', rows);
     }
     if (R.ai) add('Claude', [[L.aiSection], [L.ai.note], ...String(R.ai).split(/\r?\n/).map(l => [l])]);
     add('Mapping', [[L.source, L.rawLabel, L.mappedTo, ...P], ...ds.lines.map(l => [l.source, l.label, l.key ? CFO.itemName(l.key, lang) : '', ...P.map(p => l.values[p] ?? '')])]);

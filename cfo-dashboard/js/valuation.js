@@ -147,7 +147,7 @@
   const GROUP_AREA = { liquidity: 'treasury', profitability: 'management', efficiency: 'operations', leverage: 'treasury', cashflow: 'finance', growth: 'sales', quality: 'finance', distress: 'board' };
   const SEV_ORDER = { high: 0, med: 1, low: 2 };
 
-  function actionPlan(A, F, V, lang) {
+  function actionPlan(A, F, V, lang, beOpts) {
     const L = CFO.UI[lang].val, p = A.latest, items = [], tracked = new Set();
     const fmt = (id, v) => CFO.fmtVal(CFO.RATIO[id].unit, v, lang);
     const target = id => { const b = CFO.bench(id), def = CFO.RATIO[id]; return def.dir && b.good != null ? `${def.dir === 'high' ? '≥' : '≤'} ${fmt(id, b.good)}` : '—'; };
@@ -164,6 +164,14 @@
       items.push({ sev: roic < V.wacc - 0.03 ? 'high' : 'med', area: 'management', title: L.roicTitle, action: L.roicAction,
         kpi: CFO.ratioName('roic', lang), current: fmt('roic', roic), target: `≥ ${CFO.fmtPct(V.wacc, lang)} (WACC)` });
     }
+    // Statements that do not tie together: the figures above may rest on a misread line.
+    const off = CFO.reconcile ? CFO.reconcile(A.ds).filter(c => !c.ok) : [];
+    if (off.length) items.push({ sev: 'high', area: 'finance', title: L.reconTitle, action: L.reconAction(off.map(c => `${CFO.UI[lang].cf.check[c.id]} (${c.period}: ${CFO.fmtNum(c.diff, 0, lang)})`).join(lang === 'ar' ? '؛ ' : '; ')),
+      kpi: '—', current: String(off.length), target: '0' });
+    // A thin margin of safety leaves little room before the business stops covering its fixed costs.
+    const be = CFO.breakEven ? CFO.breakEven(A.ds, beOpts || {}) : null;
+    if (be && be.mos != null && be.mos < 0.15) items.push({ sev: be.mos < 0.05 ? 'high' : 'med', area: 'management', title: L.mosTitle, action: L.mosAction,
+      kpi: CFO.UI[lang].cf.mos, current: CFO.fmtPct(be.mos, lang), target: `≥ ${CFO.fmtPct(0.15, lang)}` });
     // Ratios rated weak or on watch that no red flag covers yet.
     for (const [status, sev, cap] of [['bad', 'med', 4], ['warn', 'low', 4]]) {
       const seen = new Set();   // one per group: their actions would repeat
@@ -198,6 +206,8 @@
       when: 'When', owner: 'Owner', priority: 'Priority', recommendation: 'Recommendation', kpi: 'KPI', current: 'Now', target: 'Target',
       horizon: { high: '0–3 months', med: '3–6 months', low: '6–12 months' },
       area: { treasury: 'Treasury', sales: 'Sales & credit', procurement: 'Procurement', operations: 'Operations', finance: 'Finance', management: 'Management', board: 'Board' },
+      reconTitle: 'Statements do not tie together', reconAction: list => `Find the misread or mis-mapped line before using these figures: ${list}. Check Data review and the original statements.`,
+      mosTitle: 'Thin margin of safety', mosAction: 'Lower the break-even point: raise the contribution margin (pricing, mix, variable costs) or cut fixed costs, and stress-test the budget for a sales drop.',
       roicTitle: 'Returns below the cost of capital', roicAction: 'Improve margins or release capital: exit or reprice low-return activities, cut working capital and approve new investment only above WACC.',
       improve: n => `Improve ${n.charAt(0).toLowerCase() + n.slice(1)}`,
       groupAction: {
@@ -241,6 +251,8 @@
       when: 'التوقيت', owner: 'المسؤول', priority: 'الأولوية', recommendation: 'التوصية', kpi: 'المؤشر', current: 'الآن', target: 'المستهدف',
       horizon: { high: '0–3 أشهر', med: '3–6 أشهر', low: '6–12 شهراً' },
       area: { treasury: 'الخزينة', sales: 'المبيعات والائتمان', procurement: 'المشتريات', operations: 'العمليات', finance: 'المالية', management: 'الإدارة العليا', board: 'مجلس الإدارة' },
+      reconTitle: 'القوائم غير مترابطة', reconAction: list => `ابحث عن البند المقروء أو المربوط خطأ قبل استخدام هذه الأرقام: ${list}. راجع مراجعة البيانات والقوائم الأصلية.`,
+      mosTitle: 'هامش أمان ضيق', mosAction: 'خفّض نقطة التعادل: ارفع هامش المساهمة (التسعير، المزيج، التكاليف المتغيرة) أو خفّض التكاليف الثابتة، واختبر الموازنة لانخفاض المبيعات.',
       roicTitle: 'عائد أقل من تكلفة رأس المال', roicAction: 'حسّن الهوامش أو حرّر رأس المال: اخرج من الأنشطة منخفضة العائد أو أعد تسعيرها، خفّض رأس المال العامل، ولا توافق على استثمار جديد بعائد أقل من WACC.',
       improve: n => `تحسين ${n}`,
       groupAction: {
@@ -271,7 +283,7 @@
     const { A, F, lang } = R, L = UIV[lang], ds = A.ds;
     const V = R.V !== undefined ? R.V : valuation(ds, R.drivers, R.dcf);
     const money = v => CFO.fmtNum(v, 0, lang), pct = v => CFO.fmtPct(v, lang), x = v => CFO.fmtVal('x', v, lang);
-    const plan = actionPlan(A, F, V && !V.missing ? V : null, lang);
+    const plan = actionPlan(A, F, V && !V.missing ? V : null, lang, R.be);
     const planTable = { head: ['#', L.priority, L.when, L.owner, L.recommendation, L.kpi, L.current, L.target],
       rows: plan.map(it => [String(it.n), it.sevText, it.horizon, it.areaText, `${it.title}: ${it.action}`, it.kpi, it.current, it.target]), items: plan };
     if (!V || V.missing) return { missing: L.missing((V?.missing || []).map(k => CFO.itemName(k, lang)).join(lang === 'ar' ? '، ' : ', ')), plan: planTable, levers: null };

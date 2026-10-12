@@ -20,7 +20,8 @@
       debt_to_ebitda: [2.5, 4.5, 2.2], cfo_to_debt: [0.3, 0.1, 0.35], cfo_margin: [0.10, 0.03, 0.10], capex_to_revenue: [null, null, 0.05],
       capex_to_cfo: [0.5, 1.0, 0.5], fcf_to_net_income: [0.8, 0.3, 0.9], cash_roa: [0.08, 0.03, 0.08],
       revenue_growth: [0.08, 0, 0.07], gross_profit_growth: [0.08, 0, 0.07], ebitda_growth: [0.08, 0, 0.07], net_income_growth: [0.08, 0, 0.07],
-      equity_growth: [0.08, 0, 0.06], sustainable_growth: [0.08, 0.02, 0.07], accruals_ratio: [0.02, 0.1, 0], piotroski_f: [7, 3, 6] } },
+      equity_growth: [0.08, 0, 0.06], sustainable_growth: [0.08, 0.02, 0.07], accruals_ratio: [0.02, 0.1, 0], piotroski_f: [7, 3, 6],
+      cf_adequacy: [1, 0.7, 1.1], fcf_div_cover: [1.5, 1, 2], cash_interest_cover: [4, 2, 6] } },
     retail: { en: 'Trading & retail', ar: 'تجارة وتجزئة', r: {
       current_ratio: [1.2, 0.8, 1.2], quick_ratio: [0.5, 0.2, 0.4], gross_margin: [0.30, 0.15, 0.28], ebitda_margin: [0.08, 0.03, 0.08],
       operating_margin: [0.05, 0.02, 0.05], net_margin: [0.03, 0.01, 0.03], asset_turnover: [2.0, 1.2, 2.2], dso: [15, 40, 10],

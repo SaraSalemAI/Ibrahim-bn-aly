@@ -6,7 +6,7 @@
     get(k) { try { return localStorage.getItem('cfo-lens:' + k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem('cfo-lens:' + k, v); } catch (e) { /* storage unavailable */ } },
   };
-  const TABS = ['full', 'overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'valuation', 'review'];
+  const TABS = ['full', 'overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'valuation', 'cashflow', 'review'];
   const SUBTOTALS = CFO.SUBTOTALS;   // defined in js/report.js
 
   const state = {
@@ -17,7 +17,8 @@
     hMode: 'pct', A: null, F: [],
     sector: CFO.SECTORS[store.get('sector')] ? store.get('sector') : 'general',
     drivers: null, fcYears: 3, S: null,            // forecast: drivers (null = from history), scenarios
-    dcf: {}, V: null,                               // valuation: inputs the user changed, result
+    dcf: {}, V: null,
+    be: { cogsVar: 1, opexVar: 0, target: null },   // break-even cost split                               // valuation: inputs the user changed, result
     ai: { text: '', busy: false, err: '', ctl: null }, aiOn: false,
     diagNumbers: false, diagOpen: false,
     periodRename: {},   // { tableSource: { detected period: year typed by the user } }
@@ -28,7 +29,7 @@
   const dataChanged = () => { state.drivers = null; for (const k of ['kd', 'tax', 'wd', 'shares', 'price']) delete state.dcf[k]; state.ai.ctl?.abort(); state.ai = { text: '', busy: false, err: '', ctl: null }; };
   // Everything the report and the exports need, in one object.
   // Claude's commentary is shown and exported only in the language it was written in (aiAll keeps it for the bilingual HTML).
-  const ctx = () => ({ A: state.A, F: state.F, S: state.S, V: state.V, drivers: state.drivers, dcf: state.dcf, lang: state.lang,
+  const ctx = () => ({ A: state.A, F: state.F, S: state.S, V: state.V, drivers: state.drivers, dcf: state.dcf, be: state.be, lang: state.lang,
     ai: !state.ai.lang || state.ai.lang === state.lang ? state.ai.text : '', aiAll: state.ai.text, aiLang: state.ai.lang });
 
   // pdf.js runs on the main thread when its worker script is loaded as a plain script (globalThis.pdfjsWorker),
@@ -294,7 +295,7 @@
 
   function renderFlags() {
     const L = T(), lang = state.lang, S = CFO.strengths(state.A, lang);
-    const VL = L.val, plan = CFO.actionPlan(state.A, state.F, state.V && !state.V.missing ? state.V : null, lang);
+    const VL = L.val, plan = CFO.actionPlan(state.A, state.F, state.V && !state.V.missing ? state.V : null, lang, state.be);
     const planCard = plan.length ? `<div class="card"><h3>${esc(VL.planTitle)}</h3><p class="muted small">${esc(VL.planHint)}</p>
       <div class="table-wrap"><table class="plan"><thead><tr><th>#</th><th>${esc(VL.priority)}</th><th>${esc(VL.when)}</th><th>${esc(VL.owner)}</th><th>${esc(VL.recommendation)}</th><th>${esc(VL.kpi)}</th><th class="n">${esc(VL.current)}</th><th class="n">${esc(VL.target)}</th></tr></thead>
       <tbody>${plan.map(it => `<tr><td>${it.n}</td><td>${pill(it.sev, it.sevText)}</td><td>${esc(it.horizon)}</td><td>${esc(it.areaText)}</td><td><b>${esc(it.title)}</b><div class="meaning">${esc(it.action)}</div></td><td>${esc(it.kpi)}</td><td class="n">${esc(it.current)}</td><td class="n">${esc(it.target)}</td></tr>`).join('')}</tbody></table></div></div>` : '';
@@ -320,7 +321,10 @@
         ${t.periods.map(p => `<input type="text" inputmode="numeric" class="year-in" data-source="${esc(t.source)}" data-period="${esc(p)}" value="${esc(state.periodRename[t.source]?.[p] ?? p)}" aria-label="${esc(t.source)} ${esc(p)}">`).join('')}</div>`).join('')}</div>
       <p class="small" id="years-msg" role="status" style="color:var(--bad);margin:6px 0 0"></p>
       ${Object.keys(state.periodRename).length ? `<div class="actions"><button class="btn" type="button" data-years="reset">${esc(Y.reset)}</button></div>` : ''}</div>`;
-    $('p-review').innerHTML = yearsCard + diagCard + `<div class="card"><h3>${L.issues}</h3>${issues ? `<ul class="issues" style="margin-top:8px">${issues}</ul>` : `<p class="muted">${L.noIssues}</p>`}</div>
+    const CL = L.cf, off = CFO.reconcile(ds).filter(c => !c.ok);
+    const reconCard = `<div class="card"><h3>${esc(CL.recon)}</h3>${off.length ? `<ul class="issues">${off.map(c => `<li>${esc(CL.check[c.id])} · ${esc(c.period)}: ${esc(CL.diff)} ${esc(CFO.fmtNum(c.diff, 0, lang))}</li>`).join('')}</ul>` : `<p class="muted small">${esc(CL.ok)} ✓</p>`}
+      <button class="btn" type="button" data-go="cashflow">${esc(L.tabs.cashflow)} →</button></div>`;
+    $('p-review').innerHTML = yearsCard + reconCard + diagCard + `<div class="card"><h3>${L.issues}</h3>${issues ? `<ul class="issues" style="margin-top:8px">${issues}</ul>` : `<p class="muted">${L.noIssues}</p>`}</div>
       <div><h2>${L.reviewTitle}</h2><p class="muted small">${L.reviewHint}</p></div>
       <div class="table-wrap"><table><thead><tr><th>${L.source}</th><th>${L.rawLabel}</th><th>${L.mappedTo}</th>${P.map(p => `<th class="n">${p}</th>`).join('')}</tr></thead>
       <tbody>${ds.lines.map(l => `<tr class="${l.key && !l.used ? 'not-used' : ''}"><td class="small muted">${esc(l.source)}</td><td>${esc(l.label)}</td>
@@ -461,6 +465,27 @@
       <p class="muted small">${esc(m.assumptions)}</p>`;
   }
 
+  /* ---------- cash flow & break-even ---------- */
+  // A display table; columns from `t.text` on are numbers.
+  const dataTable = t => !t ? '' : `<div class="table-wrap"><table><thead><tr>${t.head.map((h, i) => `<th${i >= (t.text || 1) ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead>
+    <tbody>${t.rows.map((r, k) => `<tr class="${t.sub?.[k] ? 'subtotal' : ''}">${r.map((c, i) => `<td${i >= (t.text || 1) ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  function renderCash() {
+    const L = T().cf, lang = state.lang, m = CFO.cashModel(ctx());
+    const recon = m.recon.rows.length ? `<div class="table-wrap"><table><thead><tr>${m.recon.head.map((h, i) => `<th${i >= 2 && i < 5 ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${m.recon.items.map((c, k) =>
+      `<tr>${m.recon.rows[k].map((v, i) => i === 5 ? `<td>${pill(c.ok ? 'good' : 'bad', v)}</td>` : `<td${i >= 2 ? ' class="n"' : ''}>${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : '<p class="muted">—</p>';
+    const be = state.be, pctIn = v => v == null ? '' : +(v * 100).toFixed(1);
+    $('p-cashflow').innerHTML = `<div class="card"><h2>${esc(L.recon)}</h2><p class="muted small">${esc(L.reconHint)}</p>${recon}</div>
+      <div class="card"><h3>${esc(L.bridge)}</h3><p class="muted small">${esc(L.bridgeHint)}</p>${m.bridge ? dataTable(m.bridge) : `<p class="muted">${esc(L.none)}</p>`}</div>
+      ${m.su.length ? `<div class="card"><h3>${esc(L.su)}</h3><div class="grid-2">${m.su.map(s => `<div><h4>${esc(s.period)}</h4>${dataTable(s)}</div>`).join('')}</div></div>` : ''}
+      ${m.ratios.rows.length ? `<div class="card"><h3>${esc(L.cfr)}</h3>${dataTable(m.ratios)}</div>` : ''}
+      <div class="card"><h2>${esc(L.be)}</h2><p class="muted small">${esc(L.beHint)}</p>
+        <div class="drivers"><label class="driver"><span>${esc(L.cogsVar)}</span><span class="driver-in"><input type="number" data-be="cogsVar" min="0" max="100" step="5" value="${pctIn(be.cogsVar)}"><em>%</em></span></label>
+          <label class="driver"><span>${esc(L.opexVar)}</span><span class="driver-in"><input type="number" data-be="opexVar" min="0" max="100" step="5" value="${pctIn(be.opexVar)}"><em>%</em></span></label>
+          <label class="driver"><span>${esc(L.target)}</span><span class="driver-in"><input type="number" data-be="target" step="100" value="${be.target ?? ''}"><em></em></span></label></div>
+        ${m.beMissing ? `<p>${esc(m.beMissing)}</p>` : `<div class="grid-2"><div>${dataTable(m.be)}<ul>${m.beMeaning.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>
+          <div>${m.cvp ? CFO.svgChart(m.cvp) : ''}${m.highLow ? `<h4>${esc(m.highLow.title)}</h4>${m.highLow.usable ? dataTable({ head: ['', ''], rows: m.highLow.rows }) : `<p class="muted small">${esc(m.highLow.note)}</p>`}` : ''}</div></div>`}</div>`;
+  }
+
   /* ---------- shell ---------- */
   function renderChrome() {
     const L = T();
@@ -487,7 +512,7 @@
       state.notes.map(n => `<div class="note" role="status">${esc(n())}</div>`).join('');
   }
 
-  const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, valuation: renderValuation, review: renderReview };
+  const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, valuation: renderValuation, cashflow: renderCash, review: renderReview };
 
   /** The tables with any years the user typed in Data review applied. */
   function tablesWithYears() {
@@ -578,6 +603,12 @@
     if (e.target.matches('[data-driver]')) {
       const k = e.target.dataset.driver, unit = CFO.FORECAST_DRIVERS[k][3], v = parseFloat(e.target.value);
       if (isFinite(v)) { state.drivers = { ...state.drivers, [k]: CFO.clampDriver(k, unit === '%' ? v / 100 : v) }; render(); }
+    }
+    if (e.target.matches('[data-be]')) {
+      const k = e.target.dataset.be, raw = e.target.value.trim(), v = parseFloat(raw);
+      if (k === 'target') state.be = { ...state.be, target: raw === '' || !isFinite(v) ? null : v };
+      else if (isFinite(v)) state.be = { ...state.be, [k]: Math.min(1, Math.max(0, v / 100)) };
+      return render();
     }
     if (e.target.matches('[data-dcf]')) {
       const k = e.target.dataset.dcf, raw = e.target.value.trim(), v = parseFloat(raw);

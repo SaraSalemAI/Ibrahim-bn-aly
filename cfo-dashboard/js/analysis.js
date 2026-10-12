@@ -154,6 +154,15 @@
       f: 'Free cash flow ÷ Net income', calc: d => d.net_income > 0 ? div(d.fcf, d.net_income) : null },
     { id: 'cash_roa', group: 'cashflow', unit: '%', dir: 'high', good: 0.08, bad: 0.03, needs: ['cfo', 'total_assets'],
       f: 'Cash from operations ÷ Average total assets', calc: (d, avg) => div(d.cfo, avg('total_assets')) },
+    { id: 'cf_adequacy', group: 'cashflow', unit: 'x', dir: 'high', good: 1, bad: 0.7, needs: ['cfo', 'capex', 'dividends'],
+      f: 'Cash from operations ÷ (Capex + Dividends + Debt repaid)', calc: (d, avg, r, pe) => {
+        const repaid = pe && pe.total_debt != null && d.total_debt != null ? Math.max(0, pe.total_debt - d.total_debt) : 0;
+        const need = (d.capex ?? 0) + (d.dividends ?? 0) + repaid;
+        return d.cfo == null || d.capex == null || !(need > 0) ? null : d.cfo / need; } },
+    { id: 'fcf_div_cover', group: 'cashflow', unit: 'x', dir: 'high', good: 1.5, bad: 1, needs: ['cfo', 'capex', 'dividends'],
+      f: 'Free cash flow ÷ Dividends paid', calc: d => d.dividends > 0 ? div(d.fcf, d.dividends) : null },
+    { id: 'cash_interest_cover', group: 'cashflow', unit: 'x', dir: 'high', good: 4, bad: 2, needs: ['cfo', 'interest'],
+      f: '(Cash from operations + Interest + Tax) ÷ Interest', calc: d => d.interest > 0 && d.cfo != null ? (d.cfo + d.interest + (d.tax ?? 0)) / d.interest : null },
     // Growth (year on year)
     ...[['revenue_growth', 'revenue', 'Revenue'], ['gross_profit_growth', 'gross_profit', 'Gross profit'], ['ebitda_growth', 'ebitda', 'EBITDA'],
         ['net_income_growth', 'net_income', 'Net income'], ['equity_growth', 'equity', 'Equity'], ['assets_growth', 'total_assets', 'Total assets']]
