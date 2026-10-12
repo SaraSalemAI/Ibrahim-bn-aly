@@ -1,0 +1,7 @@
+txn_id,value_date,amount,reference,description
+BT-9001,2026-10-09,-4250.00,INV-1001,ACH Atlas Packaging
+BT-9002,2026-10-09,-18900.00,INV-1002,Wire Brightline Logistics
+BT-9003,2026-10-09,-7200.00,INV-1003,ACH Corvid Software
+BT-9004,2026-10-09,56000.00,AR-7710,Customer receipt Kestrel Retail
+BT-9005,2026-10-09,-35.00,FEE-1009,Outgoing wire fee
+BT-9006,2026-10-09,-1180.45,INV-1007,ACH Evergreen Utilities

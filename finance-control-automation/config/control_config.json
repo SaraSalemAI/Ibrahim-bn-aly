@@ -1,0 +1,69 @@
+{
+  "company": "Cedar Ridge Supply Co. (fictional)",
+  "base_currency": "USD",
+
+  "trigger": {
+    "_note": "Declarative only. Nothing here schedules anything; an external scheduler must read it and invoke the runner. See DESIGN.md section 3.",
+    "mode": "schedule",
+    "schedule_cron": "15 7 * * 1-5",
+    "schedule_timezone": "America/Chicago",
+    "file_arrival": {
+      "approved_drop_path": "inbound/finance/{business_date}/",
+      "ready_marker": "_READY",
+      "required_files": ["ap_invoices.csv", "approvals.csv", "bank_transactions.csv", "gl_cash_entries.csv"],
+      "latest_arrival_local_time": "09:00",
+      "allowed_senders": ["svc-erp-export", "svc-bank-sftp"]
+    }
+  },
+
+  "inputs": {
+    "ap_invoices.csv": {
+      "key": "invoice_id",
+      "amount_column": "amount",
+      "date_column": "invoice_date",
+      "columns": ["invoice_id", "vendor_id", "vendor_name", "invoice_number", "invoice_date", "due_date", "amount", "currency", "submitted_by"]
+    },
+    "approvals.csv": {
+      "key": "approval_id",
+      "amount_column": "approver_limit",
+      "date_column": null,
+      "columns": ["approval_id", "invoice_id", "approver_id", "approved_at", "approver_limit"]
+    },
+    "bank_transactions.csv": {
+      "key": "txn_id",
+      "amount_column": "amount",
+      "date_column": "value_date",
+      "columns": ["txn_id", "value_date", "amount", "reference", "description"]
+    },
+    "gl_cash_entries.csv": {
+      "key": "entry_id",
+      "amount_column": "amount",
+      "date_column": "posting_date",
+      "columns": ["entry_id", "posting_date", "account", "amount", "reference", "description"]
+    }
+  },
+
+  "rules": {
+    "approval_required_at_or_above": "2500.00",
+    "materiality_threshold": "10000.00",
+    "duplicate_fuzzy_window_days": 7,
+    "reconciliation_tolerance": "0.00"
+  },
+
+  "routing": {
+    "_note": "Fictional reviewers. Addresses use the reserved example.com domain.",
+    "DUPLICATE_CANDIDATE": ["ap-lead@example.com"],
+    "MISSING_APPROVAL": ["ap-controls@example.com"],
+    "APPROVAL_AUTHORITY": ["ap-controls@example.com"],
+    "SEGREGATION_OF_DUTIES": ["internal-controls@example.com"],
+    "RECONCILIATION_DIFFERENCE": ["treasury-recon@example.com"],
+    "material_escalation": ["controller@example.com"],
+    "cfo_summary": ["cfo@example.com"],
+    "run_failure": ["finance-systems-oncall@example.com"]
+  },
+
+  "retries": {
+    "max_attempts": 3,
+    "base_delay_seconds": 2.0
+  }
+}

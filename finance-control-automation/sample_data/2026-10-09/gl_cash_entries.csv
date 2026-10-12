@@ -1,0 +1,7 @@
+entry_id,posting_date,account,amount,reference,description
+JE-501,2026-10-09,1010-Operating Cash,-4250.00,INV-1001,Payment Atlas Packaging
+JE-502,2026-10-09,1010-Operating Cash,-18900.00,INV-1002,Payment Brightline Logistics
+JE-503,2026-10-09,1010-Operating Cash,-7020.00,INV-1003,Payment Corvid Software
+JE-504,2026-10-09,1010-Operating Cash,56000.00,AR-7710,Receipt Kestrel Retail
+JE-505,2026-10-09,1010-Operating Cash,-1180.45,INV-1007,Payment Evergreen Utilities
+JE-506,2026-10-09,1010-Operating Cash,-2400.00,INV-0990,Payment Granite Staffing

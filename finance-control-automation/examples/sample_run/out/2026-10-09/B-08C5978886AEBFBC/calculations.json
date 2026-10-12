@@ -1,0 +1,45 @@
+{
+  "business_date": "2026-10-09",
+  "ap": {
+    "invoice_count": 9,
+    "invoice_total": "108980.45",
+    "invoices_requiring_approval": 8,
+    "amount_requiring_approval": "107800.00"
+  },
+  "cash_reconciliation": {
+    "bank_net_movement": "24434.55",
+    "bank_inflows": "56000.00",
+    "bank_outflows": "-31565.45",
+    "gl_net_movement": "22249.55",
+    "difference_bank_minus_gl": "2185.00",
+    "explained_by_exceptions": "2185.00",
+    "unexplained_difference": "0.00",
+    "references_matched": 4,
+    "references_unmatched": 3
+  },
+  "exceptions": {
+    "total": 8,
+    "material": 3,
+    "by_category": {
+      "APPROVAL_AUTHORITY": 1,
+      "DUPLICATE_CANDIDATE": 2,
+      "MISSING_APPROVAL": 1,
+      "RECONCILIATION_DIFFERENCE": 3,
+      "SEGREGATION_OF_DUTIES": 1
+    },
+    "by_severity": {
+      "HIGH": 3,
+      "MEDIUM": 4,
+      "LOW": 1
+    },
+    "gross_exposure": "80065.00"
+  },
+  "parameters": {
+    "approval_required_at_or_above": "2500.00",
+    "materiality_threshold": "10000.00",
+    "duplicate_fuzzy_window_days": 7,
+    "reconciliation_tolerance": "0.00"
+  },
+  "batch_id": "B-08C5978886AEBFBC",
+  "run_id": "example-first-run"
+}

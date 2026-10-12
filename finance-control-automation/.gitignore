@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+finance-control-automation/out/
+finance-control-automation/state/
+finance-control-automation/logs/

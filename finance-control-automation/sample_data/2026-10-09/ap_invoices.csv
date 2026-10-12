@@ -1,0 +1,10 @@
+invoice_id,vendor_id,vendor_name,invoice_number,invoice_date,due_date,amount,currency,submitted_by
+INV-1001,V-100,Atlas Packaging,AP-5531,2026-10-01,2026-10-31,4250.00,USD,u.lee
+INV-1002,V-101,Brightline Logistics,BL-0902,2026-10-02,2026-11-01,18900.00,USD,u.lee
+INV-1003,V-102,Corvid Software,CS-7781,2026-10-03,2026-11-02,7200.00,USD,u.khan
+INV-1004,V-100,Atlas Packaging,AP-5531,2026-10-06,2026-11-05,4250.00,USD,u.khan
+INV-1005,V-103,Delta Facilities,DF-2210,2026-10-06,2026-11-05,32500.00,USD,u.lee
+INV-1006,V-101,Brightline Logistics,BL-0915,2026-10-07,2026-11-06,18900.00,USD,u.khan
+INV-1007,V-104,Evergreen Utilities,EU-3340,2026-10-08,2026-11-07,1180.45,USD,u.lee
+INV-1008,V-102,Corvid Software,CS-7802,2026-10-08,2026-11-07,12000.00,USD,u.khan
+INV-1009,V-105,Fulton Legal,FL-118,2026-10-09,2026-11-08,9800.00,USD,u.lee

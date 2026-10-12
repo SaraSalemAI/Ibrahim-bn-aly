@@ -1,0 +1,26 @@
+{
+  "business_date": "2026-10-09",
+  "source_system": "ERP export (fictional)",
+  "files": {
+    "ap_invoices.csv": {
+      "sha256": "3df979076defe2a25a5657688eb2426b04017b3b5d4cb268089acfa35d8626e5",
+      "row_count": 9,
+      "control_total": "108980.45"
+    },
+    "approvals.csv": {
+      "sha256": "ea8e3c5f794e75156eaa56b769c723ff3558a8e602998b5fb15b67384b23b4a6",
+      "row_count": 7,
+      "control_total": "180000.00"
+    },
+    "bank_transactions.csv": {
+      "sha256": "1d6c225e5aa2988a176a8571f050594f9f0a81ac1fca8b3cdae3bc7457c3b7fa",
+      "row_count": 6,
+      "control_total": "24434.55"
+    },
+    "gl_cash_entries.csv": {
+      "sha256": "0b2990158a3100758ea25745f872313df9d718ae4c3e18c92d5ed1c4631b9202",
+      "row_count": 6,
+      "control_total": "22249.55"
+    }
+  }
+}

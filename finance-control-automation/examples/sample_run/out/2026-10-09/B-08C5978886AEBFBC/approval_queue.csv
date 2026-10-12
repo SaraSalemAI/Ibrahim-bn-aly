@@ -1,0 +1,9 @@
+action_key,exception_id,proposed_action,amount,material,required_approvers,approval_status,approved_by,approved_at
+AC-209151541A4E,EX-9870C4EA9B3C,Place payment hold on INV-1006 pending AP duplicate review,18900.00,Y,ap-lead@example.com;controller@example.com,PENDING,,
+AC-780F11D93473,EX-344EF6DB8F50,"Block INV-1005 from payment run until approved by an authorized, independent approver",32500.00,Y,ap-controls@example.com;controller@example.com,PENDING,,
+AC-07E1D8E2B29F,EX-7027CEA2BA41,"Block INV-1008 from payment run until approved by an authorized, independent approver",12000.00,Y,internal-controls@example.com;controller@example.com,PENDING,,
+AC-84DDC2CF22ED,EX-1A93A38D752E,"Block INV-1009 from payment run until approved by an authorized, independent approver",9800.00,N,ap-controls@example.com,PENDING,,
+AC-81F47734F8F4,EX-1C82EE4AF1B9,Place payment hold on INV-1004 pending AP duplicate review,4250.00,N,ap-lead@example.com,PENDING,,
+AC-1E343C609DAA,EX-B619E095D035,Investigate INV-0990: confirm whether the payment cleared; reverse or carry as reconciling item,2400.00,N,treasury-recon@example.com,PENDING,,
+AC-631897048ED7,EX-CC410B9841C4,Investigate INV-1003 and prepare correcting entry for -180.00,-180.00,N,treasury-recon@example.com,PENDING,,
+AC-6CEB162975D4,EX-F9B47665A29C,Prepare journal entry to record FEE-1009 -35.00 in GL cash,-35.00,N,treasury-recon@example.com,PENDING,,
