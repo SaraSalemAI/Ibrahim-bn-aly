@@ -262,6 +262,9 @@ table.plan td:nth-child(3), table.plan td:nth-child(4) { white-space: nowrap; }
 .year-in { width: 7.5em; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font-family: var(--font-num); }
 .year-in[aria-invalid="true"] { border-color: var(--bad); }
 
+.football { max-width: 720px; margin: 12px auto 0; }
+.peer-edit input { width: 100%; min-width: 7rem; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font-family: var(--font-num); }
+
 </style>
 </head>
 <body>
@@ -312,6 +315,7 @@ table.plan td:nth-child(3), table.plan td:nth-child(4) { white-space: nowrap; }
     <button class="tab" role="tab" data-tab="forecast">Forecast</button>
     <button class="tab" role="tab" data-tab="valuation">Valuation</button>
     <button class="tab" role="tab" data-tab="cashflow">Cash flow</button>
+    <button class="tab" role="tab" data-tab="compare">Compare</button>
     <button class="tab" role="tab" data-tab="review">Data review</button>
   </nav>
 
@@ -337,6 +341,7 @@ table.plan td:nth-child(3), table.plan td:nth-child(4) { white-space: nowrap; }
     <section class="panel" id="p-forecast" role="tabpanel" hidden></section>
     <section class="panel" id="p-valuation" role="tabpanel" hidden></section>
     <section class="panel" id="p-cashflow" role="tabpanel" hidden></section>
+    <section class="panel" id="p-compare" role="tabpanel" hidden></section>
     <section class="panel" id="p-review" role="tabpanel" hidden></section>
   </main>
 </div>
@@ -22046,7 +22051,8 @@ var __async = (__this, __arguments, generator) => {
       diag: { title: 'Diagnostics', hint: 'If something does not work, press Copy and paste the text in the chat. By default it contains only line labels and counts, not your figures.', withNumbers: 'Include figures', copy: 'Copy diagnostics' },
       browse: 'Choose files', exampleTag: 'Example', vs: 'vs', pts: 'pts', sampleNotice: 'Example data (fictional company, EGP thousands). Drop your own files to replace it.',
       loadSample: 'Reload example', clear: 'Clear', filesLoaded: 'Files', reading: 'Reading files…',
-      tabs: { full: 'Full analysis', overview: 'Overview', ratios: 'Ratios', vertical: 'Vertical', horizontal: 'Horizontal', flags: 'Red flags', forecast: 'Forecast', valuation: 'Valuation', cashflow: 'Cash flow & break-even', review: 'Data review' },
+      tabs: { full: 'Full analysis', overview: 'Overview', ratios: 'Ratios', vertical: 'Vertical', horizontal: 'Horizontal', flags: 'Red flags', forecast: 'Forecast', valuation: 'Valuation', cashflow: 'Cash flow & break-even', compare: 'Compare & value', review: 'Data review' },
+      secPeers: 'Peer comparison and valuation by method',
       secCash: 'Cash flow, statement checks and break-even',
       secValuation: 'Valuation (DCF) and EVA', secPlan: 'Action plan and value levers', dupont5: 'Five-step DuPont: tax burden × interest burden × EBIT margin × asset turnover × equity multiplier', taxBurden: 'Tax burden (NI ÷ PBT)', interestBurden: 'Interest burden (PBT ÷ EBIT)', ebitMargin: 'EBIT margin',
       sector: 'Sector', typical: 'Sector typical',
@@ -22133,7 +22139,8 @@ var __async = (__this, __arguments, generator) => {
       diag: { title: 'التشخيص', hint: 'إذا لم يعمل شيء، اضغط نسخ والصق النص في المحادثة. افتراضياً يحتوي على أسماء البنود والأعداد فقط، وليس أرقامك.', withNumbers: 'تضمين الأرقام', copy: 'نسخ التشخيص' },
       browse: 'اختر الملفات', exampleTag: 'مثال', vs: 'مقابل', pts: 'نقطة', sampleNotice: 'بيانات تجريبية (شركة افتراضية، بالألف جنيه). أسقط ملفاتك لاستبدالها.',
       loadSample: 'إعادة البيانات التجريبية', clear: 'مسح', filesLoaded: 'الملفات', reading: 'جارٍ قراءة الملفات…',
-      tabs: { full: 'التحليل الكامل', overview: 'نظرة عامة', ratios: 'النسب المالية', vertical: 'التحليل الرأسي', horizontal: 'التحليل الأفقي', flags: 'إشارات الخطر', forecast: 'التوقعات', valuation: 'التقييم', cashflow: 'التدفقات ونقطة التعادل', review: 'مراجعة البيانات' },
+      tabs: { full: 'التحليل الكامل', overview: 'نظرة عامة', ratios: 'النسب المالية', vertical: 'التحليل الرأسي', horizontal: 'التحليل الأفقي', flags: 'إشارات الخطر', forecast: 'التوقعات', valuation: 'التقييم', cashflow: 'التدفقات ونقطة التعادل', compare: 'المقارنة والتقييم', review: 'مراجعة البيانات' },
+      secPeers: 'المقارنة بالمنافسين والتقييم حسب الطريقة',
       secCash: 'التدفقات النقدية وفحوص الربط ونقطة التعادل',
       secValuation: 'التقييم (التدفقات المخصومة) والقيمة الاقتصادية المضافة', secPlan: 'خطة العمل وروافع القيمة', dupont5: 'ديبونت الخماسي: عبء الضريبة × عبء الفوائد × هامش EBIT × دوران الأصول × مضاعف حقوق الملكية', taxBurden: 'عبء الضريبة (صافي الربح ÷ الربح قبل الضريبة)', interestBurden: 'عبء الفوائد (الربح قبل الضريبة ÷ EBIT)', ebitMargin: 'هامش EBIT',
       sector: 'القطاع', typical: 'المعتاد في القطاع',
@@ -22933,7 +22940,7 @@ var __async = (__this, __arguments, generator) => {
   const GROUP_AREA = { liquidity: 'treasury', profitability: 'management', efficiency: 'operations', leverage: 'treasury', cashflow: 'finance', growth: 'sales', quality: 'finance', distress: 'board' };
   const SEV_ORDER = { high: 0, med: 1, low: 2 };
 
-  function actionPlan(A, F, V, lang, beOpts) {
+  function actionPlan(A, F, V, lang, opts = {}) {
     const L = CFO.UI[lang].val, p = A.latest, items = [], tracked = new Set();
     const fmt = (id, v) => CFO.fmtVal(CFO.RATIO[id].unit, v, lang);
     const target = id => { const b = CFO.bench(id), def = CFO.RATIO[id]; return def.dir && b.good != null ? `${def.dir === 'high' ? '≥' : '≤'} ${fmt(id, b.good)}` : '—'; };
@@ -22955,9 +22962,19 @@ var __async = (__this, __arguments, generator) => {
     if (off.length) items.push({ sev: 'high', area: 'finance', title: L.reconTitle, action: L.reconAction(off.map(c => `${CFO.UI[lang].cf.check[c.id]} (${c.period}: ${CFO.fmtNum(c.diff, 0, lang)})`).join(lang === 'ar' ? '؛ ' : '; ')),
       kpi: '—', current: String(off.length), target: '0' });
     // A thin margin of safety leaves little room before the business stops covering its fixed costs.
-    const be = CFO.breakEven ? CFO.breakEven(A.ds, beOpts || {}) : null;
+    const be = CFO.breakEven ? CFO.breakEven(A.ds, opts.be || {}) : null;
     if (be && be.mos != null && be.mos < 0.15) items.push({ sev: be.mos < 0.05 ? 'high' : 'med', area: 'management', title: L.mosTitle, action: L.mosAction,
       kpi: CFO.UI[lang].cf.mos, current: CFO.fmtPct(be.mos, lang), target: `≥ ${CFO.fmtPct(0.15, lang)}` });
+    // Bottom quartile against the user's own peers (two or more).
+    if (opts.peers?.length >= 2 && CFO.comparePeers) {
+      const PL = CFO.UI[lang].peer;
+      CFO.comparePeers(CFO.companyFigures(A.ds), opts.peers).filter(r => r.quartile === 'bottom' && r.n >= 2 && !tracked.has(r.id)).slice(0, 3).forEach(r => {
+        tracked.add(r.id);
+        const name = PL.m[r.id] || CFO.ratioName(r.id, lang);
+        items.push({ sev: 'med', area: GROUP_AREA[CFO.RATIO[r.id]?.group] || 'management', title: PL.bottomTitle(name), action: PL.bottomAction,
+          kpi: name, current: CFO.fmtVal(r.unit, r.company, lang), target: `${r.dir === 'high' ? '≥' : '≤'} ${CFO.fmtVal(r.unit, r.median, lang)}` });
+      });
+    }
     // Ratios rated weak or on watch that no red flag covers yet.
     for (const [status, sev, cap] of [['bad', 'med', 4], ['warn', 'low', 4]]) {
       const seen = new Set();   // one per group: their actions would repeat
@@ -23069,7 +23086,7 @@ var __async = (__this, __arguments, generator) => {
     const { A, F, lang } = R, L = UIV[lang], ds = A.ds;
     const V = R.V !== undefined ? R.V : valuation(ds, R.drivers, R.dcf);
     const money = v => CFO.fmtNum(v, 0, lang), pct = v => CFO.fmtPct(v, lang), x = v => CFO.fmtVal('x', v, lang);
-    const plan = actionPlan(A, F, V && !V.missing ? V : null, lang, R.be);
+    const plan = actionPlan(A, F, V && !V.missing ? V : null, lang, { be: R.be, peers: R.peers });
     const planTable = { head: ['#', L.priority, L.when, L.owner, L.recommendation, L.kpi, L.current, L.target],
       rows: plan.map(it => [String(it.n), it.sevText, it.horizon, it.areaText, `${it.title}: ${it.action}`, it.kpi, it.current, it.target]), items: plan };
     if (!V || V.missing) return { missing: L.missing((V?.missing || []).map(k => CFO.itemName(k, lang)).join(lang === 'ar' ? '، ' : ', ')), plan: planTable, levers: null };
@@ -23347,6 +23364,249 @@ var __async = (__this, __arguments, generator) => {
   CFO.sourcesUses = sourcesUses;
   CFO.breakEven = breakEven;
   CFO.cashModel = cashModel;
+})(globalThis.CFO = globalThis.CFO || {});
+
+</script>
+<script>
+/* Peer comparison and valuation by other methods.
+ * Peers come from the user: key figures typed into a table, or their statements dropped as files (read by the same
+ * parsers, kept apart from the company). Nothing is fetched from the internet. For each key ratio the company is
+ * compared with the peer median and quartiles and ranked. Trading multiples (from the peers, or typed in), a dividend
+ * discount model and book value join the DCF in a "football field" with a weighted value range.
+ */
+(function (CFO) {
+  const nn = v => v != null && isFinite(v);
+  const div = (a, b) => (nn(a) && nn(b) && b !== 0 ? a / b : null);
+
+  // Figures a peer can have (typed or read from statements).
+  const FIELDS = ['revenue', 'revenue_prev', 'ebitda', 'net_income', 'total_assets', 'equity', 'total_debt', 'cash', 'market_cap'];
+
+  /* Ratios compared: dir 'high' = higher is better. All on closing balances so typed peers compare like for like. */
+  const METRICS = [
+    { id: 'revenue_growth', unit: '%', dir: 'high', f: x => nn(x.revenue_prev) && x.revenue_prev !== 0 ? (x.revenue - x.revenue_prev) / Math.abs(x.revenue_prev) : null },
+    { id: 'ebitda_margin', unit: '%', dir: 'high', f: x => div(x.ebitda, x.revenue) },
+    { id: 'net_margin', unit: '%', dir: 'high', f: x => div(x.net_income, x.revenue) },
+    { id: 'roe', unit: '%', dir: 'high', f: x => x.equity > 0 ? div(x.net_income, x.equity) : null },
+    { id: 'roa', unit: '%', dir: 'high', f: x => div(x.net_income, x.total_assets) },
+    { id: 'asset_turnover', unit: 'x', dir: 'high', f: x => div(x.revenue, x.total_assets) },
+    { id: 'debt_to_equity', unit: 'x', dir: 'low', f: x => x.equity > 0 ? div(x.total_debt, x.equity) : null },
+    { id: 'net_debt_to_ebitda', unit: 'x', dir: 'low', f: x => x.ebitda > 0 && nn(x.total_debt) ? (x.total_debt - (x.cash || 0)) / x.ebitda : null },
+    { id: 'equity_ratio', unit: '%', dir: 'high', f: x => div(x.equity, x.total_assets) },
+    { id: 'ev_ebitda', unit: 'x', dir: null, f: x => x.ebitda > 0 && nn(x.market_cap) ? ev(x) / x.ebitda : null },
+    { id: 'ev_revenue', unit: 'x', dir: null, f: x => x.revenue > 0 && nn(x.market_cap) ? ev(x) / x.revenue : null },
+    { id: 'pe', unit: 'x', dir: null, f: x => x.net_income > 0 && nn(x.market_cap) ? x.market_cap / x.net_income : null },
+    { id: 'pb', unit: 'x', dir: null, f: x => x.equity > 0 && nn(x.market_cap) ? x.market_cap / x.equity : null },
+  ];
+  const ev = x => x.market_cap + (x.total_debt || 0) - (x.cash || 0);
+
+  /** Linear-interpolated quantile of sorted numbers. */
+  function quantile(sorted, q) {
+    if (!sorted.length) return null;
+    const pos = (sorted.length - 1) * q, lo = Math.floor(pos), hi = Math.ceil(pos);
+    return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo);
+  }
+  const stats = values => {
+    const s = values.filter(nn).sort((a, b) => a - b);
+    return { n: s.length, min: s[0] ?? null, q1: quantile(s, 0.25), median: quantile(s, 0.5), q3: quantile(s, 0.75), max: s[s.length - 1] ?? null };
+  };
+
+  /** The company's figures in peer form, from the latest year. */
+  function companyFigures(ds) {
+    const P = ds.periods, d = ds.data[P[P.length - 1]] || {}, e = CFO.enrich(d), prev = P.length > 1 ? ds.data[P[P.length - 2]] : null;
+    return { revenue: d.revenue ?? null, revenue_prev: prev?.revenue ?? null, ebitda: e.ebitda, net_income: d.net_income ?? null,
+      total_assets: d.total_assets ?? null, equity: d.equity ?? null, total_debt: e.total_debt, cash: d.cash ?? null, market_cap: null };
+  }
+  /** A peer read from statement files: the same reader as the company, latest year only. */
+  function peerFromTables(name, tables) {
+    const ds = CFO.buildDataset(tables);
+    if (!ds.periods.length) return null;
+    return { name, source: 'file', period: ds.periods[ds.periods.length - 1], ...companyFigures(ds) };
+  }
+
+  /** Company vs peers for every metric: values, median, quartiles, rank (1 = best), gap to median. */
+  function compare(company, peers) {
+    return METRICS.map(m => {
+      const pv = peers.map(p => m.f(p)), c = m.f(company), st = stats(pv);
+      let rank = null, quartile = null;
+      if (nn(c) && m.dir && st.n) {
+        const better = pv.filter(v => nn(v) && (m.dir === 'high' ? v > c : v < c)).length;
+        rank = better + 1;
+        const pos = m.dir === 'high' ? c : -c, q1 = m.dir === 'high' ? st.q1 : -st.q3, q3 = m.dir === 'high' ? st.q3 : -st.q1;
+        quartile = pos >= q3 ? 'top' : pos < q1 ? 'bottom' : 'mid';
+      }
+      return { ...m, company: c, peers: pv, ...st, rank, of: st.n + 1, quartile, gap: nn(c) && nn(st.median) ? c - st.median : null };
+    }).filter(r => nn(r.company) || r.n);
+  }
+
+  /** Multiples to apply: typed values win, else the peer quartiles. { id: { low, mid, high, source } } */
+  function multiples(rows, typed = {}) {
+    const out = {};
+    for (const id of ['ev_ebitda', 'ev_revenue', 'pe']) {
+      if (nn(typed[id]) && typed[id] > 0) out[id] = { low: typed[id] * 0.9, mid: typed[id], high: typed[id] * 1.1, source: 'typed' };
+      else { const r = rows.find(x => x.id === id); if (r && r.n) out[id] = { low: r.q1, mid: r.median, high: r.q3, source: 'peers', n: r.n }; }
+    }
+    return out;
+  }
+
+  /** Equity value under every method, low–mid–high, and the weighted range. */
+  function methods({ ds, V, rows, typed, weights }) {
+    const c = companyFigures(ds), netDebt = (c.total_debt || 0) - (c.cash || 0), out = [];
+    if (V && nn(V.equity) && V.sens) {
+      const inner = V.sens.grid.slice(1, 4).flatMap(r => r.slice(1, 4)).filter(nn);
+      out.push({ id: 'dcf', group: 'dcf', low: Math.min(...inner), mid: V.equity, high: Math.max(...inner) });
+    }
+    const mult = multiples(rows, typed);
+    const base = { ev_ebitda: c.ebitda, ev_revenue: c.revenue, pe: c.net_income };
+    for (const [id, m] of Object.entries(mult)) {
+      if (!(base[id] > 0)) continue;
+      const val = k => id === 'pe' ? m[k] * base[id] : m[k] * base[id] - netDebt;
+      out.push({ id, group: 'multiples', low: val('low'), mid: val('mid'), high: val('high'), multiple: m });
+    }
+    // Dividend discount (Gordon): next year's dividend ÷ (cost of equity − growth).
+    const d = ds.data[ds.periods[ds.periods.length - 1]] || {};
+    if (V && d.dividends > 0 && nn(V.ke)) {
+      const g = V.inputs.g, at = gg => V.ke - gg > 0.005 ? d.dividends * (1 + gg) / (V.ke - gg) : null;
+      const mid = at(g);
+      if (nn(mid)) out.push({ id: 'ddm', group: 'dcf', low: at(g - 0.005) ?? mid, mid, high: at(g + 0.005) ?? mid });
+    }
+    if (nn(c.equity)) out.push({ id: 'book', group: 'book', low: c.equity, mid: c.equity, high: c.equity });
+    // Weighted range: each group's weight shared equally among its methods, renormalised over what is available.
+    const w = { dcf: 0.5, multiples: 0.4, book: 0.1, ...(weights || {}) };
+    const groups = [...new Set(out.map(x => x.group))], tot = groups.reduce((t, g) => t + (w[g] || 0), 0);
+    let weighted = null;
+    if (tot > 0) {
+      weighted = { low: 0, mid: 0, high: 0 };
+      for (const x of out) {
+        const share = (w[x.group] || 0) / tot / out.filter(y => y.group === x.group).length;
+        x.weight = share;
+        for (const k of ['low', 'mid', 'high']) weighted[k] += share * x[k];
+      }
+    }
+    return { list: out, weighted, weights: w, netDebt };
+  }
+
+  /* ---------- charts (inline SVG) ---------- */
+  function footballSVG(list, weighted, labelOf, fmt) {
+    const rows = [...list, ...(weighted ? [{ id: 'weighted', ...weighted }] : [])];
+    if (!rows.length) return '';
+    const W = 560, rowH = 30, left = 150, right = 20, top = 10, H = top + rows.length * rowH + 26;
+    const lo = Math.min(0, ...rows.map(r => r.low)), hi = Math.max(...rows.map(r => r.high)) * 1.08 || 1;
+    const X = v => left + (v - lo) / (hi - lo) * (W - left - right);
+    const ticks = [0, 0.25, 0.5, 0.75, 1].map(f => lo + (hi - lo) * f);
+    const esc = CFO.esc;
+    return `<div class="football"><svg class="svg-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Football field" style="direction:ltr">
+      ${ticks.map(t => `<line x1="${X(t).toFixed(1)}" x2="${X(t).toFixed(1)}" y1="${top}" y2="${H - 22}" stroke="var(--line)" stroke-width="0.6"/><text x="${X(t).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="10" fill="var(--muted)">${esc(fmt(t))}</text>`).join('')}
+      ${rows.map((r, i) => { const y = top + i * rowH, wid = Math.max(2, X(r.high) - X(r.low)), col = r.id === 'weighted' ? 'var(--s3)' : 'var(--s1)';
+        return `<text x="${left - 8}" y="${y + 19}" text-anchor="end" font-size="11" fill="var(--ink)"${r.id === 'weighted' ? ' font-weight="700"' : ''}>${esc(labelOf(r.id))}</text>
+        <rect x="${X(r.low).toFixed(1)}" y="${y + 7}" width="${wid.toFixed(1)}" height="16" rx="3" fill="${col}" opacity="0.85"><title>${esc(labelOf(r.id))}: ${esc(fmt(r.low))} – ${esc(fmt(r.high))}</title></rect>
+        <line x1="${X(r.mid).toFixed(1)}" x2="${X(r.mid).toFixed(1)}" y1="${y + 4}" y2="${y + 26}" stroke="var(--ink)" stroke-width="2"/>`; }).join('')}
+    </svg></div>`;
+  }
+
+  function scatterSVG(points, xl, yl, fmtX, fmtY) {
+    const pts = points.filter(p => nn(p.x) && nn(p.y));
+    if (pts.length < 2) return '';
+    const W = 560, H = 260, l = 56, r = 16, t = 14, b = 34, esc = CFO.esc;
+    const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+    const pad = (a, z) => { const d = (z - a) || Math.abs(a) || 1; return [a - d * 0.1, z + d * 0.1]; };
+    const [x0, x1] = pad(Math.min(...xs), Math.max(...xs)), [y0, y1] = pad(Math.min(...ys), Math.max(...ys));
+    const X = v => l + (v - x0) / (x1 - x0) * (W - l - r), Y = v => H - b - (v - y0) / (y1 - y0) * (H - t - b);
+    return `<svg class="svg-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(xl)} / ${esc(yl)}" style="direction:ltr">
+      <line x1="${l}" x2="${W - r}" y1="${H - b}" y2="${H - b}" stroke="var(--line)"/><line x1="${l}" x2="${l}" y1="${t}" y2="${H - b}" stroke="var(--line)"/>
+      <text x="${(l + W - r) / 2}" y="${H - 6}" text-anchor="middle" font-size="11" fill="var(--muted)">${esc(xl)}</text>
+      <text x="12" y="${(t + H - b) / 2}" transform="rotate(-90 12 ${(t + H - b) / 2})" text-anchor="middle" font-size="11" fill="var(--muted)">${esc(yl)}</text>
+      <text x="${l}" y="${H - b + 14}" font-size="10" fill="var(--muted)">${esc(fmtX(x0))}</text><text x="${W - r}" y="${H - b + 14}" text-anchor="end" font-size="10" fill="var(--muted)">${esc(fmtX(x1))}</text>
+      <text x="${l - 4}" y="${H - b}" text-anchor="end" font-size="10" fill="var(--muted)">${esc(fmtY(y0))}</text><text x="${l - 4}" y="${t + 8}" text-anchor="end" font-size="10" fill="var(--muted)">${esc(fmtY(y1))}</text>
+      ${pts.map(p => `<circle cx="${X(p.x).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="${p.self ? 7 : 5}" fill="${p.self ? 'var(--s3)' : 'var(--s1)'}" stroke="var(--surface)" stroke-width="2"><title>${esc(p.name)}: ${esc(fmtX(p.x))}, ${esc(fmtY(p.y))}</title></circle>
+        <text x="${(X(p.x) + 9).toFixed(1)}" y="${(Y(p.y) + 4).toFixed(1)}" font-size="10.5" fill="var(--ink)"${p.self ? ' font-weight="700"' : ''}>${esc(p.name)}</text>`).join('')}
+    </svg>`;
+  }
+
+  /* ---------- text ---------- */
+  const UIP = {
+    en: {
+      title: 'Peer comparison', hint: 'Add the companies you compete with: type their key figures (from their published accounts or a market data service) or drop their statements. Figures stay in this browser. Without peers, the sector typical values are used.',
+      add: 'Add peer', addFiles: 'Add peer statements', remove: 'Remove', clear: 'Remove all peers', name: 'Company', you: 'This company',
+      f: { revenue: 'Revenue', revenue_prev: 'Revenue, prior year', ebitda: 'EBITDA', net_income: 'Net income', total_assets: 'Total assets', equity: 'Equity', total_debt: 'Total debt', cash: 'Cash', market_cap: 'Market value of equity' },
+      m: { ev_ebitda: 'EV / EBITDA', ev_revenue: 'EV / revenue', pe: 'Price / earnings', pb: 'Price / book', equity_ratio: 'Equity ratio' },
+      median: 'Peer median', q1: 'Lower quartile', q3: 'Upper quartile', rank: 'Rank', gap: 'vs median', sector: 'Sector typical',
+      quart: { top: 'Top quartile', mid: 'Middle', bottom: 'Bottom quartile' },
+      none: 'No peers yet. Add at least one to compare; two or more give quartiles.',
+      scatter: 'Growth vs margin', fileRead: (n, p) => `Added peer ${n} (${p}).`, fileFail: n => `${n}: no statements could be read for this peer.`,
+      methods: 'Valuation by method', methodsHint: 'Equity value under each method. Bars run from low to high; the line is the central value. Multiples use the peer quartiles, or the values you type.',
+      method: { dcf: 'DCF (WACC ± 0.5 pt, g ± 0.5 pt)', ev_ebitda: 'EV / EBITDA multiple', ev_revenue: 'EV / revenue multiple', pe: 'P / E multiple', ddm: 'Dividend discount model', book: 'Book value of equity', weighted: 'Weighted value' },
+      short: { dcf: 'DCF', ev_ebitda: 'EV / EBITDA', ev_revenue: 'EV / revenue', pe: 'P / E', ddm: 'Dividend discount', book: 'Book value', weighted: 'Weighted' },
+      typed: 'Multiples (optional, overrides peers)', weights: 'Weights', w: { dcf: 'DCF & dividends', multiples: 'Multiples', book: 'Book value' },
+      low: 'Low', mid: 'Central', high: 'High', weight: 'Weight', source: 'Source', src: { typed: 'typed', peers: n => `${n} peers` },
+      noMethods: 'Not enough data for any method yet.', bottomTitle: n => `Below most peers: ${n}`, bottomAction: 'Study what the top-quartile peers do differently (pricing, cost base, asset use, funding) and set a target to reach at least the peer median.',
+    },
+    ar: {
+      title: 'المقارنة بالمنافسين', hint: 'أضف الشركات المنافسة: اكتب أرقامها الرئيسية (من قوائمها المنشورة أو مزود بيانات سوق) أو أسقط قوائمها. تبقى الأرقام في هذا المتصفح. دون منافسين تُستخدم القيم النموذجية للقطاع.',
+      add: 'إضافة منافس', addFiles: 'إضافة قوائم منافس', remove: 'حذف', clear: 'حذف كل المنافسين', name: 'الشركة', you: 'هذه الشركة',
+      f: { revenue: 'الإيرادات', revenue_prev: 'إيرادات السنة السابقة', ebitda: 'EBITDA', net_income: 'صافي الربح', total_assets: 'إجمالي الأصول', equity: 'حقوق الملكية', total_debt: 'إجمالي الديون', cash: 'النقدية', market_cap: 'القيمة السوقية لحقوق الملكية' },
+      m: { ev_ebitda: 'قيمة المنشأة / EBITDA', ev_revenue: 'قيمة المنشأة / الإيرادات', pe: 'السعر / الربحية', pb: 'السعر / القيمة الدفترية', equity_ratio: 'نسبة حقوق الملكية' },
+      median: 'وسيط المنافسين', q1: 'الربيع الأدنى', q3: 'الربيع الأعلى', rank: 'الترتيب', gap: 'الفرق عن الوسيط', sector: 'القيمة النموذجية للقطاع',
+      quart: { top: 'الربع الأعلى', mid: 'الوسط', bottom: 'الربع الأدنى' },
+      none: 'لا يوجد منافسون بعد. أضف منافساً واحداً على الأقل؛ اثنان أو أكثر يعطيان الأرباع.',
+      scatter: 'النمو مقابل الهامش', fileRead: (n, p) => `أُضيف المنافس ${n} (${p}).`, fileFail: n => `${n}: تعذرت قراءة قوائم هذا المنافس.`,
+      methods: 'التقييم حسب الطريقة', methodsHint: 'قيمة حقوق الملكية بكل طريقة. الأعمدة من الأدنى إلى الأعلى؛ الخط هو القيمة الوسطى. المضاعفات من أرباع المنافسين أو القيم التي تكتبها.',
+      method: { dcf: 'التدفقات المخصومة (WACC ± 0.5، g ± 0.5)', ev_ebitda: 'مضاعف قيمة المنشأة / EBITDA', ev_revenue: 'مضاعف قيمة المنشأة / الإيرادات', pe: 'مضاعف الربحية', ddm: 'نموذج خصم التوزيعات', book: 'القيمة الدفترية لحقوق الملكية', weighted: 'القيمة المرجحة' },
+      short: { dcf: 'التدفقات المخصومة', ev_ebitda: 'EV / EBITDA', ev_revenue: 'EV / الإيرادات', pe: 'مضاعف الربحية', ddm: 'خصم التوزيعات', book: 'القيمة الدفترية', weighted: 'المرجحة' },
+      typed: 'المضاعفات (اختياري، تتقدم على المنافسين)', weights: 'الأوزان', w: { dcf: 'التدفقات والتوزيعات', multiples: 'المضاعفات', book: 'القيمة الدفترية' },
+      low: 'أدنى', mid: 'وسطى', high: 'أعلى', weight: 'الوزن', source: 'المصدر', src: { typed: 'مُدخل', peers: n => `${n} منافسين` },
+      noMethods: 'لا توجد بيانات كافية لأي طريقة بعد.', bottomTitle: n => `أقل من معظم المنافسين: ${n}`, bottomAction: 'ادرس ما يفعله منافسو الربع الأعلى بشكل مختلف (التسعير، هيكل التكاليف، استخدام الأصول، التمويل) وحدد هدفاً للوصول إلى وسيط المنافسين على الأقل.',
+    },
+  };
+  const metricName = (id, lang) => UIP[lang].m[id] || CFO.ratioName(id, lang);
+
+  /** Display-ready peer comparison and valuation by method. R: { A, V, peers, mult, weights, lang } */
+  function peerModel(R) {
+    const { A, lang } = R, L = UIP[lang], ds = A.ds, peers = (R.peers || []).filter(p => p && p.name);
+    const company = companyFigures(ds), rows = compare(company, peers);
+    const fmt = (unit, v) => CFO.fmtVal(unit, v, lang), money = v => CFO.fmtNum(v, 0, lang);
+    const m = { peers, hasPeers: peers.length > 0 };
+    if (peers.length) {
+      m.figures = { head: [L.name, ...FIELDS.map(k => L.f[k])], text: 1,
+        rows: [[L.you, ...FIELDS.map(k => money(company[k]))], ...peers.map(p => [p.name, ...FIELDS.map(k => money(p[k]))])] };
+      m.compare = { head: ['', L.you, L.median, L.q1, L.q3, L.sector, L.rank, ''], text: 1, rows: rows.map(r => {
+        const sec = CFO.RATIO[r.id] ? CFO.bench(r.id).typical : null;
+        return [metricName(r.id, lang), fmt(r.unit, r.company), fmt(r.unit, r.median), fmt(r.unit, r.q1), fmt(r.unit, r.q3), fmt(r.unit, sec),
+          r.rank ? `${r.rank} / ${r.of}` : '—', r.quartile ? L.quart[r.quartile] : '']; }), items: rows };
+      m.detail = { head: ['', L.you, ...peers.map(p => p.name)], text: 1, rows: rows.map(r => [metricName(r.id, lang), fmt(r.unit, r.company), ...r.peers.map(v => fmt(r.unit, v))]) };
+      const pick = ['net_margin', 'roe', 'debt_to_equity', 'ebitda_margin'];
+      m.charts = pick.map(id => rows.find(r => r.id === id)).filter(r => r && [r.company, ...r.peers].filter(nn).length >= 2).map(r => ({
+        title: metricName(r.id, lang), kind: 'bar', labels: [L.you, ...peers.map(p => p.name)], fmt: v => fmt(r.unit, v),
+        series: [{ name: metricName(r.id, lang), values: [r.company, ...r.peers], color: 'var(--s1)' }] }));
+      const g = rows.find(r => r.id === 'revenue_growth'), nm = rows.find(r => r.id === 'net_margin');
+      if (g && nm) m.scatter = scatterSVG([{ name: L.you, x: g.company, y: nm.company, self: true }, ...peers.map((p, i) => ({ name: p.name, x: g.peers[i], y: nm.peers[i] }))],
+        metricName('revenue_growth', lang), metricName('net_margin', lang), v => CFO.fmtPct(v, lang), v => CFO.fmtPct(v, lang));
+      m.bottom = rows.filter(r => r.quartile === 'bottom' && r.n >= 2);
+    }
+    const V = R.V !== undefined ? R.V : null;
+    const mt = methods({ ds, V: V && !V.missing && !V.error ? V : null, rows, typed: R.mult, weights: R.weights });
+    m.methods = mt;
+    if (mt.list.length) {
+      const label = id => L.method[id];
+      m.methodTable = { head: [L.methods, L.low, L.mid, L.high, L.weight, L.source], text: 1,
+        rows: [...mt.list.map(x => [label(x.id), money(x.low), money(x.mid), money(x.high), CFO.fmtPct(x.weight, lang),
+          x.multiple ? `${CFO.fmtVal('x', x.multiple.mid, lang)} · ${x.multiple.source === 'typed' ? L.src.typed : L.src.peers(x.multiple.n)}` : '']),
+          ...(mt.weighted ? [[label('weighted'), money(mt.weighted.low), money(mt.weighted.mid), money(mt.weighted.high), CFO.fmtPct(1, lang), '']] : [])],
+        sub: [...mt.list.map(() => false), true] };
+      m.football = footballSVG(mt.list, mt.weighted, id => L.short[id], money);
+    }
+    return m;
+  }
+
+  for (const lang of ['en', 'ar']) if (CFO.UI?.[lang]) CFO.UI[lang].peer = UIP[lang];
+  CFO.PEER_FIELDS = FIELDS;
+  CFO.PEER_METRICS = METRICS;
+  CFO.quantile = quantile;
+  CFO.companyFigures = companyFigures;
+  CFO.peerFromTables = peerFromTables;
+  CFO.comparePeers = compare;
+  CFO.peerMultiples = multiples;
+  CFO.valuationMethods = methods;
+  CFO.peerModel = peerModel;
 })(globalThis.CFO = globalThis.CFO || {});
 
 </script>
@@ -23633,6 +23893,8 @@ var __async = (__this, __arguments, generator) => {
       next: L.nextList,
     };
 
+    // Peers and other valuation methods use the same DCF result as the valuation section.
+    m.peer = CFO.peerModel ? CFO.peerModel({ ...R, V: R.V !== undefined ? R.V : (m.val && !m.val.missing ? m.val.V : null) }) : null;
     // Chart data (drawn as inline SVG, so the HTML file needs no library).
     const val = k => P.map(q => ds.data[q][k] ?? null), rat = id => P.map(q => A.ratios[id][q].value);
     // Axis labels drop a zero decimal in either digit system: "20.0%" -> "20%", "٢٠٫٠%" -> "٢٠%".
@@ -23679,6 +23941,10 @@ var __async = (__this, __arguments, generator) => {
         <h3>${esc(CL.be)}</h3><p class="muted small">${esc(CL.beHint)}</p>
         ${c.beMissing ? `<p>${esc(c.beMissing)}</p>` : `${T(c.be)}<ul>${li(c.beMeaning)}</ul>${c.cvp ? `<figure class="card"><figcaption><b>${esc(c.cvp.title)}</b></figcaption>${CFO.svgChart(c.cvp)}</figure>` : ''}
           ${c.highLow?.usable ? `<h3>${esc(c.highLow.title)}</h3>${T({ head: ['', ''], rows: c.highLow.rows })}` : ''}`}</section>`;
+    const pm = m.peer, PL = CFO.UI[R.lang].peer;
+    const peerHTML = !pm ? '' : `<section class="fa-sec" id="${id('peers')}"><h2>${esc(L.secPeers)}</h2>
+        ${pm.compare ? `${T(pm.compare)}${pm.charts.length || pm.scatter ? `<div class="grid-2 fa-charts">${pm.charts.map(c => `<figure class="card"><figcaption><b>${esc(c.title)}</b></figcaption>${CFO.svgChart(c)}</figure>`).join('')}${pm.scatter ? `<figure class="card"><figcaption><b>${esc(PL.scatter)}</b></figcaption>${pm.scatter}</figure>` : ''}</div>` : ''}<h3>${esc(PL.name)}</h3>${T(pm.figures)}` : `<p class="muted">${esc(PL.none)}</p>`}
+        <h3>${esc(PL.methods)}</h3><p class="muted small">${esc(PL.methodsHint)}</p>${pm.methodTable ? T(pm.methodTable) + pm.football : `<p>${esc(PL.noMethods)}</p>`}</section>`;
     const valHTML = !v ? '' : `<section class="fa-sec" id="${id('valuation')}"><h2>${esc(L.secValuation)}</h2><p class="muted small">${esc(VL.hint)}</p>
         ${v.missing ? `<p>${esc(v.missing)}</p>` : `
         ${v.headline ? `<div class="kpis"><div class="kpi"><span class="kpi-label">${esc(VL.ev)}</span><span class="kpi-value">${esc(v.headline.ev)}</span></div><div class="kpi"><span class="kpi-label">${esc(VL.equity)}</span><span class="kpi-value">${esc(v.headline.equity)}</span></div><div class="kpi"><span class="kpi-label">WACC</span><span class="kpi-value">${esc(v.headline.wacc)}</span></div>${v.headline.perShare ? `<div class="kpi"><span class="kpi-label">${esc(VL.perShare)}</span><span class="kpi-value">${esc(v.headline.perShare)}</span></div>` : ''}</div>` : ''}
@@ -23693,7 +23959,7 @@ var __async = (__this, __arguments, generator) => {
     const sections = [
       ['summary', L.secSummary], ...(m.ai ? [['ai', L.aiSection]] : []), ['ratios', L.secRatios], ['dupont', L.secDupont],
       ['vertical', L.tabs.vertical], ['horizontal', L.tabs.horizontal], ['flags', L.flagsRecs],
-      ...(m.val ? [['plan', L.secPlan]] : []), ...(m.forecast ? [['forecast', L.fcSection]] : []), ...(m.val ? [['valuation', L.secValuation]] : []), ...(m.cash ? [['cash', L.secCash]] : []), ['checks', L.needsReview],
+      ...(m.val ? [['plan', L.secPlan]] : []), ...(m.forecast ? [['forecast', L.fcSection]] : []), ...(m.val ? [['valuation', L.secValuation]] : []), ...(m.cash ? [['cash', L.secCash]] : []), ...(m.peer ? [['peers', L.secPeers]] : []), ['checks', L.needsReview],
     ];
     const h = m.health;
     const hColor = h.score == null ? 'var(--muted)' : h.score >= 65 ? 'var(--good)' : h.score >= 45 ? 'var(--warn)' : 'var(--bad)';
@@ -23722,6 +23988,7 @@ var __async = (__this, __arguments, generator) => {
         <h3>${esc(L.fc.detail)}</h3>${tbl(m.forecastDetail.head, plainRows(m.forecastDetail.rows))}<p class="muted small">${esc(m.forecast.note)}</p></section>` : ''}
       ${valHTML}
       ${cashHTML}
+      ${peerHTML}
       <section class="fa-sec" id="${id('checks')}"><h2>${esc(L.needsReview)}</h2>
         ${m.checks.length ? `<h3>${esc(L.issues)}</h3><ul>${li(m.checks)}</ul>` : ''}
         <ul>${li(m.review)}</ul><h3>${esc(L.assumptions)}</h3><ul>${li(m.assumptions)}</ul><h3>${esc(L.nextSteps)}</h3><ol>${li(m.next)}</ol></section>`;
@@ -23767,6 +24034,12 @@ var __async = (__this, __arguments, generator) => {
       c.su.forEach(x => lines.push('', `### ${CL.su} · ${x.period}`, ...mdTable(x.head, x.rows)));
       if (c.ratios.rows.length) lines.push('', `### ${CL.cfr}`, ...mdTable(c.ratios.head, c.ratios.rows));
       lines.push('', `### ${CL.be}`, `_${CL.beHint}_`, ...(c.beMissing ? [c.beMissing] : [...mdTable(c.be.head, c.be.rows), '', ...c.beMeaning.map(t => `- ${t}`)]));
+    }
+    const pm = m.peer, PL = CFO.UI[R.lang].peer;
+    if (pm) {
+      lines.push('', `## ${L.secPeers}`);
+      if (pm.compare) lines.push(...mdTable(pm.compare.head, pm.compare.rows), '', ...mdTable(pm.figures.head, pm.figures.rows)); else lines.push(PL.none);
+      lines.push('', `### ${PL.methods}`, ...(pm.methodTable ? mdTable(pm.methodTable.head, pm.methodTable.rows) : [PL.noMethods]));
     }
     lines.push('', `## ${L.needsReview}`, ...m.checks.map(t => `- ${t}`), ...m.review.map(t => `- ${t}`), '', `## ${L.assumptions}`, ...m.assumptions.map(t => `- ${t}`),
       '', `## ${L.nextSteps}`, ...m.next.map((t, i) => `${i + 1}. ${t}`));
@@ -23874,6 +24147,8 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
         ...(m.cash.bridge ? [H2(CFO.UI[R.lang].cf.bridge), tbl(m.cash.bridge)] : []), ...m.cash.su.flatMap(x => [H2(`${CFO.UI[R.lang].cf.su} · ${x.period}`), tbl(x)]),
         ...(m.cash.ratios.rows.length ? [H2(CFO.UI[R.lang].cf.cfr), tbl(m.cash.ratios)] : []),
         H2(CFO.UI[R.lang].cf.be), muted(CFO.UI[R.lang].cf.beHint), ...(m.cash.beMissing ? [para(m.cash.beMissing)] : [tbl(m.cash.be), ...list(m.cash.beMeaning)])] : []),
+      ...(m.peer ? [H1(L.secPeers), ...(m.peer.compare ? [tbl({ ...m.peer.compare, textCols: 1 }), tbl(m.peer.figures)] : [para(CFO.UI[R.lang].peer.none)]),
+        H2(CFO.UI[R.lang].peer.methods), muted(CFO.UI[R.lang].peer.methodsHint), ...(m.peer.methodTable ? [tbl({ ...m.peer.methodTable, textCols: 1 })] : [para(CFO.UI[R.lang].peer.noMethods)])] : []),
       H1(L.needsReview), ...(m.checks.length ? [H2(L.issues), ...list(m.checks)] : []), ...list(m.review),
       H1(L.assumptions), ...list(m.assumptions),
       H1(L.nextSteps), ...list(m.next, true),
@@ -23978,6 +24253,14 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
         [CL.fixed, be.fixed], [CL.beRevenue, be.beRevenue ?? ''], [CL.cashBe, be.cashBe ?? ''], [CL.mos, be.mos ?? ''], [CL.targetRevenue, be.targetRevenue ?? ''], [CL.dol, be.dol ?? ''], [CL.dfl, be.dfl ?? ''], [CL.dcl, be.dcl ?? '']);
       add('Cash flow', rows);
     }
+    if (m.peer) {
+      const pm = m.peer, PL = CFO.UI[lang].peer, rows = [[PL.title]];
+      if (pm.compare) rows.push(['', PL.you, PL.median, PL.q1, PL.q3, PL.rank], ...pm.compare.items.map(r => [PL.m[r.id] || CFO.ratioName(r.id, lang), r.company ?? '', r.median ?? '', r.q1 ?? '', r.q3 ?? '', r.rank ? `${r.rank}/${r.of}` : '']),
+        [], [PL.name, ...CFO.PEER_FIELDS.map(k => PL.f[k])], ...pm.peers.map(p => [p.name, ...CFO.PEER_FIELDS.map(k => p[k] ?? '')]));
+      rows.push([], [PL.methods], [PL.methods, PL.low, PL.mid, PL.high, PL.weight], ...pm.methods.list.map(x => [PL.method[x.id], x.low, x.mid, x.high, x.weight ?? '']));
+      if (pm.methods.weighted) rows.push([PL.method.weighted, pm.methods.weighted.low, pm.methods.weighted.mid, pm.methods.weighted.high, 1]);
+      add('Peers & methods', rows);
+    }
     if (R.ai) add('Claude', [[L.aiSection], [L.ai.note], ...String(R.ai).split(/\r?\n/).map(l => [l])]);
     add('Mapping', [[L.source, L.rawLabel, L.mappedTo, ...P], ...ds.lines.map(l => [l.source, l.label, l.key ? CFO.itemName(l.key, lang) : '', ...P.map(p => l.values[p] ?? '')])]);
     const bytes = X.write(wb, { type: 'array', bookType: 'xlsx' });
@@ -24013,7 +24296,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
   const r3 = v => (v == null || !isFinite(v) ? null : Math.round(v * 1000) / 1000);
 
   /** Compact, language-neutral facts for the prompt. */
-  function context(A, F, S, V) {
+  function context(A, F, S, V, peers) {
     const ds = A.ds, P = ds.periods;
     const facts = {
       sector: CFO.sectorName(CFO.getSector(), 'en'),
@@ -24032,6 +24315,10 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
         funding_required: Math.round(y.fundingNeed), current_ratio: r3(sc.A.ratios.current_ratio[y.period].value),
         debt_to_equity: r3(sc.A.ratios.debt_to_equity[y.period].value) }))]));
       facts.forecast_drivers_base = Object.fromEntries(Object.entries(S.base.drivers).map(([k, v]) => [k, r3(v)]));
+    }
+    if (peers?.length && CFO.comparePeers) {
+      facts.peer_comparison = { note: 'peer figures were entered by the user', peers: peers.map(p => p.name),
+        metrics: CFO.comparePeers(CFO.companyFigures(A.ds), peers).map(r => ({ id: r.id, company: r3(r.company), peer_median: r3(r.median), rank: r.rank, of: r.of })) };
     }
     if (V && !V.missing) {
       const n = v => (v == null || !isFinite(v) ? null : Math.round(v));
@@ -24075,10 +24362,10 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
   }
 
   /** Ask Claude; streams through onText({ text }). Rejects with { code, message, text? }. */
-  async function ask(A, F, S, lang, question, { onText, signal, V } = {}) {
+  async function ask(A, F, S, lang, question, { onText, signal, V, peers } = {}) {
     const sample = await getSample();
     if (!sample) throw { code: 'unavailable', message: 'sample unavailable' };
-    const { text, truncated } = await sample(prompt(context(A, F, S, V), lang, question), { onText, signal, modelTier: 'default' });
+    const { text, truncated } = await sample(prompt(context(A, F, S, V, peers), lang, question), { onText, signal, modelTier: 'default' });
     return { text, truncated };
   }
 
@@ -24117,7 +24404,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     get(k) { try { return localStorage.getItem('cfo-lens:' + k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem('cfo-lens:' + k, v); } catch (e) { /* storage unavailable */ } },
   };
-  const TABS = ['full', 'overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'valuation', 'cashflow', 'review'];
+  const TABS = ['full', 'overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'valuation', 'cashflow', 'compare', 'review'];
   const SUBTOTALS = CFO.SUBTOTALS;   // defined in js/report.js
 
   const state = {
@@ -24129,7 +24416,9 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     sector: CFO.SECTORS[store.get('sector')] ? store.get('sector') : 'general',
     drivers: null, fcYears: 3, S: null,            // forecast: drivers (null = from history), scenarios
     dcf: {}, V: null,
-    be: { cogsVar: 1, opexVar: 0, target: null },   // break-even cost split                               // valuation: inputs the user changed, result
+    be: { cogsVar: 1, opexVar: 0, target: null },   // break-even cost split
+    peers: (() => { try { const v = JSON.parse(store.get('peers') || '[]'); return Array.isArray(v) ? v.filter(p => p && typeof p.name === 'string') : []; } catch (e) { return []; } })(),
+    mult: {}, weights: {},                          // typed multiples and method weights                               // valuation: inputs the user changed, result
     ai: { text: '', busy: false, err: '', ctl: null }, aiOn: false,
     diagNumbers: false, diagOpen: false,
     periodRename: {},   // { tableSource: { detected period: year typed by the user } }
@@ -24140,7 +24429,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
   const dataChanged = () => { state.drivers = null; for (const k of ['kd', 'tax', 'wd', 'shares', 'price']) delete state.dcf[k]; state.ai.ctl?.abort(); state.ai = { text: '', busy: false, err: '', ctl: null }; };
   // Everything the report and the exports need, in one object.
   // Claude's commentary is shown and exported only in the language it was written in (aiAll keeps it for the bilingual HTML).
-  const ctx = () => ({ A: state.A, F: state.F, S: state.S, V: state.V, drivers: state.drivers, dcf: state.dcf, be: state.be, lang: state.lang,
+  const ctx = () => ({ A: state.A, F: state.F, S: state.S, V: state.V, drivers: state.drivers, dcf: state.dcf, be: state.be, peers: state.peers, mult: state.mult, weights: state.weights, lang: state.lang,
     ai: !state.ai.lang || state.ai.lang === state.lang ? state.ai.text : '', aiAll: state.ai.text, aiLang: state.ai.lang });
 
   // pdf.js runs on the main thread when its worker script is loaded as a plain script (globalThis.pdfjsWorker),
@@ -24406,7 +24695,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
 
   function renderFlags() {
     const L = T(), lang = state.lang, S = CFO.strengths(state.A, lang);
-    const VL = L.val, plan = CFO.actionPlan(state.A, state.F, state.V && !state.V.missing ? state.V : null, lang, state.be);
+    const VL = L.val, plan = CFO.actionPlan(state.A, state.F, state.V && !state.V.missing ? state.V : null, lang, { be: state.be, peers: state.peers });
     const planCard = plan.length ? `<div class="card"><h3>${esc(VL.planTitle)}</h3><p class="muted small">${esc(VL.planHint)}</p>
       <div class="table-wrap"><table class="plan"><thead><tr><th>#</th><th>${esc(VL.priority)}</th><th>${esc(VL.when)}</th><th>${esc(VL.owner)}</th><th>${esc(VL.recommendation)}</th><th>${esc(VL.kpi)}</th><th class="n">${esc(VL.current)}</th><th class="n">${esc(VL.target)}</th></tr></thead>
       <tbody>${plan.map(it => `<tr><td>${it.n}</td><td>${pill(it.sev, it.sevText)}</td><td>${esc(it.horizon)}</td><td>${esc(it.areaText)}</td><td><b>${esc(it.title)}</b><div class="meaning">${esc(it.action)}</div></td><td>${esc(it.kpi)}</td><td class="n">${esc(it.current)}</td><td class="n">${esc(it.target)}</td></tr>`).join('')}</tbody></table></div></div>` : '';
@@ -24494,7 +24783,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     refreshAi();
     try {
       const { text } = await CFO.askClaude(state.A, state.F, state.S, state.lang, question, {
-        signal: ctl.signal, V: state.V, onText: ({ text }) => { if (state.ai.ctl === ctl) { state.ai.text = text; refreshAiText(); } },
+        signal: ctl.signal, V: state.V, peers: state.peers, onText: ({ text }) => { if (state.ai.ctl === ctl) { state.ai.text = text; refreshAiText(); } },
       });
       if (state.ai.ctl === ctl) state.ai.text = text;
     } catch (e) {
@@ -24573,6 +24862,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
         <div class="card"><h3>${esc(VL.scen)}</h3>${tbl(m.scen)}</div></div>` : ''}
       ${m.levers?.rows.length ? `<div class="card"><h3>${esc(VL.levers)}</h3><p class="muted small">${esc(VL.leversHint)}</p>${tbl(m.levers)}</div>` : ''}
       <div class="card"><h3>${esc(VL.evaTitle)}</h3><p class="muted small">${esc(VL.evaHint)}</p>${tbl(m.eva)}</div>
+      ${(() => { const pm = CFO.peerModel(ctx()), PL = T().peer; return pm.methodTable ? `<div class="card"><div class="section-head"><h3>${esc(PL.methods)}</h3><button class="btn" type="button" data-go="compare">${esc(T().tabs.compare)} →</button></div><p class="muted small">${esc(PL.methodsHint)}</p>${dataTable(pm.methodTable)}${pm.football}</div>` : ''; })()}
       <p class="muted small">${esc(m.assumptions)}</p>`;
   }
 
@@ -24595,6 +24885,46 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
           <label class="driver"><span>${esc(L.target)}</span><span class="driver-in"><input type="number" data-be="target" step="100" value="${be.target ?? ''}"><em></em></span></label></div>
         ${m.beMissing ? `<p>${esc(m.beMissing)}</p>` : `<div class="grid-2"><div>${dataTable(m.be)}<ul>${m.beMeaning.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>
           <div>${m.cvp ? CFO.svgChart(m.cvp) : ''}${m.highLow ? `<h4>${esc(m.highLow.title)}</h4>${m.highLow.usable ? dataTable({ head: ['', ''], rows: m.highLow.rows }) : `<p class="muted small">${esc(m.highLow.note)}</p>`}` : ''}</div></div>`}</div>`;
+  }
+
+  /* ---------- peers ---------- */
+  const savePeers = () => store.set('peers', JSON.stringify(state.peers));
+  async function addPeerFiles(fileList) {
+    for (const f of [...fileList]) {
+      try {
+        const tables = await withTimeout(CFO.parseFile(f), 60000, f.name);
+        const peer = CFO.peerFromTables(f.name.replace(/\.[^.]+$/, ''), tables);
+        if (!peer) throw new Error('empty');
+        state.peers = [...state.peers, peer];
+        state.notes.push(() => T().peer.fileRead(peer.name, peer.period));
+      } catch (e) { state.errors.push(() => T().peer.fileFail(f.name)); }
+    }
+    savePeers(); render();
+  }
+  function renderCompare() {
+    const L = T().peer, m = CFO.peerModel(ctx());
+    const F = CFO.PEER_FIELDS;
+    const editor = `<div class="table-wrap"><table class="peer-edit"><thead><tr><th>${esc(L.name)}</th>${F.map(k => `<th class="n">${esc(L.f[k])}</th>`).join('')}<th></th></tr></thead><tbody>
+      ${state.peers.map((p, i) => `<tr><td><input type="text" data-peer="${i}" data-k="name" value="${esc(p.name)}" aria-label="${esc(L.name)}"></td>
+        ${F.map(k => `<td><input type="number" data-peer="${i}" data-k="${k}" value="${p[k] ?? ''}" aria-label="${esc(p.name)} ${esc(L.f[k])}"></td>`).join('')}
+        <td><button class="btn ghost" type="button" data-peer-remove="${i}" aria-label="${esc(L.remove)} ${esc(p.name)}">×</button></td></tr>`).join('')}</tbody></table></div>`;
+    const quartPill = r => r.quartile ? pill(r.quartile === 'top' ? 'good' : r.quartile === 'bottom' ? 'bad' : 'warn', L.quart[r.quartile]) : '';
+    const compare = m.compare ? `<div class="table-wrap"><table><thead><tr>${m.compare.head.map((h, i) => `<th${i ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>
+      ${m.compare.items.map((r, k) => `<tr>${m.compare.rows[k].slice(0, 7).map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}<td>${quartPill(r)}</td></tr>`).join('')}</tbody></table></div>` : '';
+    const mi = (k, v) => `<label class="driver"><span>${esc(L.m[k])}</span><span class="driver-in"><input type="number" data-mult="${k}" min="0" step="0.1" value="${v ?? ''}"><em>×</em></span></label>`;
+    const wi = k => `<label class="driver"><span>${esc(L.w[k])}</span><span class="driver-in"><input type="number" data-w="${k}" min="0" max="100" step="5" value="${Math.round((m.methods.weights[k] ?? 0) * 100)}"><em>%</em></span></label>`;
+    $('p-compare').innerHTML = `<div class="card"><div class="section-head"><h2>${esc(L.title)}</h2><span class="actions">
+        <button class="btn primary" type="button" data-peer-add>${esc(L.add)}</button>
+        <label class="btn" for="peer-file">${esc(L.addFiles)}</label><input id="peer-file" type="file" multiple accept=".xlsx,.xls,.xlsm,.ods,.csv,.tsv,.txt,.pdf" class="visually-hidden">
+        ${state.peers.length ? `<button class="btn ghost" type="button" data-peer-clear>${esc(L.clear)}</button>` : ''}</span></div>
+        <p class="muted small">${esc(L.hint)}</p>${state.peers.length ? editor : `<p class="muted">${esc(L.none)}</p>`}</div>
+      ${compare ? `<div class="card"><h3>${esc(L.title)}</h3>${compare}</div>` : ''}
+      ${m.charts?.length || m.scatter ? `<div class="grid-2">${(m.charts || []).map(c => `<div class="card"><h3>${esc(c.title)}</h3>${CFO.svgChart(c)}</div>`).join('')}${m.scatter ? `<div class="card"><h3>${esc(L.scatter)}</h3>${m.scatter}</div>` : ''}</div>` : ''}
+      ${m.detail ? `<details class="card"><summary><b>${esc(L.title)} · ${esc(L.name)}</b></summary>${dataTable(m.detail)}${dataTable(m.figures)}</details>` : ''}
+      <div class="card"><h2>${esc(L.methods)}</h2><p class="muted small">${esc(L.methodsHint)}</p>
+        <h3>${esc(L.typed)}</h3><div class="drivers">${['ev_ebitda', 'ev_revenue', 'pe'].map(k => mi(k, state.mult[k])).join('')}</div>
+        <h3>${esc(L.weights)}</h3><div class="drivers">${['dcf', 'multiples', 'book'].map(wi).join('')}</div>
+        ${m.methodTable ? dataTable(m.methodTable) + m.football : `<p class="muted">${esc(L.noMethods)}</p>`}</div>`;
   }
 
   /* ---------- shell ---------- */
@@ -24623,7 +24953,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       state.notes.map(n => `<div class="note" role="status">${esc(n())}</div>`).join('');
   }
 
-  const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, valuation: renderValuation, cashflow: renderCash, review: renderReview };
+  const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, valuation: renderValuation, cashflow: renderCash, compare: renderCompare, review: renderReview };
 
   /** The tables with any years the user typed in Data review applied. */
   function tablesWithYears() {
@@ -24682,6 +25012,9 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     }
     if (e.target.closest('[data-fc="reset"]')) { state.drivers = null; return render(); }
     if (e.target.closest('[data-dcf-reset]')) { state.dcf = {}; return render(); }
+    if (e.target.closest('[data-peer-add]')) { state.peers = [...state.peers, { name: `${T().peer.name} ${state.peers.length + 1}`, source: 'manual' }]; savePeers(); return render(); }
+    if (e.target.closest('[data-peer-clear]')) { state.peers = []; savePeers(); return render(); }
+    const pr = e.target.closest('[data-peer-remove]'); if (pr) { state.peers = state.peers.filter((_, i) => i !== +pr.dataset.peerRemove); savePeers(); return render(); }
     if (e.target.closest('[data-years="reset"]')) { state.periodRename = {}; dataChanged(); return render(); }
     if (e.target.closest('[data-paste="go"]')) { addPastedTable($('paste-in').value); $('paste-in').value = ''; return; }
     if (e.target.closest('[data-diag="copy"]')) {
@@ -24715,6 +25048,14 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       const k = e.target.dataset.driver, unit = CFO.FORECAST_DRIVERS[k][3], v = parseFloat(e.target.value);
       if (isFinite(v)) { state.drivers = { ...state.drivers, [k]: CFO.clampDriver(k, unit === '%' ? v / 100 : v) }; render(); }
     }
+    if (e.target.matches('[data-peer]')) {
+      const i = +e.target.dataset.peer, k = e.target.dataset.k, raw = e.target.value.trim(), v = CFO.parseNumber(raw);
+      state.peers = state.peers.map((p, j) => j === i ? { ...p, [k]: k === 'name' ? (raw || p.name) : (raw === '' || v == null ? null : v) } : p);
+      savePeers(); return render();
+    }
+    if (e.target.matches('[data-mult]')) { const v = parseFloat(e.target.value); state.mult = { ...state.mult, [e.target.dataset.mult]: isFinite(v) && v > 0 ? v : null }; return render(); }
+    if (e.target.matches('[data-w]')) { const v = parseFloat(e.target.value); if (isFinite(v)) state.weights = { ...state.weights, [e.target.dataset.w]: Math.max(0, v) / 100 }; return render(); }
+    if (e.target.id === 'peer-file') { addPeerFiles(e.target.files); e.target.value = ''; return; }
     if (e.target.matches('[data-be]')) {
       const k = e.target.dataset.be, raw = e.target.value.trim(), v = parseFloat(raw);
       if (k === 'target') state.be = { ...state.be, target: raw === '' || !isFinite(v) ? null : v };

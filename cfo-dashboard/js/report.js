@@ -130,6 +130,8 @@
       next: L.nextList,
     };
 
+    // Peers and other valuation methods use the same DCF result as the valuation section.
+    m.peer = CFO.peerModel ? CFO.peerModel({ ...R, V: R.V !== undefined ? R.V : (m.val && !m.val.missing ? m.val.V : null) }) : null;
     // Chart data (drawn as inline SVG, so the HTML file needs no library).
     const val = k => P.map(q => ds.data[q][k] ?? null), rat = id => P.map(q => A.ratios[id][q].value);
     // Axis labels drop a zero decimal in either digit system: "20.0%" -> "20%", "٢٠٫٠%" -> "٢٠%".
@@ -176,6 +178,10 @@
         <h3>${esc(CL.be)}</h3><p class="muted small">${esc(CL.beHint)}</p>
         ${c.beMissing ? `<p>${esc(c.beMissing)}</p>` : `${T(c.be)}<ul>${li(c.beMeaning)}</ul>${c.cvp ? `<figure class="card"><figcaption><b>${esc(c.cvp.title)}</b></figcaption>${CFO.svgChart(c.cvp)}</figure>` : ''}
           ${c.highLow?.usable ? `<h3>${esc(c.highLow.title)}</h3>${T({ head: ['', ''], rows: c.highLow.rows })}` : ''}`}</section>`;
+    const pm = m.peer, PL = CFO.UI[R.lang].peer;
+    const peerHTML = !pm ? '' : `<section class="fa-sec" id="${id('peers')}"><h2>${esc(L.secPeers)}</h2>
+        ${pm.compare ? `${T(pm.compare)}${pm.charts.length || pm.scatter ? `<div class="grid-2 fa-charts">${pm.charts.map(c => `<figure class="card"><figcaption><b>${esc(c.title)}</b></figcaption>${CFO.svgChart(c)}</figure>`).join('')}${pm.scatter ? `<figure class="card"><figcaption><b>${esc(PL.scatter)}</b></figcaption>${pm.scatter}</figure>` : ''}</div>` : ''}<h3>${esc(PL.name)}</h3>${T(pm.figures)}` : `<p class="muted">${esc(PL.none)}</p>`}
+        <h3>${esc(PL.methods)}</h3><p class="muted small">${esc(PL.methodsHint)}</p>${pm.methodTable ? T(pm.methodTable) + pm.football : `<p>${esc(PL.noMethods)}</p>`}</section>`;
     const valHTML = !v ? '' : `<section class="fa-sec" id="${id('valuation')}"><h2>${esc(L.secValuation)}</h2><p class="muted small">${esc(VL.hint)}</p>
         ${v.missing ? `<p>${esc(v.missing)}</p>` : `
         ${v.headline ? `<div class="kpis"><div class="kpi"><span class="kpi-label">${esc(VL.ev)}</span><span class="kpi-value">${esc(v.headline.ev)}</span></div><div class="kpi"><span class="kpi-label">${esc(VL.equity)}</span><span class="kpi-value">${esc(v.headline.equity)}</span></div><div class="kpi"><span class="kpi-label">WACC</span><span class="kpi-value">${esc(v.headline.wacc)}</span></div>${v.headline.perShare ? `<div class="kpi"><span class="kpi-label">${esc(VL.perShare)}</span><span class="kpi-value">${esc(v.headline.perShare)}</span></div>` : ''}</div>` : ''}
@@ -190,7 +196,7 @@
     const sections = [
       ['summary', L.secSummary], ...(m.ai ? [['ai', L.aiSection]] : []), ['ratios', L.secRatios], ['dupont', L.secDupont],
       ['vertical', L.tabs.vertical], ['horizontal', L.tabs.horizontal], ['flags', L.flagsRecs],
-      ...(m.val ? [['plan', L.secPlan]] : []), ...(m.forecast ? [['forecast', L.fcSection]] : []), ...(m.val ? [['valuation', L.secValuation]] : []), ...(m.cash ? [['cash', L.secCash]] : []), ['checks', L.needsReview],
+      ...(m.val ? [['plan', L.secPlan]] : []), ...(m.forecast ? [['forecast', L.fcSection]] : []), ...(m.val ? [['valuation', L.secValuation]] : []), ...(m.cash ? [['cash', L.secCash]] : []), ...(m.peer ? [['peers', L.secPeers]] : []), ['checks', L.needsReview],
     ];
     const h = m.health;
     const hColor = h.score == null ? 'var(--muted)' : h.score >= 65 ? 'var(--good)' : h.score >= 45 ? 'var(--warn)' : 'var(--bad)';
@@ -219,6 +225,7 @@
         <h3>${esc(L.fc.detail)}</h3>${tbl(m.forecastDetail.head, plainRows(m.forecastDetail.rows))}<p class="muted small">${esc(m.forecast.note)}</p></section>` : ''}
       ${valHTML}
       ${cashHTML}
+      ${peerHTML}
       <section class="fa-sec" id="${id('checks')}"><h2>${esc(L.needsReview)}</h2>
         ${m.checks.length ? `<h3>${esc(L.issues)}</h3><ul>${li(m.checks)}</ul>` : ''}
         <ul>${li(m.review)}</ul><h3>${esc(L.assumptions)}</h3><ul>${li(m.assumptions)}</ul><h3>${esc(L.nextSteps)}</h3><ol>${li(m.next)}</ol></section>`;
@@ -264,6 +271,12 @@
       c.su.forEach(x => lines.push('', `### ${CL.su} · ${x.period}`, ...mdTable(x.head, x.rows)));
       if (c.ratios.rows.length) lines.push('', `### ${CL.cfr}`, ...mdTable(c.ratios.head, c.ratios.rows));
       lines.push('', `### ${CL.be}`, `_${CL.beHint}_`, ...(c.beMissing ? [c.beMissing] : [...mdTable(c.be.head, c.be.rows), '', ...c.beMeaning.map(t => `- ${t}`)]));
+    }
+    const pm = m.peer, PL = CFO.UI[R.lang].peer;
+    if (pm) {
+      lines.push('', `## ${L.secPeers}`);
+      if (pm.compare) lines.push(...mdTable(pm.compare.head, pm.compare.rows), '', ...mdTable(pm.figures.head, pm.figures.rows)); else lines.push(PL.none);
+      lines.push('', `### ${PL.methods}`, ...(pm.methodTable ? mdTable(pm.methodTable.head, pm.methodTable.rows) : [PL.noMethods]));
     }
     lines.push('', `## ${L.needsReview}`, ...m.checks.map(t => `- ${t}`), ...m.review.map(t => `- ${t}`), '', `## ${L.assumptions}`, ...m.assumptions.map(t => `- ${t}`),
       '', `## ${L.nextSteps}`, ...m.next.map((t, i) => `${i + 1}. ${t}`));
@@ -371,6 +384,8 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
         ...(m.cash.bridge ? [H2(CFO.UI[R.lang].cf.bridge), tbl(m.cash.bridge)] : []), ...m.cash.su.flatMap(x => [H2(`${CFO.UI[R.lang].cf.su} · ${x.period}`), tbl(x)]),
         ...(m.cash.ratios.rows.length ? [H2(CFO.UI[R.lang].cf.cfr), tbl(m.cash.ratios)] : []),
         H2(CFO.UI[R.lang].cf.be), muted(CFO.UI[R.lang].cf.beHint), ...(m.cash.beMissing ? [para(m.cash.beMissing)] : [tbl(m.cash.be), ...list(m.cash.beMeaning)])] : []),
+      ...(m.peer ? [H1(L.secPeers), ...(m.peer.compare ? [tbl({ ...m.peer.compare, textCols: 1 }), tbl(m.peer.figures)] : [para(CFO.UI[R.lang].peer.none)]),
+        H2(CFO.UI[R.lang].peer.methods), muted(CFO.UI[R.lang].peer.methodsHint), ...(m.peer.methodTable ? [tbl({ ...m.peer.methodTable, textCols: 1 })] : [para(CFO.UI[R.lang].peer.noMethods)])] : []),
       H1(L.needsReview), ...(m.checks.length ? [H2(L.issues), ...list(m.checks)] : []), ...list(m.review),
       H1(L.assumptions), ...list(m.assumptions),
       H1(L.nextSteps), ...list(m.next, true),
@@ -474,6 +489,14 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       if (be) rows.push([], [CL.be], [CL.cogsVar, be.cogsVar], [CL.opexVar, be.opexVar], [CFO.itemName('revenue', lang), be.revenue], [CL.variable, be.variable], [CL.cm, be.cm], [CL.cmr, be.cmr],
         [CL.fixed, be.fixed], [CL.beRevenue, be.beRevenue ?? ''], [CL.cashBe, be.cashBe ?? ''], [CL.mos, be.mos ?? ''], [CL.targetRevenue, be.targetRevenue ?? ''], [CL.dol, be.dol ?? ''], [CL.dfl, be.dfl ?? ''], [CL.dcl, be.dcl ?? '']);
       add('Cash flow', rows);
+    }
+    if (m.peer) {
+      const pm = m.peer, PL = CFO.UI[lang].peer, rows = [[PL.title]];
+      if (pm.compare) rows.push(['', PL.you, PL.median, PL.q1, PL.q3, PL.rank], ...pm.compare.items.map(r => [PL.m[r.id] || CFO.ratioName(r.id, lang), r.company ?? '', r.median ?? '', r.q1 ?? '', r.q3 ?? '', r.rank ? `${r.rank}/${r.of}` : '']),
+        [], [PL.name, ...CFO.PEER_FIELDS.map(k => PL.f[k])], ...pm.peers.map(p => [p.name, ...CFO.PEER_FIELDS.map(k => p[k] ?? '')]));
+      rows.push([], [PL.methods], [PL.methods, PL.low, PL.mid, PL.high, PL.weight], ...pm.methods.list.map(x => [PL.method[x.id], x.low, x.mid, x.high, x.weight ?? '']));
+      if (pm.methods.weighted) rows.push([PL.method.weighted, pm.methods.weighted.low, pm.methods.weighted.mid, pm.methods.weighted.high, 1]);
+      add('Peers & methods', rows);
     }
     if (R.ai) add('Claude', [[L.aiSection], [L.ai.note], ...String(R.ai).split(/\r?\n/).map(l => [l])]);
     add('Mapping', [[L.source, L.rawLabel, L.mappedTo, ...P], ...ds.lines.map(l => [l.source, l.label, l.key ? CFO.itemName(l.key, lang) : '', ...P.map(p => l.values[p] ?? '')])]);

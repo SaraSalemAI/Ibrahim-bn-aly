@@ -251,3 +251,6 @@ table.plan td:nth-child(3), table.plan td:nth-child(4) { white-space: nowrap; }
 .years-row > span { flex: 1 1 200px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
 .year-in { width: 7.5em; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font-family: var(--font-num); }
 .year-in[aria-invalid="true"] { border-color: var(--bad); }
+
+.football { max-width: 720px; margin: 12px auto 0; }
+.peer-edit input { width: 100%; min-width: 7rem; padding: 4px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font-family: var(--font-num); }

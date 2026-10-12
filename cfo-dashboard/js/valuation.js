@@ -147,7 +147,7 @@
   const GROUP_AREA = { liquidity: 'treasury', profitability: 'management', efficiency: 'operations', leverage: 'treasury', cashflow: 'finance', growth: 'sales', quality: 'finance', distress: 'board' };
   const SEV_ORDER = { high: 0, med: 1, low: 2 };
 
-  function actionPlan(A, F, V, lang, beOpts) {
+  function actionPlan(A, F, V, lang, opts = {}) {
     const L = CFO.UI[lang].val, p = A.latest, items = [], tracked = new Set();
     const fmt = (id, v) => CFO.fmtVal(CFO.RATIO[id].unit, v, lang);
     const target = id => { const b = CFO.bench(id), def = CFO.RATIO[id]; return def.dir && b.good != null ? `${def.dir === 'high' ? '≥' : '≤'} ${fmt(id, b.good)}` : '—'; };
@@ -169,9 +169,19 @@
     if (off.length) items.push({ sev: 'high', area: 'finance', title: L.reconTitle, action: L.reconAction(off.map(c => `${CFO.UI[lang].cf.check[c.id]} (${c.period}: ${CFO.fmtNum(c.diff, 0, lang)})`).join(lang === 'ar' ? '؛ ' : '; ')),
       kpi: '—', current: String(off.length), target: '0' });
     // A thin margin of safety leaves little room before the business stops covering its fixed costs.
-    const be = CFO.breakEven ? CFO.breakEven(A.ds, beOpts || {}) : null;
+    const be = CFO.breakEven ? CFO.breakEven(A.ds, opts.be || {}) : null;
     if (be && be.mos != null && be.mos < 0.15) items.push({ sev: be.mos < 0.05 ? 'high' : 'med', area: 'management', title: L.mosTitle, action: L.mosAction,
       kpi: CFO.UI[lang].cf.mos, current: CFO.fmtPct(be.mos, lang), target: `≥ ${CFO.fmtPct(0.15, lang)}` });
+    // Bottom quartile against the user's own peers (two or more).
+    if (opts.peers?.length >= 2 && CFO.comparePeers) {
+      const PL = CFO.UI[lang].peer;
+      CFO.comparePeers(CFO.companyFigures(A.ds), opts.peers).filter(r => r.quartile === 'bottom' && r.n >= 2 && !tracked.has(r.id)).slice(0, 3).forEach(r => {
+        tracked.add(r.id);
+        const name = PL.m[r.id] || CFO.ratioName(r.id, lang);
+        items.push({ sev: 'med', area: GROUP_AREA[CFO.RATIO[r.id]?.group] || 'management', title: PL.bottomTitle(name), action: PL.bottomAction,
+          kpi: name, current: CFO.fmtVal(r.unit, r.company, lang), target: `${r.dir === 'high' ? '≥' : '≤'} ${CFO.fmtVal(r.unit, r.median, lang)}` });
+      });
+    }
     // Ratios rated weak or on watch that no red flag covers yet.
     for (const [status, sev, cap] of [['bad', 'med', 4], ['warn', 'low', 4]]) {
       const seen = new Set();   // one per group: their actions would repeat
@@ -283,7 +293,7 @@
     const { A, F, lang } = R, L = UIV[lang], ds = A.ds;
     const V = R.V !== undefined ? R.V : valuation(ds, R.drivers, R.dcf);
     const money = v => CFO.fmtNum(v, 0, lang), pct = v => CFO.fmtPct(v, lang), x = v => CFO.fmtVal('x', v, lang);
-    const plan = actionPlan(A, F, V && !V.missing ? V : null, lang, R.be);
+    const plan = actionPlan(A, F, V && !V.missing ? V : null, lang, { be: R.be, peers: R.peers });
     const planTable = { head: ['#', L.priority, L.when, L.owner, L.recommendation, L.kpi, L.current, L.target],
       rows: plan.map(it => [String(it.n), it.sevText, it.horizon, it.areaText, `${it.title}: ${it.action}`, it.kpi, it.current, it.target]), items: plan };
     if (!V || V.missing) return { missing: L.missing((V?.missing || []).map(k => CFO.itemName(k, lang)).join(lang === 'ar' ? '، ' : ', ')), plan: planTable, levers: null };

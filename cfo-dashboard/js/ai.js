@@ -10,7 +10,7 @@
   const r3 = v => (v == null || !isFinite(v) ? null : Math.round(v * 1000) / 1000);
 
   /** Compact, language-neutral facts for the prompt. */
-  function context(A, F, S, V) {
+  function context(A, F, S, V, peers) {
     const ds = A.ds, P = ds.periods;
     const facts = {
       sector: CFO.sectorName(CFO.getSector(), 'en'),
@@ -29,6 +29,10 @@
         funding_required: Math.round(y.fundingNeed), current_ratio: r3(sc.A.ratios.current_ratio[y.period].value),
         debt_to_equity: r3(sc.A.ratios.debt_to_equity[y.period].value) }))]));
       facts.forecast_drivers_base = Object.fromEntries(Object.entries(S.base.drivers).map(([k, v]) => [k, r3(v)]));
+    }
+    if (peers?.length && CFO.comparePeers) {
+      facts.peer_comparison = { note: 'peer figures were entered by the user', peers: peers.map(p => p.name),
+        metrics: CFO.comparePeers(CFO.companyFigures(A.ds), peers).map(r => ({ id: r.id, company: r3(r.company), peer_median: r3(r.median), rank: r.rank, of: r.of })) };
     }
     if (V && !V.missing) {
       const n = v => (v == null || !isFinite(v) ? null : Math.round(v));
@@ -72,10 +76,10 @@
   }
 
   /** Ask Claude; streams through onText({ text }). Rejects with { code, message, text? }. */
-  async function ask(A, F, S, lang, question, { onText, signal, V } = {}) {
+  async function ask(A, F, S, lang, question, { onText, signal, V, peers } = {}) {
     const sample = await getSample();
     if (!sample) throw { code: 'unavailable', message: 'sample unavailable' };
-    const { text, truncated } = await sample(prompt(context(A, F, S, V), lang, question), { onText, signal, modelTier: 'default' });
+    const { text, truncated } = await sample(prompt(context(A, F, S, V, peers), lang, question), { onText, signal, modelTier: 'default' });
     return { text, truncated };
   }
 

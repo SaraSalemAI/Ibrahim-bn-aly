@@ -6,7 +6,7 @@
     get(k) { try { return localStorage.getItem('cfo-lens:' + k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem('cfo-lens:' + k, v); } catch (e) { /* storage unavailable */ } },
   };
-  const TABS = ['full', 'overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'valuation', 'cashflow', 'review'];
+  const TABS = ['full', 'overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'valuation', 'cashflow', 'compare', 'review'];
   const SUBTOTALS = CFO.SUBTOTALS;   // defined in js/report.js
 
   const state = {
@@ -18,7 +18,9 @@
     sector: CFO.SECTORS[store.get('sector')] ? store.get('sector') : 'general',
     drivers: null, fcYears: 3, S: null,            // forecast: drivers (null = from history), scenarios
     dcf: {}, V: null,
-    be: { cogsVar: 1, opexVar: 0, target: null },   // break-even cost split                               // valuation: inputs the user changed, result
+    be: { cogsVar: 1, opexVar: 0, target: null },   // break-even cost split
+    peers: (() => { try { const v = JSON.parse(store.get('peers') || '[]'); return Array.isArray(v) ? v.filter(p => p && typeof p.name === 'string') : []; } catch (e) { return []; } })(),
+    mult: {}, weights: {},                          // typed multiples and method weights                               // valuation: inputs the user changed, result
     ai: { text: '', busy: false, err: '', ctl: null }, aiOn: false,
     diagNumbers: false, diagOpen: false,
     periodRename: {},   // { tableSource: { detected period: year typed by the user } }
@@ -29,7 +31,7 @@
   const dataChanged = () => { state.drivers = null; for (const k of ['kd', 'tax', 'wd', 'shares', 'price']) delete state.dcf[k]; state.ai.ctl?.abort(); state.ai = { text: '', busy: false, err: '', ctl: null }; };
   // Everything the report and the exports need, in one object.
   // Claude's commentary is shown and exported only in the language it was written in (aiAll keeps it for the bilingual HTML).
-  const ctx = () => ({ A: state.A, F: state.F, S: state.S, V: state.V, drivers: state.drivers, dcf: state.dcf, be: state.be, lang: state.lang,
+  const ctx = () => ({ A: state.A, F: state.F, S: state.S, V: state.V, drivers: state.drivers, dcf: state.dcf, be: state.be, peers: state.peers, mult: state.mult, weights: state.weights, lang: state.lang,
     ai: !state.ai.lang || state.ai.lang === state.lang ? state.ai.text : '', aiAll: state.ai.text, aiLang: state.ai.lang });
 
   // pdf.js runs on the main thread when its worker script is loaded as a plain script (globalThis.pdfjsWorker),
@@ -295,7 +297,7 @@
 
   function renderFlags() {
     const L = T(), lang = state.lang, S = CFO.strengths(state.A, lang);
-    const VL = L.val, plan = CFO.actionPlan(state.A, state.F, state.V && !state.V.missing ? state.V : null, lang, state.be);
+    const VL = L.val, plan = CFO.actionPlan(state.A, state.F, state.V && !state.V.missing ? state.V : null, lang, { be: state.be, peers: state.peers });
     const planCard = plan.length ? `<div class="card"><h3>${esc(VL.planTitle)}</h3><p class="muted small">${esc(VL.planHint)}</p>
       <div class="table-wrap"><table class="plan"><thead><tr><th>#</th><th>${esc(VL.priority)}</th><th>${esc(VL.when)}</th><th>${esc(VL.owner)}</th><th>${esc(VL.recommendation)}</th><th>${esc(VL.kpi)}</th><th class="n">${esc(VL.current)}</th><th class="n">${esc(VL.target)}</th></tr></thead>
       <tbody>${plan.map(it => `<tr><td>${it.n}</td><td>${pill(it.sev, it.sevText)}</td><td>${esc(it.horizon)}</td><td>${esc(it.areaText)}</td><td><b>${esc(it.title)}</b><div class="meaning">${esc(it.action)}</div></td><td>${esc(it.kpi)}</td><td class="n">${esc(it.current)}</td><td class="n">${esc(it.target)}</td></tr>`).join('')}</tbody></table></div></div>` : '';
@@ -383,7 +385,7 @@
     refreshAi();
     try {
       const { text } = await CFO.askClaude(state.A, state.F, state.S, state.lang, question, {
-        signal: ctl.signal, V: state.V, onText: ({ text }) => { if (state.ai.ctl === ctl) { state.ai.text = text; refreshAiText(); } },
+        signal: ctl.signal, V: state.V, peers: state.peers, onText: ({ text }) => { if (state.ai.ctl === ctl) { state.ai.text = text; refreshAiText(); } },
       });
       if (state.ai.ctl === ctl) state.ai.text = text;
     } catch (e) {
@@ -462,6 +464,7 @@
         <div class="card"><h3>${esc(VL.scen)}</h3>${tbl(m.scen)}</div></div>` : ''}
       ${m.levers?.rows.length ? `<div class="card"><h3>${esc(VL.levers)}</h3><p class="muted small">${esc(VL.leversHint)}</p>${tbl(m.levers)}</div>` : ''}
       <div class="card"><h3>${esc(VL.evaTitle)}</h3><p class="muted small">${esc(VL.evaHint)}</p>${tbl(m.eva)}</div>
+      ${(() => { const pm = CFO.peerModel(ctx()), PL = T().peer; return pm.methodTable ? `<div class="card"><div class="section-head"><h3>${esc(PL.methods)}</h3><button class="btn" type="button" data-go="compare">${esc(T().tabs.compare)} →</button></div><p class="muted small">${esc(PL.methodsHint)}</p>${dataTable(pm.methodTable)}${pm.football}</div>` : ''; })()}
       <p class="muted small">${esc(m.assumptions)}</p>`;
   }
 
@@ -484,6 +487,46 @@
           <label class="driver"><span>${esc(L.target)}</span><span class="driver-in"><input type="number" data-be="target" step="100" value="${be.target ?? ''}"><em></em></span></label></div>
         ${m.beMissing ? `<p>${esc(m.beMissing)}</p>` : `<div class="grid-2"><div>${dataTable(m.be)}<ul>${m.beMeaning.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>
           <div>${m.cvp ? CFO.svgChart(m.cvp) : ''}${m.highLow ? `<h4>${esc(m.highLow.title)}</h4>${m.highLow.usable ? dataTable({ head: ['', ''], rows: m.highLow.rows }) : `<p class="muted small">${esc(m.highLow.note)}</p>`}` : ''}</div></div>`}</div>`;
+  }
+
+  /* ---------- peers ---------- */
+  const savePeers = () => store.set('peers', JSON.stringify(state.peers));
+  async function addPeerFiles(fileList) {
+    for (const f of [...fileList]) {
+      try {
+        const tables = await withTimeout(CFO.parseFile(f), 60000, f.name);
+        const peer = CFO.peerFromTables(f.name.replace(/\.[^.]+$/, ''), tables);
+        if (!peer) throw new Error('empty');
+        state.peers = [...state.peers, peer];
+        state.notes.push(() => T().peer.fileRead(peer.name, peer.period));
+      } catch (e) { state.errors.push(() => T().peer.fileFail(f.name)); }
+    }
+    savePeers(); render();
+  }
+  function renderCompare() {
+    const L = T().peer, m = CFO.peerModel(ctx());
+    const F = CFO.PEER_FIELDS;
+    const editor = `<div class="table-wrap"><table class="peer-edit"><thead><tr><th>${esc(L.name)}</th>${F.map(k => `<th class="n">${esc(L.f[k])}</th>`).join('')}<th></th></tr></thead><tbody>
+      ${state.peers.map((p, i) => `<tr><td><input type="text" data-peer="${i}" data-k="name" value="${esc(p.name)}" aria-label="${esc(L.name)}"></td>
+        ${F.map(k => `<td><input type="number" data-peer="${i}" data-k="${k}" value="${p[k] ?? ''}" aria-label="${esc(p.name)} ${esc(L.f[k])}"></td>`).join('')}
+        <td><button class="btn ghost" type="button" data-peer-remove="${i}" aria-label="${esc(L.remove)} ${esc(p.name)}">×</button></td></tr>`).join('')}</tbody></table></div>`;
+    const quartPill = r => r.quartile ? pill(r.quartile === 'top' ? 'good' : r.quartile === 'bottom' ? 'bad' : 'warn', L.quart[r.quartile]) : '';
+    const compare = m.compare ? `<div class="table-wrap"><table><thead><tr>${m.compare.head.map((h, i) => `<th${i ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>
+      ${m.compare.items.map((r, k) => `<tr>${m.compare.rows[k].slice(0, 7).map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}<td>${quartPill(r)}</td></tr>`).join('')}</tbody></table></div>` : '';
+    const mi = (k, v) => `<label class="driver"><span>${esc(L.m[k])}</span><span class="driver-in"><input type="number" data-mult="${k}" min="0" step="0.1" value="${v ?? ''}"><em>×</em></span></label>`;
+    const wi = k => `<label class="driver"><span>${esc(L.w[k])}</span><span class="driver-in"><input type="number" data-w="${k}" min="0" max="100" step="5" value="${Math.round((m.methods.weights[k] ?? 0) * 100)}"><em>%</em></span></label>`;
+    $('p-compare').innerHTML = `<div class="card"><div class="section-head"><h2>${esc(L.title)}</h2><span class="actions">
+        <button class="btn primary" type="button" data-peer-add>${esc(L.add)}</button>
+        <label class="btn" for="peer-file">${esc(L.addFiles)}</label><input id="peer-file" type="file" multiple accept=".xlsx,.xls,.xlsm,.ods,.csv,.tsv,.txt,.pdf" class="visually-hidden">
+        ${state.peers.length ? `<button class="btn ghost" type="button" data-peer-clear>${esc(L.clear)}</button>` : ''}</span></div>
+        <p class="muted small">${esc(L.hint)}</p>${state.peers.length ? editor : `<p class="muted">${esc(L.none)}</p>`}</div>
+      ${compare ? `<div class="card"><h3>${esc(L.title)}</h3>${compare}</div>` : ''}
+      ${m.charts?.length || m.scatter ? `<div class="grid-2">${(m.charts || []).map(c => `<div class="card"><h3>${esc(c.title)}</h3>${CFO.svgChart(c)}</div>`).join('')}${m.scatter ? `<div class="card"><h3>${esc(L.scatter)}</h3>${m.scatter}</div>` : ''}</div>` : ''}
+      ${m.detail ? `<details class="card"><summary><b>${esc(L.title)} · ${esc(L.name)}</b></summary>${dataTable(m.detail)}${dataTable(m.figures)}</details>` : ''}
+      <div class="card"><h2>${esc(L.methods)}</h2><p class="muted small">${esc(L.methodsHint)}</p>
+        <h3>${esc(L.typed)}</h3><div class="drivers">${['ev_ebitda', 'ev_revenue', 'pe'].map(k => mi(k, state.mult[k])).join('')}</div>
+        <h3>${esc(L.weights)}</h3><div class="drivers">${['dcf', 'multiples', 'book'].map(wi).join('')}</div>
+        ${m.methodTable ? dataTable(m.methodTable) + m.football : `<p class="muted">${esc(L.noMethods)}</p>`}</div>`;
   }
 
   /* ---------- shell ---------- */
@@ -512,7 +555,7 @@
       state.notes.map(n => `<div class="note" role="status">${esc(n())}</div>`).join('');
   }
 
-  const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, valuation: renderValuation, cashflow: renderCash, review: renderReview };
+  const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, valuation: renderValuation, cashflow: renderCash, compare: renderCompare, review: renderReview };
 
   /** The tables with any years the user typed in Data review applied. */
   function tablesWithYears() {
@@ -571,6 +614,9 @@
     }
     if (e.target.closest('[data-fc="reset"]')) { state.drivers = null; return render(); }
     if (e.target.closest('[data-dcf-reset]')) { state.dcf = {}; return render(); }
+    if (e.target.closest('[data-peer-add]')) { state.peers = [...state.peers, { name: `${T().peer.name} ${state.peers.length + 1}`, source: 'manual' }]; savePeers(); return render(); }
+    if (e.target.closest('[data-peer-clear]')) { state.peers = []; savePeers(); return render(); }
+    const pr = e.target.closest('[data-peer-remove]'); if (pr) { state.peers = state.peers.filter((_, i) => i !== +pr.dataset.peerRemove); savePeers(); return render(); }
     if (e.target.closest('[data-years="reset"]')) { state.periodRename = {}; dataChanged(); return render(); }
     if (e.target.closest('[data-paste="go"]')) { addPastedTable($('paste-in').value); $('paste-in').value = ''; return; }
     if (e.target.closest('[data-diag="copy"]')) {
@@ -604,6 +650,14 @@
       const k = e.target.dataset.driver, unit = CFO.FORECAST_DRIVERS[k][3], v = parseFloat(e.target.value);
       if (isFinite(v)) { state.drivers = { ...state.drivers, [k]: CFO.clampDriver(k, unit === '%' ? v / 100 : v) }; render(); }
     }
+    if (e.target.matches('[data-peer]')) {
+      const i = +e.target.dataset.peer, k = e.target.dataset.k, raw = e.target.value.trim(), v = CFO.parseNumber(raw);
+      state.peers = state.peers.map((p, j) => j === i ? { ...p, [k]: k === 'name' ? (raw || p.name) : (raw === '' || v == null ? null : v) } : p);
+      savePeers(); return render();
+    }
+    if (e.target.matches('[data-mult]')) { const v = parseFloat(e.target.value); state.mult = { ...state.mult, [e.target.dataset.mult]: isFinite(v) && v > 0 ? v : null }; return render(); }
+    if (e.target.matches('[data-w]')) { const v = parseFloat(e.target.value); if (isFinite(v)) state.weights = { ...state.weights, [e.target.dataset.w]: Math.max(0, v) / 100 }; return render(); }
+    if (e.target.id === 'peer-file') { addPeerFiles(e.target.files); e.target.value = ''; return; }
     if (e.target.matches('[data-be]')) {
       const k = e.target.dataset.be, raw = e.target.value.trim(), v = parseFloat(raw);
       if (k === 'target') state.be = { ...state.be, target: raw === '' || !isFinite(v) ? null : v };
