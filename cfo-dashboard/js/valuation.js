@@ -182,6 +182,12 @@
           kpi: name, current: CFO.fmtVal(r.unit, r.company, lang), target: `${r.dir === 'high' ? '≥' : '≤'} ${CFO.fmtVal(r.unit, r.median, lang)}` });
       });
     }
+    // Adverse budget variances above 10% on the main lines.
+    if (opts.budget && CFO.adverseVariances) {
+      const VR = CFO.UI[lang].var;
+      CFO.adverseVariances(A.ds, opts.budget).slice(0, 3).forEach(r => items.push({ sev: Math.abs(r.pct) > 0.2 ? 'high' : 'med', area: r.key === 'opex' ? 'operations' : r.key === 'revenue' ? 'sales' : 'management',
+        title: VR.advTitle(CFO.itemName(r.key, lang)), action: VR.advAction, kpi: CFO.itemName(r.key, lang), current: CFO.fmtNum(r.actual, 0, lang), target: CFO.fmtNum(r.plan, 0, lang) }));
+    }
     // Ratios rated weak or on watch that no red flag covers yet.
     for (const [status, sev, cap] of [['bad', 'med', 4], ['warn', 'low', 4]]) {
       const seen = new Set();   // one per group: their actions would repeat
@@ -293,7 +299,7 @@
     const { A, F, lang } = R, L = UIV[lang], ds = A.ds;
     const V = R.V !== undefined ? R.V : valuation(ds, R.drivers, R.dcf);
     const money = v => CFO.fmtNum(v, 0, lang), pct = v => CFO.fmtPct(v, lang), x = v => CFO.fmtVal('x', v, lang);
-    const plan = actionPlan(A, F, V && !V.missing ? V : null, lang, { be: R.be, peers: R.peers });
+    const plan = actionPlan(A, F, V && !V.missing ? V : null, lang, { be: R.be, peers: R.peers, budget: R.budget });
     const planTable = { head: ['#', L.priority, L.when, L.owner, L.recommendation, L.kpi, L.current, L.target],
       rows: plan.map(it => [String(it.n), it.sevText, it.horizon, it.areaText, `${it.title}: ${it.action}`, it.kpi, it.current, it.target]), items: plan };
     if (!V || V.missing) return { missing: L.missing((V?.missing || []).map(k => CFO.itemName(k, lang)).join(lang === 'ar' ? '، ' : ', ')), plan: planTable, levers: null };

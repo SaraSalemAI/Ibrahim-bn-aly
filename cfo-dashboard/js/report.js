@@ -116,6 +116,7 @@
           CFO.fmtVal('x', r.asset_turnover, lang), CFO.fmtVal('x', r.equity_multiplier, lang), CFO.fmtPct(r.roe, lang)]) },
       val: CFO.valuationModel ? CFO.valuationModel(R) : null,
       cash: CFO.cashModel ? CFO.cashModel(R) : null,
+      variance: CFO.varianceModel ? CFO.varianceModel(R) : null,
       altman: { value: CFO.fmtVal('score', z, lang), meaning: z != null ? CFO.meaning('altman_z', z, lang) : L.notAvail, zones: L.zZones,
         status: z == null ? 'na' : A.ratios.altman_z[p].status },
       vertical: byStatement(A.vertical, r => P.map(q => r.pct[q] == null ? '—' : `${CFO.fmtPct(r.pct[q], lang)}`), st => [L.item, ...P.map(q => `${q} · ${st === 'BS' ? L.ofAssets : L.ofRevenue}`)]),
@@ -182,6 +183,9 @@
     const peerHTML = !pm ? '' : `<section class="fa-sec" id="${id('peers')}"><h2>${esc(L.secPeers)}</h2>
         ${pm.compare ? `${T(pm.compare)}${pm.charts.length || pm.scatter ? `<div class="grid-2 fa-charts">${pm.charts.map(c => `<figure class="card"><figcaption><b>${esc(c.title)}</b></figcaption>${CFO.svgChart(c)}</figure>`).join('')}${pm.scatter ? `<figure class="card"><figcaption><b>${esc(PL.scatter)}</b></figcaption>${pm.scatter}</figure>` : ''}</div>` : ''}<h3>${esc(PL.name)}</h3>${T(pm.figures)}` : `<p class="muted">${esc(PL.none)}</p>`}
         <h3>${esc(PL.methods)}</h3><p class="muted small">${esc(PL.methodsHint)}</p>${pm.methodTable ? T(pm.methodTable) + pm.football : `<p>${esc(PL.noMethods)}</p>`}</section>`;
+    const vm = m.variance, VR = CFO.UI[R.lang].var;
+    const varHTML = !vm?.table ? '' : `<section class="fa-sec" id="${id('variance')}"><h2>${esc(L.secVariance)}</h2><p class="muted small">${esc(vm.hint)}</p>${T(vm.table)}
+        ${vm.walk ? `<h3>${esc(VR.walk)}</h3><p class="muted small">${esc(VR.walkHint)}</p>${T(vm.walk)}<figure class="card"><figcaption><b>${esc(VR.walk)}</b></figcaption>${CFO.svgChart(vm.chart)}</figure>` : ''}</section>`;
     const valHTML = !v ? '' : `<section class="fa-sec" id="${id('valuation')}"><h2>${esc(L.secValuation)}</h2><p class="muted small">${esc(VL.hint)}</p>
         ${v.missing ? `<p>${esc(v.missing)}</p>` : `
         ${v.headline ? `<div class="kpis"><div class="kpi"><span class="kpi-label">${esc(VL.ev)}</span><span class="kpi-value">${esc(v.headline.ev)}</span></div><div class="kpi"><span class="kpi-label">${esc(VL.equity)}</span><span class="kpi-value">${esc(v.headline.equity)}</span></div><div class="kpi"><span class="kpi-label">WACC</span><span class="kpi-value">${esc(v.headline.wacc)}</span></div>${v.headline.perShare ? `<div class="kpi"><span class="kpi-label">${esc(VL.perShare)}</span><span class="kpi-value">${esc(v.headline.perShare)}</span></div>` : ''}</div>` : ''}
@@ -196,7 +200,7 @@
     const sections = [
       ['summary', L.secSummary], ...(m.ai ? [['ai', L.aiSection]] : []), ['ratios', L.secRatios], ['dupont', L.secDupont],
       ['vertical', L.tabs.vertical], ['horizontal', L.tabs.horizontal], ['flags', L.flagsRecs],
-      ...(m.val ? [['plan', L.secPlan]] : []), ...(m.forecast ? [['forecast', L.fcSection]] : []), ...(m.val ? [['valuation', L.secValuation]] : []), ...(m.cash ? [['cash', L.secCash]] : []), ...(m.peer ? [['peers', L.secPeers]] : []), ['checks', L.needsReview],
+      ...(m.val ? [['plan', L.secPlan]] : []), ...(m.forecast ? [['forecast', L.fcSection]] : []), ...(m.val ? [['valuation', L.secValuation]] : []), ...(m.cash ? [['cash', L.secCash]] : []), ...(m.peer ? [['peers', L.secPeers]] : []), ...(m.variance?.table ? [['variance', L.secVariance]] : []), ['checks', L.needsReview],
     ];
     const h = m.health;
     const hColor = h.score == null ? 'var(--muted)' : h.score >= 65 ? 'var(--good)' : h.score >= 45 ? 'var(--warn)' : 'var(--bad)';
@@ -226,6 +230,7 @@
       ${valHTML}
       ${cashHTML}
       ${peerHTML}
+      ${varHTML}
       <section class="fa-sec" id="${id('checks')}"><h2>${esc(L.needsReview)}</h2>
         ${m.checks.length ? `<h3>${esc(L.issues)}</h3><ul>${li(m.checks)}</ul>` : ''}
         <ul>${li(m.review)}</ul><h3>${esc(L.assumptions)}</h3><ul>${li(m.assumptions)}</ul><h3>${esc(L.nextSteps)}</h3><ol>${li(m.next)}</ol></section>`;
@@ -277,6 +282,10 @@
       lines.push('', `## ${L.secPeers}`);
       if (pm.compare) lines.push(...mdTable(pm.compare.head, pm.compare.rows), '', ...mdTable(pm.figures.head, pm.figures.rows)); else lines.push(PL.none);
       lines.push('', `### ${PL.methods}`, ...(pm.methodTable ? mdTable(pm.methodTable.head, pm.methodTable.rows) : [PL.noMethods]));
+    }
+    if (m.variance?.table) {
+      lines.push('', `## ${L.secVariance}`, `_${m.variance.hint}_`, ...mdTable(m.variance.table.head, m.variance.table.rows));
+      if (m.variance.walk) lines.push('', `### ${CFO.UI[R.lang].var.walk}`, ...mdTable(m.variance.walk.head, m.variance.walk.rows));
     }
     lines.push('', `## ${L.needsReview}`, ...m.checks.map(t => `- ${t}`), ...m.review.map(t => `- ${t}`), '', `## ${L.assumptions}`, ...m.assumptions.map(t => `- ${t}`),
       '', `## ${L.nextSteps}`, ...m.next.map((t, i) => `${i + 1}. ${t}`));
@@ -386,6 +395,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
         H2(CFO.UI[R.lang].cf.be), muted(CFO.UI[R.lang].cf.beHint), ...(m.cash.beMissing ? [para(m.cash.beMissing)] : [tbl(m.cash.be), ...list(m.cash.beMeaning)])] : []),
       ...(m.peer ? [H1(L.secPeers), ...(m.peer.compare ? [tbl({ ...m.peer.compare, textCols: 1 }), tbl(m.peer.figures)] : [para(CFO.UI[R.lang].peer.none)]),
         H2(CFO.UI[R.lang].peer.methods), muted(CFO.UI[R.lang].peer.methodsHint), ...(m.peer.methodTable ? [tbl({ ...m.peer.methodTable, textCols: 1 })] : [para(CFO.UI[R.lang].peer.noMethods)])] : []),
+      ...(m.variance?.table ? [H1(L.secVariance), muted(m.variance.hint), tbl({ ...m.variance.table, textCols: 1 }), ...(m.variance.walk ? [H2(CFO.UI[R.lang].var.walk), tbl(m.variance.walk)] : [])] : []),
       H1(L.needsReview), ...(m.checks.length ? [H2(L.issues), ...list(m.checks)] : []), ...list(m.review),
       H1(L.assumptions), ...list(m.assumptions),
       H1(L.nextSteps), ...list(m.next, true),
@@ -497,6 +507,11 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       rows.push([], [PL.methods], [PL.methods, PL.low, PL.mid, PL.high, PL.weight], ...pm.methods.list.map(x => [PL.method[x.id], x.low, x.mid, x.high, x.weight ?? '']));
       if (pm.methods.weighted) rows.push([PL.method.weighted, pm.methods.weighted.low, pm.methods.weighted.mid, pm.methods.weighted.high, 1]);
       add('Peers & methods', rows);
+    }
+    if (m.variance?.table) {
+      const VR = CFO.UI[lang].var, vv = m.variance.v;
+      add('Variance', [[L.secVariance], [m.variance.hint], m.variance.table.head, ...vv.rows.map(r => [CFO.itemName(r.key, lang), r.actual, r.plan, r.diff, r.pct ?? '', r.fav == null ? '' : r.fav ? VR.fav : VR.adv]),
+        ...(vv.walk ? [[], [VR.walk], [VR.step.start, vv.walk.start], ...vv.walk.steps.map(([k, x]) => [VR.step[k], x]), [VR.step.end, vv.walk.end]] : [])]);
     }
     if (R.ai) add('Claude', [[L.aiSection], [L.ai.note], ...String(R.ai).split(/\r?\n/).map(l => [l])]);
     add('Mapping', [[L.source, L.rawLabel, L.mappedTo, ...P], ...ds.lines.map(l => [l.source, l.label, l.key ? CFO.itemName(l.key, lang) : '', ...P.map(p => l.values[p] ?? '')])]);

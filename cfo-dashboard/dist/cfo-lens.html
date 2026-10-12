@@ -316,6 +316,7 @@ table.plan td:nth-child(3), table.plan td:nth-child(4) { white-space: nowrap; }
     <button class="tab" role="tab" data-tab="valuation">Valuation</button>
     <button class="tab" role="tab" data-tab="cashflow">Cash flow</button>
     <button class="tab" role="tab" data-tab="compare">Compare</button>
+    <button class="tab" role="tab" data-tab="variance">Budget</button>
     <button class="tab" role="tab" data-tab="review">Data review</button>
   </nav>
 
@@ -342,6 +343,7 @@ table.plan td:nth-child(3), table.plan td:nth-child(4) { white-space: nowrap; }
     <section class="panel" id="p-valuation" role="tabpanel" hidden></section>
     <section class="panel" id="p-cashflow" role="tabpanel" hidden></section>
     <section class="panel" id="p-compare" role="tabpanel" hidden></section>
+    <section class="panel" id="p-variance" role="tabpanel" hidden></section>
     <section class="panel" id="p-review" role="tabpanel" hidden></section>
   </main>
 </div>
@@ -22051,7 +22053,8 @@ var __async = (__this, __arguments, generator) => {
       diag: { title: 'Diagnostics', hint: 'If something does not work, press Copy and paste the text in the chat. By default it contains only line labels and counts, not your figures.', withNumbers: 'Include figures', copy: 'Copy diagnostics' },
       browse: 'Choose files', exampleTag: 'Example', vs: 'vs', pts: 'pts', sampleNotice: 'Example data (fictional company, EGP thousands). Drop your own files to replace it.',
       loadSample: 'Reload example', clear: 'Clear', filesLoaded: 'Files', reading: 'Reading files…',
-      tabs: { full: 'Full analysis', overview: 'Overview', ratios: 'Ratios', vertical: 'Vertical', horizontal: 'Horizontal', flags: 'Red flags', forecast: 'Forecast', valuation: 'Valuation', cashflow: 'Cash flow & break-even', compare: 'Compare & value', review: 'Data review' },
+      tabs: { full: 'Full analysis', overview: 'Overview', ratios: 'Ratios', vertical: 'Vertical', horizontal: 'Horizontal', flags: 'Red flags', forecast: 'Forecast', valuation: 'Valuation', cashflow: 'Cash flow & break-even', compare: 'Compare & value', variance: 'Budget vs actual', review: 'Data review' },
+      secVariance: 'Budget vs actual (variance analysis)',
       secPeers: 'Peer comparison and valuation by method',
       secCash: 'Cash flow, statement checks and break-even',
       secValuation: 'Valuation (DCF) and EVA', secPlan: 'Action plan and value levers', dupont5: 'Five-step DuPont: tax burden × interest burden × EBIT margin × asset turnover × equity multiplier', taxBurden: 'Tax burden (NI ÷ PBT)', interestBurden: 'Interest burden (PBT ÷ EBIT)', ebitMargin: 'EBIT margin',
@@ -22139,7 +22142,8 @@ var __async = (__this, __arguments, generator) => {
       diag: { title: 'التشخيص', hint: 'إذا لم يعمل شيء، اضغط نسخ والصق النص في المحادثة. افتراضياً يحتوي على أسماء البنود والأعداد فقط، وليس أرقامك.', withNumbers: 'تضمين الأرقام', copy: 'نسخ التشخيص' },
       browse: 'اختر الملفات', exampleTag: 'مثال', vs: 'مقابل', pts: 'نقطة', sampleNotice: 'بيانات تجريبية (شركة افتراضية، بالألف جنيه). أسقط ملفاتك لاستبدالها.',
       loadSample: 'إعادة البيانات التجريبية', clear: 'مسح', filesLoaded: 'الملفات', reading: 'جارٍ قراءة الملفات…',
-      tabs: { full: 'التحليل الكامل', overview: 'نظرة عامة', ratios: 'النسب المالية', vertical: 'التحليل الرأسي', horizontal: 'التحليل الأفقي', flags: 'إشارات الخطر', forecast: 'التوقعات', valuation: 'التقييم', cashflow: 'التدفقات ونقطة التعادل', compare: 'المقارنة والتقييم', review: 'مراجعة البيانات' },
+      tabs: { full: 'التحليل الكامل', overview: 'نظرة عامة', ratios: 'النسب المالية', vertical: 'التحليل الرأسي', horizontal: 'التحليل الأفقي', flags: 'إشارات الخطر', forecast: 'التوقعات', valuation: 'التقييم', cashflow: 'التدفقات ونقطة التعادل', compare: 'المقارنة والتقييم', variance: 'الموازنة مقابل الفعلي', review: 'مراجعة البيانات' },
+      secVariance: 'الموازنة مقابل الفعلي (تحليل الانحرافات)',
       secPeers: 'المقارنة بالمنافسين والتقييم حسب الطريقة',
       secCash: 'التدفقات النقدية وفحوص الربط ونقطة التعادل',
       secValuation: 'التقييم (التدفقات المخصومة) والقيمة الاقتصادية المضافة', secPlan: 'خطة العمل وروافع القيمة', dupont5: 'ديبونت الخماسي: عبء الضريبة × عبء الفوائد × هامش EBIT × دوران الأصول × مضاعف حقوق الملكية', taxBurden: 'عبء الضريبة (صافي الربح ÷ الربح قبل الضريبة)', interestBurden: 'عبء الفوائد (الربح قبل الضريبة ÷ EBIT)', ebitMargin: 'هامش EBIT',
@@ -22975,6 +22979,12 @@ var __async = (__this, __arguments, generator) => {
           kpi: name, current: CFO.fmtVal(r.unit, r.company, lang), target: `${r.dir === 'high' ? '≥' : '≤'} ${CFO.fmtVal(r.unit, r.median, lang)}` });
       });
     }
+    // Adverse budget variances above 10% on the main lines.
+    if (opts.budget && CFO.adverseVariances) {
+      const VR = CFO.UI[lang].var;
+      CFO.adverseVariances(A.ds, opts.budget).slice(0, 3).forEach(r => items.push({ sev: Math.abs(r.pct) > 0.2 ? 'high' : 'med', area: r.key === 'opex' ? 'operations' : r.key === 'revenue' ? 'sales' : 'management',
+        title: VR.advTitle(CFO.itemName(r.key, lang)), action: VR.advAction, kpi: CFO.itemName(r.key, lang), current: CFO.fmtNum(r.actual, 0, lang), target: CFO.fmtNum(r.plan, 0, lang) }));
+    }
     // Ratios rated weak or on watch that no red flag covers yet.
     for (const [status, sev, cap] of [['bad', 'med', 4], ['warn', 'low', 4]]) {
       const seen = new Set();   // one per group: their actions would repeat
@@ -23086,7 +23096,7 @@ var __async = (__this, __arguments, generator) => {
     const { A, F, lang } = R, L = UIV[lang], ds = A.ds;
     const V = R.V !== undefined ? R.V : valuation(ds, R.drivers, R.dcf);
     const money = v => CFO.fmtNum(v, 0, lang), pct = v => CFO.fmtPct(v, lang), x = v => CFO.fmtVal('x', v, lang);
-    const plan = actionPlan(A, F, V && !V.missing ? V : null, lang, { be: R.be, peers: R.peers });
+    const plan = actionPlan(A, F, V && !V.missing ? V : null, lang, { be: R.be, peers: R.peers, budget: R.budget });
     const planTable = { head: ['#', L.priority, L.when, L.owner, L.recommendation, L.kpi, L.current, L.target],
       rows: plan.map(it => [String(it.n), it.sevText, it.horizon, it.areaText, `${it.title}: ${it.action}`, it.kpi, it.current, it.target]), items: plan };
     if (!V || V.missing) return { missing: L.missing((V?.missing || []).map(k => CFO.itemName(k, lang)).join(lang === 'ar' ? '، ' : ', ')), plan: planTable, levers: null };
@@ -23611,6 +23621,106 @@ var __async = (__this, __arguments, generator) => {
 
 </script>
 <script>
+/* Budget vs actual (or actual vs prior year when no budget is given).
+ * The budget is read by the same parsers and mapped to the same standard items, kept apart from the actuals.
+ * For each line: actual, plan, variance, variance %, favourable / adverse (lower is better for costs).
+ * The profit walk splits the gross-profit variance into a volume effect (revenue change at the planned margin)
+ * and a margin effect (margin change on actual revenue), then the cost, interest and tax lines down to net income.
+ */
+(function (CFO) {
+  const nn = v => v != null && isFinite(v);
+  const LINES = ['revenue', 'cogs', 'gross_profit', 'opex', 'dna', 'operating_income', 'interest', 'pretax_income', 'tax', 'net_income',
+    'cash', 'receivables', 'inventory', 'current_assets', 'total_assets', 'payables', 'short_debt', 'long_debt', 'total_liabilities', 'equity', 'cfo', 'capex', 'dividends'];
+  // Better when higher (+1), lower (−1), or neither (0) for the favourable / adverse label.
+  const GOOD = { revenue: 1, gross_profit: 1, operating_income: 1, pretax_income: 1, net_income: 1, cash: 1, equity: 1, cfo: 1,
+    cogs: -1, opex: -1, dna: -1, interest: -1, tax: 0, receivables: -1, inventory: -1, short_debt: -1, long_debt: -1, capex: 0, dividends: 0 };
+
+  /** Which plan period to compare with: the same year if the budget has it, else the budget's latest column. */
+  function pickPeriods(ds, budget) {
+    const actual = ds.periods[ds.periods.length - 1];
+    if (!budget) return { actual, plan: ds.periods.length > 1 ? ds.periods[ds.periods.length - 2] : null, mode: 'prior' };
+    const plan = budget.periods.includes(actual) ? actual : budget.periods[budget.periods.length - 1];
+    return { actual, plan, mode: 'budget' };
+  }
+
+  function variance(ds, budget) {
+    const pp = pickPeriods(ds, budget);
+    if (!pp.actual || !pp.plan) return { ...pp, rows: [] };
+    const a = ds.data[pp.actual] || {}, b = (budget ? budget.data : ds.data)[pp.plan] || {};
+    const rows = LINES.filter(k => nn(a[k]) && nn(b[k])).map(k => {
+      const diff = a[k] - b[k], pct = b[k] !== 0 ? diff / Math.abs(b[k]) : null, g = GOOD[k] ?? 0;
+      return { key: k, actual: a[k], plan: b[k], diff, pct, fav: g === 0 || Math.abs(diff) < 1e-9 ? null : diff * g > 0 };
+    });
+    // Profit walk from plan to actual net income.
+    let walk = null;
+    if (nn(a.revenue) && nn(b.revenue) && nn(a.gross_profit) && nn(b.gross_profit) && b.revenue !== 0 && a.revenue !== 0 && nn(a.net_income) && nn(b.net_income)) {
+      const gmB = b.gross_profit / b.revenue, gmA = a.gross_profit / a.revenue;
+      const step = k => nn(a[k]) && nn(b[k]) ? -(a[k] - b[k]) : null;   // a cost above plan lowers profit
+      const steps = [['volume', (a.revenue - b.revenue) * gmB], ['margin', (gmA - gmB) * a.revenue],
+        ['opex', step('opex')], ['dna', step('dna')], ['interest', step('interest')], ['tax', step('tax')]].filter(([, v]) => nn(v));
+      const explained = steps.reduce((t, [, v]) => t + v, 0), total = a.net_income - b.net_income;
+      if (Math.abs(total - explained) > 0.5) steps.push(['other', total - explained]);
+      walk = { start: b.net_income, end: a.net_income, steps };
+    }
+    return { ...pp, rows, walk };
+  }
+
+  const UIV = {
+    en: {
+      title: 'Budget vs actual', hintBudget: 'Compared with the budget you added. Favourable = better for profit or cash (lower costs, higher revenue).',
+      hintPrior: 'No budget added, so the latest year is compared with the prior year. Add a budget in the same layout as the statements (labels + a year or "Budget" column).',
+      addBudget: 'Add budget file', pasteBudget: 'Paste budget from Excel', useBudget: 'Use pasted budget', removeBudget: 'Remove budget',
+      actual: 'Actual', plan: { budget: 'Budget', prior: 'Prior year' }, diff: 'Variance', pct: 'Variance %', fav: 'Favourable', adv: 'Adverse',
+      walk: 'Net income walk', walkHint: 'From planned to actual net income. Volume = revenue change at the planned gross margin; margin = change in gross margin on actual revenue.',
+      step: { start: 'Planned net income', volume: 'Sales volume / revenue', margin: 'Gross margin', opex: 'Operating expenses', dna: 'Depreciation', interest: 'Interest', tax: 'Tax', other: 'Other items', end: 'Actual net income' },
+      none: 'Needs a budget or at least two years of statements.', read: (n, p) => `Budget read from ${n} (${p}).`, fail: n => `${n}: no budget lines with a year or budget column were found.`,
+      advTitle: n => `Adverse variance: ${n}`, advAction: 'Explain the gap (price, volume, cost, timing) with the line owner, agree corrective actions and update the forecast.',
+    },
+    ar: {
+      title: 'الموازنة مقابل الفعلي', hintBudget: 'مقارنة بالموازنة التي أضفتها. ملائم = أفضل للربح أو النقد (تكاليف أقل، إيرادات أعلى).',
+      hintPrior: 'لم تُضف موازنة، لذا تُقارن آخر سنة بالسنة السابقة. أضف موازنة بنفس شكل القوائم (البنود + عمود سنة أو «موازنة»).',
+      addBudget: 'إضافة ملف الموازنة', pasteBudget: 'لصق الموازنة من Excel', useBudget: 'استخدام الموازنة الملصقة', removeBudget: 'حذف الموازنة',
+      actual: 'الفعلي', plan: { budget: 'الموازنة', prior: 'السنة السابقة' }, diff: 'الانحراف', pct: 'الانحراف %', fav: 'ملائم', adv: 'غير ملائم',
+      walk: 'جسر صافي الربح', walkHint: 'من صافي الربح المخطط إلى الفعلي. الحجم = تغير الإيرادات بهامش مجمل الربح المخطط؛ الهامش = تغير هامش مجمل الربح على الإيرادات الفعلية.',
+      step: { start: 'صافي الربح المخطط', volume: 'حجم المبيعات / الإيرادات', margin: 'هامش مجمل الربح', opex: 'المصروفات التشغيلية', dna: 'الإهلاك', interest: 'الفوائد', tax: 'الضريبة', other: 'بنود أخرى', end: 'صافي الربح الفعلي' },
+      none: 'يحتاج إلى موازنة أو سنتين على الأقل من القوائم.', read: (n, p) => `قُرئت الموازنة من ${n} (${p}).`, fail: n => `${n}: لم يُعثر على بنود موازنة بعمود سنة أو موازنة.`,
+      advTitle: n => `انحراف غير ملائم: ${n}`, advAction: 'فسّر الفجوة (سعر، حجم، تكلفة، توقيت) مع مسؤول البند، واتفق على إجراءات تصحيحية، وحدّث التوقعات.',
+    },
+  };
+
+  /** Display-ready variance tables. R: { A, budget (dataset or null), lang } */
+  function varianceModel(R) {
+    const { A, lang } = R, L = UIV[lang], v = variance(A.ds, R.budget || null);
+    const money = x => CFO.fmtNum(x, 0, lang), pct = x => (x == null ? '—' : `${x > 0 ? '+' : ''}${CFO.fmtPct(x, lang)}`);
+    const planName = v.mode === 'budget' ? `${L.plan.budget} ${v.plan}` : `${L.plan.prior} ${v.plan || ''}`;
+    const m = { v, mode: v.mode, hint: v.mode === 'budget' ? L.hintBudget : L.hintPrior };
+    if (!v.rows.length) { m.none = L.none; return m; }
+    m.table = { head: [CFO.UI[lang].item, `${L.actual} ${v.actual}`, planName, L.diff, L.pct, ''], text: 1, sub: v.rows.map(r => CFO.SUBTOTALS.has(r.key)),
+      rows: v.rows.map(r => [CFO.itemName(r.key, lang), money(r.actual), money(r.plan), money(r.diff), pct(r.pct), r.fav == null ? '' : r.fav ? L.fav : L.adv]), items: v.rows };
+    if (v.walk) {
+      const w = v.walk;
+      m.walk = { head: [L.walk, ''], sub: [true, ...w.steps.map(() => false), true],
+        rows: [[L.step.start, money(w.start)], ...w.steps.map(([k, x]) => [L.step[k], `${x >= 0 ? '+' : ''}${money(x)}`]), [L.step.end, money(w.end)]] };
+      m.chart = { title: L.walk, kind: 'bar', labels: w.steps.map(([k]) => L.step[k]), fmt: money,
+        series: [{ name: L.diff, values: w.steps.map(([, x]) => x), color: 'var(--s1)' }] };
+    }
+    return m;
+  }
+
+  /** Adverse variances above 10% on the main profit lines, for the action plan. */
+  function adverse(ds, budget) {
+    return variance(ds, budget).rows.filter(r => r.fav === false && r.pct != null && Math.abs(r.pct) > 0.1 &&
+      ['revenue', 'gross_profit', 'opex', 'operating_income', 'net_income', 'cfo'].includes(r.key));
+  }
+
+  for (const lang of ['en', 'ar']) if (CFO.UI?.[lang]) CFO.UI[lang].var = UIV[lang];
+  CFO.variance = variance;
+  CFO.varianceModel = varianceModel;
+  CFO.adverseVariances = adverse;
+})(globalThis.CFO = globalThis.CFO || {});
+
+</script>
+<script>
 /* Overview charts (Chart.js) and KPI sparklines (inline SVG). Colours come from CSS tokens. */
 (function (CFO) {
   const live = {};
@@ -23879,6 +23989,7 @@ var __async = (__this, __arguments, generator) => {
           CFO.fmtVal('x', r.asset_turnover, lang), CFO.fmtVal('x', r.equity_multiplier, lang), CFO.fmtPct(r.roe, lang)]) },
       val: CFO.valuationModel ? CFO.valuationModel(R) : null,
       cash: CFO.cashModel ? CFO.cashModel(R) : null,
+      variance: CFO.varianceModel ? CFO.varianceModel(R) : null,
       altman: { value: CFO.fmtVal('score', z, lang), meaning: z != null ? CFO.meaning('altman_z', z, lang) : L.notAvail, zones: L.zZones,
         status: z == null ? 'na' : A.ratios.altman_z[p].status },
       vertical: byStatement(A.vertical, r => P.map(q => r.pct[q] == null ? '—' : `${CFO.fmtPct(r.pct[q], lang)}`), st => [L.item, ...P.map(q => `${q} · ${st === 'BS' ? L.ofAssets : L.ofRevenue}`)]),
@@ -23945,6 +24056,9 @@ var __async = (__this, __arguments, generator) => {
     const peerHTML = !pm ? '' : `<section class="fa-sec" id="${id('peers')}"><h2>${esc(L.secPeers)}</h2>
         ${pm.compare ? `${T(pm.compare)}${pm.charts.length || pm.scatter ? `<div class="grid-2 fa-charts">${pm.charts.map(c => `<figure class="card"><figcaption><b>${esc(c.title)}</b></figcaption>${CFO.svgChart(c)}</figure>`).join('')}${pm.scatter ? `<figure class="card"><figcaption><b>${esc(PL.scatter)}</b></figcaption>${pm.scatter}</figure>` : ''}</div>` : ''}<h3>${esc(PL.name)}</h3>${T(pm.figures)}` : `<p class="muted">${esc(PL.none)}</p>`}
         <h3>${esc(PL.methods)}</h3><p class="muted small">${esc(PL.methodsHint)}</p>${pm.methodTable ? T(pm.methodTable) + pm.football : `<p>${esc(PL.noMethods)}</p>`}</section>`;
+    const vm = m.variance, VR = CFO.UI[R.lang].var;
+    const varHTML = !vm?.table ? '' : `<section class="fa-sec" id="${id('variance')}"><h2>${esc(L.secVariance)}</h2><p class="muted small">${esc(vm.hint)}</p>${T(vm.table)}
+        ${vm.walk ? `<h3>${esc(VR.walk)}</h3><p class="muted small">${esc(VR.walkHint)}</p>${T(vm.walk)}<figure class="card"><figcaption><b>${esc(VR.walk)}</b></figcaption>${CFO.svgChart(vm.chart)}</figure>` : ''}</section>`;
     const valHTML = !v ? '' : `<section class="fa-sec" id="${id('valuation')}"><h2>${esc(L.secValuation)}</h2><p class="muted small">${esc(VL.hint)}</p>
         ${v.missing ? `<p>${esc(v.missing)}</p>` : `
         ${v.headline ? `<div class="kpis"><div class="kpi"><span class="kpi-label">${esc(VL.ev)}</span><span class="kpi-value">${esc(v.headline.ev)}</span></div><div class="kpi"><span class="kpi-label">${esc(VL.equity)}</span><span class="kpi-value">${esc(v.headline.equity)}</span></div><div class="kpi"><span class="kpi-label">WACC</span><span class="kpi-value">${esc(v.headline.wacc)}</span></div>${v.headline.perShare ? `<div class="kpi"><span class="kpi-label">${esc(VL.perShare)}</span><span class="kpi-value">${esc(v.headline.perShare)}</span></div>` : ''}</div>` : ''}
@@ -23959,7 +24073,7 @@ var __async = (__this, __arguments, generator) => {
     const sections = [
       ['summary', L.secSummary], ...(m.ai ? [['ai', L.aiSection]] : []), ['ratios', L.secRatios], ['dupont', L.secDupont],
       ['vertical', L.tabs.vertical], ['horizontal', L.tabs.horizontal], ['flags', L.flagsRecs],
-      ...(m.val ? [['plan', L.secPlan]] : []), ...(m.forecast ? [['forecast', L.fcSection]] : []), ...(m.val ? [['valuation', L.secValuation]] : []), ...(m.cash ? [['cash', L.secCash]] : []), ...(m.peer ? [['peers', L.secPeers]] : []), ['checks', L.needsReview],
+      ...(m.val ? [['plan', L.secPlan]] : []), ...(m.forecast ? [['forecast', L.fcSection]] : []), ...(m.val ? [['valuation', L.secValuation]] : []), ...(m.cash ? [['cash', L.secCash]] : []), ...(m.peer ? [['peers', L.secPeers]] : []), ...(m.variance?.table ? [['variance', L.secVariance]] : []), ['checks', L.needsReview],
     ];
     const h = m.health;
     const hColor = h.score == null ? 'var(--muted)' : h.score >= 65 ? 'var(--good)' : h.score >= 45 ? 'var(--warn)' : 'var(--bad)';
@@ -23989,6 +24103,7 @@ var __async = (__this, __arguments, generator) => {
       ${valHTML}
       ${cashHTML}
       ${peerHTML}
+      ${varHTML}
       <section class="fa-sec" id="${id('checks')}"><h2>${esc(L.needsReview)}</h2>
         ${m.checks.length ? `<h3>${esc(L.issues)}</h3><ul>${li(m.checks)}</ul>` : ''}
         <ul>${li(m.review)}</ul><h3>${esc(L.assumptions)}</h3><ul>${li(m.assumptions)}</ul><h3>${esc(L.nextSteps)}</h3><ol>${li(m.next)}</ol></section>`;
@@ -24040,6 +24155,10 @@ var __async = (__this, __arguments, generator) => {
       lines.push('', `## ${L.secPeers}`);
       if (pm.compare) lines.push(...mdTable(pm.compare.head, pm.compare.rows), '', ...mdTable(pm.figures.head, pm.figures.rows)); else lines.push(PL.none);
       lines.push('', `### ${PL.methods}`, ...(pm.methodTable ? mdTable(pm.methodTable.head, pm.methodTable.rows) : [PL.noMethods]));
+    }
+    if (m.variance?.table) {
+      lines.push('', `## ${L.secVariance}`, `_${m.variance.hint}_`, ...mdTable(m.variance.table.head, m.variance.table.rows));
+      if (m.variance.walk) lines.push('', `### ${CFO.UI[R.lang].var.walk}`, ...mdTable(m.variance.walk.head, m.variance.walk.rows));
     }
     lines.push('', `## ${L.needsReview}`, ...m.checks.map(t => `- ${t}`), ...m.review.map(t => `- ${t}`), '', `## ${L.assumptions}`, ...m.assumptions.map(t => `- ${t}`),
       '', `## ${L.nextSteps}`, ...m.next.map((t, i) => `${i + 1}. ${t}`));
@@ -24149,6 +24268,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
         H2(CFO.UI[R.lang].cf.be), muted(CFO.UI[R.lang].cf.beHint), ...(m.cash.beMissing ? [para(m.cash.beMissing)] : [tbl(m.cash.be), ...list(m.cash.beMeaning)])] : []),
       ...(m.peer ? [H1(L.secPeers), ...(m.peer.compare ? [tbl({ ...m.peer.compare, textCols: 1 }), tbl(m.peer.figures)] : [para(CFO.UI[R.lang].peer.none)]),
         H2(CFO.UI[R.lang].peer.methods), muted(CFO.UI[R.lang].peer.methodsHint), ...(m.peer.methodTable ? [tbl({ ...m.peer.methodTable, textCols: 1 })] : [para(CFO.UI[R.lang].peer.noMethods)])] : []),
+      ...(m.variance?.table ? [H1(L.secVariance), muted(m.variance.hint), tbl({ ...m.variance.table, textCols: 1 }), ...(m.variance.walk ? [H2(CFO.UI[R.lang].var.walk), tbl(m.variance.walk)] : [])] : []),
       H1(L.needsReview), ...(m.checks.length ? [H2(L.issues), ...list(m.checks)] : []), ...list(m.review),
       H1(L.assumptions), ...list(m.assumptions),
       H1(L.nextSteps), ...list(m.next, true),
@@ -24260,6 +24380,11 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       rows.push([], [PL.methods], [PL.methods, PL.low, PL.mid, PL.high, PL.weight], ...pm.methods.list.map(x => [PL.method[x.id], x.low, x.mid, x.high, x.weight ?? '']));
       if (pm.methods.weighted) rows.push([PL.method.weighted, pm.methods.weighted.low, pm.methods.weighted.mid, pm.methods.weighted.high, 1]);
       add('Peers & methods', rows);
+    }
+    if (m.variance?.table) {
+      const VR = CFO.UI[lang].var, vv = m.variance.v;
+      add('Variance', [[L.secVariance], [m.variance.hint], m.variance.table.head, ...vv.rows.map(r => [CFO.itemName(r.key, lang), r.actual, r.plan, r.diff, r.pct ?? '', r.fav == null ? '' : r.fav ? VR.fav : VR.adv]),
+        ...(vv.walk ? [[], [VR.walk], [VR.step.start, vv.walk.start], ...vv.walk.steps.map(([k, x]) => [VR.step[k], x]), [VR.step.end, vv.walk.end]] : [])]);
     }
     if (R.ai) add('Claude', [[L.aiSection], [L.ai.note], ...String(R.ai).split(/\r?\n/).map(l => [l])]);
     add('Mapping', [[L.source, L.rawLabel, L.mappedTo, ...P], ...ds.lines.map(l => [l.source, l.label, l.key ? CFO.itemName(l.key, lang) : '', ...P.map(p => l.values[p] ?? '')])]);
@@ -24404,7 +24529,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     get(k) { try { return localStorage.getItem('cfo-lens:' + k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem('cfo-lens:' + k, v); } catch (e) { /* storage unavailable */ } },
   };
-  const TABS = ['full', 'overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'valuation', 'cashflow', 'compare', 'review'];
+  const TABS = ['full', 'overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'valuation', 'cashflow', 'compare', 'variance', 'review'];
   const SUBTOTALS = CFO.SUBTOTALS;   // defined in js/report.js
 
   const state = {
@@ -24418,7 +24543,8 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     dcf: {}, V: null,
     be: { cogsVar: 1, opexVar: 0, target: null },   // break-even cost split
     peers: (() => { try { const v = JSON.parse(store.get('peers') || '[]'); return Array.isArray(v) ? v.filter(p => p && typeof p.name === 'string') : []; } catch (e) { return []; } })(),
-    mult: {}, weights: {},                          // typed multiples and method weights                               // valuation: inputs the user changed, result
+    mult: {}, weights: {},                          // typed multiples and method weights
+    budgetTables: null, budgetName: '', budget: null, // budget vs actual                               // valuation: inputs the user changed, result
     ai: { text: '', busy: false, err: '', ctl: null }, aiOn: false,
     diagNumbers: false, diagOpen: false,
     periodRename: {},   // { tableSource: { detected period: year typed by the user } }
@@ -24429,7 +24555,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
   const dataChanged = () => { state.drivers = null; for (const k of ['kd', 'tax', 'wd', 'shares', 'price']) delete state.dcf[k]; state.ai.ctl?.abort(); state.ai = { text: '', busy: false, err: '', ctl: null }; };
   // Everything the report and the exports need, in one object.
   // Claude's commentary is shown and exported only in the language it was written in (aiAll keeps it for the bilingual HTML).
-  const ctx = () => ({ A: state.A, F: state.F, S: state.S, V: state.V, drivers: state.drivers, dcf: state.dcf, be: state.be, peers: state.peers, mult: state.mult, weights: state.weights, lang: state.lang,
+  const ctx = () => ({ A: state.A, F: state.F, S: state.S, V: state.V, drivers: state.drivers, dcf: state.dcf, be: state.be, peers: state.peers, mult: state.mult, weights: state.weights, budget: state.budget, lang: state.lang,
     ai: !state.ai.lang || state.ai.lang === state.lang ? state.ai.text : '', aiAll: state.ai.text, aiLang: state.ai.lang });
 
   // pdf.js runs on the main thread when its worker script is loaded as a plain script (globalThis.pdfjsWorker),
@@ -24695,7 +24821,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
 
   function renderFlags() {
     const L = T(), lang = state.lang, S = CFO.strengths(state.A, lang);
-    const VL = L.val, plan = CFO.actionPlan(state.A, state.F, state.V && !state.V.missing ? state.V : null, lang, { be: state.be, peers: state.peers });
+    const VL = L.val, plan = CFO.actionPlan(state.A, state.F, state.V && !state.V.missing ? state.V : null, lang, { be: state.be, peers: state.peers, budget: state.budget });
     const planCard = plan.length ? `<div class="card"><h3>${esc(VL.planTitle)}</h3><p class="muted small">${esc(VL.planHint)}</p>
       <div class="table-wrap"><table class="plan"><thead><tr><th>#</th><th>${esc(VL.priority)}</th><th>${esc(VL.when)}</th><th>${esc(VL.owner)}</th><th>${esc(VL.recommendation)}</th><th>${esc(VL.kpi)}</th><th class="n">${esc(VL.current)}</th><th class="n">${esc(VL.target)}</th></tr></thead>
       <tbody>${plan.map(it => `<tr><td>${it.n}</td><td>${pill(it.sev, it.sevText)}</td><td>${esc(it.horizon)}</td><td>${esc(it.areaText)}</td><td><b>${esc(it.title)}</b><div class="meaning">${esc(it.action)}</div></td><td>${esc(it.kpi)}</td><td class="n">${esc(it.current)}</td><td class="n">${esc(it.target)}</td></tr>`).join('')}</tbody></table></div></div>` : '';
@@ -24927,6 +25053,34 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
         ${m.methodTable ? dataTable(m.methodTable) + m.football : `<p class="muted">${esc(L.noMethods)}</p>`}</div>`;
   }
 
+  /* ---------- budget vs actual ---------- */
+  function setBudget(name, tables) {
+    const L = T().var, lines = tables.reduce((n, t) => n + t.lines.length, 0);
+    if (!lines) { state.errors.push(() => T().var.fail(name)); return render(); }
+    state.budgetTables = tables; state.budgetName = name;
+    const b = CFO.buildDataset(tables);
+    state.notes.push(() => T().var.read(name, b.periods.join(', ')));
+    render();
+  }
+  async function addBudgetFile(file) {
+    try { setBudget(file.name, await withTimeout(CFO.parseFile(file), 60000, file.name)); }
+    catch (e) { state.errors.push(() => T().var.fail(file.name)); render(); }
+  }
+  function renderVariance() {
+    const L = T().var, m = CFO.varianceModel(ctx());
+    const favPill = r => r.fav == null ? '' : pill(r.fav ? 'good' : 'bad', r.fav ? L.fav : L.adv);
+    const table = m.table ? `<div class="table-wrap"><table><thead><tr>${m.table.head.map((h, i) => `<th${i && i < 5 ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>
+      ${m.table.items.map((r, k) => `<tr class="${m.table.sub[k] ? 'subtotal' : ''}">${m.table.rows[k].slice(0, 5).map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}<td>${favPill(r)}</td></tr>`).join('')}</tbody></table></div>` : `<p class="muted">${esc(m.none)}</p>`;
+    $('p-variance').innerHTML = `<div class="card"><div class="section-head"><h2>${esc(L.title)}</h2><span class="actions">
+        <label class="btn primary" for="budget-file">${esc(L.addBudget)}</label><input id="budget-file" type="file" accept=".xlsx,.xls,.xlsm,.ods,.csv,.tsv,.txt,.pdf" class="visually-hidden">
+        ${state.budgetTables ? `<span class="chip">${esc(state.budgetName)}</span><button class="btn ghost" type="button" data-budget-remove>${esc(L.removeBudget)}</button>` : ''}</span></div>
+        <p class="muted small">${esc(m.hint)}</p>
+        <details class="paste-box"><summary>${esc(L.pasteBudget)}</summary><textarea id="budget-paste" rows="4" aria-label="${esc(L.pasteBudget)}"></textarea>
+          <div class="actions"><button class="btn" type="button" data-budget-paste>${esc(L.useBudget)}</button></div></details>
+        ${table}</div>
+      ${m.walk ? `<div class="grid-2"><div class="card"><h3>${esc(L.walk)}</h3><p class="muted small">${esc(L.walkHint)}</p>${dataTable(m.walk)}</div><div class="card"><h3>${esc(L.walk)}</h3>${CFO.svgChart(m.chart)}</div></div>` : ''}`;
+  }
+
   /* ---------- shell ---------- */
   function renderChrome() {
     const L = T();
@@ -24953,7 +25107,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       state.notes.map(n => `<div class="note" role="status">${esc(n())}</div>`).join('');
   }
 
-  const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, valuation: renderValuation, cashflow: renderCash, compare: renderCompare, review: renderReview };
+  const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, valuation: renderValuation, cashflow: renderCash, compare: renderCompare, variance: renderVariance, review: renderReview };
 
   /** The tables with any years the user typed in Data review applied. */
   function tablesWithYears() {
@@ -24975,6 +25129,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       state.S = CFO.runScenarios(ds, state.drivers, state.fcYears);
     }
     state.V = ds.periods.length ? CFO.valuation(ds, state.drivers, state.dcf) : null;
+    state.budget = state.budgetTables ? CFO.buildDataset(state.budgetTables) : null;
     renderChrome();
     if (!ds.periods.length) { $('p-' + state.tab).innerHTML = ''; return; }
     PANELS[state.tab]();
@@ -25013,6 +25168,8 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     if (e.target.closest('[data-fc="reset"]')) { state.drivers = null; return render(); }
     if (e.target.closest('[data-dcf-reset]')) { state.dcf = {}; return render(); }
     if (e.target.closest('[data-peer-add]')) { state.peers = [...state.peers, { name: `${T().peer.name} ${state.peers.length + 1}`, source: 'manual' }]; savePeers(); return render(); }
+    if (e.target.closest('[data-budget-remove]')) { state.budgetTables = null; state.budgetName = ''; return render(); }
+    if (e.target.closest('[data-budget-paste]')) { const t = $('budget-paste').value; if (t.trim()) setBudget(T().var.pasteBudget, CFO.csvTables(new TextEncoder().encode(t), 'Budget')); return; }
     if (e.target.closest('[data-peer-clear]')) { state.peers = []; savePeers(); return render(); }
     const pr = e.target.closest('[data-peer-remove]'); if (pr) { state.peers = state.peers.filter((_, i) => i !== +pr.dataset.peerRemove); savePeers(); return render(); }
     if (e.target.closest('[data-years="reset"]')) { state.periodRename = {}; dataChanged(); return render(); }
@@ -25055,6 +25212,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     }
     if (e.target.matches('[data-mult]')) { const v = parseFloat(e.target.value); state.mult = { ...state.mult, [e.target.dataset.mult]: isFinite(v) && v > 0 ? v : null }; return render(); }
     if (e.target.matches('[data-w]')) { const v = parseFloat(e.target.value); if (isFinite(v)) state.weights = { ...state.weights, [e.target.dataset.w]: Math.max(0, v) / 100 }; return render(); }
+    if (e.target.id === 'budget-file') { if (e.target.files[0]) addBudgetFile(e.target.files[0]); e.target.value = ''; return; }
     if (e.target.id === 'peer-file') { addPeerFiles(e.target.files); e.target.value = ''; return; }
     if (e.target.matches('[data-be]')) {
       const k = e.target.dataset.be, raw = e.target.value.trim(), v = parseFloat(raw);

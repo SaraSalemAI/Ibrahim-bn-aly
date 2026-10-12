@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
 const dir = fileURLToPath(new URL('../js/', import.meta.url));
-for (const f of ['catalog', 'parsers', 'mapper', 'analysis', 'benchmarks', 'i18n', 'insights', 'sample', 'forecast', 'valuation', 'cashflow', 'peers', 'charts', 'report', 'ai']) {
+for (const f of ['catalog', 'parsers', 'mapper', 'analysis', 'benchmarks', 'i18n', 'insights', 'sample', 'forecast', 'valuation', 'cashflow', 'peers', 'variance', 'charts', 'report', 'ai']) {
   vm.runInThisContext(readFileSync(dir + f + '.js', 'utf8'), { filename: f + '.js' });
 }
 const CFO = globalThis.CFO;
@@ -36,7 +36,7 @@ test('the HTML file carries both languages, its own switch, and nothing from out
   assert.match(html, /data-lang="ar" lang="ar" dir="rtl">/);
   assert.ok(html.includes('Full financial analysis') && html.includes('التحليل المالي الكامل'));
   assert.ok(html.includes('data-l="en"') && html.includes('data-l="ar"') && html.includes('data-theme-toggle'));
-  assert.equal((html.match(/<svg class="svg-chart"/g) || []).length, 16, '8 charts in each language (incl. football field)');
+  assert.equal((html.match(/<svg class="svg-chart"/g) || []).length, 18, '9 charts in each language (incl. football field, variance walk)');
   assert.ok(!/<script[^>]+src=|<link[^>]+href=|https?:\/\//.test(html), 'no external scripts, styles or links');
   assert.equal((html.match(/<h2>Summary<\/h2>|<h4>Summary<\/h4>/g) || []).length, 1, 'Claude text only in the language it was written in');
   assert.ok(new Set([...html.matchAll(/ id="([^"]+)"/g)].map(m => m[1])).size === [...html.matchAll(/ id="([^"]+)"/g)].length, 'ids are unique');

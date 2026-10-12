@@ -6,7 +6,7 @@
     get(k) { try { return localStorage.getItem('cfo-lens:' + k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem('cfo-lens:' + k, v); } catch (e) { /* storage unavailable */ } },
   };
-  const TABS = ['full', 'overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'valuation', 'cashflow', 'compare', 'review'];
+  const TABS = ['full', 'overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'valuation', 'cashflow', 'compare', 'variance', 'review'];
   const SUBTOTALS = CFO.SUBTOTALS;   // defined in js/report.js
 
   const state = {
@@ -20,7 +20,8 @@
     dcf: {}, V: null,
     be: { cogsVar: 1, opexVar: 0, target: null },   // break-even cost split
     peers: (() => { try { const v = JSON.parse(store.get('peers') || '[]'); return Array.isArray(v) ? v.filter(p => p && typeof p.name === 'string') : []; } catch (e) { return []; } })(),
-    mult: {}, weights: {},                          // typed multiples and method weights                               // valuation: inputs the user changed, result
+    mult: {}, weights: {},                          // typed multiples and method weights
+    budgetTables: null, budgetName: '', budget: null, // budget vs actual                               // valuation: inputs the user changed, result
     ai: { text: '', busy: false, err: '', ctl: null }, aiOn: false,
     diagNumbers: false, diagOpen: false,
     periodRename: {},   // { tableSource: { detected period: year typed by the user } }
@@ -31,7 +32,7 @@
   const dataChanged = () => { state.drivers = null; for (const k of ['kd', 'tax', 'wd', 'shares', 'price']) delete state.dcf[k]; state.ai.ctl?.abort(); state.ai = { text: '', busy: false, err: '', ctl: null }; };
   // Everything the report and the exports need, in one object.
   // Claude's commentary is shown and exported only in the language it was written in (aiAll keeps it for the bilingual HTML).
-  const ctx = () => ({ A: state.A, F: state.F, S: state.S, V: state.V, drivers: state.drivers, dcf: state.dcf, be: state.be, peers: state.peers, mult: state.mult, weights: state.weights, lang: state.lang,
+  const ctx = () => ({ A: state.A, F: state.F, S: state.S, V: state.V, drivers: state.drivers, dcf: state.dcf, be: state.be, peers: state.peers, mult: state.mult, weights: state.weights, budget: state.budget, lang: state.lang,
     ai: !state.ai.lang || state.ai.lang === state.lang ? state.ai.text : '', aiAll: state.ai.text, aiLang: state.ai.lang });
 
   // pdf.js runs on the main thread when its worker script is loaded as a plain script (globalThis.pdfjsWorker),
@@ -297,7 +298,7 @@
 
   function renderFlags() {
     const L = T(), lang = state.lang, S = CFO.strengths(state.A, lang);
-    const VL = L.val, plan = CFO.actionPlan(state.A, state.F, state.V && !state.V.missing ? state.V : null, lang, { be: state.be, peers: state.peers });
+    const VL = L.val, plan = CFO.actionPlan(state.A, state.F, state.V && !state.V.missing ? state.V : null, lang, { be: state.be, peers: state.peers, budget: state.budget });
     const planCard = plan.length ? `<div class="card"><h3>${esc(VL.planTitle)}</h3><p class="muted small">${esc(VL.planHint)}</p>
       <div class="table-wrap"><table class="plan"><thead><tr><th>#</th><th>${esc(VL.priority)}</th><th>${esc(VL.when)}</th><th>${esc(VL.owner)}</th><th>${esc(VL.recommendation)}</th><th>${esc(VL.kpi)}</th><th class="n">${esc(VL.current)}</th><th class="n">${esc(VL.target)}</th></tr></thead>
       <tbody>${plan.map(it => `<tr><td>${it.n}</td><td>${pill(it.sev, it.sevText)}</td><td>${esc(it.horizon)}</td><td>${esc(it.areaText)}</td><td><b>${esc(it.title)}</b><div class="meaning">${esc(it.action)}</div></td><td>${esc(it.kpi)}</td><td class="n">${esc(it.current)}</td><td class="n">${esc(it.target)}</td></tr>`).join('')}</tbody></table></div></div>` : '';
@@ -529,6 +530,34 @@
         ${m.methodTable ? dataTable(m.methodTable) + m.football : `<p class="muted">${esc(L.noMethods)}</p>`}</div>`;
   }
 
+  /* ---------- budget vs actual ---------- */
+  function setBudget(name, tables) {
+    const L = T().var, lines = tables.reduce((n, t) => n + t.lines.length, 0);
+    if (!lines) { state.errors.push(() => T().var.fail(name)); return render(); }
+    state.budgetTables = tables; state.budgetName = name;
+    const b = CFO.buildDataset(tables);
+    state.notes.push(() => T().var.read(name, b.periods.join(', ')));
+    render();
+  }
+  async function addBudgetFile(file) {
+    try { setBudget(file.name, await withTimeout(CFO.parseFile(file), 60000, file.name)); }
+    catch (e) { state.errors.push(() => T().var.fail(file.name)); render(); }
+  }
+  function renderVariance() {
+    const L = T().var, m = CFO.varianceModel(ctx());
+    const favPill = r => r.fav == null ? '' : pill(r.fav ? 'good' : 'bad', r.fav ? L.fav : L.adv);
+    const table = m.table ? `<div class="table-wrap"><table><thead><tr>${m.table.head.map((h, i) => `<th${i && i < 5 ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>
+      ${m.table.items.map((r, k) => `<tr class="${m.table.sub[k] ? 'subtotal' : ''}">${m.table.rows[k].slice(0, 5).map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}<td>${favPill(r)}</td></tr>`).join('')}</tbody></table></div>` : `<p class="muted">${esc(m.none)}</p>`;
+    $('p-variance').innerHTML = `<div class="card"><div class="section-head"><h2>${esc(L.title)}</h2><span class="actions">
+        <label class="btn primary" for="budget-file">${esc(L.addBudget)}</label><input id="budget-file" type="file" accept=".xlsx,.xls,.xlsm,.ods,.csv,.tsv,.txt,.pdf" class="visually-hidden">
+        ${state.budgetTables ? `<span class="chip">${esc(state.budgetName)}</span><button class="btn ghost" type="button" data-budget-remove>${esc(L.removeBudget)}</button>` : ''}</span></div>
+        <p class="muted small">${esc(m.hint)}</p>
+        <details class="paste-box"><summary>${esc(L.pasteBudget)}</summary><textarea id="budget-paste" rows="4" aria-label="${esc(L.pasteBudget)}"></textarea>
+          <div class="actions"><button class="btn" type="button" data-budget-paste>${esc(L.useBudget)}</button></div></details>
+        ${table}</div>
+      ${m.walk ? `<div class="grid-2"><div class="card"><h3>${esc(L.walk)}</h3><p class="muted small">${esc(L.walkHint)}</p>${dataTable(m.walk)}</div><div class="card"><h3>${esc(L.walk)}</h3>${CFO.svgChart(m.chart)}</div></div>` : ''}`;
+  }
+
   /* ---------- shell ---------- */
   function renderChrome() {
     const L = T();
@@ -555,7 +584,7 @@
       state.notes.map(n => `<div class="note" role="status">${esc(n())}</div>`).join('');
   }
 
-  const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, valuation: renderValuation, cashflow: renderCash, compare: renderCompare, review: renderReview };
+  const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, valuation: renderValuation, cashflow: renderCash, compare: renderCompare, variance: renderVariance, review: renderReview };
 
   /** The tables with any years the user typed in Data review applied. */
   function tablesWithYears() {
@@ -577,6 +606,7 @@
       state.S = CFO.runScenarios(ds, state.drivers, state.fcYears);
     }
     state.V = ds.periods.length ? CFO.valuation(ds, state.drivers, state.dcf) : null;
+    state.budget = state.budgetTables ? CFO.buildDataset(state.budgetTables) : null;
     renderChrome();
     if (!ds.periods.length) { $('p-' + state.tab).innerHTML = ''; return; }
     PANELS[state.tab]();
@@ -615,6 +645,8 @@
     if (e.target.closest('[data-fc="reset"]')) { state.drivers = null; return render(); }
     if (e.target.closest('[data-dcf-reset]')) { state.dcf = {}; return render(); }
     if (e.target.closest('[data-peer-add]')) { state.peers = [...state.peers, { name: `${T().peer.name} ${state.peers.length + 1}`, source: 'manual' }]; savePeers(); return render(); }
+    if (e.target.closest('[data-budget-remove]')) { state.budgetTables = null; state.budgetName = ''; return render(); }
+    if (e.target.closest('[data-budget-paste]')) { const t = $('budget-paste').value; if (t.trim()) setBudget(T().var.pasteBudget, CFO.csvTables(new TextEncoder().encode(t), 'Budget')); return; }
     if (e.target.closest('[data-peer-clear]')) { state.peers = []; savePeers(); return render(); }
     const pr = e.target.closest('[data-peer-remove]'); if (pr) { state.peers = state.peers.filter((_, i) => i !== +pr.dataset.peerRemove); savePeers(); return render(); }
     if (e.target.closest('[data-years="reset"]')) { state.periodRename = {}; dataChanged(); return render(); }
@@ -657,6 +689,7 @@
     }
     if (e.target.matches('[data-mult]')) { const v = parseFloat(e.target.value); state.mult = { ...state.mult, [e.target.dataset.mult]: isFinite(v) && v > 0 ? v : null }; return render(); }
     if (e.target.matches('[data-w]')) { const v = parseFloat(e.target.value); if (isFinite(v)) state.weights = { ...state.weights, [e.target.dataset.w]: Math.max(0, v) / 100 }; return render(); }
+    if (e.target.id === 'budget-file') { if (e.target.files[0]) addBudgetFile(e.target.files[0]); e.target.value = ''; return; }
     if (e.target.id === 'peer-file') { addPeerFiles(e.target.files); e.target.value = ''; return; }
     if (e.target.matches('[data-be]')) {
       const k = e.target.dataset.be, raw = e.target.value.trim(), v = parseFloat(raw);
