@@ -55,3 +55,23 @@ test('SVG charts draw negatives, stacks and lines', () => {
   assert.equal((line.match(/<circle/g) || []).length, 2);
   assert.ok(CFO.svgChart({ kind: 'stack', max100: true, labels: ['a'], series: [{ name: 'p', values: [0.6], color: 'g' }, { name: 'q', values: [0.4], color: 'h' }] }).includes('<title>q · a'));
 });
+
+test('the full analysis never shows NaN, undefined or Infinity, whatever is missing', () => {
+  const cases = {
+    'income statement only': [['', 2023, 2024], ['Revenue', 58000, 61000], ['Cost of sales', 35960, 39650], ['Net income', 3937, 1488]],
+    'balance sheet only': [['', 2023, 2024], ['Total current assets', 25700, 30300], ['Total current liabilities', 15000, 21500], ['Total assets', 58700, 65800], ['Total equity', 29200, 27800]],
+    'single year': [['', 2024], ['Revenue', 61000], ['Net income', 1488], ['Total assets', 65800], ['Total equity', 27800]],
+    'losses and zeros': [['', 2023, 2024], ['Revenue', 0, 1000], ['Cost of sales', 0, 1500], ['Net income', -500, -900], ['Total assets', 1000, 800], ['Total equity', -100, -1000], ['Total liabilities', 1100, 1800], ['Finance costs', 0, 0]],
+    'no years': [['Revenue', 100, 120], ['Net income', 5, 6], ['Total assets', 300, 320], ['Total equity', 150, 160]],
+  };
+  for (const [name, rows] of Object.entries(cases)) {
+    const d = CFO.buildDataset([{ source: name, ...CFO.rowsToLines(rows) }]);
+    const a = CFO.analyze(d), f = CFO.flags(a);
+    const s = CFO.forecastMissing(d).length ? null : CFO.runScenarios(d, CFO.defaultDrivers(d), 2);
+    for (const lang of ['en', 'ar']) {
+      const html = CFO.fullHTML({ A: a, F: f, S: s, ai: '', lang }) + CFO.reportMarkdown({ A: a, F: f, S: s, ai: '', lang });
+      const bad = html.match(/.{0,40}\b(NaN|undefined|Infinity)\b.{0,20}/);
+      assert.equal(bad, null, `${name} (${lang}): ${bad && bad[0]}`);
+    }
+  }
+});

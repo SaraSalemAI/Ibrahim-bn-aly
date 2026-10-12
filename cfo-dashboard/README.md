@@ -49,7 +49,8 @@ One row per line item, one column per year:
 - CSV files may use commas, semicolons or tabs, and be saved as UTF-8, UTF-16 ("Unicode text") or Windows-1256 (Excel on Arabic Windows).
 - PDFs: the year columns carry over to continuation pages, labels wrapped over two lines are joined, and prose and page footers are skipped.
 - Each sheet of an Excel workbook is read separately. PDFs must contain real text (exported from accounting software), not a scan.
-- Labels are matched in English and Arabic (≈300 synonyms in `js/catalog.js`). Anything unmatched still appears in vertical/horizontal analysis, and you can map it by hand in **Data review**; the whole analysis updates immediately.
+- Labels are matched in English and Arabic in three stages: exact synonyms (≈300 in `js/catalog.js`), ordered keyword rules covering IFRS, Egyptian and Gulf wording (cash-flow totals before cash, depreciation before PP&E, "before tax" before tax…), then partial synonyms; 240 real-world labels are checked in `tests/labels.test.mjs`. "Other …", non-current, accumulated, payable-to-tax and similar lines are never taken for the main item. Items split over several lines (selling + administrative expenses; short-term loans + overdraft + current portion) are added up unless the file shows their total. Anything unmatched still appears in vertical/horizontal analysis, and you can map it by hand in **Data review**.
+- **Years**: read from headers such as `2024`, `31 December 2024`, `٢٠٢٤م`, `FY 2023/24` (named by the year it ends), long Arabic headers, or date cells. Data review → **Years** shows the years found per file; correct them, or type them when a file has none (the page tells you when that is needed).
 
 Examples in `sample/`: three English CSVs, a 3-sheet Excel workbook, an Arabic CSV, and a PDF. Harder real-world layouts used by the tests are in `tests/fixtures/`.
 

@@ -239,3 +239,10 @@ textarea#md-out { width: 100%; min-height: 140px; font: 0.8rem/1.4 var(--font-nu
 .fa-actions { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 58px); z-index: 4; background: var(--bg); padding-block: 6px; }
 @media (max-width: 560px) { .fa-health { flex-direction: column; align-items: flex-start; } .fa-actions { position: static; } }
 @media print { .fa-toc, .fa-actions { display: none !important; } .fa-sec { break-inside: auto; } }
+
+/* Years editor (Data review) */
+.years-grid { display: grid; gap: 8px; margin-top: 8px; }
+.years-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.years-row > span { flex: 1 1 200px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.year-in { width: 7.5em; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font-family: var(--font-num); }
+.year-in[aria-invalid="true"] { border-color: var(--bad); }

@@ -41,6 +41,13 @@
     if (cell instanceof Date) return isNaN(cell) ? null : String(cell.getUTCFullYear());   // Excel date-formatted header
     if (typeof cell === 'number') return cell >= 1900 && cell <= 2100 && Number.isInteger(cell) ? String(cell) : null;
     const s = latinDigits(cell);
+    // A fiscal year written as a range ("2023/2024", "FY 2024/25", "2023-24") is named by the year it ends.
+    // A date ("2024-12-31") is not a range: its second part is not the following year.
+    const fy = s.match(/(?:^|[^\d])((?:19|20)\d{2})\s*[\/\u2013-]\s*((?:19|20)?\d{2})(?![\d\/-])/);
+    if (fy) {
+      const a = +fy[1], b = fy[2].length === 2 ? Math.floor(a / 100) * 100 + +fy[2] : +fy[2];
+      if (b === a + 1) return String(b);
+    }
     const m = s.match(/(?:^|[^\d])((?:19|20)\d{2})(?!\d)/);
     if (!m) { const fy = s.match(/\bFY\s?'?(\d{2})\b/i); return fy ? '20' + fy[1] : null; }
     // Quarter / half-year labels keep their qualifier so they do not collide with the full year.
@@ -76,10 +83,11 @@
     const cells = (row || []).map((c, i) => ({ c, i })).filter(x => filled(x.c));
     // A lone cell is a title ("As at 31 December 2024") unless it is a short period label away from
     // the label column, as in a one-year statement: "| | 2024" (only as the first header).
-    if (cells.length < 2 && !(first && cells.length === 1 && cells[0].i > 0 && typeof cells[0].c !== 'number' && words(cells[0].c) <= 3 && parsePeriod(cells[0].c))) return null;
+    if (cells.length < 2 && !(first && cells.length === 1 && cells[0].i > 0 && (typeof cells[0].c === 'number' || words(cells[0].c) <= 3) && parsePeriod(cells[0].c))) return null;
     const per = [], other = [];
     for (const x of cells) {
-      const p = (typeof x.c === 'string' && words(x.c) > 7) ? null : parsePeriod(x.c);
+      // A header cell can be long ("عن السنة المالية المنتهية في 31 ديسمبر 2024"); a sentence is not one.
+      const p = (typeof x.c === 'string' && words(x.c) > 10) ? null : parsePeriod(x.c);
       // "2024" typed as text (CSV) is as ambiguous as the number 2024: it could be an amount.
       p ? per.push({ i: x.i, p, bare: typeof x.c === 'number' || /^\s*[\d٠-٩]{4}\s*$/.test(x.c) }) : other.push(x);
     }
@@ -129,7 +137,16 @@
       // No period header anywhere: treat every numeric column as an unnamed period.
       const width = Math.max(0, ...rows.map(r => (r || []).length));
       const cs = [];
-      for (let i = 0; i < width; i++) if (rows.some(r => r && typeof r[i] !== 'string' && parseNumber(r[i]) != null)) cs.push({ i, p: `P${cs.length + 1}` });
+      // A column counts when most of its filled cells are amounts (CSV cells are text, so "61,000" counts too).
+      const cols = [];
+      for (let i = 0; i < width; i++) {
+        const cells = rows.map(r => r && r[i]).filter(filled);
+        const nums = cells.map(c => parseNumber(c)).filter(v => v != null);
+        if (nums.length && nums.length >= cells.length * 0.6) cols.push({ i, nums });
+      }
+      // A column of small whole numbers next to real amounts is a note reference, not a year.
+      const big = cols.some(c => c.nums.some(v => Math.abs(v) >= 100));
+      cols.filter(c => !(big && c.nums.every(v => Number.isInteger(v) && v >= 0 && v < 100))).forEach(c => cs.push({ i: c.i, p: `P${cs.length + 1}` }));
       rows.forEach(r => readRow(r || [], cs));
       cs.forEach(c => periods.push(c.p));
     }

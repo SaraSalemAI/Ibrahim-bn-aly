@@ -39,13 +39,41 @@
     const origin = Object.fromEntries(periods.map(p => [p, {}]));
     const issues = [];
 
+    // Items a statement often splits over several lines ("Selling and distribution" + "General and administrative";
+    // "Short-term loans" + "Overdraft" + "Current portion of long-term loans"). Within one table their lines are
+    // added up, unless the table already shows a total line for the item, which is then used on its own.
+    // D&A, capex and dividends are left out: they appear in two statements on the same sheet, not split in parts.
+    const SUMMED = new Set(['opex', 'short_debt', 'long_debt']);
+    const isTotal = l => /^(total|sum)\b|^(اجمالي|مجموع|جمله)(\s|$)/.test(CFO.normalize(l.label));
+    const merged = [];
+    const groups = new Map();
     for (const l of lines) {
       if (!l.key) continue;
+      const g = `${l.table}|${l.key}`;
+      groups.has(g) ? groups.get(g).push(l) : groups.set(g, [l]);
+    }
+    for (const ls of groups.values()) {
+      const key = ls[0].key, totals = ls.filter(isTotal);
+      if (!SUMMED.has(key) || ls.length === 1) { merged.push(...ls); continue; }
+      if (totals.length) { ls.forEach(l => { if (l !== totals[0]) { l.component = true; l.used = true; } }); merged.push(totals[0]); continue; }
+      // The same figures repeated (an item shown in two statements on one sheet) are one line, not two parts.
+      const same = (x, y) => Object.keys(x.values).length === Object.keys(y.values).length && Object.entries(x.values).every(([p, v]) => Math.abs(Math.abs(v) - Math.abs(y.values[p] ?? NaN)) < 1e-9);
+      const parts = ls.filter((l, i) => !ls.slice(0, i).some(o => same(o, l)));
+      if (parts.length === 1) { merged.push(...ls); continue; }
+      // Add the components up, sign by sign as shown (expenses are made positive afterwards).
+      const values = {};
+      for (const l of parts) for (const [p, v] of Object.entries(l.values)) values[p] = (values[p] || 0) + (CFO.ITEM[key].expense ? Math.abs(v) : v);
+      ls.forEach(l => { l.component = true; l.used = true; });
+      merged.push({ ...ls[0], label: parts.map(l => l.label).join(' + '), values, sumOf: ls });
+    }
+    merged.sort((x, y) => lines.indexOf(x.sumOf ? x.sumOf[0] : x) - lines.indexOf(y.sumOf ? y.sumOf[0] : y));
+
+    for (const l of merged) {
       const item = CFO.ITEM[l.key];
       for (const [p, raw] of Object.entries(l.values)) {
         const v = item.expense ? Math.abs(raw) : raw;
         const prev = data[p][l.key];
-        if (prev == null) { data[p][l.key] = v; origin[p][l.key] = l; l.used = true; }
+        if (prev == null) { data[p][l.key] = v; origin[p][l.key] = l; l.used = true; (l.sumOf || []).forEach(c => { c.used = true; }); }
         else if (Math.abs(prev - v) > Math.max(1, Math.abs(prev) * 0.005)) {
           issues.push({ type: 'conflict', key: l.key, period: p, kept: prev, ignored: v, keptFrom: origin[p][l.key].source, ignoredFrom: l.source, label: l.label });
         } else l.used = true;
@@ -79,6 +107,9 @@
     for (const k of ['revenue', 'net_income', 'total_assets', 'equity', 'current_assets', 'current_liabilities', 'cfo']) {
       if (periods.length && periods.every(p => data[p][k] == null)) issues.push({ type: 'missing', key: k });
     }
+    // Columns without a real year (P1, Prior year...) can be named in Data review.
+    const unnamed = periods.filter(p => !/^(19|20)\d{2}/.test(p));
+    if (unnamed.length) issues.push({ type: 'noYears', periods: unnamed });
     const unmapped = lines.filter(l => !l.key).length;
     if (unmapped) issues.push({ type: 'unmapped', count: unmapped });
 

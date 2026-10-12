@@ -118,30 +118,86 @@
   const NORM_SYN = ITEMS.map(it => ({ it, syn: it.syn.map(normalize) }));
 
   /** Best catalogue match for a raw label, or null. Exact match beats containment; longer synonym wins. */
+  /* Keyword rules, tried after an exact synonym and before partial synonym matches. Order matters: the most
+   * specific come first (cash-flow totals before "cash", depreciation and capex before PP&E, "before tax"
+   * before tax). Labels are normalised first (lower case, Arabic letter variants unified, brackets removed). */
+  const CASHFLOW = /\b(cash|cash flows?)\b|نقد|تدفق/;
+  const RULES = [
+    ['cfo', n => /\b(operating|operations)\b|تشغيل|التشغيليه/.test(n) && CASHFLOW.test(n)],
+    ['cfi', n => /\binvesting\b|استثمار/.test(n) && CASHFLOW.test(n)],
+    ['cff', n => /\bfinancing\b|تمويليه|التمويل|تمويل/.test(n) && CASHFLOW.test(n)],
+    ['capex', n => /\b(purchases?|acquisitions?|payments? for|additions? to|paid for)\b|مدفوعات|شراء|اقتناء|اضافات/.test(n) && /\b(property|plant|equipment|fixed assets?)\b|ممتلكات|اصول ثابته|الاصول الثابته|الالات والمعدات/.test(n)],
+    ['pretax_income', n => /\bbefore\b.*\b(tax|taxes|taxation|zakat)\b|قبل.*(ضريب|ضرائب|زكا)/.test(n)],
+    ['interest', n => /\b(finance|financing|interest|borrowing) (costs?|expenses?|charges?)\b|\binterest expense|فوائد|تكاليف التمويل|تكلفه التمويل|مصروفات تمويليه|مصروفات التمويل|اعباء تمويليه/.test(n)],
+    ['dna', n => /\b(depreciation|amorti[sz]ation)\b|اهلاك|استهلاك/.test(n) && !/\baccumulated\b|مجمع/.test(n)],
+    ['tax', n => /\b(income tax|taxation|tax expense|zakat)\b|ضريب|ضرائب|زكا/.test(n) && !/\b(payable|deferred|receivable|asset|liabilit|net|after|before)|مستحق|مؤجل|مدين|صافي|بعد|قبل/.test(n)],
+    ['short_debt', n => !/\bnon ?current\b|غير المتداول|غير متداول/.test(n) && /\bcurrent portion\b|الجزء المتداول|\boverdrafts?\b|المكشوف|credit facilit|تسهيلات ائتمانيه|\bshort.?term (loans?|borrowings?|debt|financ)|قروض قصيره|\bcurrent (borrowings|loans)\b/.test(n)],
+    ['long_debt', n => /\b(long.?term|non.?current)\b.*\b(loans?|borrowings?|debt|financ)|\b(loans?|borrowings?)\b.*\b(long.?term|non.?current)\b|قروض.*طويله|طويله الاجل.*(قروض|تمويل)|\bbonds\b|سندات/.test(n)],
+    ['retained_earnings', n => /\bretained\b|accumulated (losses|deficit|profits)|ارباح مرحله|الارباح المرحله|ارباح مبقاه|الارباح المبقاه|محتجزه|خسائر متراكمه|الخسائر المتراكمه/.test(n)],
+    ['cogs', n => /\bcost of (sales|revenues?|goods|operations|services)\b|\bdirect costs?\b|تكلفه (المبيعات|الايرادات|البضاعه|النشاط)|تكاليف (النشاط|التشغيل|الايرادات)|التكاليف المباشره/.test(n)],
+    ['gross_profit', n => /\bgross (profit|income|margin|loss)\b|مجمل (الربح|ربح|الخساره)/.test(n)],
+    ['operating_income', n => /\b(operating|operations) (profit|income|result)|\b(profit|income|results?) from (operations|operating)\b|(ربح|ارباح|الربح|الارباح) (من )?(التشغيل|النشاط)|(الربح|الارباح) التشغيليه?|الربح التشغيلي/.test(n)],
+    ['net_income', n => (/\bnet (profit|income|earnings|loss)\b|\b(profit|loss|income|earnings) (for|of) the (year|period)\b|\bprofit after tax\b|صافي (ربح|الربح|ارباح|الارباح|الدخل|الخساره)|(ربح|ارباح|الربح) (العام|السنه|الفتره)/.test(n)) && !/\bbefore\b|قبل|\bper share\b|للسهم|\bcomprehensive\b|non ?controlling|\bminority\b|الشامل|غير المسيطره|حقوق الاقليه/.test(n)],
+    ['opex', n => /\b(selling|distribution|marketing|general|administrative|admin|operating) (and [a-z ]+ )?(expenses?|costs?)\b|\bsg ?& ?a\b|\bselling general\b|مصروفات.*(بيع|توزيع|تسويق|عموميه|اداريه|تشغيليه)|المصاريف.*(اداريه|عموميه|بيعيه)|(البيعيه|التسويقيه)/.test(n) && !/\bother\b|اخري/.test(n)],
+    ['revenue', n => /\b(revenues?|sales|turnover)\b|ايرادات|الايرادات|المبيعات|مبيعات/.test(n) && !/\b(cost|other|deferred|unearned|finance|interest|investment)\b|تكلف|تكاليف|اخري|مؤجل|تمويل|استثمار|فوائد/.test(n)],
+    ['current_assets', n => /\bcurrent assets\b|اصول متداوله|الاصول المتداوله|موجودات متداوله|الموجودات المتداوله/.test(n) && !/\bnon.?current\b|غير المتداوله|غير متداوله|\bother\b|اخري/.test(n)],
+    ['current_liabilities', n => /\bcurrent liabilities\b|(التزامات|الالتزامات|خصوم|الخصوم|مطلوبات|المطلوبات) متداوله|(الالتزامات|الخصوم|المطلوبات) المتداوله/.test(n) && !/\bnon.?current\b|غير المتداوله|غير متداوله|\bother\b|اخري/.test(n)],
+    ['cash', n => (/^cash( and (cash equivalents|equivalents|bank|banks|bank balances|deposits)| at banks?| on hand| in hand| balances?)?\b/.test(n) || /^(النقديه|النقد|نقديه|نقد)(\s|$)/.test(n))
+      && !/\b(paid|payments?|receipts?|received|dividends?|flows?|generated|used)\b|مدفوع|محصل|متحصل|توزيع|تدفق/.test(n)],
+    ['receivables', n => /\breceivables?\b|\bdebtors\b|^customers\b|عملاء|العملاء|مدينون|المدينون|ذمم مدينه|اوراق القبض/.test(n) && !/\b(tax|zakat|related part)|ضريب|ضرائب|زكا|اطراف ذات علاقه/.test(n)],
+    ['payables', n => /\bpayables?\b|\bcreditors\b|^suppliers\b|موردون|الموردون|موردين|الموردين|دائنون|الدائنون|ذمم دائنه|اوراق الدفع/.test(n) && !/\b(tax|zakat|dividends?|related part|interest|lease|loans?)|ضريب|ضرائب|زكا|توزيعات|اطراف ذات علاقه|فوائد|ايجار|قروض/.test(n)
+      && !(/\bnotes? payable\b/.test(n) && !/\btrade\b|\bsuppliers\b/.test(n))],
+    ['inventory', n => /\binventor(y|ies)\b|\bstock in trade\b|مخزون|المخزون/.test(n)],
+    ['ppe', n => /\b(property|plant) (and|&) equipment|\bproperty and equipment\b|\bfixed assets\b|ممتلكات|اصول ثابته|الاصول الثابته/.test(n) && !/\bright.of.use\b|حق الاستخدام/.test(n)],
+    ['dividends', n => /\bdividends?\b|توزيعات/.test(n) && !/\b(payable|declared|received|income)\b|مستحق|مقبوضه|محصله/.test(n)],
+    ['equity', n => /\b(shareholders?|stockholders?|owners?)'?s? equity\b|\bequity attributable\b|^total equity\b|حقوق (الملكيه|المساهمين)/.test(n)],
+  ];
+  // Words that mean the line is a movement, a per-share figure or an opening balance, not the item itself.
+  const NOT_THE_ITEM = /\b(change|changes|increase|decrease|movement|gain on|loss on|proceeds|repayments?|deferred|unearned|beginning|opening|per share|ratio|provision for|impairment|reversal)\b|التغير|الزياده|النقص|متحصلات|سداد|مؤجل|مقدما|اول المده|اول الفتره|اول العام|اول السنه|للسهم|مخصص|اضمحلال|رد /;
+
+  /* Checks every non-exact match must pass, whichever stage found it. */
+  const NON_CURRENT = /\bnon ?current\b|غير المتداول|غير متداول/;
+  const GUARDS = {
+    current_assets: n => !NON_CURRENT.test(n), current_liabilities: n => !NON_CURRENT.test(n),
+    short_debt: n => !NON_CURRENT.test(n),
+    total_assets: n => !NON_CURRENT.test(n) && !/\bcurrent\b|متداول/.test(n),
+    total_liabilities: n => !NON_CURRENT.test(n) && !/\bcurrent\b|متداول/.test(n),
+    dna: n => !/\baccumulated\b|مجمع/.test(n),
+    tax: n => !/\b(payable|deferred|receivable|asset|liabilit|net|after|before)|مستحق|مؤجل|مدين|صافي|بعد|قبل/.test(n),
+    revenue: n => !/\b(cost|deferred|unearned|finance|interest|investment)\b|تكلف|تكاليف|مؤجل|تمويل|استثمار|فوائد/.test(n),
+    // A cash balance, not a cash movement ("cash paid to suppliers", "cash receipts", "cash dividends").
+    cash: n => !/\b(paid|payments?|receipts?|received|dividends?|flows?|generated|used|from|to)\b|مدفوع|محصل|متحصل|توزيع|تدفق/.test(n),
+    payables: n => !/\b(tax|zakat|dividends?|related part|interest|lease|loans?)|ضريب|ضرائب|زكا|توزيعات|اطراف ذات علاقه|فوائد|ايجار|قروض/.test(n)
+      && !(/\bnotes? payable\b/.test(n) && !/\btrade\b|\bsuppliers\b/.test(n)),
+    net_income: n => !/\bbefore\b|قبل|\bper share\b|للسهم|\bcomprehensive\b|non ?controlling|\bminority\b|الشامل|غير المسيطره|حقوق الاقليه/.test(n),
+  };
+  // "Other ..." is a separate line, except the usual "trade and other receivables / payables", "debtors and other debit balances".
+  const OTHER = /\bother\b|اخري/;
+  const OTHER_OK = n => /\btrade\b|^(debtors|creditors)\b|^(مدينون|دائنون|المدينون|الدائنون)/.test(n);
+  const accept = (key, n) => (!GUARDS[key] || GUARDS[key](n)) && (!OTHER.test(n) || (['receivables', 'payables'].includes(key) && OTHER_OK(n)));
+
   function matchLabel(label) {
     const n = normalize(label);
     if (!n) return null;
-    let best = null, bestScore = 0, bestSyn = '';
-    for (const { it, syn } of NORM_SYN) {
-      for (const s of syn) {
-        let score = 0;
-        if (n === s) score = 1000 + s.length;
-        else if (s.length >= 4 && (' ' + n + ' ').includes(' ' + s + ' ')) score = s.length;
-        if (score > bestScore) { bestScore = score; best = it.key; bestSyn = s; }
-      }
-    }
+    // 1. An exact synonym always wins.
+    for (const { it, syn } of NORM_SYN) if (syn.includes(n)) return it.key;
     // "Total liabilities and equity" is a check total, not an item.
     if (/liabilit/.test(n) && /equity/.test(n) || /(الالتزامات|الخصوم|المطلوبات)/.test(n) && /حقوق/.test(n)) return null;
-    // A partial match on a line describing a movement or a sub-line ("change in inventory",
-    // "deferred revenue", "cash at beginning of year") is not the item itself.
-    if (best && bestScore < 1000) {
-      // Only the words outside the matched synonym count: "trade and other receivables net" is still receivables.
-      const rest = (' ' + n + ' ').replace(' ' + bestSyn + ' ', ' ');
-      const notTheItem = /\b(change|changes|increase|decrease|movement|gain|loss on|proceeds|repayment|deferred|unearned|other|beginning|opening|per share|ratio)\b|التغير|الزياده|النقص|متحصلات|سداد|مؤجل|مقدما|اخري|اول المده|اول الفتره|اول العام|للسهم/;
-      if (notTheItem.test(rest)) return null;
+    if (NOT_THE_ITEM.test(n)) return null;
+    // 2. Keyword rules, most specific first.
+    for (const [key, test] of RULES) if (test(n)) return accept(key, n) ? key : null;
+    // 3. Longest synonym contained in the label; words outside it must not mark a sub-line ("other ...").
+    let best = null, bestLen = 0, bestSyn = '';
+    for (const { it, syn } of NORM_SYN) for (const sy of syn) {
+      if (sy.length >= 4 && sy.length > bestLen && (' ' + n + ' ').includes(' ' + sy + ' ')) { best = it.key; bestLen = sy.length; bestSyn = sy; }
     }
-    return best;
+    if (!best) return null;
+    // Words outside the matched synonym decide whether this is really the item ("trade and other receivables" keeps its own "other").
+    const rest = (' ' + n + ' ').replace(' ' + bestSyn + ' ', ' ');
+    if (OTHER.test(rest) && !(['receivables', 'payables'].includes(best) && OTHER_OK(n))) return null;
+    return GUARDS[best] && !GUARDS[best](n) ? null : best;
   }
+
 
   CFO.ITEMS = ITEMS;
   CFO.ITEM = Object.fromEntries(ITEMS.map(i => [i.key, i]));

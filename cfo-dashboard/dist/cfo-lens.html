@@ -250,6 +250,13 @@ textarea#md-out { width: 100%; min-height: 140px; font: 0.8rem/1.4 var(--font-nu
 @media (max-width: 560px) { .fa-health { flex-direction: column; align-items: flex-start; } .fa-actions { position: static; } }
 @media print { .fa-toc, .fa-actions { display: none !important; } .fa-sec { break-inside: auto; } }
 
+/* Years editor (Data review) */
+.years-grid { display: grid; gap: 8px; margin-top: 8px; }
+.years-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.years-row > span { flex: 1 1 200px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.year-in { width: 7.5em; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font-family: var(--font-num); }
+.year-in[aria-invalid="true"] { border-color: var(--bad); }
+
 </style>
 </head>
 <body>
@@ -21088,30 +21095,86 @@ var __async = (__this, __arguments, generator) => {
   const NORM_SYN = ITEMS.map(it => ({ it, syn: it.syn.map(normalize) }));
 
   /** Best catalogue match for a raw label, or null. Exact match beats containment; longer synonym wins. */
+  /* Keyword rules, tried after an exact synonym and before partial synonym matches. Order matters: the most
+   * specific come first (cash-flow totals before "cash", depreciation and capex before PP&E, "before tax"
+   * before tax). Labels are normalised first (lower case, Arabic letter variants unified, brackets removed). */
+  const CASHFLOW = /\b(cash|cash flows?)\b|نقد|تدفق/;
+  const RULES = [
+    ['cfo', n => /\b(operating|operations)\b|تشغيل|التشغيليه/.test(n) && CASHFLOW.test(n)],
+    ['cfi', n => /\binvesting\b|استثمار/.test(n) && CASHFLOW.test(n)],
+    ['cff', n => /\bfinancing\b|تمويليه|التمويل|تمويل/.test(n) && CASHFLOW.test(n)],
+    ['capex', n => /\b(purchases?|acquisitions?|payments? for|additions? to|paid for)\b|مدفوعات|شراء|اقتناء|اضافات/.test(n) && /\b(property|plant|equipment|fixed assets?)\b|ممتلكات|اصول ثابته|الاصول الثابته|الالات والمعدات/.test(n)],
+    ['pretax_income', n => /\bbefore\b.*\b(tax|taxes|taxation|zakat)\b|قبل.*(ضريب|ضرائب|زكا)/.test(n)],
+    ['interest', n => /\b(finance|financing|interest|borrowing) (costs?|expenses?|charges?)\b|\binterest expense|فوائد|تكاليف التمويل|تكلفه التمويل|مصروفات تمويليه|مصروفات التمويل|اعباء تمويليه/.test(n)],
+    ['dna', n => /\b(depreciation|amorti[sz]ation)\b|اهلاك|استهلاك/.test(n) && !/\baccumulated\b|مجمع/.test(n)],
+    ['tax', n => /\b(income tax|taxation|tax expense|zakat)\b|ضريب|ضرائب|زكا/.test(n) && !/\b(payable|deferred|receivable|asset|liabilit|net|after|before)|مستحق|مؤجل|مدين|صافي|بعد|قبل/.test(n)],
+    ['short_debt', n => !/\bnon ?current\b|غير المتداول|غير متداول/.test(n) && /\bcurrent portion\b|الجزء المتداول|\boverdrafts?\b|المكشوف|credit facilit|تسهيلات ائتمانيه|\bshort.?term (loans?|borrowings?|debt|financ)|قروض قصيره|\bcurrent (borrowings|loans)\b/.test(n)],
+    ['long_debt', n => /\b(long.?term|non.?current)\b.*\b(loans?|borrowings?|debt|financ)|\b(loans?|borrowings?)\b.*\b(long.?term|non.?current)\b|قروض.*طويله|طويله الاجل.*(قروض|تمويل)|\bbonds\b|سندات/.test(n)],
+    ['retained_earnings', n => /\bretained\b|accumulated (losses|deficit|profits)|ارباح مرحله|الارباح المرحله|ارباح مبقاه|الارباح المبقاه|محتجزه|خسائر متراكمه|الخسائر المتراكمه/.test(n)],
+    ['cogs', n => /\bcost of (sales|revenues?|goods|operations|services)\b|\bdirect costs?\b|تكلفه (المبيعات|الايرادات|البضاعه|النشاط)|تكاليف (النشاط|التشغيل|الايرادات)|التكاليف المباشره/.test(n)],
+    ['gross_profit', n => /\bgross (profit|income|margin|loss)\b|مجمل (الربح|ربح|الخساره)/.test(n)],
+    ['operating_income', n => /\b(operating|operations) (profit|income|result)|\b(profit|income|results?) from (operations|operating)\b|(ربح|ارباح|الربح|الارباح) (من )?(التشغيل|النشاط)|(الربح|الارباح) التشغيليه?|الربح التشغيلي/.test(n)],
+    ['net_income', n => (/\bnet (profit|income|earnings|loss)\b|\b(profit|loss|income|earnings) (for|of) the (year|period)\b|\bprofit after tax\b|صافي (ربح|الربح|ارباح|الارباح|الدخل|الخساره)|(ربح|ارباح|الربح) (العام|السنه|الفتره)/.test(n)) && !/\bbefore\b|قبل|\bper share\b|للسهم|\bcomprehensive\b|non ?controlling|\bminority\b|الشامل|غير المسيطره|حقوق الاقليه/.test(n)],
+    ['opex', n => /\b(selling|distribution|marketing|general|administrative|admin|operating) (and [a-z ]+ )?(expenses?|costs?)\b|\bsg ?& ?a\b|\bselling general\b|مصروفات.*(بيع|توزيع|تسويق|عموميه|اداريه|تشغيليه)|المصاريف.*(اداريه|عموميه|بيعيه)|(البيعيه|التسويقيه)/.test(n) && !/\bother\b|اخري/.test(n)],
+    ['revenue', n => /\b(revenues?|sales|turnover)\b|ايرادات|الايرادات|المبيعات|مبيعات/.test(n) && !/\b(cost|other|deferred|unearned|finance|interest|investment)\b|تكلف|تكاليف|اخري|مؤجل|تمويل|استثمار|فوائد/.test(n)],
+    ['current_assets', n => /\bcurrent assets\b|اصول متداوله|الاصول المتداوله|موجودات متداوله|الموجودات المتداوله/.test(n) && !/\bnon.?current\b|غير المتداوله|غير متداوله|\bother\b|اخري/.test(n)],
+    ['current_liabilities', n => /\bcurrent liabilities\b|(التزامات|الالتزامات|خصوم|الخصوم|مطلوبات|المطلوبات) متداوله|(الالتزامات|الخصوم|المطلوبات) المتداوله/.test(n) && !/\bnon.?current\b|غير المتداوله|غير متداوله|\bother\b|اخري/.test(n)],
+    ['cash', n => (/^cash( and (cash equivalents|equivalents|bank|banks|bank balances|deposits)| at banks?| on hand| in hand| balances?)?\b/.test(n) || /^(النقديه|النقد|نقديه|نقد)(\s|$)/.test(n))
+      && !/\b(paid|payments?|receipts?|received|dividends?|flows?|generated|used)\b|مدفوع|محصل|متحصل|توزيع|تدفق/.test(n)],
+    ['receivables', n => /\breceivables?\b|\bdebtors\b|^customers\b|عملاء|العملاء|مدينون|المدينون|ذمم مدينه|اوراق القبض/.test(n) && !/\b(tax|zakat|related part)|ضريب|ضرائب|زكا|اطراف ذات علاقه/.test(n)],
+    ['payables', n => /\bpayables?\b|\bcreditors\b|^suppliers\b|موردون|الموردون|موردين|الموردين|دائنون|الدائنون|ذمم دائنه|اوراق الدفع/.test(n) && !/\b(tax|zakat|dividends?|related part|interest|lease|loans?)|ضريب|ضرائب|زكا|توزيعات|اطراف ذات علاقه|فوائد|ايجار|قروض/.test(n)
+      && !(/\bnotes? payable\b/.test(n) && !/\btrade\b|\bsuppliers\b/.test(n))],
+    ['inventory', n => /\binventor(y|ies)\b|\bstock in trade\b|مخزون|المخزون/.test(n)],
+    ['ppe', n => /\b(property|plant) (and|&) equipment|\bproperty and equipment\b|\bfixed assets\b|ممتلكات|اصول ثابته|الاصول الثابته/.test(n) && !/\bright.of.use\b|حق الاستخدام/.test(n)],
+    ['dividends', n => /\bdividends?\b|توزيعات/.test(n) && !/\b(payable|declared|received|income)\b|مستحق|مقبوضه|محصله/.test(n)],
+    ['equity', n => /\b(shareholders?|stockholders?|owners?)'?s? equity\b|\bequity attributable\b|^total equity\b|حقوق (الملكيه|المساهمين)/.test(n)],
+  ];
+  // Words that mean the line is a movement, a per-share figure or an opening balance, not the item itself.
+  const NOT_THE_ITEM = /\b(change|changes|increase|decrease|movement|gain on|loss on|proceeds|repayments?|deferred|unearned|beginning|opening|per share|ratio|provision for|impairment|reversal)\b|التغير|الزياده|النقص|متحصلات|سداد|مؤجل|مقدما|اول المده|اول الفتره|اول العام|اول السنه|للسهم|مخصص|اضمحلال|رد /;
+
+  /* Checks every non-exact match must pass, whichever stage found it. */
+  const NON_CURRENT = /\bnon ?current\b|غير المتداول|غير متداول/;
+  const GUARDS = {
+    current_assets: n => !NON_CURRENT.test(n), current_liabilities: n => !NON_CURRENT.test(n),
+    short_debt: n => !NON_CURRENT.test(n),
+    total_assets: n => !NON_CURRENT.test(n) && !/\bcurrent\b|متداول/.test(n),
+    total_liabilities: n => !NON_CURRENT.test(n) && !/\bcurrent\b|متداول/.test(n),
+    dna: n => !/\baccumulated\b|مجمع/.test(n),
+    tax: n => !/\b(payable|deferred|receivable|asset|liabilit|net|after|before)|مستحق|مؤجل|مدين|صافي|بعد|قبل/.test(n),
+    revenue: n => !/\b(cost|deferred|unearned|finance|interest|investment)\b|تكلف|تكاليف|مؤجل|تمويل|استثمار|فوائد/.test(n),
+    // A cash balance, not a cash movement ("cash paid to suppliers", "cash receipts", "cash dividends").
+    cash: n => !/\b(paid|payments?|receipts?|received|dividends?|flows?|generated|used|from|to)\b|مدفوع|محصل|متحصل|توزيع|تدفق/.test(n),
+    payables: n => !/\b(tax|zakat|dividends?|related part|interest|lease|loans?)|ضريب|ضرائب|زكا|توزيعات|اطراف ذات علاقه|فوائد|ايجار|قروض/.test(n)
+      && !(/\bnotes? payable\b/.test(n) && !/\btrade\b|\bsuppliers\b/.test(n)),
+    net_income: n => !/\bbefore\b|قبل|\bper share\b|للسهم|\bcomprehensive\b|non ?controlling|\bminority\b|الشامل|غير المسيطره|حقوق الاقليه/.test(n),
+  };
+  // "Other ..." is a separate line, except the usual "trade and other receivables / payables", "debtors and other debit balances".
+  const OTHER = /\bother\b|اخري/;
+  const OTHER_OK = n => /\btrade\b|^(debtors|creditors)\b|^(مدينون|دائنون|المدينون|الدائنون)/.test(n);
+  const accept = (key, n) => (!GUARDS[key] || GUARDS[key](n)) && (!OTHER.test(n) || (['receivables', 'payables'].includes(key) && OTHER_OK(n)));
+
   function matchLabel(label) {
     const n = normalize(label);
     if (!n) return null;
-    let best = null, bestScore = 0, bestSyn = '';
-    for (const { it, syn } of NORM_SYN) {
-      for (const s of syn) {
-        let score = 0;
-        if (n === s) score = 1000 + s.length;
-        else if (s.length >= 4 && (' ' + n + ' ').includes(' ' + s + ' ')) score = s.length;
-        if (score > bestScore) { bestScore = score; best = it.key; bestSyn = s; }
-      }
-    }
+    // 1. An exact synonym always wins.
+    for (const { it, syn } of NORM_SYN) if (syn.includes(n)) return it.key;
     // "Total liabilities and equity" is a check total, not an item.
     if (/liabilit/.test(n) && /equity/.test(n) || /(الالتزامات|الخصوم|المطلوبات)/.test(n) && /حقوق/.test(n)) return null;
-    // A partial match on a line describing a movement or a sub-line ("change in inventory",
-    // "deferred revenue", "cash at beginning of year") is not the item itself.
-    if (best && bestScore < 1000) {
-      // Only the words outside the matched synonym count: "trade and other receivables net" is still receivables.
-      const rest = (' ' + n + ' ').replace(' ' + bestSyn + ' ', ' ');
-      const notTheItem = /\b(change|changes|increase|decrease|movement|gain|loss on|proceeds|repayment|deferred|unearned|other|beginning|opening|per share|ratio)\b|التغير|الزياده|النقص|متحصلات|سداد|مؤجل|مقدما|اخري|اول المده|اول الفتره|اول العام|للسهم/;
-      if (notTheItem.test(rest)) return null;
+    if (NOT_THE_ITEM.test(n)) return null;
+    // 2. Keyword rules, most specific first.
+    for (const [key, test] of RULES) if (test(n)) return accept(key, n) ? key : null;
+    // 3. Longest synonym contained in the label; words outside it must not mark a sub-line ("other ...").
+    let best = null, bestLen = 0, bestSyn = '';
+    for (const { it, syn } of NORM_SYN) for (const sy of syn) {
+      if (sy.length >= 4 && sy.length > bestLen && (' ' + n + ' ').includes(' ' + sy + ' ')) { best = it.key; bestLen = sy.length; bestSyn = sy; }
     }
-    return best;
+    if (!best) return null;
+    // Words outside the matched synonym decide whether this is really the item ("trade and other receivables" keeps its own "other").
+    const rest = (' ' + n + ' ').replace(' ' + bestSyn + ' ', ' ');
+    if (OTHER.test(rest) && !(['receivables', 'payables'].includes(best) && OTHER_OK(n))) return null;
+    return GUARDS[best] && !GUARDS[best](n) ? null : best;
   }
+
 
   CFO.ITEMS = ITEMS;
   CFO.ITEM = Object.fromEntries(ITEMS.map(i => [i.key, i]));
@@ -21165,6 +21228,13 @@ var __async = (__this, __arguments, generator) => {
     if (cell instanceof Date) return isNaN(cell) ? null : String(cell.getUTCFullYear());   // Excel date-formatted header
     if (typeof cell === 'number') return cell >= 1900 && cell <= 2100 && Number.isInteger(cell) ? String(cell) : null;
     const s = latinDigits(cell);
+    // A fiscal year written as a range ("2023/2024", "FY 2024/25", "2023-24") is named by the year it ends.
+    // A date ("2024-12-31") is not a range: its second part is not the following year.
+    const fy = s.match(/(?:^|[^\d])((?:19|20)\d{2})\s*[\/\u2013-]\s*((?:19|20)?\d{2})(?![\d\/-])/);
+    if (fy) {
+      const a = +fy[1], b = fy[2].length === 2 ? Math.floor(a / 100) * 100 + +fy[2] : +fy[2];
+      if (b === a + 1) return String(b);
+    }
     const m = s.match(/(?:^|[^\d])((?:19|20)\d{2})(?!\d)/);
     if (!m) { const fy = s.match(/\bFY\s?'?(\d{2})\b/i); return fy ? '20' + fy[1] : null; }
     // Quarter / half-year labels keep their qualifier so they do not collide with the full year.
@@ -21200,10 +21270,11 @@ var __async = (__this, __arguments, generator) => {
     const cells = (row || []).map((c, i) => ({ c, i })).filter(x => filled(x.c));
     // A lone cell is a title ("As at 31 December 2024") unless it is a short period label away from
     // the label column, as in a one-year statement: "| | 2024" (only as the first header).
-    if (cells.length < 2 && !(first && cells.length === 1 && cells[0].i > 0 && typeof cells[0].c !== 'number' && words(cells[0].c) <= 3 && parsePeriod(cells[0].c))) return null;
+    if (cells.length < 2 && !(first && cells.length === 1 && cells[0].i > 0 && (typeof cells[0].c === 'number' || words(cells[0].c) <= 3) && parsePeriod(cells[0].c))) return null;
     const per = [], other = [];
     for (const x of cells) {
-      const p = (typeof x.c === 'string' && words(x.c) > 7) ? null : parsePeriod(x.c);
+      // A header cell can be long ("عن السنة المالية المنتهية في 31 ديسمبر 2024"); a sentence is not one.
+      const p = (typeof x.c === 'string' && words(x.c) > 10) ? null : parsePeriod(x.c);
       // "2024" typed as text (CSV) is as ambiguous as the number 2024: it could be an amount.
       p ? per.push({ i: x.i, p, bare: typeof x.c === 'number' || /^\s*[\d٠-٩]{4}\s*$/.test(x.c) }) : other.push(x);
     }
@@ -21253,7 +21324,16 @@ var __async = (__this, __arguments, generator) => {
       // No period header anywhere: treat every numeric column as an unnamed period.
       const width = Math.max(0, ...rows.map(r => (r || []).length));
       const cs = [];
-      for (let i = 0; i < width; i++) if (rows.some(r => r && typeof r[i] !== 'string' && parseNumber(r[i]) != null)) cs.push({ i, p: `P${cs.length + 1}` });
+      // A column counts when most of its filled cells are amounts (CSV cells are text, so "61,000" counts too).
+      const cols = [];
+      for (let i = 0; i < width; i++) {
+        const cells = rows.map(r => r && r[i]).filter(filled);
+        const nums = cells.map(c => parseNumber(c)).filter(v => v != null);
+        if (nums.length && nums.length >= cells.length * 0.6) cols.push({ i, nums });
+      }
+      // A column of small whole numbers next to real amounts is a note reference, not a year.
+      const big = cols.some(c => c.nums.some(v => Math.abs(v) >= 100));
+      cols.filter(c => !(big && c.nums.every(v => Number.isInteger(v) && v >= 0 && v < 100))).forEach(c => cs.push({ i: c.i, p: `P${cs.length + 1}` }));
       rows.forEach(r => readRow(r || [], cs));
       cs.forEach(c => periods.push(c.p));
     }
@@ -21454,13 +21534,41 @@ var __async = (__this, __arguments, generator) => {
     const origin = Object.fromEntries(periods.map(p => [p, {}]));
     const issues = [];
 
+    // Items a statement often splits over several lines ("Selling and distribution" + "General and administrative";
+    // "Short-term loans" + "Overdraft" + "Current portion of long-term loans"). Within one table their lines are
+    // added up, unless the table already shows a total line for the item, which is then used on its own.
+    // D&A, capex and dividends are left out: they appear in two statements on the same sheet, not split in parts.
+    const SUMMED = new Set(['opex', 'short_debt', 'long_debt']);
+    const isTotal = l => /^(total|sum)\b|^(اجمالي|مجموع|جمله)(\s|$)/.test(CFO.normalize(l.label));
+    const merged = [];
+    const groups = new Map();
     for (const l of lines) {
       if (!l.key) continue;
+      const g = `${l.table}|${l.key}`;
+      groups.has(g) ? groups.get(g).push(l) : groups.set(g, [l]);
+    }
+    for (const ls of groups.values()) {
+      const key = ls[0].key, totals = ls.filter(isTotal);
+      if (!SUMMED.has(key) || ls.length === 1) { merged.push(...ls); continue; }
+      if (totals.length) { ls.forEach(l => { if (l !== totals[0]) { l.component = true; l.used = true; } }); merged.push(totals[0]); continue; }
+      // The same figures repeated (an item shown in two statements on one sheet) are one line, not two parts.
+      const same = (x, y) => Object.keys(x.values).length === Object.keys(y.values).length && Object.entries(x.values).every(([p, v]) => Math.abs(Math.abs(v) - Math.abs(y.values[p] ?? NaN)) < 1e-9);
+      const parts = ls.filter((l, i) => !ls.slice(0, i).some(o => same(o, l)));
+      if (parts.length === 1) { merged.push(...ls); continue; }
+      // Add the components up, sign by sign as shown (expenses are made positive afterwards).
+      const values = {};
+      for (const l of parts) for (const [p, v] of Object.entries(l.values)) values[p] = (values[p] || 0) + (CFO.ITEM[key].expense ? Math.abs(v) : v);
+      ls.forEach(l => { l.component = true; l.used = true; });
+      merged.push({ ...ls[0], label: parts.map(l => l.label).join(' + '), values, sumOf: ls });
+    }
+    merged.sort((x, y) => lines.indexOf(x.sumOf ? x.sumOf[0] : x) - lines.indexOf(y.sumOf ? y.sumOf[0] : y));
+
+    for (const l of merged) {
       const item = CFO.ITEM[l.key];
       for (const [p, raw] of Object.entries(l.values)) {
         const v = item.expense ? Math.abs(raw) : raw;
         const prev = data[p][l.key];
-        if (prev == null) { data[p][l.key] = v; origin[p][l.key] = l; l.used = true; }
+        if (prev == null) { data[p][l.key] = v; origin[p][l.key] = l; l.used = true; (l.sumOf || []).forEach(c => { c.used = true; }); }
         else if (Math.abs(prev - v) > Math.max(1, Math.abs(prev) * 0.005)) {
           issues.push({ type: 'conflict', key: l.key, period: p, kept: prev, ignored: v, keptFrom: origin[p][l.key].source, ignoredFrom: l.source, label: l.label });
         } else l.used = true;
@@ -21494,6 +21602,9 @@ var __async = (__this, __arguments, generator) => {
     for (const k of ['revenue', 'net_income', 'total_assets', 'equity', 'current_assets', 'current_liabilities', 'cfo']) {
       if (periods.length && periods.every(p => data[p][k] == null)) issues.push({ type: 'missing', key: k });
     }
+    // Columns without a real year (P1, Prior year...) can be named in Data review.
+    const unnamed = periods.filter(p => !/^(19|20)\d{2}/.test(p));
+    if (unnamed.length) issues.push({ type: 'noYears', periods: unnamed });
     const unmapped = lines.filter(l => !l.key).length;
     if (unmapped) issues.push({ type: 'unmapped', count: unmapped });
 
@@ -21808,6 +21919,7 @@ var __async = (__this, __arguments, generator) => {
       pasteTitle: 'Paste from Excel', pasteHint: 'Select the statement cells in Excel (labels and year columns, with the year row), copy (Ctrl+C), paste here (Ctrl+V), then press Analyse. Works even when files cannot be dropped.',
       pastePlaceholder: 'Paste the copied cells here…', pasteGo: 'Analyse pasted table',
       missingTitle: 'Some ratios cannot be calculated yet', missingBody: items => `These items were not found in your files: ${items}. Open Data review to link the right lines, or add the missing statement.`, openReview: 'Open Data review',
+      years: { title: 'Years', hint: 'Years found in each file, oldest to newest. Correct any that are wrong, or type them where the file had none (e.g. 2023, 2024). The analysis updates at once.', reset: 'Use years from the files', invalid: v => `"${v}" is not a year. Type a four-digit year such as 2024.`, duplicate: v => `${v} is already used for another column of this file; each column needs its own year.` },
       diag: { title: 'Diagnostics', hint: 'If something does not work, press Copy and paste the text in the chat. By default it contains only line labels and counts, not your figures.', withNumbers: 'Include figures', copy: 'Copy diagnostics' },
       browse: 'Choose files', exampleTag: 'Example', vs: 'vs', pts: 'pts', sampleNotice: 'Example data (fictional company, EGP thousands). Drop your own files to replace it.',
       loadSample: 'Reload example', clear: 'Clear', filesLoaded: 'Files', reading: 'Reading files…',
@@ -21852,6 +21964,7 @@ var __async = (__this, __arguments, generator) => {
         gp_mismatch: i => `${i.period}: revenue − cost of sales differs from gross profit by ${i.gap}.`,
         missing: (i, n) => `${n(i.key)} was not found in any file. Ratios that need it show N/A.`,
         unmapped: i => `${i.count} lines were not matched to a standard item. They still appear in vertical and horizontal analysis.`,
+        noYears: i => `No year was found for: ${i.periods.join(', ')}. Type the years under "Years" in Data review so the analysis runs in the right order.`,
       },
       reportTitle: 'Financial analysis report', execSummary: 'Executive summary', keyRatios: 'Key ratios', assumptions: 'Assumptions and limits',
       needsReview: 'Items for human review', nextSteps: 'Next steps',
@@ -21890,6 +22003,7 @@ var __async = (__this, __arguments, generator) => {
       pasteTitle: 'لصق من Excel', pasteHint: 'حدّد خلايا القائمة في Excel (البنود وأعمدة السنوات مع صف السنوات)، انسخ (Ctrl+C)، الصق هنا (Ctrl+V)، ثم اضغط تحليل. يعمل حتى لو تعذّر إسقاط الملفات.',
       pastePlaceholder: 'الصق الخلايا المنسوخة هنا…', pasteGo: 'تحليل الجدول الملصق',
       missingTitle: 'بعض النسب لا يمكن حسابها بعد', missingBody: items => `لم يُعثر على هذه البنود في ملفاتك: ${items}. افتح مراجعة البيانات لربط البنود الصحيحة، أو أضف القائمة الناقصة.`, openReview: 'افتح مراجعة البيانات',
+      years: { title: 'السنوات', hint: 'السنوات الموجودة في كل ملف، من الأقدم للأحدث. صحّح الخاطئ منها أو اكتبها إن لم يحتوِ الملف عليها (مثل 2023، 2024). يتحدث التحليل فوراً.', reset: 'استخدم السنوات من الملفات', invalid: v => `«${v}» ليست سنة. اكتب سنة من أربعة أرقام مثل 2024.`, duplicate: v => `${v} مستخدمة لعمود آخر في هذا الملف؛ كل عمود يحتاج سنة مختلفة.` },
       diag: { title: 'التشخيص', hint: 'إذا لم يعمل شيء، اضغط نسخ والصق النص في المحادثة. افتراضياً يحتوي على أسماء البنود والأعداد فقط، وليس أرقامك.', withNumbers: 'تضمين الأرقام', copy: 'نسخ التشخيص' },
       browse: 'اختر الملفات', exampleTag: 'مثال', vs: 'مقابل', pts: 'نقطة', sampleNotice: 'بيانات تجريبية (شركة افتراضية، بالألف جنيه). أسقط ملفاتك لاستبدالها.',
       loadSample: 'إعادة البيانات التجريبية', clear: 'مسح', filesLoaded: 'الملفات', reading: 'جارٍ قراءة الملفات…',
@@ -21934,6 +22048,7 @@ var __async = (__this, __arguments, generator) => {
         gp_mismatch: i => `${i.period}: الإيرادات − تكلفة المبيعات لا تساوي مجمل الربح، الفرق ${i.gap}.`,
         missing: (i, n) => `لم يُعثر على ${n(i.key)} في أي ملف. النسب التي تحتاجه تظهر غير متاحة.`,
         unmapped: i => `${i.count} بنود لم تُربط ببند قياسي. ما زالت تظهر في التحليل الرأسي والأفقي.`,
+        noYears: i => `لم يُعثر على سنة لـ: ${i.periods.join('، ')}. اكتب السنوات في «السنوات» داخل مراجعة البيانات ليُحسب التحليل بالترتيب الصحيح.`,
       },
       reportTitle: 'تقرير التحليل المالي', execSummary: 'الملخص التنفيذي', keyRatios: 'أهم النسب', assumptions: 'الافتراضات والحدود',
       needsReview: 'بنود تحتاج مراجعة بشرية', nextSteps: 'الخطوات التالية',
@@ -23159,6 +23274,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     drivers: null, fcYears: 3, S: null,            // forecast: drivers (null = from history), scenarios
     ai: { text: '', busy: false, err: '', ctl: null }, aiOn: false,
     diagNumbers: false, diagOpen: false,
+    periodRename: {},   // { tableSource: { detected period: year typed by the user } }
   };
   CFO.setSector(state.sector);
   // Anything that changes the data starts the forecast and the commentary afresh.
@@ -23219,6 +23335,10 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       if (added.length) {
         // Dropping a file with the same name again replaces its earlier version.
         const names = new Set(added.map(a => a.name));
+        // Years typed for an earlier version of a re-added file no longer apply.
+        const fresh = { ...state.periodRename };
+        added.forEach(a => a.tables.forEach(t => { delete fresh[t.source]; }));
+        state.periodRename = fresh;
         state.tables = [...kept.tables.filter(t => !names.has(t.file)), ...added.flatMap(a => a.tables)];
         state.files = [...kept.files.filter(n => !names.has(n)), ...added.map(a => a.name)];
         state.overrides = {}; state.isSample = false; dataChanged();
@@ -23284,10 +23404,11 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
   function loadSample() {
     state.tables = CFO.sampleTables().map(t => ({ ...t, file: t.source }));
     state.files = state.tables.map(t => t.file);
-    state.overrides = {}; state.isSample = true; dataChanged();
+    state.overrides = {}; state.isSample = true; state.periodRename = {}; dataChanged();
   }
 
   function removeFile(name) {
+    state.tables.filter(t => t.file === name).forEach(t => { delete state.periodRename[t.source]; });
     state.tables = state.tables.filter(t => t.file !== name);
     state.files = state.files.filter(f => f !== name);
     state.overrides = {}; dataChanged();
@@ -23337,9 +23458,11 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     $('top-flags').innerHTML = `<div class="section-head"><h3>${L.flagsTitle}</h3><button class="btn" type="button" data-go="flags">${F.length} →</button></div>
       <div class="list" style="margin-top:10px">${top.length ? top.map(flagCard).join('') : `<p class="muted">${L.noFlags}</p>`}</div>`;
     // Ratios that cannot be computed are explained instead of showing silent dashes.
-    const missingIssues = A.ds.issues.filter(i => i.type === 'missing');
-    $('missing-card').hidden = state.isSample || !missingIssues.length;
-    $('missing-card').innerHTML = missingIssues.length ? `<h3>${esc(L.missingTitle)}</h3><p>${esc(L.missingBody(missingIssues.map(i => CFO.itemName(i.key, lang)).join(lang === 'ar' ? '، ' : ', ')))}</p>
+    const missingIssues = A.ds.issues.filter(i => i.type === 'missing'), noYears = A.ds.issues.find(i => i.type === 'noYears');
+    $('missing-card').hidden = state.isSample || (!missingIssues.length && !noYears);
+    $('missing-card').innerHTML = missingIssues.length || noYears ? `<h3>${esc(L.missingTitle)}</h3>
+      ${noYears ? `<p>${esc(L.issue.noYears(noYears))}</p>` : ''}
+      ${missingIssues.length ? `<p>${esc(L.missingBody(missingIssues.map(i => CFO.itemName(i.key, lang)).join(lang === 'ar' ? '، ' : ', ')))}</p>` : ''}
       <div class="actions"><button class="btn primary" type="button" data-go="review">${esc(L.openReview)}</button></div>` : '';
     $('ai-overview').innerHTML = aiPanel();
     $('ai-overview').hidden = !state.aiOn;
@@ -23440,7 +23563,13 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       <div class="actions"><label class="small"><input type="checkbox" id="diag-num" ${state.diagNumbers ? 'checked' : ''}> ${esc(D.withNumbers)}</label>
         <button class="btn primary" type="button" data-diag="copy">${esc(D.copy)}</button><span class="muted small" id="diag-msg" role="status"></span></div>
       <textarea id="diag-out" readonly aria-label="${esc(D.title)}">${esc(diagnosticsText(state.diagNumbers))}</textarea></details>`;
-    $('p-review').innerHTML = diagCard + `<div class="card"><h3>${L.issues}</h3>${issues ? `<ul class="issues" style="margin-top:8px">${issues}</ul>` : `<p class="muted">${L.noIssues}</p>`}</div>
+    const Y = L.years;
+    const yearsCard = `<div class="card" id="years-card"><h3>${esc(Y.title)}</h3><p class="muted small">${esc(Y.hint)}</p>
+      <div class="years-grid">${state.tables.map(t => `<div class="years-row"><span class="small" title="${esc(t.source)}">${esc(t.source)}</span>
+        ${t.periods.map(p => `<input type="text" inputmode="numeric" class="year-in" data-source="${esc(t.source)}" data-period="${esc(p)}" value="${esc(state.periodRename[t.source]?.[p] ?? p)}" aria-label="${esc(t.source)} ${esc(p)}">`).join('')}</div>`).join('')}</div>
+      <p class="small" id="years-msg" role="status" style="color:var(--bad);margin:6px 0 0"></p>
+      ${Object.keys(state.periodRename).length ? `<div class="actions"><button class="btn" type="button" data-years="reset">${esc(Y.reset)}</button></div>` : ''}</div>`;
+    $('p-review').innerHTML = yearsCard + diagCard + `<div class="card"><h3>${L.issues}</h3>${issues ? `<ul class="issues" style="margin-top:8px">${issues}</ul>` : `<p class="muted">${L.noIssues}</p>`}</div>
       <div><h2>${L.reviewTitle}</h2><p class="muted small">${L.reviewHint}</p></div>
       <div class="table-wrap"><table><thead><tr><th>${L.source}</th><th>${L.rawLabel}</th><th>${L.mappedTo}</th>${P.map(p => `<th class="n">${p}</th>`).join('')}</tr></thead>
       <tbody>${ds.lines.map(l => `<tr class="${l.key && !l.used ? 'not-used' : ''}"><td class="small muted">${esc(l.source)}</td><td>${esc(l.label)}</td>
@@ -23576,8 +23705,18 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
 
   const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, review: renderReview };
 
+  /** The tables with any years the user typed in Data review applied. */
+  function tablesWithYears() {
+    return state.tables.map(t => {
+      const ren = state.periodRename[t.source];
+      if (!ren) return t;
+      const name = p => (ren[p] || p).trim() || p;
+      return { ...t, periods: t.periods.map(name), lines: t.lines.map(l => ({ ...l, values: Object.fromEntries(Object.entries(l.values).map(([p, v]) => [name(p), v])) })) };
+    });
+  }
+
   function render() {
-    const ds = CFO.buildDataset(state.tables, state.overrides);
+    const ds = CFO.buildDataset(tablesWithYears(), state.overrides);
     state.A = CFO.analyze(ds);
     state.F = CFO.flags(state.A);
     state.S = null;
@@ -23621,6 +23760,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       return;
     }
     if (e.target.closest('[data-fc="reset"]')) { state.drivers = null; return render(); }
+    if (e.target.closest('[data-years="reset"]')) { state.periodRename = {}; dataChanged(); return render(); }
     if (e.target.closest('[data-paste="go"]')) { addPastedTable($('paste-in').value); $('paste-in').value = ''; return; }
     if (e.target.closest('[data-diag="copy"]')) {
       const text = diagnosticsText(state.diagNumbers), msg = $('diag-msg');
@@ -23654,6 +23794,22 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       if (isFinite(v)) { state.drivers = { ...state.drivers, [k]: CFO.clampDriver(k, unit === '%' ? v / 100 : v) }; render(); }
     }
     if (e.target.id === 'fc-years') { state.fcYears = +e.target.value; render(); }
+    if (e.target.matches('.year-in')) {
+      const src = e.target.dataset.source, p = e.target.dataset.period;
+      const v = e.target.value.trim().replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+      const ren = { ...(state.periodRename[src] || {}) };
+      const table = state.tables.find(t => t.source === src);
+      const finalNames = table.periods.map(q => (q === p ? (v || p) : (ren[q] || q)));
+      const msg = $('years-msg');
+      // A year must look like one, and two columns of the same file cannot share it (one would be lost).
+      if (v && v !== p && !/^(19|20)\d{2}$/.test(v)) { e.target.setAttribute('aria-invalid', 'true'); msg.textContent = T().years.invalid(v); return; }
+      if (new Set(finalNames).size !== finalNames.length) { e.target.setAttribute('aria-invalid', 'true'); msg.textContent = T().years.duplicate(v); return; }
+      if (!v || v === p) delete ren[p]; else ren[p] = v;
+      state.periodRename = { ...state.periodRename, [src]: ren };
+      if (!Object.keys(ren).length) delete state.periodRename[src];
+      dataChanged(); render();
+      return;
+    }
     if (e.target.id === 'diag-num') { state.diagNumbers = e.target.checked; state.diagOpen = true; renderReview(); }
     if (e.target.id === 'file-input') { diag.events.chooser++; addFiles(e.target.files); e.target.value = ''; }
   });

@@ -19,6 +19,7 @@
     drivers: null, fcYears: 3, S: null,            // forecast: drivers (null = from history), scenarios
     ai: { text: '', busy: false, err: '', ctl: null }, aiOn: false,
     diagNumbers: false, diagOpen: false,
+    periodRename: {},   // { tableSource: { detected period: year typed by the user } }
   };
   CFO.setSector(state.sector);
   // Anything that changes the data starts the forecast and the commentary afresh.
@@ -79,6 +80,10 @@
       if (added.length) {
         // Dropping a file with the same name again replaces its earlier version.
         const names = new Set(added.map(a => a.name));
+        // Years typed for an earlier version of a re-added file no longer apply.
+        const fresh = { ...state.periodRename };
+        added.forEach(a => a.tables.forEach(t => { delete fresh[t.source]; }));
+        state.periodRename = fresh;
         state.tables = [...kept.tables.filter(t => !names.has(t.file)), ...added.flatMap(a => a.tables)];
         state.files = [...kept.files.filter(n => !names.has(n)), ...added.map(a => a.name)];
         state.overrides = {}; state.isSample = false; dataChanged();
@@ -144,10 +149,11 @@
   function loadSample() {
     state.tables = CFO.sampleTables().map(t => ({ ...t, file: t.source }));
     state.files = state.tables.map(t => t.file);
-    state.overrides = {}; state.isSample = true; dataChanged();
+    state.overrides = {}; state.isSample = true; state.periodRename = {}; dataChanged();
   }
 
   function removeFile(name) {
+    state.tables.filter(t => t.file === name).forEach(t => { delete state.periodRename[t.source]; });
     state.tables = state.tables.filter(t => t.file !== name);
     state.files = state.files.filter(f => f !== name);
     state.overrides = {}; dataChanged();
@@ -197,9 +203,11 @@
     $('top-flags').innerHTML = `<div class="section-head"><h3>${L.flagsTitle}</h3><button class="btn" type="button" data-go="flags">${F.length} →</button></div>
       <div class="list" style="margin-top:10px">${top.length ? top.map(flagCard).join('') : `<p class="muted">${L.noFlags}</p>`}</div>`;
     // Ratios that cannot be computed are explained instead of showing silent dashes.
-    const missingIssues = A.ds.issues.filter(i => i.type === 'missing');
-    $('missing-card').hidden = state.isSample || !missingIssues.length;
-    $('missing-card').innerHTML = missingIssues.length ? `<h3>${esc(L.missingTitle)}</h3><p>${esc(L.missingBody(missingIssues.map(i => CFO.itemName(i.key, lang)).join(lang === 'ar' ? '، ' : ', ')))}</p>
+    const missingIssues = A.ds.issues.filter(i => i.type === 'missing'), noYears = A.ds.issues.find(i => i.type === 'noYears');
+    $('missing-card').hidden = state.isSample || (!missingIssues.length && !noYears);
+    $('missing-card').innerHTML = missingIssues.length || noYears ? `<h3>${esc(L.missingTitle)}</h3>
+      ${noYears ? `<p>${esc(L.issue.noYears(noYears))}</p>` : ''}
+      ${missingIssues.length ? `<p>${esc(L.missingBody(missingIssues.map(i => CFO.itemName(i.key, lang)).join(lang === 'ar' ? '، ' : ', ')))}</p>` : ''}
       <div class="actions"><button class="btn primary" type="button" data-go="review">${esc(L.openReview)}</button></div>` : '';
     $('ai-overview').innerHTML = aiPanel();
     $('ai-overview').hidden = !state.aiOn;
@@ -300,7 +308,13 @@
       <div class="actions"><label class="small"><input type="checkbox" id="diag-num" ${state.diagNumbers ? 'checked' : ''}> ${esc(D.withNumbers)}</label>
         <button class="btn primary" type="button" data-diag="copy">${esc(D.copy)}</button><span class="muted small" id="diag-msg" role="status"></span></div>
       <textarea id="diag-out" readonly aria-label="${esc(D.title)}">${esc(diagnosticsText(state.diagNumbers))}</textarea></details>`;
-    $('p-review').innerHTML = diagCard + `<div class="card"><h3>${L.issues}</h3>${issues ? `<ul class="issues" style="margin-top:8px">${issues}</ul>` : `<p class="muted">${L.noIssues}</p>`}</div>
+    const Y = L.years;
+    const yearsCard = `<div class="card" id="years-card"><h3>${esc(Y.title)}</h3><p class="muted small">${esc(Y.hint)}</p>
+      <div class="years-grid">${state.tables.map(t => `<div class="years-row"><span class="small" title="${esc(t.source)}">${esc(t.source)}</span>
+        ${t.periods.map(p => `<input type="text" inputmode="numeric" class="year-in" data-source="${esc(t.source)}" data-period="${esc(p)}" value="${esc(state.periodRename[t.source]?.[p] ?? p)}" aria-label="${esc(t.source)} ${esc(p)}">`).join('')}</div>`).join('')}</div>
+      <p class="small" id="years-msg" role="status" style="color:var(--bad);margin:6px 0 0"></p>
+      ${Object.keys(state.periodRename).length ? `<div class="actions"><button class="btn" type="button" data-years="reset">${esc(Y.reset)}</button></div>` : ''}</div>`;
+    $('p-review').innerHTML = yearsCard + diagCard + `<div class="card"><h3>${L.issues}</h3>${issues ? `<ul class="issues" style="margin-top:8px">${issues}</ul>` : `<p class="muted">${L.noIssues}</p>`}</div>
       <div><h2>${L.reviewTitle}</h2><p class="muted small">${L.reviewHint}</p></div>
       <div class="table-wrap"><table><thead><tr><th>${L.source}</th><th>${L.rawLabel}</th><th>${L.mappedTo}</th>${P.map(p => `<th class="n">${p}</th>`).join('')}</tr></thead>
       <tbody>${ds.lines.map(l => `<tr class="${l.key && !l.used ? 'not-used' : ''}"><td class="small muted">${esc(l.source)}</td><td>${esc(l.label)}</td>
@@ -436,8 +450,18 @@
 
   const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, review: renderReview };
 
+  /** The tables with any years the user typed in Data review applied. */
+  function tablesWithYears() {
+    return state.tables.map(t => {
+      const ren = state.periodRename[t.source];
+      if (!ren) return t;
+      const name = p => (ren[p] || p).trim() || p;
+      return { ...t, periods: t.periods.map(name), lines: t.lines.map(l => ({ ...l, values: Object.fromEntries(Object.entries(l.values).map(([p, v]) => [name(p), v])) })) };
+    });
+  }
+
   function render() {
-    const ds = CFO.buildDataset(state.tables, state.overrides);
+    const ds = CFO.buildDataset(tablesWithYears(), state.overrides);
     state.A = CFO.analyze(ds);
     state.F = CFO.flags(state.A);
     state.S = null;
@@ -481,6 +505,7 @@
       return;
     }
     if (e.target.closest('[data-fc="reset"]')) { state.drivers = null; return render(); }
+    if (e.target.closest('[data-years="reset"]')) { state.periodRename = {}; dataChanged(); return render(); }
     if (e.target.closest('[data-paste="go"]')) { addPastedTable($('paste-in').value); $('paste-in').value = ''; return; }
     if (e.target.closest('[data-diag="copy"]')) {
       const text = diagnosticsText(state.diagNumbers), msg = $('diag-msg');
@@ -514,6 +539,22 @@
       if (isFinite(v)) { state.drivers = { ...state.drivers, [k]: CFO.clampDriver(k, unit === '%' ? v / 100 : v) }; render(); }
     }
     if (e.target.id === 'fc-years') { state.fcYears = +e.target.value; render(); }
+    if (e.target.matches('.year-in')) {
+      const src = e.target.dataset.source, p = e.target.dataset.period;
+      const v = e.target.value.trim().replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+      const ren = { ...(state.periodRename[src] || {}) };
+      const table = state.tables.find(t => t.source === src);
+      const finalNames = table.periods.map(q => (q === p ? (v || p) : (ren[q] || q)));
+      const msg = $('years-msg');
+      // A year must look like one, and two columns of the same file cannot share it (one would be lost).
+      if (v && v !== p && !/^(19|20)\d{2}$/.test(v)) { e.target.setAttribute('aria-invalid', 'true'); msg.textContent = T().years.invalid(v); return; }
+      if (new Set(finalNames).size !== finalNames.length) { e.target.setAttribute('aria-invalid', 'true'); msg.textContent = T().years.duplicate(v); return; }
+      if (!v || v === p) delete ren[p]; else ren[p] = v;
+      state.periodRename = { ...state.periodRename, [src]: ren };
+      if (!Object.keys(ren).length) delete state.periodRename[src];
+      dataChanged(); render();
+      return;
+    }
     if (e.target.id === 'diag-num') { state.diagNumbers = e.target.checked; state.diagOpen = true; renderReview(); }
     if (e.target.id === 'file-input') { diag.events.chooser++; addFiles(e.target.files); e.target.value = ''; }
   });
