@@ -77,15 +77,18 @@
       if (e.nopat == null || !(ic > 0)) return { period: p, nopat: e.nopat, ic: ic ?? null, roic: null, eva: null };
       return { period: p, nopat: e.nopat, ic, roic: e.nopat / ic, eva: e.nopat - w * ic };
     });
-    if (w - inp.g < MIN_SPREAD) { out.error = 'waccLeG'; return out; }
+    if (w - inp.g < MIN_SPREAD || w <= 0) { out.error = 'waccLeG'; return out; }
     const last = rows[n - 1];
     const roic0 = e0.invested_capital > 0 && e0.nopat != null ? e0.nopat / e0.invested_capital : null;
-    out.ronic = Math.max(w, roic0 ?? 0);
+    // RONIC: at least WACC, and always above g so the reinvestment rate g ÷ RONIC stays below 1.
+    const ronicAt = ww => Math.max(ww, roic0 ?? 0, inp.g + MIN_SPREAD);
+    out.ronic = ronicAt(w);
     out.sumPv = rows.reduce((t, r) => t + r.pv, 0);
     out.tv = terminal(last.nopat, w, inp.g, out.ronic);
     out.pvTv = out.tv * last.df;
     out.ev = out.sumPv + out.pvTv;
     out.equity = out.ev - netDebt;
+    if (!isFinite(out.ev) || !isFinite(out.equity)) { out.error = 'waccLeG'; out.ev = out.equity = undefined; return out; }
     out.tvShare = out.ev > 0 ? out.pvTv / out.ev : null;
     out.perShare = inp.shares > 0 ? out.equity / inp.shares : null;
     out.upside = out.perShare != null && inp.price > 0 ? out.perShare / inp.price - 1 : null;
@@ -101,7 +104,7 @@
     // Sensitivity: the same forecast cash flows at other discount rates and terminal growth rates.
     const steps = [-0.01, -0.005, 0, 0.005, 0.01];
     const waccs = steps.map(s => w + s), gs = steps.map(s => inp.g + s);
-    out.sens = { waccs, gs, grid: waccs.map(ww => gs.map(gg => equityAt(fcff, last.nopat, out.ronic, netDebt, ww, gg))) };
+    out.sens = { waccs, gs, grid: waccs.map(ww => gs.map(gg => equityAt(fcff, last.nopat, Math.max(ww, roic0 ?? 0, gg + MIN_SPREAD), netDebt, ww, gg))) };
 
     return out;
   }

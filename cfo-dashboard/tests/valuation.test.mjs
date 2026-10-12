@@ -99,6 +99,25 @@ test('the DCF refuses WACC at or below terminal growth, and explains missing dat
   assert.ok(/يحتاج التقييم/.test(mm.missing));
 });
 
+test('review cases: no debt lines, missing gross profit, zero WACC, negative equity', () => {
+  const noDebt = JSON.parse(JSON.stringify(ds.data));
+  for (const y of Object.values(noDebt)) { delete y.short_debt; delete y.long_debt; }
+  const dn = { ...ds, data: noDebt }, An = CFO.analyze(dn);
+  const nop = 175 * (1 - 33 / 153);
+  close(An.ratios.roic['2024'].value, nop / ((450 + 510) / 2), 1e-9, 'debt-free ROIC');
+  assert.ok(CFO.valuation(dn, null, null).eva.every(e => e.eva != null));
+  const noGp = JSON.parse(JSON.stringify(ds.data));
+  for (const y of Object.values(noGp)) delete y.gross_profit;
+  assert.equal(CFO.piotroskiSignals(noGp['2024'], noGp['2023'])[7], null, 'missing gross profit cannot run the test');
+  const z = CFO.valuation(ds, null, { rf: 0, erp: 0, beta: 0, kd: 0, tax: 0.2, wd: 0.5, g: -0.01, years: 5 });
+  assert.equal(z.error, 'waccLeG');
+  const neg = JSON.parse(JSON.stringify(ds.data)); neg['2024'].equity = -200; neg['2023'].equity = -100;
+  assert.equal(CFO.analyze({ ...ds, data: neg }).ratios.roic['2024'].value, null, 'no ROIC on negative equity');
+  const V = CFO.valuation(ds, null, null);
+  const w1 = CFO.valuation(ds, null, { ...V.inputs, rf: V.inputs.rf + 0.01 / (1 - V.inputs.wd) });
+  close(V.sens.grid[4][2], w1.equity, 1e-6, 'off-centre grid cell equals a direct re-valuation');
+});
+
 test('value levers are ranked by the equity value they add', () => {
   const V = CFO.valuation(ds, null, null), L = CFO.valueLevers(ds, V);
   assert.ok(L.length >= 4);

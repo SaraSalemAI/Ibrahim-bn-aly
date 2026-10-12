@@ -19,7 +19,8 @@
     // Effective tax rate (0 when there is no taxable profit) and operating profit after tax.
     e.tax_rate_eff = d.pretax_income > 0 && d.tax != null ? Math.min(0.6, Math.max(0, d.tax / d.pretax_income)) : 0;
     e.nopat = d.operating_income != null ? d.operating_income * (1 - e.tax_rate_eff) : null;
-    e.invested_capital = e.total_debt != null && d.equity != null ? e.total_debt + d.equity : null;
+    // A company that shows no borrowing lines has no debt; capital is meaningless when equity is negative.
+    e.invested_capital = d.equity > 0 ? (e.total_debt || 0) + d.equity : null;
     e.nwc = d.receivables != null || d.inventory != null || d.payables != null ? (d.receivables || 0) + (d.inventory || 0) - (d.payables || 0) : null;
     return e;
   }
@@ -177,11 +178,12 @@
   ];
   /** The nine Piotroski tests (true / false / null when the data is missing). Share issuance is not in the statements read. */
   function piotroskiSignals(d, pe) {
-    const roa = x => x && x.total_assets ? (x.net_income ?? null) / x.total_assets : null;
+    const q = (a, b) => a == null || !b ? null : a / b;   // null when either figure is missing, never 0
+    const roa = x => x ? q(x.net_income, x.total_assets) : null;
     const lev = x => x && x.total_assets && x.long_debt != null ? x.long_debt / x.total_assets : null;
-    const cr = x => x && x.current_liabilities ? (x.current_assets ?? null) / x.current_liabilities : null;
-    const gm = x => x && x.revenue ? (x.gross_profit ?? null) / x.revenue : null;
-    const at = x => x && x.total_assets ? (x.revenue ?? null) / x.total_assets : null;
+    const cr = x => x ? q(x.current_assets, x.current_liabilities) : null;
+    const gm = x => x ? q(x.gross_profit, x.revenue) : null;
+    const at = x => x ? q(x.revenue, x.total_assets) : null;
     const up = (f, better = 'up') => { const a = f(pe), b = f(d); return a == null || b == null || !isFinite(a) || !isFinite(b) ? null : better === 'up' ? b > a : b < a; };
     return [d.net_income == null ? null : d.net_income > 0, d.cfo == null ? null : d.cfo > 0, up(roa),
       d.cfo == null || d.net_income == null ? null : d.cfo > d.net_income, up(lev, 'down'), up(cr), null, up(gm), up(at)];

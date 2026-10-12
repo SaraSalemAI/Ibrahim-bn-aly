@@ -21645,7 +21645,8 @@ var __async = (__this, __arguments, generator) => {
     // Effective tax rate (0 when there is no taxable profit) and operating profit after tax.
     e.tax_rate_eff = d.pretax_income > 0 && d.tax != null ? Math.min(0.6, Math.max(0, d.tax / d.pretax_income)) : 0;
     e.nopat = d.operating_income != null ? d.operating_income * (1 - e.tax_rate_eff) : null;
-    e.invested_capital = e.total_debt != null && d.equity != null ? e.total_debt + d.equity : null;
+    // A company that shows no borrowing lines has no debt; capital is meaningless when equity is negative.
+    e.invested_capital = d.equity > 0 ? (e.total_debt || 0) + d.equity : null;
     e.nwc = d.receivables != null || d.inventory != null || d.payables != null ? (d.receivables || 0) + (d.inventory || 0) - (d.payables || 0) : null;
     return e;
   }
@@ -21803,11 +21804,12 @@ var __async = (__this, __arguments, generator) => {
   ];
   /** The nine Piotroski tests (true / false / null when the data is missing). Share issuance is not in the statements read. */
   function piotroskiSignals(d, pe) {
-    const roa = x => x && x.total_assets ? (x.net_income ?? null) / x.total_assets : null;
+    const q = (a, b) => a == null || !b ? null : a / b;   // null when either figure is missing, never 0
+    const roa = x => x ? q(x.net_income, x.total_assets) : null;
     const lev = x => x && x.total_assets && x.long_debt != null ? x.long_debt / x.total_assets : null;
-    const cr = x => x && x.current_liabilities ? (x.current_assets ?? null) / x.current_liabilities : null;
-    const gm = x => x && x.revenue ? (x.gross_profit ?? null) / x.revenue : null;
-    const at = x => x && x.total_assets ? (x.revenue ?? null) / x.total_assets : null;
+    const cr = x => x ? q(x.current_assets, x.current_liabilities) : null;
+    const gm = x => x ? q(x.gross_profit, x.revenue) : null;
+    const at = x => x ? q(x.revenue, x.total_assets) : null;
     const up = (f, better = 'up') => { const a = f(pe), b = f(d); return a == null || b == null || !isFinite(a) || !isFinite(b) ? null : better === 'up' ? b > a : b < a; };
     return [d.net_income == null ? null : d.net_income > 0, d.cfo == null ? null : d.cfo > 0, up(roa),
       d.cfo == null || d.net_income == null ? null : d.cfo > d.net_income, up(lev, 'down'), up(cr), null, up(gm), up(at)];
@@ -22843,15 +22845,18 @@ var __async = (__this, __arguments, generator) => {
       if (e.nopat == null || !(ic > 0)) return { period: p, nopat: e.nopat, ic: ic ?? null, roic: null, eva: null };
       return { period: p, nopat: e.nopat, ic, roic: e.nopat / ic, eva: e.nopat - w * ic };
     });
-    if (w - inp.g < MIN_SPREAD) { out.error = 'waccLeG'; return out; }
+    if (w - inp.g < MIN_SPREAD || w <= 0) { out.error = 'waccLeG'; return out; }
     const last = rows[n - 1];
     const roic0 = e0.invested_capital > 0 && e0.nopat != null ? e0.nopat / e0.invested_capital : null;
-    out.ronic = Math.max(w, roic0 ?? 0);
+    // RONIC: at least WACC, and always above g so the reinvestment rate g ÷ RONIC stays below 1.
+    const ronicAt = ww => Math.max(ww, roic0 ?? 0, inp.g + MIN_SPREAD);
+    out.ronic = ronicAt(w);
     out.sumPv = rows.reduce((t, r) => t + r.pv, 0);
     out.tv = terminal(last.nopat, w, inp.g, out.ronic);
     out.pvTv = out.tv * last.df;
     out.ev = out.sumPv + out.pvTv;
     out.equity = out.ev - netDebt;
+    if (!isFinite(out.ev) || !isFinite(out.equity)) { out.error = 'waccLeG'; out.ev = out.equity = undefined; return out; }
     out.tvShare = out.ev > 0 ? out.pvTv / out.ev : null;
     out.perShare = inp.shares > 0 ? out.equity / inp.shares : null;
     out.upside = out.perShare != null && inp.price > 0 ? out.perShare / inp.price - 1 : null;
@@ -22867,7 +22872,7 @@ var __async = (__this, __arguments, generator) => {
     // Sensitivity: the same forecast cash flows at other discount rates and terminal growth rates.
     const steps = [-0.01, -0.005, 0, 0.005, 0.01];
     const waccs = steps.map(s => w + s), gs = steps.map(s => inp.g + s);
-    out.sens = { waccs, gs, grid: waccs.map(ww => gs.map(gg => equityAt(fcff, last.nopat, out.ronic, netDebt, ww, gg))) };
+    out.sens = { waccs, gs, grid: waccs.map(ww => gs.map(gg => equityAt(fcff, last.nopat, Math.max(ww, roic0 ?? 0, gg + MIN_SPREAD), netDebt, ww, gg))) };
 
     return out;
   }
