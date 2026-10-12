@@ -16,6 +16,11 @@
     e.fcf = d.cfo != null && d.capex != null ? d.cfo - d.capex : null;
     e.net_debt = e.total_debt != null && d.cash != null ? e.total_debt - d.cash : null;
     e.capital_employed = d.total_assets != null && d.current_liabilities != null ? d.total_assets - d.current_liabilities : null;
+    // Effective tax rate (0 when there is no taxable profit) and operating profit after tax.
+    e.tax_rate_eff = d.pretax_income > 0 && d.tax != null ? Math.min(0.6, Math.max(0, d.tax / d.pretax_income)) : 0;
+    e.nopat = d.operating_income != null ? d.operating_income * (1 - e.tax_rate_eff) : null;
+    e.invested_capital = e.total_debt != null && d.equity != null ? e.total_debt + d.equity : null;
+    e.nwc = d.receivables != null || d.inventory != null || d.payables != null ? (d.receivables || 0) + (d.inventory || 0) - (d.payables || 0) : null;
     return e;
   }
 
@@ -99,8 +104,89 @@
         if (!ta || d.working_capital == null || d.retained_earnings == null || d.ebit == null || d.equity == null || !d.total_liabilities) return null;
         return 6.56 * d.working_capital / ta + 3.26 * d.retained_earnings / ta + 6.72 * d.ebit / ta + 1.05 * d.equity / d.total_liabilities;
       } },
+
+    /* ---- Added: growth, turnover, capital structure, cash-flow quality, earnings quality ---- */
+    // Liquidity
+    { id: 'defensive_interval', group: 'liquidity', unit: 'days', dir: 'high', good: 90, bad: 30, needs: ['cash', 'receivables', 'cogs', 'opex'],
+      f: '(Cash + Receivables) ÷ ((Cost of sales + Operating expenses) ÷ 365)', calc: d => { const burn = (d.cogs ?? 0) + (d.opex ?? 0); return d.cash == null || !burn ? null : (d.cash + (d.receivables || 0)) / (burn / 365); } },
+    { id: 'wc_to_assets', group: 'liquidity', unit: '%', dir: 'high', good: 0.1, bad: 0, needs: ['current_assets', 'current_liabilities', 'total_assets'],
+      f: 'Working capital ÷ Total assets', calc: d => div(d.working_capital, d.total_assets) },
+    // Profitability
+    { id: 'pretax_margin', group: 'profitability', unit: '%', dir: 'high', good: 0.08, bad: 0.02, needs: ['pretax_income', 'revenue'],
+      f: 'Profit before tax ÷ Revenue', calc: d => div(d.pretax_income, d.revenue) },
+    { id: 'nopat_margin', group: 'profitability', unit: '%', dir: 'high', good: 0.07, bad: 0.02, needs: ['operating_income', 'revenue'],
+      f: 'EBIT × (1 − tax rate) ÷ Revenue', calc: d => div(d.nopat, d.revenue) },
+    { id: 'roic', group: 'profitability', unit: '%', dir: 'high', good: 0.12, bad: 0.05, needs: ['operating_income', 'short_debt', 'long_debt', 'equity'],
+      f: 'EBIT × (1 − tax rate) ÷ Average (Debt + Equity)', calc: (d, avg, r, pe) => {
+        const ic = pe && pe.invested_capital != null && d.invested_capital != null ? (pe.invested_capital + d.invested_capital) / 2 : d.invested_capital;
+        return ic > 0 ? div(d.nopat, ic) : null; } },
+    // Efficiency
+    { id: 'receivables_turnover', group: 'efficiency', unit: 'x', dir: 'high', good: 8, bad: 4, needs: ['revenue', 'receivables'],
+      f: 'Revenue ÷ Average receivables', calc: (d, avg) => div(d.revenue, avg('receivables')) },
+    { id: 'inventory_turnover', group: 'efficiency', unit: 'x', dir: 'high', good: 6, bad: 3, needs: ['cogs', 'inventory'],
+      f: 'Cost of sales ÷ Average inventory', calc: (d, avg) => div(d.cogs, avg('inventory')) },
+    { id: 'payables_turnover', group: 'efficiency', unit: 'x', dir: null, needs: ['cogs', 'payables'],
+      f: 'Cost of sales ÷ Average payables', calc: (d, avg) => div(d.cogs, avg('payables')) },
+    { id: 'wc_turnover', group: 'efficiency', unit: 'x', dir: null, needs: ['revenue', 'current_assets', 'current_liabilities'],
+      f: 'Revenue ÷ Working capital', calc: d => d.working_capital > 0 ? div(d.revenue, d.working_capital) : null },
+    // Leverage & solvency
+    { id: 'debt_to_capital', group: 'leverage', unit: '%', dir: 'low', good: 0.4, bad: 0.6, needs: ['short_debt', 'long_debt', 'equity'],
+      f: 'Debt ÷ (Debt + Equity)', calc: d => d.invested_capital > 0 ? div(d.total_debt, d.invested_capital) : null },
+    { id: 'debt_to_assets', group: 'leverage', unit: '%', dir: 'low', good: 0.3, bad: 0.5, needs: ['short_debt', 'long_debt', 'total_assets'],
+      f: 'Debt ÷ Total assets', calc: d => div(d.total_debt, d.total_assets) },
+    { id: 'lt_debt_to_equity', group: 'leverage', unit: 'x', dir: 'low', good: 0.5, bad: 1.0, needs: ['long_debt', 'equity'],
+      f: 'Long-term debt ÷ Equity', calc: d => d.equity > 0 ? div(d.long_debt, d.equity) : null },
+    { id: 'equity_ratio', group: 'leverage', unit: '%', dir: 'high', good: 0.5, bad: 0.3, needs: ['equity', 'total_assets'],
+      f: 'Equity ÷ Total assets', calc: d => div(d.equity, d.total_assets) },
+    { id: 'debt_to_ebitda', group: 'leverage', unit: 'x', dir: 'low', good: 2.5, bad: 4.5, needs: ['short_debt', 'long_debt', 'operating_income', 'dna'],
+      f: 'Debt ÷ EBITDA', calc: d => d.ebitda > 0 ? div(d.total_debt, d.ebitda) : null },
+    { id: 'cfo_to_debt', group: 'leverage', unit: '%', dir: 'high', good: 0.3, bad: 0.1, needs: ['cfo', 'short_debt', 'long_debt'],
+      f: 'Cash from operations ÷ Debt', calc: d => d.total_debt > 0 ? div(d.cfo, d.total_debt) : null },
+    // Cash flow
+    { id: 'cfo_margin', group: 'cashflow', unit: '%', dir: 'high', good: 0.1, bad: 0.03, needs: ['cfo', 'revenue'],
+      f: 'Cash from operations ÷ Revenue', calc: d => div(d.cfo, d.revenue) },
+    { id: 'capex_to_revenue', group: 'cashflow', unit: '%', dir: null, needs: ['capex', 'revenue'],
+      f: 'Capital expenditure ÷ Revenue', calc: d => div(d.capex, d.revenue) },
+    { id: 'capex_to_cfo', group: 'cashflow', unit: '%', dir: 'low', good: 0.5, bad: 1.0, needs: ['capex', 'cfo'],
+      f: 'Capital expenditure ÷ Cash from operations', calc: d => d.cfo > 0 ? div(d.capex, d.cfo) : null },
+    { id: 'fcf_to_net_income', group: 'cashflow', unit: 'x', dir: 'high', good: 0.8, bad: 0.3, needs: ['cfo', 'capex', 'net_income'],
+      f: 'Free cash flow ÷ Net income', calc: d => d.net_income > 0 ? div(d.fcf, d.net_income) : null },
+    { id: 'cash_roa', group: 'cashflow', unit: '%', dir: 'high', good: 0.08, bad: 0.03, needs: ['cfo', 'total_assets'],
+      f: 'Cash from operations ÷ Average total assets', calc: (d, avg) => div(d.cfo, avg('total_assets')) },
+    // Growth (year on year)
+    ...[['revenue_growth', 'revenue', 'Revenue'], ['gross_profit_growth', 'gross_profit', 'Gross profit'], ['ebitda_growth', 'ebitda', 'EBITDA'],
+        ['net_income_growth', 'net_income', 'Net income'], ['equity_growth', 'equity', 'Equity'], ['assets_growth', 'total_assets', 'Total assets']]
+      .map(([id, k, name]) => ({ id, group: 'growth', unit: '%', dir: k === 'total_assets' ? null : 'high', good: 0.08, bad: 0,
+        needs: k === 'ebitda' ? ['operating_income', 'dna'] : [k], f: `(${name} this year − last year) ÷ |last year|`,
+        calc: (d, avg, r, pe) => pe && pe[k] != null && d[k] != null && pe[k] !== 0 ? (d[k] - pe[k]) / Math.abs(pe[k]) : null })),
+    { id: 'sustainable_growth', group: 'growth', unit: '%', dir: 'high', good: 0.08, bad: 0.02, needs: ['net_income', 'equity'],
+      f: 'ROE × (1 − Dividends ÷ Net income)', calc: (d, avg, r) => r.roe == null || !(d.net_income > 0) ? null : r.roe * (1 - Math.min(1, (d.dividends || 0) / d.net_income)) },
+    // Earnings quality
+    { id: 'accruals_ratio', group: 'quality', unit: '%', dir: 'low', good: 0.02, bad: 0.1, needs: ['net_income', 'cfo', 'total_assets'],
+      f: '(Net income − Cash from operations) ÷ Average total assets', calc: (d, avg) => d.net_income == null || d.cfo == null ? null : div(d.net_income - d.cfo, avg('total_assets')) },
+    { id: 'retention_ratio', group: 'quality', unit: '%', dir: null, needs: ['net_income', 'dividends'],
+      f: '1 − Dividends ÷ Net income', calc: d => d.net_income > 0 ? 1 - (d.dividends || 0) / d.net_income : null },
+    { id: 'piotroski_f', group: 'quality', unit: 'score', dir: 'high', good: 7, bad: 3,
+      needs: ['net_income', 'cfo', 'total_assets', 'current_assets', 'current_liabilities', 'revenue', 'gross_profit', 'long_debt'],
+      f: 'Piotroski F-score: profitability, leverage and efficiency tests passed (0–9, scaled when some cannot be run)',
+      calc: (d, avg, r, pe) => {
+        const sig = piotroskiSignals(d, pe);
+        const known = sig.filter(x => x != null);
+        return known.length >= 6 ? Math.round(known.filter(Boolean).length / known.length * 90) / 10 : null;
+      } },
   ];
-  const GROUPS = ['liquidity', 'profitability', 'efficiency', 'leverage', 'cashflow', 'distress'];
+  /** The nine Piotroski tests (true / false / null when the data is missing). Share issuance is not in the statements read. */
+  function piotroskiSignals(d, pe) {
+    const roa = x => x && x.total_assets ? (x.net_income ?? null) / x.total_assets : null;
+    const lev = x => x && x.total_assets && x.long_debt != null ? x.long_debt / x.total_assets : null;
+    const cr = x => x && x.current_liabilities ? (x.current_assets ?? null) / x.current_liabilities : null;
+    const gm = x => x && x.revenue ? (x.gross_profit ?? null) / x.revenue : null;
+    const at = x => x && x.total_assets ? (x.revenue ?? null) / x.total_assets : null;
+    const up = (f, better = 'up') => { const a = f(pe), b = f(d); return a == null || b == null || !isFinite(a) || !isFinite(b) ? null : better === 'up' ? b > a : b < a; };
+    return [d.net_income == null ? null : d.net_income > 0, d.cfo == null ? null : d.cfo > 0, up(roa),
+      d.cfo == null || d.net_income == null ? null : d.cfo > d.net_income, up(lev, 'down'), up(cr), null, up(gm), up(at)];
+  }
+  const GROUPS = ['liquidity', 'profitability', 'efficiency', 'leverage', 'cashflow', 'growth', 'quality', 'distress'];
 
   /** Healthy / watch / weak against the selected sector's limits (js/benchmarks.js), else the defaults above. */
   function status(def, v) {
@@ -116,6 +202,7 @@
     ds.periods.forEach((p, i) => {
       const d = enrich(ds.data[p]);
       const prev = i > 0 ? ds.data[ds.periods[i - 1]] : null;
+      const pe = prev ? enrich(prev) : null;   // prior year, for growth and change-based scores
       let avgUsed = false;
       const avg = k => {
         if (prev && prev[k] != null && d[k] != null) { avgUsed = true; return (prev[k] + d[k]) / 2; }
@@ -124,7 +211,7 @@
       const r = {};
       for (const def of RATIOS) {
         avgUsed = false;
-        let v = def.calc(d, avg, r);
+        let v = def.calc(d, avg, r, pe);
         if (v != null && !isFinite(v)) v = null;
         r[def.id] = v;
         out[def.id][p] = { value: v, status: status(def, v), avgUsed };
@@ -133,14 +220,18 @@
     return out;
   }
 
-  /** ROE = Net margin × Asset turnover × Equity multiplier (all on closing balances so the product reconciles). */
+  /** ROE = Net margin × Asset turnover × Equity multiplier (3-step), and
+   *  ROE = Tax burden × Interest burden × EBIT margin × Asset turnover × Equity multiplier (5-step), on closing balances. */
   function dupont(ds) {
     return ds.periods.map(p => {
       const d = ds.data[p];
       const nm = div(d.net_income, d.revenue), at = div(d.revenue, d.total_assets), em = d.equity > 0 ? div(d.total_assets, d.equity) : null;
-      return { period: p, net_margin: nm, asset_turnover: at, equity_multiplier: em, roe: nm != null && at != null && em != null ? nm * at * em : null };
+      const tb = d.pretax_income ? div(d.net_income, d.pretax_income) : null, ib = d.operating_income ? div(d.pretax_income, d.operating_income) : null, om = div(d.operating_income, d.revenue);
+      return { period: p, net_margin: nm, asset_turnover: at, equity_multiplier: em, roe: nm != null && at != null && em != null ? nm * at * em : null,
+        tax_burden: tb, interest_burden: ib, ebit_margin: om };
     });
   }
+
 
   /** Rows for vertical & horizontal analysis: standard items plus unmapped lines, grouped by statement. */
   function analysisRows(ds) {
@@ -191,7 +282,7 @@
 
   /** 0-100 health score from the latest year's ratio statuses, weighted by group. */
   function healthScore(ratios, period) {
-    const W = { liquidity: 1, profitability: 1.2, efficiency: 0.6, leverage: 1.2, cashflow: 1, distress: 1 };
+    const W = { liquidity: 1, profitability: 1.2, efficiency: 0.6, leverage: 1.2, cashflow: 1, growth: 0.7, quality: 0.8, distress: 1 };
     const P = { good: 100, warn: 55, bad: 10 };
     let sum = 0, w = 0;
     const byGroup = {};
@@ -215,6 +306,7 @@
   }
 
   CFO.RATIOS = RATIOS;
+  CFO.piotroskiSignals = piotroskiSignals;
   CFO.RATIO = Object.fromEntries(RATIOS.map(r => [r.id, r]));
   CFO.GROUPS = GROUPS;
   CFO.enrich = enrich;

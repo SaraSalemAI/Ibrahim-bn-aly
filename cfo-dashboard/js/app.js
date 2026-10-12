@@ -6,7 +6,7 @@
     get(k) { try { return localStorage.getItem('cfo-lens:' + k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem('cfo-lens:' + k, v); } catch (e) { /* storage unavailable */ } },
   };
-  const TABS = ['full', 'overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'review'];
+  const TABS = ['full', 'overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'valuation', 'review'];
   const SUBTOTALS = CFO.SUBTOTALS;   // defined in js/report.js
 
   const state = {
@@ -17,23 +17,25 @@
     hMode: 'pct', A: null, F: [],
     sector: CFO.SECTORS[store.get('sector')] ? store.get('sector') : 'general',
     drivers: null, fcYears: 3, S: null,            // forecast: drivers (null = from history), scenarios
+    dcf: {}, V: null,                               // valuation: inputs the user changed, result
     ai: { text: '', busy: false, err: '', ctl: null }, aiOn: false,
     diagNumbers: false, diagOpen: false,
     periodRename: {},   // { tableSource: { detected period: year typed by the user } }
   };
   CFO.setSector(state.sector);
   // Anything that changes the data starts the forecast and the commentary afresh.
-  const dataChanged = () => { state.drivers = null; state.ai.ctl?.abort(); state.ai = { text: '', busy: false, err: '', ctl: null }; };
+  // Company-specific valuation inputs go back to their defaults; market inputs (rf, ERP, beta, g) are kept.
+  const dataChanged = () => { state.drivers = null; for (const k of ['kd', 'tax', 'wd', 'shares', 'price']) delete state.dcf[k]; state.ai.ctl?.abort(); state.ai = { text: '', busy: false, err: '', ctl: null }; };
   // Everything the report and the exports need, in one object.
   // Claude's commentary is shown and exported only in the language it was written in (aiAll keeps it for the bilingual HTML).
-  const ctx = () => ({ A: state.A, F: state.F, S: state.S, lang: state.lang,
+  const ctx = () => ({ A: state.A, F: state.F, S: state.S, V: state.V, drivers: state.drivers, dcf: state.dcf, lang: state.lang,
     ai: !state.ai.lang || state.ai.lang === state.lang ? state.ai.text : '', aiAll: state.ai.text, aiLang: state.ai.lang });
 
   // pdf.js runs on the main thread when its worker script is loaded as a plain script (globalThis.pdfjsWorker),
   // which avoids web-worker restrictions in sandboxed frames. Otherwise fall back to the CDN worker.
   if (globalThis.pdfjsLib && !globalThis.pdfjsWorker) globalThis.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-  CFO.BUILD = '2026-10-03.6';
+  CFO.BUILD = '2026-10-12.1';
 
   /* ---------- intake ---------- */
   // What happened to each attempt, for the diagnostics box (Data review) the user can copy to support.
@@ -292,7 +294,11 @@
 
   function renderFlags() {
     const L = T(), lang = state.lang, S = CFO.strengths(state.A, lang);
-    $('p-flags').innerHTML = `<div class="section-head"><h2>${L.flagsTitle}</h2><span class="muted small">${state.F.length}</span></div>
+    const VL = L.val, plan = CFO.actionPlan(state.A, state.F, state.V && !state.V.missing ? state.V : null, lang);
+    const planCard = plan.length ? `<div class="card"><h3>${esc(VL.planTitle)}</h3><p class="muted small">${esc(VL.planHint)}</p>
+      <div class="table-wrap"><table class="plan"><thead><tr><th>#</th><th>${esc(VL.priority)}</th><th>${esc(VL.when)}</th><th>${esc(VL.owner)}</th><th>${esc(VL.recommendation)}</th><th>${esc(VL.kpi)}</th><th class="n">${esc(VL.current)}</th><th class="n">${esc(VL.target)}</th></tr></thead>
+      <tbody>${plan.map(it => `<tr><td>${it.n}</td><td>${pill(it.sev, it.sevText)}</td><td>${esc(it.horizon)}</td><td>${esc(it.areaText)}</td><td><b>${esc(it.title)}</b><div class="meaning">${esc(it.action)}</div></td><td>${esc(it.kpi)}</td><td class="n">${esc(it.current)}</td><td class="n">${esc(it.target)}</td></tr>`).join('')}</tbody></table></div></div>` : '';
+    $('p-flags').innerHTML = planCard + `<div class="section-head"><h2>${L.flagsTitle}</h2><span class="muted small">${state.F.length}</span></div>
       <div class="list">${state.F.length ? state.F.map(flagCard).join('') : `<p>${L.noFlags}</p>`}</div>
       <div class="card"><h3>${L.strengths}</h3><div class="list" style="margin-top:8px">${S.length ? S.map(s => `<div class="strength"><span>${esc(s.text)}</span></div>`).join('') : '<span class="muted">—</span>'}</div></div>`;
   }
@@ -373,7 +379,7 @@
     refreshAi();
     try {
       const { text } = await CFO.askClaude(state.A, state.F, state.S, state.lang, question, {
-        signal: ctl.signal, onText: ({ text }) => { if (state.ai.ctl === ctl) { state.ai.text = text; refreshAiText(); } },
+        signal: ctl.signal, V: state.V, onText: ({ text }) => { if (state.ai.ctl === ctl) { state.ai.text = text; refreshAiText(); } },
       });
       if (state.ai.ctl === ctl) state.ai.text = text;
     } catch (e) {
@@ -422,6 +428,39 @@
     requestAnimationFrame(() => CFO.drawForecastCharts(state.S, ds, lang));
   }
 
+  /* ---------- valuation ---------- */
+  function renderValuation() {
+    const L = T(), VL = L.val, lang = state.lang;
+    const m = CFO.valuationModel(ctx());
+    if (m.missing) { $('p-valuation').innerHTML = `<div class="card"><h2>${esc(VL.title)}</h2><p>${esc(m.missing)}</p></div>`; return; }
+    const V = m.V, inp = V.inputs;
+    const shown = (k, v) => v == null ? '' : CFO.DCF_INPUTS[k][3] === '%' ? +(v * 100).toFixed(2) : +(+v).toFixed(4);
+    const inputs = Object.entries(CFO.DCF_INPUTS).map(([k, [lo, hi, step, unit]]) => {
+      const pct = unit === '%', edited = state.dcf[k] != null;
+      return `<label class="driver${edited ? ' edited' : ''}"><span>${esc(VL.in[k])}</span><span class="driver-in"><input type="number" data-dcf="${k}" id="dcf-${k}" value="${shown(k, inp[k])}"
+        min="${pct ? lo * 100 : lo}"${hi != null ? ` max="${pct ? hi * 100 : hi}"` : ''} step="${pct ? +(step * 100).toFixed(2) : step}"><em>${pct ? '%' : ''}</em></span></label>`;
+    }).join('');
+    const tbl = (t, cls = '') => !t ? '' : `<div class="table-wrap"><table${cls ? ` class="${cls}"` : ''}><thead><tr>${t.head.map((h, i) => `<th${i >= (t.text || 1) ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead>
+      <tbody>${t.rows.map((r, k) => `<tr class="${t.sub?.[k] ? 'subtotal' : ''}">${r.map((c, i) => `<td class="${i >= (t.text || 1) ? 'n' : ''}${t.center != null && k === t.center && i === t.center + 1 ? ' base-cell' : ''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    const h = m.headline;
+    $('p-valuation').innerHTML = `<div class="card"><div class="section-head"><h2>${esc(VL.title)}</h2><button class="btn" type="button" data-dcf-reset>${esc(VL.reset)}</button></div>
+        <p class="muted small">${esc(VL.hint)}</p>
+        <h3 style="margin-top:12px">${esc(VL.inputs)}</h3><div class="drivers">${inputs}</div></div>
+      ${m.warnings.map(w => `<div class="note" role="status">${esc(w)}</div>`).join('')}
+      ${h ? `<div class="kpis"><div class="kpi"><span class="kpi-label">${esc(VL.ev)}</span><span class="kpi-value">${esc(h.ev)}</span></div>
+        <div class="kpi"><span class="kpi-label">${esc(VL.equity)}</span><span class="kpi-value">${esc(h.equity)}</span></div>
+        <div class="kpi"><span class="kpi-label">WACC</span><span class="kpi-value">${esc(h.wacc)}</span></div>
+        ${h.perShare ? `<div class="kpi"><span class="kpi-label">${esc(VL.perShare)}</span><span class="kpi-value">${esc(h.perShare)}</span></div>` : ''}</div>` : ''}
+      <div class="grid-2"><div class="card"><h3>${esc(VL.wacc)}</h3>${tbl(m.wacc)}</div>
+        <div class="card">${m.bridge ? `${tbl(m.bridge)}${tbl(m.multiples)}` : ''}</div></div>
+      <div class="card"><h3>${esc(VL.fcffTitle)}</h3>${tbl(m.fcff)}${m.chart ? CFO.svgChart(m.chart) : ''}</div>
+      ${m.sens ? `<div class="grid-2"><div class="card"><h3>${esc(VL.sens)}</h3><p class="muted small">${esc(VL.sensHint)}</p>${tbl(m.sens, 'sens')}</div>
+        <div class="card"><h3>${esc(VL.scen)}</h3>${tbl(m.scen)}</div></div>` : ''}
+      ${m.levers?.rows.length ? `<div class="card"><h3>${esc(VL.levers)}</h3><p class="muted small">${esc(VL.leversHint)}</p>${tbl(m.levers)}</div>` : ''}
+      <div class="card"><h3>${esc(VL.evaTitle)}</h3><p class="muted small">${esc(VL.evaHint)}</p>${tbl(m.eva)}</div>
+      <p class="muted small">${esc(m.assumptions)}</p>`;
+  }
+
   /* ---------- shell ---------- */
   function renderChrome() {
     const L = T();
@@ -448,7 +487,7 @@
       state.notes.map(n => `<div class="note" role="status">${esc(n())}</div>`).join('');
   }
 
-  const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, review: renderReview };
+  const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, valuation: renderValuation, review: renderReview };
 
   /** The tables with any years the user typed in Data review applied. */
   function tablesWithYears() {
@@ -469,6 +508,7 @@
       state.drivers = state.drivers || CFO.defaultDrivers(ds);
       state.S = CFO.runScenarios(ds, state.drivers, state.fcYears);
     }
+    state.V = ds.periods.length ? CFO.valuation(ds, state.drivers, state.dcf) : null;
     renderChrome();
     if (!ds.periods.length) { $('p-' + state.tab).innerHTML = ''; return; }
     PANELS[state.tab]();
@@ -505,6 +545,7 @@
       return;
     }
     if (e.target.closest('[data-fc="reset"]')) { state.drivers = null; return render(); }
+    if (e.target.closest('[data-dcf-reset]')) { state.dcf = {}; return render(); }
     if (e.target.closest('[data-years="reset"]')) { state.periodRename = {}; dataChanged(); return render(); }
     if (e.target.closest('[data-paste="go"]')) { addPastedTable($('paste-in').value); $('paste-in').value = ''; return; }
     if (e.target.closest('[data-diag="copy"]')) {
@@ -537,6 +578,12 @@
     if (e.target.matches('[data-driver]')) {
       const k = e.target.dataset.driver, unit = CFO.FORECAST_DRIVERS[k][3], v = parseFloat(e.target.value);
       if (isFinite(v)) { state.drivers = { ...state.drivers, [k]: CFO.clampDriver(k, unit === '%' ? v / 100 : v) }; render(); }
+    }
+    if (e.target.matches('[data-dcf]')) {
+      const k = e.target.dataset.dcf, raw = e.target.value.trim(), v = parseFloat(raw);
+      if (raw === '') { const d = { ...state.dcf }; delete d[k]; state.dcf = d; return render(); }
+      if (isFinite(v)) { state.dcf = { ...state.dcf, [k]: CFO.clampDcf(k, CFO.DCF_INPUTS[k][3] === '%' ? v / 100 : v) }; render(); }
+      return;
     }
     if (e.target.id === 'fc-years') { state.fcYears = +e.target.value; render(); }
     if (e.target.matches('.year-in')) {

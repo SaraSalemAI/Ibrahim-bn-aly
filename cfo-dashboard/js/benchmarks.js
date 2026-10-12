@@ -13,15 +13,24 @@
       roa: [0.06, 0.02, 0.06], roe: [0.15, 0.05, 0.12], roce: [0.12, 0.05, 0.12],
       asset_turnover: [1.0, 0.5, 0.9], fixed_asset_turnover: [3, 1, 3], dso: [45, 90, 45], dio: [60, 120, 60], dpo: [null, null, 45], ccc: [60, 120, 60],
       debt_to_equity: [1.0, 2.0, 0.8], debt_ratio: [0.5, 0.7, 0.5], equity_multiplier: [2, 3, 2], interest_coverage: [3, 1.5, 5], net_debt_to_ebitda: [2, 4, 1.8],
-      fcf_margin: [0.05, 0, 0.05], cash_conversion: [1.0, 0.8, 1.1], payout_ratio: [0.6, 1.0, 0.4], altman_z: [2.6, 1.1, 3.0] } },
+      fcf_margin: [0.05, 0, 0.05], cash_conversion: [1.0, 0.8, 1.1], payout_ratio: [0.6, 1.0, 0.4], altman_z: [2.6, 1.1, 3.0],
+      defensive_interval: [90, 30, 90], wc_to_assets: [0.1, 0, 0.15], pretax_margin: [0.08, 0.02, 0.09], nopat_margin: [0.07, 0.02, 0.08], roic: [0.12, 0.05, 0.10],
+      receivables_turnover: [8, 4, 8], inventory_turnover: [6, 3, 6], payables_turnover: [null, null, 8],
+      debt_to_capital: [0.4, 0.6, 0.35], debt_to_assets: [0.3, 0.5, 0.28], lt_debt_to_equity: [0.5, 1.0, 0.45], equity_ratio: [0.5, 0.3, 0.45],
+      debt_to_ebitda: [2.5, 4.5, 2.2], cfo_to_debt: [0.3, 0.1, 0.35], cfo_margin: [0.10, 0.03, 0.10], capex_to_revenue: [null, null, 0.05],
+      capex_to_cfo: [0.5, 1.0, 0.5], fcf_to_net_income: [0.8, 0.3, 0.9], cash_roa: [0.08, 0.03, 0.08],
+      revenue_growth: [0.08, 0, 0.07], gross_profit_growth: [0.08, 0, 0.07], ebitda_growth: [0.08, 0, 0.07], net_income_growth: [0.08, 0, 0.07],
+      equity_growth: [0.08, 0, 0.06], sustainable_growth: [0.08, 0.02, 0.07], accruals_ratio: [0.02, 0.1, 0], piotroski_f: [7, 3, 6] } },
     retail: { en: 'Trading & retail', ar: 'تجارة وتجزئة', r: {
       current_ratio: [1.2, 0.8, 1.2], quick_ratio: [0.5, 0.2, 0.4], gross_margin: [0.30, 0.15, 0.28], ebitda_margin: [0.08, 0.03, 0.08],
       operating_margin: [0.05, 0.02, 0.05], net_margin: [0.03, 0.01, 0.03], asset_turnover: [2.0, 1.2, 2.2], dso: [15, 40, 10],
-      dio: [50, 100, 55], ccc: [30, 80, 35], debt_to_equity: [1.0, 2.0, 0.9], fcf_margin: [0.03, 0, 0.03] } },
+      dio: [50, 100, 55], ccc: [30, 80, 35], debt_to_equity: [1.0, 2.0, 0.9], fcf_margin: [0.03, 0, 0.03],
+      receivables_turnover: [20, 9, 30], inventory_turnover: [7, 3.5, 6.5], cfo_margin: [0.05, 0.015, 0.05], capex_to_revenue: [null, null, 0.03] } },
     manufacturing: { en: 'Manufacturing', ar: 'صناعة', r: {
       current_ratio: [1.5, 1.0, 1.6], quick_ratio: [0.9, 0.6, 0.9], gross_margin: [0.30, 0.15, 0.28], ebitda_margin: [0.15, 0.06, 0.14],
       operating_margin: [0.10, 0.04, 0.09], net_margin: [0.07, 0.02, 0.06], asset_turnover: [0.9, 0.5, 0.8], dso: [50, 90, 55],
-      dio: [70, 130, 75], ccc: [80, 140, 85], debt_to_equity: [0.8, 1.6, 0.7] } },
+      dio: [70, 130, 75], ccc: [80, 140, 85], debt_to_equity: [0.8, 1.6, 0.7],
+      receivables_turnover: [7, 4, 6.5], inventory_turnover: [5, 2.8, 4.8], capex_to_revenue: [null, null, 0.07] } },
     services: { en: 'Services & technology', ar: 'خدمات وتقنية', r: {
       current_ratio: [1.3, 0.9, 1.5], quick_ratio: [1.2, 0.8, 1.3], gross_margin: [0.50, 0.30, 0.55], ebitda_margin: [0.20, 0.08, 0.20],
       operating_margin: [0.15, 0.05, 0.15], net_margin: [0.10, 0.03, 0.11], roe: [0.18, 0.06, 0.16], asset_turnover: [0.9, 0.5, 0.8],
@@ -30,7 +39,8 @@
     construction: { en: 'Construction & real estate', ar: 'مقاولات وعقارات', r: {
       current_ratio: [1.3, 1.0, 1.3], gross_margin: [0.18, 0.08, 0.15], ebitda_margin: [0.10, 0.04, 0.09], operating_margin: [0.07, 0.02, 0.06],
       net_margin: [0.05, 0.01, 0.04], asset_turnover: [0.8, 0.4, 0.7], dso: [70, 120, 75], ccc: [80, 150, 85],
-      debt_to_equity: [1.2, 2.5, 1.1], interest_coverage: [2.5, 1.3, 4], net_debt_to_ebitda: [2.5, 4.5, 2.5], fcf_margin: [0.03, 0, 0.03] } },
+      debt_to_equity: [1.2, 2.5, 1.1], interest_coverage: [2.5, 1.3, 4], net_debt_to_ebitda: [2.5, 4.5, 2.5], fcf_margin: [0.03, 0, 0.03],
+      debt_to_capital: [0.5, 0.7, 0.5], debt_to_ebitda: [3, 5, 3], equity_ratio: [0.4, 0.25, 0.4], receivables_turnover: [5, 3, 4.8] } },
     food: { en: 'Food & beverage', ar: 'أغذية ومشروبات', r: {
       current_ratio: [1.2, 0.8, 1.2], quick_ratio: [0.6, 0.3, 0.6], gross_margin: [0.30, 0.15, 0.32], ebitda_margin: [0.12, 0.05, 0.12],
       operating_margin: [0.08, 0.03, 0.08], net_margin: [0.05, 0.015, 0.05], asset_turnover: [1.5, 0.8, 1.4], dso: [30, 60, 25],

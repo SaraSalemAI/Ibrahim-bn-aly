@@ -80,7 +80,8 @@
     const out = [];
     for (let k = 1; k <= years; k++) {
       const dr = drivers;
-      const revenue = prev.revenue * (1 + dr.growth);
+      // An optional growthPath (one rate per year) lets the valuation fade growth towards its long-run rate.
+      const revenue = prev.revenue * (1 + (dr.growthPath?.[k - 1] ?? dr.growth));
       const cogs = revenue * (1 - dr.grossMargin), gross_profit = revenue - cogs;
       const capex = revenue * dr.capexPct;
       // Depreciation cannot exceed the asset base it wears down, which keeps PP&E >= 0 and the balance sheet balanced.
@@ -156,4 +157,5 @@
   CFO.project = project;
   CFO.withProjection = withProjection;
   CFO.runScenarios = runScenarios;
+  CFO.scenarioDrivers = scenarioDrivers;
 })(globalThis.CFO = globalThis.CFO || {});

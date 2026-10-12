@@ -211,6 +211,11 @@ textarea#md-out { width: 100%; min-height: 140px; font: 0.8rem/1.4 var(--font-nu
 .driver-in { display: flex; align-items: center; gap: 6px; }
 .driver input { width: 100%; min-width: 0; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font-family: var(--font-num); }
 .driver em { font-style: normal; color: var(--muted); min-width: 2.5em; }
+.driver.edited input { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+td.base-cell { font-weight: 700; background: var(--sunk); }
+table.plan td { vertical-align: top; }
+table.plan td:nth-child(5) { min-width: 18rem; }
+table.plan td:nth-child(3), table.plan td:nth-child(4) { white-space: nowrap; }
 .ai-ask { display: flex; gap: 8px; flex-wrap: wrap; }
 .ai-ask input { flex: 1 1 260px; min-width: 0; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
 .ai-out { margin-top: 12px; }
@@ -305,6 +310,7 @@ textarea#md-out { width: 100%; min-height: 140px; font: 0.8rem/1.4 var(--font-nu
     <button class="tab" role="tab" data-tab="horizontal">Horizontal</button>
     <button class="tab" role="tab" data-tab="flags">Red flags</button>
     <button class="tab" role="tab" data-tab="forecast">Forecast</button>
+    <button class="tab" role="tab" data-tab="valuation">Valuation</button>
     <button class="tab" role="tab" data-tab="review">Data review</button>
   </nav>
 
@@ -328,6 +334,7 @@ textarea#md-out { width: 100%; min-height: 140px; font: 0.8rem/1.4 var(--font-nu
     <section class="panel" id="p-horizontal" role="tabpanel" hidden></section>
     <section class="panel" id="p-flags" role="tabpanel" hidden></section>
     <section class="panel" id="p-forecast" role="tabpanel" hidden></section>
+    <section class="panel" id="p-valuation" role="tabpanel" hidden></section>
     <section class="panel" id="p-review" role="tabpanel" hidden></section>
   </main>
 </div>
@@ -21635,6 +21642,11 @@ var __async = (__this, __arguments, generator) => {
     e.fcf = d.cfo != null && d.capex != null ? d.cfo - d.capex : null;
     e.net_debt = e.total_debt != null && d.cash != null ? e.total_debt - d.cash : null;
     e.capital_employed = d.total_assets != null && d.current_liabilities != null ? d.total_assets - d.current_liabilities : null;
+    // Effective tax rate (0 when there is no taxable profit) and operating profit after tax.
+    e.tax_rate_eff = d.pretax_income > 0 && d.tax != null ? Math.min(0.6, Math.max(0, d.tax / d.pretax_income)) : 0;
+    e.nopat = d.operating_income != null ? d.operating_income * (1 - e.tax_rate_eff) : null;
+    e.invested_capital = e.total_debt != null && d.equity != null ? e.total_debt + d.equity : null;
+    e.nwc = d.receivables != null || d.inventory != null || d.payables != null ? (d.receivables || 0) + (d.inventory || 0) - (d.payables || 0) : null;
     return e;
   }
 
@@ -21718,8 +21730,89 @@ var __async = (__this, __arguments, generator) => {
         if (!ta || d.working_capital == null || d.retained_earnings == null || d.ebit == null || d.equity == null || !d.total_liabilities) return null;
         return 6.56 * d.working_capital / ta + 3.26 * d.retained_earnings / ta + 6.72 * d.ebit / ta + 1.05 * d.equity / d.total_liabilities;
       } },
+
+    /* ---- Added: growth, turnover, capital structure, cash-flow quality, earnings quality ---- */
+    // Liquidity
+    { id: 'defensive_interval', group: 'liquidity', unit: 'days', dir: 'high', good: 90, bad: 30, needs: ['cash', 'receivables', 'cogs', 'opex'],
+      f: '(Cash + Receivables) ÷ ((Cost of sales + Operating expenses) ÷ 365)', calc: d => { const burn = (d.cogs ?? 0) + (d.opex ?? 0); return d.cash == null || !burn ? null : (d.cash + (d.receivables || 0)) / (burn / 365); } },
+    { id: 'wc_to_assets', group: 'liquidity', unit: '%', dir: 'high', good: 0.1, bad: 0, needs: ['current_assets', 'current_liabilities', 'total_assets'],
+      f: 'Working capital ÷ Total assets', calc: d => div(d.working_capital, d.total_assets) },
+    // Profitability
+    { id: 'pretax_margin', group: 'profitability', unit: '%', dir: 'high', good: 0.08, bad: 0.02, needs: ['pretax_income', 'revenue'],
+      f: 'Profit before tax ÷ Revenue', calc: d => div(d.pretax_income, d.revenue) },
+    { id: 'nopat_margin', group: 'profitability', unit: '%', dir: 'high', good: 0.07, bad: 0.02, needs: ['operating_income', 'revenue'],
+      f: 'EBIT × (1 − tax rate) ÷ Revenue', calc: d => div(d.nopat, d.revenue) },
+    { id: 'roic', group: 'profitability', unit: '%', dir: 'high', good: 0.12, bad: 0.05, needs: ['operating_income', 'short_debt', 'long_debt', 'equity'],
+      f: 'EBIT × (1 − tax rate) ÷ Average (Debt + Equity)', calc: (d, avg, r, pe) => {
+        const ic = pe && pe.invested_capital != null && d.invested_capital != null ? (pe.invested_capital + d.invested_capital) / 2 : d.invested_capital;
+        return ic > 0 ? div(d.nopat, ic) : null; } },
+    // Efficiency
+    { id: 'receivables_turnover', group: 'efficiency', unit: 'x', dir: 'high', good: 8, bad: 4, needs: ['revenue', 'receivables'],
+      f: 'Revenue ÷ Average receivables', calc: (d, avg) => div(d.revenue, avg('receivables')) },
+    { id: 'inventory_turnover', group: 'efficiency', unit: 'x', dir: 'high', good: 6, bad: 3, needs: ['cogs', 'inventory'],
+      f: 'Cost of sales ÷ Average inventory', calc: (d, avg) => div(d.cogs, avg('inventory')) },
+    { id: 'payables_turnover', group: 'efficiency', unit: 'x', dir: null, needs: ['cogs', 'payables'],
+      f: 'Cost of sales ÷ Average payables', calc: (d, avg) => div(d.cogs, avg('payables')) },
+    { id: 'wc_turnover', group: 'efficiency', unit: 'x', dir: null, needs: ['revenue', 'current_assets', 'current_liabilities'],
+      f: 'Revenue ÷ Working capital', calc: d => d.working_capital > 0 ? div(d.revenue, d.working_capital) : null },
+    // Leverage & solvency
+    { id: 'debt_to_capital', group: 'leverage', unit: '%', dir: 'low', good: 0.4, bad: 0.6, needs: ['short_debt', 'long_debt', 'equity'],
+      f: 'Debt ÷ (Debt + Equity)', calc: d => d.invested_capital > 0 ? div(d.total_debt, d.invested_capital) : null },
+    { id: 'debt_to_assets', group: 'leverage', unit: '%', dir: 'low', good: 0.3, bad: 0.5, needs: ['short_debt', 'long_debt', 'total_assets'],
+      f: 'Debt ÷ Total assets', calc: d => div(d.total_debt, d.total_assets) },
+    { id: 'lt_debt_to_equity', group: 'leverage', unit: 'x', dir: 'low', good: 0.5, bad: 1.0, needs: ['long_debt', 'equity'],
+      f: 'Long-term debt ÷ Equity', calc: d => d.equity > 0 ? div(d.long_debt, d.equity) : null },
+    { id: 'equity_ratio', group: 'leverage', unit: '%', dir: 'high', good: 0.5, bad: 0.3, needs: ['equity', 'total_assets'],
+      f: 'Equity ÷ Total assets', calc: d => div(d.equity, d.total_assets) },
+    { id: 'debt_to_ebitda', group: 'leverage', unit: 'x', dir: 'low', good: 2.5, bad: 4.5, needs: ['short_debt', 'long_debt', 'operating_income', 'dna'],
+      f: 'Debt ÷ EBITDA', calc: d => d.ebitda > 0 ? div(d.total_debt, d.ebitda) : null },
+    { id: 'cfo_to_debt', group: 'leverage', unit: '%', dir: 'high', good: 0.3, bad: 0.1, needs: ['cfo', 'short_debt', 'long_debt'],
+      f: 'Cash from operations ÷ Debt', calc: d => d.total_debt > 0 ? div(d.cfo, d.total_debt) : null },
+    // Cash flow
+    { id: 'cfo_margin', group: 'cashflow', unit: '%', dir: 'high', good: 0.1, bad: 0.03, needs: ['cfo', 'revenue'],
+      f: 'Cash from operations ÷ Revenue', calc: d => div(d.cfo, d.revenue) },
+    { id: 'capex_to_revenue', group: 'cashflow', unit: '%', dir: null, needs: ['capex', 'revenue'],
+      f: 'Capital expenditure ÷ Revenue', calc: d => div(d.capex, d.revenue) },
+    { id: 'capex_to_cfo', group: 'cashflow', unit: '%', dir: 'low', good: 0.5, bad: 1.0, needs: ['capex', 'cfo'],
+      f: 'Capital expenditure ÷ Cash from operations', calc: d => d.cfo > 0 ? div(d.capex, d.cfo) : null },
+    { id: 'fcf_to_net_income', group: 'cashflow', unit: 'x', dir: 'high', good: 0.8, bad: 0.3, needs: ['cfo', 'capex', 'net_income'],
+      f: 'Free cash flow ÷ Net income', calc: d => d.net_income > 0 ? div(d.fcf, d.net_income) : null },
+    { id: 'cash_roa', group: 'cashflow', unit: '%', dir: 'high', good: 0.08, bad: 0.03, needs: ['cfo', 'total_assets'],
+      f: 'Cash from operations ÷ Average total assets', calc: (d, avg) => div(d.cfo, avg('total_assets')) },
+    // Growth (year on year)
+    ...[['revenue_growth', 'revenue', 'Revenue'], ['gross_profit_growth', 'gross_profit', 'Gross profit'], ['ebitda_growth', 'ebitda', 'EBITDA'],
+        ['net_income_growth', 'net_income', 'Net income'], ['equity_growth', 'equity', 'Equity'], ['assets_growth', 'total_assets', 'Total assets']]
+      .map(([id, k, name]) => ({ id, group: 'growth', unit: '%', dir: k === 'total_assets' ? null : 'high', good: 0.08, bad: 0,
+        needs: k === 'ebitda' ? ['operating_income', 'dna'] : [k], f: `(${name} this year − last year) ÷ |last year|`,
+        calc: (d, avg, r, pe) => pe && pe[k] != null && d[k] != null && pe[k] !== 0 ? (d[k] - pe[k]) / Math.abs(pe[k]) : null })),
+    { id: 'sustainable_growth', group: 'growth', unit: '%', dir: 'high', good: 0.08, bad: 0.02, needs: ['net_income', 'equity'],
+      f: 'ROE × (1 − Dividends ÷ Net income)', calc: (d, avg, r) => r.roe == null || !(d.net_income > 0) ? null : r.roe * (1 - Math.min(1, (d.dividends || 0) / d.net_income)) },
+    // Earnings quality
+    { id: 'accruals_ratio', group: 'quality', unit: '%', dir: 'low', good: 0.02, bad: 0.1, needs: ['net_income', 'cfo', 'total_assets'],
+      f: '(Net income − Cash from operations) ÷ Average total assets', calc: (d, avg) => d.net_income == null || d.cfo == null ? null : div(d.net_income - d.cfo, avg('total_assets')) },
+    { id: 'retention_ratio', group: 'quality', unit: '%', dir: null, needs: ['net_income', 'dividends'],
+      f: '1 − Dividends ÷ Net income', calc: d => d.net_income > 0 ? 1 - (d.dividends || 0) / d.net_income : null },
+    { id: 'piotroski_f', group: 'quality', unit: 'score', dir: 'high', good: 7, bad: 3,
+      needs: ['net_income', 'cfo', 'total_assets', 'current_assets', 'current_liabilities', 'revenue', 'gross_profit', 'long_debt'],
+      f: 'Piotroski F-score: profitability, leverage and efficiency tests passed (0–9, scaled when some cannot be run)',
+      calc: (d, avg, r, pe) => {
+        const sig = piotroskiSignals(d, pe);
+        const known = sig.filter(x => x != null);
+        return known.length >= 6 ? Math.round(known.filter(Boolean).length / known.length * 90) / 10 : null;
+      } },
   ];
-  const GROUPS = ['liquidity', 'profitability', 'efficiency', 'leverage', 'cashflow', 'distress'];
+  /** The nine Piotroski tests (true / false / null when the data is missing). Share issuance is not in the statements read. */
+  function piotroskiSignals(d, pe) {
+    const roa = x => x && x.total_assets ? (x.net_income ?? null) / x.total_assets : null;
+    const lev = x => x && x.total_assets && x.long_debt != null ? x.long_debt / x.total_assets : null;
+    const cr = x => x && x.current_liabilities ? (x.current_assets ?? null) / x.current_liabilities : null;
+    const gm = x => x && x.revenue ? (x.gross_profit ?? null) / x.revenue : null;
+    const at = x => x && x.total_assets ? (x.revenue ?? null) / x.total_assets : null;
+    const up = (f, better = 'up') => { const a = f(pe), b = f(d); return a == null || b == null || !isFinite(a) || !isFinite(b) ? null : better === 'up' ? b > a : b < a; };
+    return [d.net_income == null ? null : d.net_income > 0, d.cfo == null ? null : d.cfo > 0, up(roa),
+      d.cfo == null || d.net_income == null ? null : d.cfo > d.net_income, up(lev, 'down'), up(cr), null, up(gm), up(at)];
+  }
+  const GROUPS = ['liquidity', 'profitability', 'efficiency', 'leverage', 'cashflow', 'growth', 'quality', 'distress'];
 
   /** Healthy / watch / weak against the selected sector's limits (js/benchmarks.js), else the defaults above. */
   function status(def, v) {
@@ -21735,6 +21828,7 @@ var __async = (__this, __arguments, generator) => {
     ds.periods.forEach((p, i) => {
       const d = enrich(ds.data[p]);
       const prev = i > 0 ? ds.data[ds.periods[i - 1]] : null;
+      const pe = prev ? enrich(prev) : null;   // prior year, for growth and change-based scores
       let avgUsed = false;
       const avg = k => {
         if (prev && prev[k] != null && d[k] != null) { avgUsed = true; return (prev[k] + d[k]) / 2; }
@@ -21743,7 +21837,7 @@ var __async = (__this, __arguments, generator) => {
       const r = {};
       for (const def of RATIOS) {
         avgUsed = false;
-        let v = def.calc(d, avg, r);
+        let v = def.calc(d, avg, r, pe);
         if (v != null && !isFinite(v)) v = null;
         r[def.id] = v;
         out[def.id][p] = { value: v, status: status(def, v), avgUsed };
@@ -21752,14 +21846,18 @@ var __async = (__this, __arguments, generator) => {
     return out;
   }
 
-  /** ROE = Net margin × Asset turnover × Equity multiplier (all on closing balances so the product reconciles). */
+  /** ROE = Net margin × Asset turnover × Equity multiplier (3-step), and
+   *  ROE = Tax burden × Interest burden × EBIT margin × Asset turnover × Equity multiplier (5-step), on closing balances. */
   function dupont(ds) {
     return ds.periods.map(p => {
       const d = ds.data[p];
       const nm = div(d.net_income, d.revenue), at = div(d.revenue, d.total_assets), em = d.equity > 0 ? div(d.total_assets, d.equity) : null;
-      return { period: p, net_margin: nm, asset_turnover: at, equity_multiplier: em, roe: nm != null && at != null && em != null ? nm * at * em : null };
+      const tb = d.pretax_income ? div(d.net_income, d.pretax_income) : null, ib = d.operating_income ? div(d.pretax_income, d.operating_income) : null, om = div(d.operating_income, d.revenue);
+      return { period: p, net_margin: nm, asset_turnover: at, equity_multiplier: em, roe: nm != null && at != null && em != null ? nm * at * em : null,
+        tax_burden: tb, interest_burden: ib, ebit_margin: om };
     });
   }
+
 
   /** Rows for vertical & horizontal analysis: standard items plus unmapped lines, grouped by statement. */
   function analysisRows(ds) {
@@ -21810,7 +21908,7 @@ var __async = (__this, __arguments, generator) => {
 
   /** 0-100 health score from the latest year's ratio statuses, weighted by group. */
   function healthScore(ratios, period) {
-    const W = { liquidity: 1, profitability: 1.2, efficiency: 0.6, leverage: 1.2, cashflow: 1, distress: 1 };
+    const W = { liquidity: 1, profitability: 1.2, efficiency: 0.6, leverage: 1.2, cashflow: 1, growth: 0.7, quality: 0.8, distress: 1 };
     const P = { good: 100, warn: 55, bad: 10 };
     let sum = 0, w = 0;
     const byGroup = {};
@@ -21834,6 +21932,7 @@ var __async = (__this, __arguments, generator) => {
   }
 
   CFO.RATIOS = RATIOS;
+  CFO.piotroskiSignals = piotroskiSignals;
   CFO.RATIO = Object.fromEntries(RATIOS.map(r => [r.id, r]));
   CFO.GROUPS = GROUPS;
   CFO.enrich = enrich;
@@ -21857,15 +21956,24 @@ var __async = (__this, __arguments, generator) => {
       roa: [0.06, 0.02, 0.06], roe: [0.15, 0.05, 0.12], roce: [0.12, 0.05, 0.12],
       asset_turnover: [1.0, 0.5, 0.9], fixed_asset_turnover: [3, 1, 3], dso: [45, 90, 45], dio: [60, 120, 60], dpo: [null, null, 45], ccc: [60, 120, 60],
       debt_to_equity: [1.0, 2.0, 0.8], debt_ratio: [0.5, 0.7, 0.5], equity_multiplier: [2, 3, 2], interest_coverage: [3, 1.5, 5], net_debt_to_ebitda: [2, 4, 1.8],
-      fcf_margin: [0.05, 0, 0.05], cash_conversion: [1.0, 0.8, 1.1], payout_ratio: [0.6, 1.0, 0.4], altman_z: [2.6, 1.1, 3.0] } },
+      fcf_margin: [0.05, 0, 0.05], cash_conversion: [1.0, 0.8, 1.1], payout_ratio: [0.6, 1.0, 0.4], altman_z: [2.6, 1.1, 3.0],
+      defensive_interval: [90, 30, 90], wc_to_assets: [0.1, 0, 0.15], pretax_margin: [0.08, 0.02, 0.09], nopat_margin: [0.07, 0.02, 0.08], roic: [0.12, 0.05, 0.10],
+      receivables_turnover: [8, 4, 8], inventory_turnover: [6, 3, 6], payables_turnover: [null, null, 8],
+      debt_to_capital: [0.4, 0.6, 0.35], debt_to_assets: [0.3, 0.5, 0.28], lt_debt_to_equity: [0.5, 1.0, 0.45], equity_ratio: [0.5, 0.3, 0.45],
+      debt_to_ebitda: [2.5, 4.5, 2.2], cfo_to_debt: [0.3, 0.1, 0.35], cfo_margin: [0.10, 0.03, 0.10], capex_to_revenue: [null, null, 0.05],
+      capex_to_cfo: [0.5, 1.0, 0.5], fcf_to_net_income: [0.8, 0.3, 0.9], cash_roa: [0.08, 0.03, 0.08],
+      revenue_growth: [0.08, 0, 0.07], gross_profit_growth: [0.08, 0, 0.07], ebitda_growth: [0.08, 0, 0.07], net_income_growth: [0.08, 0, 0.07],
+      equity_growth: [0.08, 0, 0.06], sustainable_growth: [0.08, 0.02, 0.07], accruals_ratio: [0.02, 0.1, 0], piotroski_f: [7, 3, 6] } },
     retail: { en: 'Trading & retail', ar: 'تجارة وتجزئة', r: {
       current_ratio: [1.2, 0.8, 1.2], quick_ratio: [0.5, 0.2, 0.4], gross_margin: [0.30, 0.15, 0.28], ebitda_margin: [0.08, 0.03, 0.08],
       operating_margin: [0.05, 0.02, 0.05], net_margin: [0.03, 0.01, 0.03], asset_turnover: [2.0, 1.2, 2.2], dso: [15, 40, 10],
-      dio: [50, 100, 55], ccc: [30, 80, 35], debt_to_equity: [1.0, 2.0, 0.9], fcf_margin: [0.03, 0, 0.03] } },
+      dio: [50, 100, 55], ccc: [30, 80, 35], debt_to_equity: [1.0, 2.0, 0.9], fcf_margin: [0.03, 0, 0.03],
+      receivables_turnover: [20, 9, 30], inventory_turnover: [7, 3.5, 6.5], cfo_margin: [0.05, 0.015, 0.05], capex_to_revenue: [null, null, 0.03] } },
     manufacturing: { en: 'Manufacturing', ar: 'صناعة', r: {
       current_ratio: [1.5, 1.0, 1.6], quick_ratio: [0.9, 0.6, 0.9], gross_margin: [0.30, 0.15, 0.28], ebitda_margin: [0.15, 0.06, 0.14],
       operating_margin: [0.10, 0.04, 0.09], net_margin: [0.07, 0.02, 0.06], asset_turnover: [0.9, 0.5, 0.8], dso: [50, 90, 55],
-      dio: [70, 130, 75], ccc: [80, 140, 85], debt_to_equity: [0.8, 1.6, 0.7] } },
+      dio: [70, 130, 75], ccc: [80, 140, 85], debt_to_equity: [0.8, 1.6, 0.7],
+      receivables_turnover: [7, 4, 6.5], inventory_turnover: [5, 2.8, 4.8], capex_to_revenue: [null, null, 0.07] } },
     services: { en: 'Services & technology', ar: 'خدمات وتقنية', r: {
       current_ratio: [1.3, 0.9, 1.5], quick_ratio: [1.2, 0.8, 1.3], gross_margin: [0.50, 0.30, 0.55], ebitda_margin: [0.20, 0.08, 0.20],
       operating_margin: [0.15, 0.05, 0.15], net_margin: [0.10, 0.03, 0.11], roe: [0.18, 0.06, 0.16], asset_turnover: [0.9, 0.5, 0.8],
@@ -21874,7 +21982,8 @@ var __async = (__this, __arguments, generator) => {
     construction: { en: 'Construction & real estate', ar: 'مقاولات وعقارات', r: {
       current_ratio: [1.3, 1.0, 1.3], gross_margin: [0.18, 0.08, 0.15], ebitda_margin: [0.10, 0.04, 0.09], operating_margin: [0.07, 0.02, 0.06],
       net_margin: [0.05, 0.01, 0.04], asset_turnover: [0.8, 0.4, 0.7], dso: [70, 120, 75], ccc: [80, 150, 85],
-      debt_to_equity: [1.2, 2.5, 1.1], interest_coverage: [2.5, 1.3, 4], net_debt_to_ebitda: [2.5, 4.5, 2.5], fcf_margin: [0.03, 0, 0.03] } },
+      debt_to_equity: [1.2, 2.5, 1.1], interest_coverage: [2.5, 1.3, 4], net_debt_to_ebitda: [2.5, 4.5, 2.5], fcf_margin: [0.03, 0, 0.03],
+      debt_to_capital: [0.5, 0.7, 0.5], debt_to_ebitda: [3, 5, 3], equity_ratio: [0.4, 0.25, 0.4], receivables_turnover: [5, 3, 4.8] } },
     food: { en: 'Food & beverage', ar: 'أغذية ومشروبات', r: {
       current_ratio: [1.2, 0.8, 1.2], quick_ratio: [0.6, 0.3, 0.6], gross_margin: [0.30, 0.15, 0.32], ebitda_margin: [0.12, 0.05, 0.12],
       operating_margin: [0.08, 0.03, 0.08], net_margin: [0.05, 0.015, 0.05], asset_turnover: [1.5, 0.8, 1.4], dso: [30, 60, 25],
@@ -21923,7 +22032,8 @@ var __async = (__this, __arguments, generator) => {
       diag: { title: 'Diagnostics', hint: 'If something does not work, press Copy and paste the text in the chat. By default it contains only line labels and counts, not your figures.', withNumbers: 'Include figures', copy: 'Copy diagnostics' },
       browse: 'Choose files', exampleTag: 'Example', vs: 'vs', pts: 'pts', sampleNotice: 'Example data (fictional company, EGP thousands). Drop your own files to replace it.',
       loadSample: 'Reload example', clear: 'Clear', filesLoaded: 'Files', reading: 'Reading files…',
-      tabs: { full: 'Full analysis', overview: 'Overview', ratios: 'Ratios', vertical: 'Vertical', horizontal: 'Horizontal', flags: 'Red flags', forecast: 'Forecast', review: 'Data review' },
+      tabs: { full: 'Full analysis', overview: 'Overview', ratios: 'Ratios', vertical: 'Vertical', horizontal: 'Horizontal', flags: 'Red flags', forecast: 'Forecast', valuation: 'Valuation', review: 'Data review' },
+      secValuation: 'Valuation (DCF) and EVA', secPlan: 'Action plan and value levers', dupont5: 'Five-step DuPont: tax burden × interest burden × EBIT margin × asset turnover × equity multiplier', taxBurden: 'Tax burden (NI ÷ PBT)', interestBurden: 'Interest burden (PBT ÷ EBIT)', ebitMargin: 'EBIT margin',
       sector: 'Sector', typical: 'Sector typical',
       fullTitle: 'Full financial analysis', flagsRecs: 'Red flags and recommendations', toc: 'Contents', secSummary: 'Summary and key figures', secRatios: 'All financial ratios',
       secDupont: 'DuPont analysis and distress score', verticalHint: 'Each line as a share of revenue (income statement, cash flow) or of total assets (balance sheet). * = line not matched to a standard item.',
@@ -21943,8 +22053,9 @@ var __async = (__this, __arguments, generator) => {
         err: { not_granted: 'Permission was declined, so Claude was not asked.', rate_limited: 'Too many requests right now. Try again in a minute.', prompt_too_large: 'Too much data for one request. Remove some files and try again.', refused: 'Claude declined to answer this request.', other: 'Claude could not answer right now. Try again later.' },
       },
       period: 'Year', latest: 'Latest year', health: 'Financial health', healthOf: 'out of 100',
-      kpi: { revenue: 'Revenue', net_income: 'Net income', fcf: 'Free cash flow', current_ratio: 'Current ratio', debt_to_equity: 'Debt / equity', roe: 'Return on equity' },
-      groups: { liquidity: 'Liquidity', profitability: 'Profitability', efficiency: 'Efficiency', leverage: 'Leverage & solvency', cashflow: 'Cash flow', distress: 'Distress risk' },
+      kpi: { revenue: 'Revenue', net_income: 'Net income', fcf: 'Free cash flow', current_ratio: 'Current ratio', debt_to_equity: 'Debt / equity', roe: 'Return on equity',
+        gross_profit: 'Gross profit', ebitda: 'EBITDA', cfo: 'Operating cash flow', cash: 'Cash', total_debt: 'Total debt', working_capital: 'Working capital', roic: 'Return on invested capital', revenue_growth: 'Revenue growth' },
+      groups: { liquidity: 'Liquidity', profitability: 'Profitability', efficiency: 'Efficiency', leverage: 'Leverage & solvency', cashflow: 'Cash flow', growth: 'Growth', quality: 'Earnings quality', distress: 'Distress risk' },
       st: { IS: 'Income statement', BS: 'Balance sheet', CF: 'Cash flow' },
       status: { good: 'Healthy', warn: 'Watch', bad: 'Weak', na: 'N/A', info: 'Info' },
       sev: { high: 'High', med: 'Medium', low: 'Low' },
@@ -22007,7 +22118,8 @@ var __async = (__this, __arguments, generator) => {
       diag: { title: 'التشخيص', hint: 'إذا لم يعمل شيء، اضغط نسخ والصق النص في المحادثة. افتراضياً يحتوي على أسماء البنود والأعداد فقط، وليس أرقامك.', withNumbers: 'تضمين الأرقام', copy: 'نسخ التشخيص' },
       browse: 'اختر الملفات', exampleTag: 'مثال', vs: 'مقابل', pts: 'نقطة', sampleNotice: 'بيانات تجريبية (شركة افتراضية، بالألف جنيه). أسقط ملفاتك لاستبدالها.',
       loadSample: 'إعادة البيانات التجريبية', clear: 'مسح', filesLoaded: 'الملفات', reading: 'جارٍ قراءة الملفات…',
-      tabs: { full: 'التحليل الكامل', overview: 'نظرة عامة', ratios: 'النسب المالية', vertical: 'التحليل الرأسي', horizontal: 'التحليل الأفقي', flags: 'إشارات الخطر', forecast: 'التوقعات', review: 'مراجعة البيانات' },
+      tabs: { full: 'التحليل الكامل', overview: 'نظرة عامة', ratios: 'النسب المالية', vertical: 'التحليل الرأسي', horizontal: 'التحليل الأفقي', flags: 'إشارات الخطر', forecast: 'التوقعات', valuation: 'التقييم', review: 'مراجعة البيانات' },
+      secValuation: 'التقييم (التدفقات المخصومة) والقيمة الاقتصادية المضافة', secPlan: 'خطة العمل وروافع القيمة', dupont5: 'ديبونت الخماسي: عبء الضريبة × عبء الفوائد × هامش EBIT × دوران الأصول × مضاعف حقوق الملكية', taxBurden: 'عبء الضريبة (صافي الربح ÷ الربح قبل الضريبة)', interestBurden: 'عبء الفوائد (الربح قبل الضريبة ÷ EBIT)', ebitMargin: 'هامش EBIT',
       sector: 'القطاع', typical: 'المعتاد في القطاع',
       fullTitle: 'التحليل المالي الكامل', flagsRecs: 'إشارات الخطر والتوصيات', toc: 'المحتويات', secSummary: 'الملخص والأرقام الرئيسية', secRatios: 'جميع النسب المالية',
       secDupont: 'تحليل ديبونت ومؤشر التعثر', verticalHint: 'كل بند كنسبة من الإيرادات (قائمة الدخل والتدفقات) أو من إجمالي الأصول (الميزانية). * = بند غير مربوط ببند قياسي.',
@@ -22027,8 +22139,9 @@ var __async = (__this, __arguments, generator) => {
         err: { not_granted: 'تم رفض الإذن، لذا لم يُرسل الطلب إلى Claude.', rate_limited: 'طلبات كثيرة الآن. حاول بعد دقيقة.', prompt_too_large: 'البيانات أكبر من طلب واحد. احذف بعض الملفات وحاول مرة أخرى.', refused: 'رفض Claude الإجابة على هذا الطلب.', other: 'تعذر الحصول على رد من Claude الآن. حاول لاحقاً.' },
       },
       period: 'السنة', latest: 'آخر سنة', health: 'الصحة المالية', healthOf: 'من 100',
-      kpi: { revenue: 'الإيرادات', net_income: 'صافي الربح', fcf: 'التدفق النقدي الحر', current_ratio: 'نسبة التداول', debt_to_equity: 'الديون / حقوق الملكية', roe: 'العائد على حقوق الملكية' },
-      groups: { liquidity: 'السيولة', profitability: 'الربحية', efficiency: 'الكفاءة', leverage: 'الرفع المالي والملاءة', cashflow: 'التدفقات النقدية', distress: 'مخاطر التعثر' },
+      kpi: { revenue: 'الإيرادات', net_income: 'صافي الربح', fcf: 'التدفق النقدي الحر', current_ratio: 'نسبة التداول', debt_to_equity: 'الديون / حقوق الملكية', roe: 'العائد على حقوق الملكية',
+        gross_profit: 'مجمل الربح', ebitda: 'EBITDA', cfo: 'التدفق النقدي التشغيلي', cash: 'النقدية', total_debt: 'إجمالي الديون', working_capital: 'رأس المال العامل', roic: 'العائد على رأس المال المستثمر', revenue_growth: 'نمو الإيرادات' },
+      groups: { liquidity: 'السيولة', profitability: 'الربحية', efficiency: 'الكفاءة', leverage: 'الرفع المالي والملاءة', cashflow: 'التدفقات النقدية', growth: 'النمو', quality: 'جودة الأرباح', distress: 'مخاطر التعثر' },
       st: { IS: 'قائمة الدخل', BS: 'الميزانية', CF: 'التدفقات النقدية' },
       status: { good: 'جيد', warn: 'للمتابعة', bad: 'ضعيف', na: 'غير متاح', info: 'معلوماتي' },
       sev: { high: 'مرتفعة', med: 'متوسطة', low: 'منخفضة' },
@@ -22091,8 +22204,26 @@ var __async = (__this, __arguments, generator) => {
     net_debt_to_ebitda: ['Net debt / EBITDA', 'صافي الدين / EBITDA'], fcf: ['Free cash flow', 'التدفق النقدي الحر'], fcf_margin: ['FCF margin', 'هامش التدفق النقدي الحر'],
     cash_conversion: ['Cash conversion (CFO / net income)', 'جودة الأرباح (التدفق التشغيلي / صافي الربح)'], capex_to_dna: ['Capex / depreciation', 'الإنفاق الرأسمالي / الإهلاك'],
     payout_ratio: ['Dividend payout', 'نسبة توزيع الأرباح'], altman_z: ["Altman Z''-score", "مؤشر ألتمان Z''"],
+    defensive_interval: ['Defensive interval', 'فترة الأمان الدفاعية'], wc_to_assets: ['Working capital / assets', 'رأس المال العامل / الأصول'],
+    pretax_margin: ['Pre-tax margin', 'هامش الربح قبل الضريبة'], nopat_margin: ['NOPAT margin', 'هامش الربح التشغيلي بعد الضريبة'],
+    roic: ['Return on invested capital (ROIC)', 'العائد على رأس المال المستثمر'],
+    receivables_turnover: ['Receivables turnover', 'معدل دوران المدينين'], inventory_turnover: ['Inventory turnover', 'معدل دوران المخزون'],
+    payables_turnover: ['Payables turnover', 'معدل دوران الدائنين'], wc_turnover: ['Working-capital turnover', 'معدل دوران رأس المال العامل'],
+    debt_to_capital: ['Debt to capital', 'الديون إلى رأس المال'], debt_to_assets: ['Debt to assets', 'الديون إلى الأصول'],
+    lt_debt_to_equity: ['Long-term debt to equity', 'الديون طويلة الأجل إلى حقوق الملكية'], equity_ratio: ['Equity ratio', 'نسبة حقوق الملكية'],
+    debt_to_ebitda: ['Debt / EBITDA', 'الديون / EBITDA'], cfo_to_debt: ['Operating cash flow / debt', 'التدفق التشغيلي / الديون'],
+    cfo_margin: ['Operating cash-flow margin', 'هامش التدفق النقدي التشغيلي'], capex_to_revenue: ['Capex / revenue', 'الإنفاق الرأسمالي / الإيرادات'],
+    capex_to_cfo: ['Capex / operating cash flow', 'الإنفاق الرأسمالي / التدفق التشغيلي'], fcf_to_net_income: ['FCF / net income', 'التدفق الحر / صافي الربح'],
+    cash_roa: ['Cash return on assets', 'العائد النقدي على الأصول'],
+    revenue_growth: ['Revenue growth', 'نمو الإيرادات'], gross_profit_growth: ['Gross profit growth', 'نمو مجمل الربح'], ebitda_growth: ['EBITDA growth', 'نمو EBITDA'],
+    net_income_growth: ['Net income growth', 'نمو صافي الربح'], equity_growth: ['Equity growth', 'نمو حقوق الملكية'], assets_growth: ['Total assets growth', 'نمو إجمالي الأصول'],
+    sustainable_growth: ['Sustainable growth rate', 'معدل النمو المستدام'],
+    accruals_ratio: ['Accruals ratio', 'نسبة الاستحقاقات'], retention_ratio: ['Earnings retention', 'نسبة الأرباح المحتجزة'], piotroski_f: ['Piotroski F-score', 'مؤشر بيوتروسكي F'],
   };
 
+  const GROW = (en, ar) => ({
+    en: (v, r) => r >= 0 ? `${en} grew ${v} on the prior year.` : `${en} fell ${v.replace(/[()\-−\u061C\u200E\u200F]/g, '')} on the prior year.`,
+    ar: (v, r) => r >= 0 ? `ارتفع ${ar} بنسبة ${v} عن السنة السابقة.` : `انخفض ${ar} بنسبة ${v.replace(/[()\-−\u061C\u200E\u200F]/g, '')} عن السنة السابقة.` });
   /* Meaning templates: v = formatted value, raw = number. Kept to one or two plain sentences. */
   const MEANING = {
     current_ratio: { en: v => `For every 1 the company owes within a year, it holds ${v} in current assets.`, ar: v => `مقابل كل 1 مستحق خلال سنة، تملك الشركة ${v} من الأصول المتداولة.` },
@@ -22125,6 +22256,32 @@ var __async = (__this, __arguments, generator) => {
     capex_to_dna: { en: v => `The company reinvests ${v} its depreciation: above 1 means it is growing its asset base.`, ar: v => `تعيد الشركة استثمار ${v} قيمة الإهلاك: أكثر من 1 يعني توسيع قاعدة الأصول.` },
     payout_ratio: { en: v => `${v} of net income was paid out as dividends.`, ar: v => `وُزّع ${v} من صافي الربح كأرباح نقدية.` },
     altman_z: { en: (v, r) => `Score ${v}: ${r > 2.6 ? 'safe zone, low near-term distress risk' : r >= 1.1 ? 'grey zone, monitor closely' : 'distress zone, elevated risk of financial difficulty'}.`, ar: (v, r) => `الدرجة ${v}: ${r > 2.6 ? 'منطقة آمنة، خطر تعثر منخفض' : r >= 1.1 ? 'منطقة رمادية، تحتاج متابعة' : 'منطقة تعثر، خطر صعوبات مالية مرتفع'}.` },
+    defensive_interval: { en: v => `Cash and receivables would pay running costs for about ${v} with no new sales.`, ar: v => `تكفي النقدية والمدينون لتغطية التكاليف الجارية حوالي ${v} دون مبيعات جديدة.` },
+    wc_to_assets: { en: v => `Working capital equals ${v} of total assets.`, ar: v => `رأس المال العامل يعادل ${v} من إجمالي الأصول.` },
+    pretax_margin: { en: v => `${v} of revenue is left as profit before income tax.`, ar: v => `يتبقى ${v} من الإيرادات كربح قبل ضريبة الدخل.` },
+    nopat_margin: { en: v => `After a notional tax on operating profit, operations keep ${v} of revenue.`, ar: v => `بعد ضريبة افتراضية على الربح التشغيلي، يحتفظ التشغيل بـ ${v} من الإيرادات.` },
+    roic: { en: v => `Every 100 of capital provided by lenders and shareholders earns ${v.replace('%', '')} after tax. Compare with the cost of capital (WACC) in the valuation.`, ar: v => `كل 100 من رأس المال المقدّم من المقرضين والمساهمين تحقق ${v.replace('%', '')} بعد الضريبة. قارنها بتكلفة رأس المال (WACC) في التقييم.` },
+    receivables_turnover: { en: v => `Receivables are collected and replaced ${v} a year.`, ar: v => `يُحصَّل رصيد المدينين ويتجدد ${v} في السنة.` },
+    inventory_turnover: { en: v => `Inventory is sold and replaced ${v} a year.`, ar: v => `يُباع المخزون ويتجدد ${v} في السنة.` },
+    payables_turnover: { en: v => `Suppliers are paid off ${v} a year.`, ar: v => `يُسدَّد رصيد الموردين ${v} في السنة.` },
+    wc_turnover: { en: v => `Each 1 of working capital supports ${v} of revenue.`, ar: v => `كل 1 من رأس المال العامل يدعم ${v} من الإيرادات.` },
+    debt_to_capital: { en: v => `${v} of the long-term funding (debt + equity) is borrowed.`, ar: v => `${v} من التمويل (ديون + حقوق ملكية) مقترض.` },
+    debt_to_assets: { en: v => `Interest-bearing debt finances ${v} of the assets.`, ar: v => `الديون بفوائد تموّل ${v} من الأصول.` },
+    lt_debt_to_equity: { en: v => `Long-term lenders have put in ${v} for every 1 of equity.`, ar: v => `قدّم المقرضون لأجل طويل ${v} مقابل كل 1 من حقوق الملكية.` },
+    equity_ratio: { en: v => `Shareholders' own funds finance ${v} of the assets.`, ar: v => `أموال المساهمين تموّل ${v} من الأصول.` },
+    debt_to_ebitda: { en: v => `Total debt equals about ${v.replace('×', '')} years of EBITDA.`, ar: v => `إجمالي الديون يعادل حوالي ${v.replace('×', '')} سنوات من EBITDA.` },
+    cfo_to_debt: { en: v => `One year of operating cash flow would repay ${v} of total debt.`, ar: v => `تدفق تشغيلي لسنة واحدة يسدد ${v} من إجمالي الديون.` },
+    cfo_margin: { en: v => `${v} of revenue comes in as operating cash.`, ar: v => `${v} من الإيرادات تدخل كنقد تشغيلي.` },
+    capex_to_revenue: { en: v => `The company spends ${v} of revenue on new assets.`, ar: v => `تنفق الشركة ${v} من الإيرادات على أصول جديدة.` },
+    capex_to_cfo: { en: v => `Investment uses ${v} of operating cash flow.`, ar: v => `يستهلك الاستثمار ${v} من التدفق النقدي التشغيلي.` },
+    fcf_to_net_income: { en: v => `Each 1 of profit left ${v} of free cash after investment.`, ar: v => `كل 1 من الربح ترك ${v} نقداً حراً بعد الاستثمار.` },
+    cash_roa: { en: v => `Assets generate ${v} a year in operating cash.`, ar: v => `تولّد الأصول ${v} سنوياً نقداً تشغيلياً.` },
+    revenue_growth: GROW('Revenue', 'الإيراد'), gross_profit_growth: GROW('Gross profit', 'مجمل الربح'), ebitda_growth: GROW('EBITDA', 'EBITDA'),
+    net_income_growth: GROW('Net income', 'صافي الربح'), equity_growth: GROW('Equity', 'حقوق الملكية'), assets_growth: GROW('Total assets', 'إجمالي الأصول'),
+    sustainable_growth: { en: v => `Without new equity or more leverage, the company can grow about ${v} a year from retained profit.`, ar: v => `دون زيادة رأس المال أو الاقتراض، يمكن للشركة النمو حوالي ${v} سنوياً من الأرباح المحتجزة.` },
+    accruals_ratio: { en: (v, r) => r > 0 ? `Profit exceeds operating cash by ${v} of assets: the higher this is, the less of the profit is backed by cash.` : `Operating cash exceeds profit (${v} of assets): earnings are well backed by cash.`, ar: (v, r) => r > 0 ? `الربح يزيد عن النقد التشغيلي بما يعادل ${v} من الأصول: كلما ارتفع قلّ دعم النقد للأرباح.` : `النقد التشغيلي يزيد عن الربح (${v} من الأصول): الأرباح مدعومة بالنقد.` },
+    retention_ratio: { en: v => `${v} of the profit is kept in the business.`, ar: v => `يُحتجز ${v} من الربح داخل الشركة.` },
+    piotroski_f: { en: (v, r) => `${v} of 9 financial-strength tests passed: ${r >= 7 ? 'strong' : r > 3 ? 'average' : 'weak'} fundamentals.`, ar: (v, r) => `اجتازت الشركة ${v} من 9 اختبارات قوة مالية: أساسيات ${r >= 7 ? 'قوية' : r > 3 ? 'متوسطة' : 'ضعيفة'}.` },
   };
 
   function fmtNum(v, digits = 0, lang = 'en') {
@@ -22525,7 +22682,8 @@ var __async = (__this, __arguments, generator) => {
     const out = [];
     for (let k = 1; k <= years; k++) {
       const dr = drivers;
-      const revenue = prev.revenue * (1 + dr.growth);
+      // An optional growthPath (one rate per year) lets the valuation fade growth towards its long-run rate.
+      const revenue = prev.revenue * (1 + (dr.growthPath?.[k - 1] ?? dr.growth));
       const cogs = revenue * (1 - dr.grossMargin), gross_profit = revenue - cogs;
       const capex = revenue * dr.capexPct;
       // Depreciation cannot exceed the asset base it wears down, which keeps PP&E >= 0 and the balance sheet balanced.
@@ -22601,6 +22759,326 @@ var __async = (__this, __arguments, generator) => {
   CFO.project = project;
   CFO.withProjection = withProjection;
   CFO.runScenarios = runScenarios;
+  CFO.scenarioDrivers = scenarioDrivers;
+})(globalThis.CFO = globalThis.CFO || {});
+
+</script>
+<script>
+/* Valuation and action plan.
+ * DCF: free cash flow to the firm (FCFF) from the driver forecast in js/forecast.js, discounted at WACC (CAPM cost of
+ * equity + after-tax cost of debt). The terminal value uses the value-driver formula NOPAT × (1 − g ÷ RONIC) ÷ (WACC − g):
+ * the reinvestment needed to grow at g forever, at a return on new investment (RONIC) equal to the higher of the
+ * latest ROIC and WACC, rather than carrying the last forecast year's capex and working-capital build-up into perpetuity. Revenue growth fades in a straight line from
+ * the forecast growth rate to the terminal rate. Also: EVA by year, a WACC × growth sensitivity grid, value under the
+ * three scenarios, value levers ranked by their effect on equity value, and a prioritised action plan.
+ * Market inputs (risk-free rate, equity risk premium, beta) depend on the country and currency: the defaults are
+ * placeholders to replace, and the page says so.
+ */
+(function (CFO) {
+  const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const or0 = v => (v == null || !isFinite(v) ? 0 : v);
+
+  // name: [min, max, step, unit]; '%' values are fractions.
+  const INPUTS = {
+    rf: [0, 0.3, 0.0025, '%'], erp: [0, 0.2, 0.0025, '%'], beta: [0, 3, 0.05, 'x'], kd: [0, 0.4, 0.0025, '%'],
+    tax: [0, 0.5, 0.0025, '%'], wd: [0, 0.9, 0.01, '%'], g: [-0.03, 0.08, 0.0025, '%'], years: [3, 10, 1, 'n'],
+    shares: [0, null, 1, 'n'], price: [0, null, 0.01, 'n'],
+  };
+  const MIN_SPREAD = 0.005;   // WACC must exceed terminal growth by at least half a point
+
+  /** Default inputs: market placeholders + the company's own interest rate, tax rate and book debt weight. */
+  function dcfDefaults(ds, drivers) {
+    const d = ds.data[ds.periods[ds.periods.length - 1]] || {}, e = CFO.enrich(d);
+    const debt = e.total_debt || 0;
+    const wd = d.equity > 0 ? clamp(debt / (debt + d.equity), 0, 0.8) : debt > 0 ? 0.6 : 0;
+    return { rf: 0.045, erp: 0.055, beta: 1, kd: drivers?.rate ?? 0.08, tax: drivers?.taxRate ?? 0.225, wd: Math.round(wd * 100) / 100,
+      g: 0.025, years: 5, shares: null, price: null };
+  }
+  const clampInput = (k, v) => { const [lo, hi] = INPUTS[k]; return clamp(v, lo ?? -Infinity, hi ?? Infinity); };
+
+  function wacc(inp) {
+    const ke = inp.rf + inp.beta * inp.erp, kdAt = inp.kd * (1 - inp.tax);
+    return { ke, kdAt, wacc: inp.wd * kdAt + (1 - inp.wd) * ke };
+  }
+
+  /** Terminal value at the end of the forecast: next year's NOPAT less the reinvestment growth at g needs. */
+  const terminal = (nopatN, w, g, ronic) => nopatN * (1 + g) * (1 - g / ronic) / (w - g);
+
+  /** Equity value from forecast cash flows at a given WACC and terminal growth (null when WACC − g is under half a point). */
+  function equityAt(fcff, nopatN, ronic, netDebt, w, g) {
+    if (!(w - g >= MIN_SPREAD - 1e-12)) return null;
+    let pv = 0;
+    fcff.forEach((f, i) => { pv += f / Math.pow(1 + w, i + 1); });
+    return pv + terminal(nopatN, w, g, ronic) / Math.pow(1 + w, fcff.length) - netDebt;
+  }
+
+  /** Full DCF. Returns { missing } when the forecast cannot run. */
+  function valuation(ds, driversIn, inputs) {
+    if (!ds.periods.length) return { missing: ['revenue'] };
+    const missing = CFO.forecastMissing(ds);
+    if (missing.length) return { missing };
+    const drivers = driversIn || CFO.defaultDrivers(ds);
+    const inp = { ...dcfDefaults(ds, drivers), ...(inputs || {}) };
+    const n = Math.round(clamp(inp.years, 3, 10));
+    const { ke, kdAt, wacc: w } = wacc(inp);
+    const path = Array.from({ length: n }, (_, k) => drivers.growth + (inp.g - drivers.growth) * k / (n - 1));
+    const proj = CFO.project(ds, { ...drivers, growthPath: path }, n);
+
+    const p0 = ds.periods[ds.periods.length - 1], d0 = ds.data[p0], e0 = CFO.enrich(d0);
+    const nwc = d => or0(d.receivables) + or0(d.inventory) - or0(d.payables);
+    let prevNwc = nwc(d0);
+    const rows = proj.map((y, i) => {
+      const d = y.data, ebit = d.operating_income, nopat = ebit * (1 - inp.tax), w_ = nwc(d), dNwc = w_ - prevNwc;
+      prevNwc = w_;
+      const fcff = nopat + d.dna - d.capex - dNwc, df = 1 / Math.pow(1 + w, i + 1);
+      return { period: y.period, revenue: d.revenue, growth: path[i], ebit, nopat, dna: d.dna, capex: d.capex, dNwc, fcff, df, pv: fcff * df };
+    });
+    const netDebt = or0(e0.total_debt) - or0(d0.cash);
+    const fcff = rows.map(r => r.fcff);
+    const out = { inputs: inp, drivers, ke, kdAt, wacc: w, rows, netDebt, base: p0, warnings: [] };
+    // EVA by historical year: NOPAT − WACC × invested capital (opening capital when the prior year exists).
+    out.eva = ds.periods.map((p, i) => {
+      const e = CFO.enrich(ds.data[p]), pe = i ? CFO.enrich(ds.data[ds.periods[i - 1]]) : null;
+      const ic = pe?.invested_capital > 0 ? pe.invested_capital : e.invested_capital;
+      if (e.nopat == null || !(ic > 0)) return { period: p, nopat: e.nopat, ic: ic ?? null, roic: null, eva: null };
+      return { period: p, nopat: e.nopat, ic, roic: e.nopat / ic, eva: e.nopat - w * ic };
+    });
+    if (w - inp.g < MIN_SPREAD) { out.error = 'waccLeG'; return out; }
+    const last = rows[n - 1];
+    const roic0 = e0.invested_capital > 0 && e0.nopat != null ? e0.nopat / e0.invested_capital : null;
+    out.ronic = Math.max(w, roic0 ?? 0);
+    out.sumPv = rows.reduce((t, r) => t + r.pv, 0);
+    out.tv = terminal(last.nopat, w, inp.g, out.ronic);
+    out.pvTv = out.tv * last.df;
+    out.ev = out.sumPv + out.pvTv;
+    out.equity = out.ev - netDebt;
+    out.tvShare = out.ev > 0 ? out.pvTv / out.ev : null;
+    out.perShare = inp.shares > 0 ? out.equity / inp.shares : null;
+    out.upside = out.perShare != null && inp.price > 0 ? out.perShare / inp.price - 1 : null;
+    out.evEbitda = e0.ebitda > 0 ? out.ev / e0.ebitda : null;
+    out.pe = d0.net_income > 0 ? out.equity / d0.net_income : null;
+    out.evRevenue = d0.revenue > 0 ? out.ev / d0.revenue : null;
+    if (out.tvShare != null && out.tvShare > 0.75) out.warnings.push('tvHigh');
+    if (out.ev <= 0) out.warnings.push('negative');
+    else if (out.equity <= 0) out.warnings.push('debtExceeds');
+    if (!(d0.operating_income > 0)) out.warnings.push('loss');
+    if (inp.wd > 0.6) out.warnings.push('highDebtWeight');
+
+    // Sensitivity: the same forecast cash flows at other discount rates and terminal growth rates.
+    const steps = [-0.01, -0.005, 0, 0.005, 0.01];
+    const waccs = steps.map(s => w + s), gs = steps.map(s => inp.g + s);
+    out.sens = { waccs, gs, grid: waccs.map(ww => gs.map(gg => equityAt(fcff, last.nopat, out.ronic, netDebt, ww, gg))) };
+
+    return out;
+  }
+
+  /** Equity value under the base, upside and downside scenarios (same offsets as the Forecast tab). */
+  function scenarioValues(ds, drivers, inputs) {
+    const sd = CFO.scenarioDrivers(drivers || CFO.defaultDrivers(ds));
+    return Object.fromEntries(Object.entries(sd).map(([k, d]) => {
+      const v = valuation(ds, d, inputs);
+      return [k, v.equity ?? null];
+    }));
+  }
+
+  /* Value levers: one operational change at a time, re-valued. */
+  const LEVERS = [
+    { id: 'growth', k: 'growth', by: 0.02 }, { id: 'grossMargin', k: 'grossMargin', by: 0.01 }, { id: 'opex', k: 'opexPct', by: -0.01 },
+    { id: 'dso', k: 'dso', by: -10 }, { id: 'dio', k: 'dio', by: -10 }, { id: 'capex', k: 'capexPct', by: -0.01 },
+  ];
+  function valueLevers(ds, V) {
+    if (!V || V.equity == null) return [];
+    return LEVERS.map(l => {
+      const from = V.drivers[l.k], to = CFO.clampDriver(l.k, from + l.by);
+      if (Math.abs(to - from) < 1e-9) return null;
+      const v = valuation(ds, { ...V.drivers, [l.k]: to }, V.inputs);
+      if (v.equity == null) return null;
+      return { id: l.id, key: l.k, from, to, impact: v.equity - V.equity, pct: V.equity > 0 ? (v.equity - V.equity) / V.equity : null };
+    }).filter(x => x && x.impact > 0).sort((a, b) => b.impact - a.impact);
+  }
+
+  /* ---------- prioritised action plan ---------- */
+  // flag id -> [owner area, ratio to track]
+  const FLAG_KPI = {
+    liquidity: ['treasury', 'current_ratio'], interest: ['treasury', 'interest_coverage'], leverage: ['treasury', 'net_debt_to_ebitda'],
+    neg_equity: ['board', 'equity_ratio'], loss: ['management', 'net_margin'], earnings_quality: ['finance', 'cash_conversion'],
+    receivables: ['sales', 'dso'], inventory: ['operations', 'dio'], margins: ['procurement', 'gross_margin'],
+    sector_margins: ['management', 'operating_margin'], revenue: ['sales', 'revenue_growth'], fcf_div: ['board', 'payout_ratio'],
+    payout: ['board', 'payout_ratio'], altman: ['board', 'altman_z'], cash_burn: ['treasury', 'fcf_margin'],
+    debt_growth: ['treasury', 'debt_to_ebitda'], opex: ['operations', 'operating_margin'],
+  };
+  const GROUP_AREA = { liquidity: 'treasury', profitability: 'management', efficiency: 'operations', leverage: 'treasury', cashflow: 'finance', growth: 'sales', quality: 'finance', distress: 'board' };
+  const SEV_ORDER = { high: 0, med: 1, low: 2 };
+
+  function actionPlan(A, F, V, lang) {
+    const L = CFO.UI[lang].val, p = A.latest, items = [], tracked = new Set();
+    const fmt = (id, v) => CFO.fmtVal(CFO.RATIO[id].unit, v, lang);
+    const target = id => { const b = CFO.bench(id), def = CFO.RATIO[id]; return def.dir && b.good != null ? `${def.dir === 'high' ? '≥' : '≤'} ${fmt(id, b.good)}` : '—'; };
+    const kpiFor = id => id && CFO.RATIO[id] ? { kpi: CFO.ratioName(id, lang), current: fmt(id, A.ratios[id][p]?.value), target: target(id) } : { kpi: '—', current: '—', target: '—' };
+    F.forEach(f => {
+      const [area, id] = FLAG_KPI[f.id] || ['finance', null];
+      if (id) tracked.add(id);
+      items.push({ sev: f.sev, area, title: f.title[lang], action: f.rec[lang], ...kpiFor(id) });
+    });
+    // Valuation: returns below the cost of capital destroy value even when profit is positive.
+    const roic = A.ratios.roic?.[p]?.value;
+    if (V && V.wacc != null && roic != null && roic < V.wacc) {
+      tracked.add('roic');
+      items.push({ sev: roic < V.wacc - 0.03 ? 'high' : 'med', area: 'management', title: L.roicTitle, action: L.roicAction,
+        kpi: CFO.ratioName('roic', lang), current: fmt('roic', roic), target: `≥ ${CFO.fmtPct(V.wacc, lang)} (WACC)` });
+    }
+    // Ratios rated weak or on watch that no red flag covers yet.
+    for (const [status, sev, cap] of [['bad', 'med', 4], ['warn', 'low', 4]]) {
+      const seen = new Set();   // one per group: their actions would repeat
+      CFO.RATIOS.filter(def => !tracked.has(def.id) && A.ratios[def.id][p]?.status === status && !seen.has(def.group) && seen.add(def.group)).slice(0, cap).forEach(def => {
+        tracked.add(def.id);
+        items.push({ sev, area: GROUP_AREA[def.group], title: L.improve(CFO.ratioName(def.id, lang)), action: L.groupAction[def.group], ...kpiFor(def.id) });
+      });
+    }
+    return items.sort((a, b) => SEV_ORDER[a.sev] - SEV_ORDER[b.sev])
+      .map((it, i) => ({ ...it, n: i + 1, horizon: L.horizon[it.sev], areaText: L.area[it.area], sevText: CFO.UI[lang].sev[it.sev] }));
+  }
+
+  /* ---------- text ---------- */
+  const UIV = {
+    en: {
+      title: 'Valuation (DCF)', hint: 'Discounted cash flow from the base forecast. Market inputs depend on the country and currency of the statements: the defaults are placeholders, replace them with your own.',
+      inputs: 'Inputs', reset: 'Reset inputs',
+      in: { rf: 'Risk-free rate', erp: 'Equity risk premium', beta: 'Beta', kd: 'Cost of debt (pre-tax)', tax: 'Tax rate', wd: 'Debt weight D/(D+E)', g: 'Terminal growth', years: 'Forecast years', shares: 'Shares outstanding (optional)', price: 'Share price (optional)' },
+      ke: 'Cost of equity (CAPM)', kdAt: 'Cost of debt after tax', wacc: 'WACC',
+      fcffTitle: 'Free cash flow to the firm', growth: 'Revenue growth', ebit: 'EBIT', nopat: 'NOPAT = EBIT × (1 − tax)', dna: '+ Depreciation & amortisation', capex: '− Capital expenditure',
+      dNwc: '− Increase in working capital', fcff: 'FCFF', df: 'Discount factor', pv: 'Present value',
+      ronic: 'Return on new investment (terminal)', bridge: 'From enterprise value to equity value', sumPv: 'PV of forecast cash flows', pvTv: 'PV of terminal value', ev: 'Enterprise value', netDebt: '− Net debt (debt − cash)',
+      equity: 'Equity value', perShare: 'Value per share', upside: 'Upside / downside vs price', tvShare: 'Terminal value share of EV',
+      multiples: 'Implied multiples (latest year)', evEbitda: 'EV / EBITDA', pe: 'Equity value / net income', evRevenue: 'EV / revenue',
+      sens: 'Sensitivity: equity value', sensHint: 'Rows: WACC; columns: terminal growth. Same forecast cash flows.',
+      scen: 'Equity value by scenario', evaTitle: 'Economic value added (EVA)', evaHint: 'EVA = NOPAT − WACC × invested capital (debt + equity, opening balance). Positive means returns above the cost of capital.',
+      ic: 'Invested capital', roic: 'ROIC', eva: 'EVA', spread: 'ROIC − WACC',
+      levers: 'Value levers', leversHint: 'Each change is applied on its own to the base forecast and the company re-valued. Largest effect on equity value first.',
+      lever: { growth: 'Revenue growth +2 pts', grossMargin: 'Gross margin +1 pt', opex: 'Operating expenses −1 pt of revenue', dso: 'Collect 10 days faster (DSO −10)', dio: 'Hold 10 days less stock (DIO −10)', capex: 'Capex −1 pt of revenue' },
+      impact: 'Added equity value', change: 'Change',
+      planTitle: 'Action plan', planHint: 'Every recommendation, ordered by urgency. These are proposals for management: nothing is sent, paid or posted.',
+      when: 'When', owner: 'Owner', priority: 'Priority', recommendation: 'Recommendation', kpi: 'KPI', current: 'Now', target: 'Target',
+      horizon: { high: '0–3 months', med: '3–6 months', low: '6–12 months' },
+      area: { treasury: 'Treasury', sales: 'Sales & credit', procurement: 'Procurement', operations: 'Operations', finance: 'Finance', management: 'Management', board: 'Board' },
+      roicTitle: 'Returns below the cost of capital', roicAction: 'Improve margins or release capital: exit or reprice low-return activities, cut working capital and approve new investment only above WACC.',
+      improve: n => `Improve ${n.charAt(0).toLowerCase() + n.slice(1)}`,
+      groupAction: {
+        liquidity: 'Keep a minimum cash buffer, match debt maturities to cash inflows and run a 13-week cash forecast.',
+        profitability: 'Review pricing, product mix and unit costs; reprice or drop loss-making lines.',
+        efficiency: 'Tighten credit terms and collections, cut slow-moving stock and agree supplier terms that fit the cash cycle.',
+        leverage: 'Set a target debt level, fix or hedge interest costs and plan repayments from free cash flow.',
+        cashflow: 'Rank capital spending by return and keep dividends within free cash flow.',
+        growth: 'Set a growth plan by product and market, funded within the sustainable growth rate.',
+        quality: 'Reconcile profit with cash: review revenue recognition, provisions and working-capital build-ups.',
+        distress: 'Strengthen equity and liquidity and agree a recovery plan with the board and lenders.',
+      },
+      warn: {
+        waccLeG: 'WACC must be at least 0.5 points above terminal growth: raise WACC inputs or lower terminal growth.',
+        tvHigh: 'More than 75% of the value comes from the terminal value: the result is very sensitive to the long-run assumptions.',
+        negative: 'Forecast cash flows are negative, so the DCF gives no positive value. Look at the levers and the forecast drivers.',
+        debtExceeds: 'Net debt exceeds the enterprise value: on these assumptions the shares have no value.',
+        loss: 'The latest year has no operating profit: the value depends entirely on the forecast recovering.',
+        highDebtWeight: 'The debt weight is above 60%: the cost of equity (beta) is likely understated at this leverage.',
+      },
+      missing: list => `The valuation needs ${list} in the latest year. Add the statement or map the line in Data review.`,
+      assumptions: 'End-of-year discounting; growth fades in a straight line to the terminal rate; terminal value = NOPAT × (1 − g ÷ RONIC) ÷ (WACC − g); working capital, capex and D&A follow the forecast drivers; net debt from the latest balance sheet (leases only if shown as debt).',
+    },
+    ar: {
+      title: 'التقييم (التدفقات النقدية المخصومة)', hint: 'تقييم بالتدفقات النقدية المخصومة من التوقع الأساسي. مدخلات السوق تعتمد على دولة وعملة القوائم: القيم الافتراضية مؤقتة، استبدلها بقيمك.',
+      inputs: 'المدخلات', reset: 'إعادة المدخلات',
+      in: { rf: 'العائد الخالي من المخاطر', erp: 'علاوة مخاطر السوق', beta: 'معامل بيتا', kd: 'تكلفة الدين (قبل الضريبة)', tax: 'معدل الضريبة', wd: 'وزن الدين D/(D+E)', g: 'النمو طويل الأجل', years: 'سنوات التوقع', shares: 'عدد الأسهم (اختياري)', price: 'سعر السهم (اختياري)' },
+      ke: 'تكلفة حقوق الملكية (CAPM)', kdAt: 'تكلفة الدين بعد الضريبة', wacc: 'المتوسط المرجح لتكلفة رأس المال WACC',
+      fcffTitle: 'التدفق النقدي الحر للشركة', growth: 'نمو الإيرادات', ebit: 'الربح التشغيلي EBIT', nopat: 'NOPAT = EBIT × (1 − الضريبة)', dna: '+ الإهلاك والاستهلاك', capex: '− الإنفاق الرأسمالي',
+      dNwc: '− الزيادة في رأس المال العامل', fcff: 'FCFF', df: 'معامل الخصم', pv: 'القيمة الحالية',
+      ronic: 'العائد على الاستثمار الجديد (المدى الطويل)', bridge: 'من قيمة المنشأة إلى قيمة حقوق الملكية', sumPv: 'القيمة الحالية لتدفقات التوقع', pvTv: 'القيمة الحالية للقيمة النهائية', ev: 'قيمة المنشأة', netDebt: '− صافي الدين (الديون − النقدية)',
+      equity: 'قيمة حقوق الملكية', perShare: 'القيمة للسهم', upside: 'الفرق عن سعر السهم', tvShare: 'نسبة القيمة النهائية من قيمة المنشأة',
+      multiples: 'المضاعفات الضمنية (آخر سنة)', evEbitda: 'قيمة المنشأة / EBITDA', pe: 'قيمة حقوق الملكية / صافي الربح', evRevenue: 'قيمة المنشأة / الإيرادات',
+      sens: 'الحساسية: قيمة حقوق الملكية', sensHint: 'الصفوف: WACC؛ الأعمدة: النمو طويل الأجل. نفس التدفقات المتوقعة.',
+      scen: 'قيمة حقوق الملكية حسب السيناريو', evaTitle: 'القيمة الاقتصادية المضافة (EVA)', evaHint: 'EVA = NOPAT − WACC × رأس المال المستثمر (ديون + حقوق ملكية، رصيد أول المدة). الموجب يعني عائداً أعلى من تكلفة رأس المال.',
+      ic: 'رأس المال المستثمر', roic: 'العائد على رأس المال المستثمر', eva: 'EVA', spread: 'ROIC − WACC',
+      levers: 'روافع القيمة', leversHint: 'يُطبَّق كل تغيير وحده على التوقع الأساسي ويُعاد التقييم. الأكبر أثراً على قيمة حقوق الملكية أولاً.',
+      lever: { growth: 'نمو الإيرادات +2 نقطة', grossMargin: 'هامش مجمل الربح +1 نقطة', opex: 'المصروفات التشغيلية −1 نقطة من الإيرادات', dso: 'تحصيل أسرع بـ10 أيام', dio: 'مخزون أقل بـ10 أيام', capex: 'الإنفاق الرأسمالي −1 نقطة من الإيرادات' },
+      impact: 'قيمة مضافة لحقوق الملكية', change: 'التغيير',
+      planTitle: 'خطة العمل', planHint: 'كل التوصيات مرتبة حسب الأولوية. هذه مقترحات للإدارة: لا يُرسل أو يُدفع أو يُرحَّل أي شيء.',
+      when: 'التوقيت', owner: 'المسؤول', priority: 'الأولوية', recommendation: 'التوصية', kpi: 'المؤشر', current: 'الآن', target: 'المستهدف',
+      horizon: { high: '0–3 أشهر', med: '3–6 أشهر', low: '6–12 شهراً' },
+      area: { treasury: 'الخزينة', sales: 'المبيعات والائتمان', procurement: 'المشتريات', operations: 'العمليات', finance: 'المالية', management: 'الإدارة العليا', board: 'مجلس الإدارة' },
+      roicTitle: 'عائد أقل من تكلفة رأس المال', roicAction: 'حسّن الهوامش أو حرّر رأس المال: اخرج من الأنشطة منخفضة العائد أو أعد تسعيرها، خفّض رأس المال العامل، ولا توافق على استثمار جديد بعائد أقل من WACC.',
+      improve: n => `تحسين ${n}`,
+      groupAction: {
+        liquidity: 'احتفظ بحد أدنى من النقدية، وطابق آجال الديون مع التدفقات الداخلة، وأعدّ توقعاً نقدياً لمدة 13 أسبوعاً.',
+        profitability: 'راجع التسعير ومزيج المنتجات وتكلفة الوحدة؛ أعد تسعير الخطوط الخاسرة أو أوقفها.',
+        efficiency: 'شدّد شروط الائتمان والتحصيل، وخفّض المخزون بطيء الحركة، واتفق مع الموردين على آجال تناسب الدورة النقدية.',
+        leverage: 'حدد مستوى مستهدفاً للديون، وثبّت أو تحوّط تكلفة الفائدة، وخطط للسداد من التدفق النقدي الحر.',
+        cashflow: 'رتّب الإنفاق الرأسمالي حسب العائد، وأبقِ التوزيعات في حدود التدفق النقدي الحر.',
+        growth: 'ضع خطة نمو حسب المنتج والسوق، ممولة في حدود معدل النمو المستدام.',
+        quality: 'طابق الربح مع النقد: راجع الاعتراف بالإيراد والمخصصات وتراكم رأس المال العامل.',
+        distress: 'دعّم حقوق الملكية والسيولة واتفق على خطة تعافٍ مع مجلس الإدارة والبنوك.',
+      },
+      warn: {
+        waccLeG: 'يجب أن يزيد WACC عن النمو طويل الأجل بنصف نقطة على الأقل: ارفع مدخلات WACC أو خفّض النمو.',
+        tvHigh: 'أكثر من 75% من القيمة يأتي من القيمة النهائية: النتيجة حساسة جداً لافتراضات المدى الطويل.',
+        negative: 'التدفقات المتوقعة سالبة، فلا يعطي التقييم قيمة موجبة. راجع روافع القيمة ومحركات التوقع.',
+        debtExceeds: 'صافي الدين يتجاوز قيمة المنشأة: وفق هذه الافتراضات لا قيمة للأسهم.',
+        loss: 'لا يوجد ربح تشغيلي في آخر سنة: القيمة تعتمد كلياً على تعافي التوقع.',
+        highDebtWeight: 'وزن الدين أعلى من 60%: غالباً ما تكون تكلفة حقوق الملكية (بيتا) أقل من الواقع عند هذا الرفع.',
+      },
+      missing: list => `يحتاج التقييم إلى ${list} في آخر سنة. أضف القائمة أو اربط البند في مراجعة البيانات.`,
+      assumptions: 'الخصم في نهاية السنة؛ النمو يتناقص خطياً حتى معدل المدى الطويل؛ القيمة النهائية = NOPAT × (1 − g ÷ RONIC) ÷ (WACC − g)؛ رأس المال العامل والإنفاق الرأسمالي والإهلاك تتبع محركات التوقع؛ صافي الدين من آخر ميزانية (الإيجارات فقط إن ظهرت كديون).',
+    },
+  };
+
+  /** Valuation and plan as display-ready tables, shared by the Valuation tab, the Full analysis and the exports. */
+  function valuationModel(R) {
+    const { A, F, lang } = R, L = UIV[lang], ds = A.ds;
+    const V = R.V !== undefined ? R.V : valuation(ds, R.drivers, R.dcf);
+    const money = v => CFO.fmtNum(v, 0, lang), pct = v => CFO.fmtPct(v, lang), x = v => CFO.fmtVal('x', v, lang);
+    const plan = actionPlan(A, F, V && !V.missing ? V : null, lang);
+    const planTable = { head: ['#', L.priority, L.when, L.owner, L.recommendation, L.kpi, L.current, L.target],
+      rows: plan.map(it => [String(it.n), it.sevText, it.horizon, it.areaText, `${it.title}: ${it.action}`, it.kpi, it.current, it.target]), items: plan };
+    if (!V || V.missing) return { missing: L.missing((V?.missing || []).map(k => CFO.itemName(k, lang)).join(lang === 'ar' ? '، ' : ', ')), plan: planTable, levers: null };
+    const out = { V, warnings: [...(V.error ? [V.error] : []), ...V.warnings].map(w => L.warn[w]), plan: planTable, assumptions: L.assumptions };
+    out.wacc = { head: [L.inputs, ''], rows: [[L.in.rf, pct(V.inputs.rf)], [L.in.erp, pct(V.inputs.erp)], [L.in.beta, x(V.inputs.beta)], [L.ke, pct(V.ke)],
+      [L.in.kd, pct(V.inputs.kd)], [L.in.tax, pct(V.inputs.tax)], [L.kdAt, pct(V.kdAt)], [L.in.wd, pct(V.inputs.wd)], [L.wacc, pct(V.wacc)], [L.in.g, pct(V.inputs.g)],
+      ...(V.ronic != null ? [[L.ronic, pct(V.ronic)]] : [])] };
+    out.fcff = { head: ['', ...V.rows.map(r => r.period)], sub: [false, false, false, false, false, false, false, true, false, false],
+      rows: [[CFO.itemName('revenue', lang), ...V.rows.map(r => money(r.revenue))], [L.growth, ...V.rows.map(r => pct(r.growth))], [L.ebit, ...V.rows.map(r => money(r.ebit))],
+        [L.nopat, ...V.rows.map(r => money(r.nopat))], [L.dna, ...V.rows.map(r => money(r.dna))], [L.capex, ...V.rows.map(r => money(r.capex))],
+        [L.dNwc, ...V.rows.map(r => money(r.dNwc))], [L.fcff, ...V.rows.map(r => money(r.fcff))], [L.df, ...V.rows.map(r => r.df.toFixed(3))], [L.pv, ...V.rows.map(r => money(r.pv))]] };
+    out.eva = { head: [CFO.UI[lang].period, L.nopat, L.ic, L.roic, L.wacc, L.spread, L.eva],
+      rows: V.eva.map(e => [e.period, money(e.nopat), money(e.ic), pct(e.roic), pct(V.wacc), e.roic == null ? '—' : pct(e.roic - V.wacc), money(e.eva)]) };
+    if (V.error) return out;
+    out.bridge = { head: [L.bridge, ''], sub: [false, false, true, false, true, false, false],
+      rows: [[L.sumPv, money(V.sumPv)], [L.pvTv, money(V.pvTv)], [L.ev, money(V.ev)], [L.netDebt, money(V.netDebt)], [L.equity, money(V.equity)],
+        ...(V.perShare != null ? [[L.perShare, CFO.fmtVal('num', V.perShare, lang)]] : []), ...(V.upside != null ? [[L.upside, `${V.upside >= 0 ? '+' : ''}${pct(V.upside)}`]] : []),
+        [L.tvShare, pct(V.tvShare)]] };
+    out.multiples = { head: [L.multiples, ''], rows: [[L.evEbitda, x(V.evEbitda)], [L.pe, x(V.pe)], [L.evRevenue, x(V.evRevenue)]] };
+    out.sens = { head: [`WACC \\ g`, ...V.sens.gs.map(pct)], center: 2,
+      rows: V.sens.waccs.map((w, i) => [pct(w), ...V.sens.grid[i].map(v => v == null ? '—' : money(v))]) };
+    const sv = R.scenarioValues !== undefined ? R.scenarioValues : scenarioValues(ds, V.drivers, V.inputs);
+    const Fc = CFO.UI[lang].fc;
+    out.scen = { head: ['', ...['base', 'upside', 'downside'].map(n => Fc.sc[n])], rows: [[L.equity, ...['base', 'upside', 'downside'].map(n => money(sv[n]))]] };
+    const lev = R.levers !== undefined ? R.levers : valueLevers(ds, V);
+    const fmtD = (k, v) => CFO.FORECAST_DRIVERS[k][3] === '%' ? pct(v) : CFO.fmtVal('days', v, lang);
+    out.levers = { head: ['#', L.levers, L.change, L.impact, '%'], text: 2,
+      rows: lev.map((l, i) => [String(i + 1), L.lever[l.id], `${fmtD(l.key, l.from)} → ${fmtD(l.key, l.to)}`, `+${money(l.impact)}`, l.pct == null ? '—' : `+${pct(l.pct)}`]) };
+    out.headline = { ev: money(V.ev), equity: money(V.equity), wacc: pct(V.wacc), perShare: V.perShare != null ? CFO.fmtVal('num', V.perShare, lang) : null };
+    out.chart = { title: L.fcffTitle, kind: 'bar', labels: V.rows.map(r => r.period), fmt: money,
+      series: [{ name: L.fcff, values: V.rows.map(r => r.fcff), color: 'var(--s1)' }, { name: L.pv, values: V.rows.map(r => r.pv), color: 'var(--s2)' }] };
+    return out;
+  }
+
+  for (const lang of ['en', 'ar']) if (CFO.UI?.[lang]) CFO.UI[lang].val = UIV[lang];
+  CFO.DCF_INPUTS = INPUTS;
+  CFO.dcfDefaults = dcfDefaults;
+  CFO.clampDcf = clampInput;
+  CFO.valuation = valuation;
+  CFO.scenarioValues = scenarioValues;
+  CFO.valueLevers = valueLevers;
+  CFO.actionPlan = actionPlan;
+  CFO.valuationModel = valuationModel;
+  CFO.equityAt = equityAt;
 })(globalThis.CFO = globalThis.CFO || {});
 
 </script>
@@ -22768,9 +23246,15 @@ var __async = (__this, __arguments, generator) => {
   /** Key figures with their history and the change on the prior year (shared by Overview and the Full analysis). */
   function kpiList(A, lang) {
     const L = CFO.UI[lang], P = A.ds.periods, ds = A.ds, prevP = P[P.length - 2];
-    return [['revenue', 'money', q => ds.data[q].revenue, true], ['net_income', 'money', q => ds.data[q].net_income, true],
-      ['fcf', 'money', q => A.ratios.fcf[q].value, true], ['current_ratio', 'x', q => A.ratios.current_ratio[q].value, true],
-      ['debt_to_equity', 'x', q => A.ratios.debt_to_equity[q].value, false], ['roe', '%', q => A.ratios.roe[q].value, true]]
+    const e = q => CFO.enrich(ds.data[q]), rv = id => q => A.ratios[id][q].value;
+    return [['revenue', 'money', q => ds.data[q].revenue, true], ['gross_profit', 'money', q => ds.data[q].gross_profit, true],
+      ['ebitda', 'money', q => e(q).ebitda, true], ['net_income', 'money', q => ds.data[q].net_income, true],
+      ['cfo', 'money', q => ds.data[q].cfo, true], ['fcf', 'money', rv('fcf'), true], ['cash', 'money', q => ds.data[q].cash, true],
+      ['total_debt', 'money', q => e(q).total_debt, false], ['working_capital', 'money', rv('working_capital'), true],
+      ['revenue_growth', '%', rv('revenue_growth'), true], ['current_ratio', 'x', rv('current_ratio'), true],
+      ['debt_to_equity', 'x', rv('debt_to_equity'), false], ['roe', '%', rv('roe'), true], ['roic', '%', rv('roic'), true]]
+      // Figures the statements cannot give are left out rather than shown as a row of dashes.
+      .filter(([, , get]) => P.some(q => get(q) != null && isFinite(get(q))))
       .map(([k, unit, get, highGood]) => {
         const series = P.map(q => get(q) ?? null), cur = series[series.length - 1], prev = series[series.length - 2];
         let change = '', dir = 'flat', up = true;
@@ -22862,6 +23346,10 @@ var __async = (__this, __arguments, generator) => {
       health: A.health || {}, kpis, groups,
       dupont: { head: [L.period, CFO.ratioName('net_margin', lang), CFO.ratioName('asset_turnover', lang), CFO.ratioName('equity_multiplier', lang), 'ROE'],
         rows: A.dupont.map(r => [r.period, CFO.fmtPct(r.net_margin, lang), CFO.fmtVal('x', r.asset_turnover, lang), CFO.fmtVal('x', r.equity_multiplier, lang), CFO.fmtPct(r.roe, lang)]) },
+      dupont5: { head: [L.period, L.taxBurden, L.interestBurden, L.ebitMargin, CFO.ratioName('asset_turnover', lang), CFO.ratioName('equity_multiplier', lang), 'ROE'],
+        rows: A.dupont.map(r => [r.period, CFO.fmtVal('x', r.tax_burden, lang), CFO.fmtVal('x', r.interest_burden, lang), CFO.fmtPct(r.ebit_margin, lang),
+          CFO.fmtVal('x', r.asset_turnover, lang), CFO.fmtVal('x', r.equity_multiplier, lang), CFO.fmtPct(r.roe, lang)]) },
+      val: CFO.valuationModel ? CFO.valuationModel(R) : null,
       altman: { value: CFO.fmtVal('score', z, lang), meaning: z != null ? CFO.meaning('altman_z', z, lang) : L.notAvail, zones: L.zZones,
         status: z == null ? 'na' : A.ratios.altman_z[p].status },
       vertical: byStatement(A.vertical, r => P.map(q => r.pct[q] == null ? '—' : `${CFO.fmtPct(r.pct[q], lang)}`), st => [L.item, ...P.map(q => `${q} · ${st === 'BS' ? L.ofAssets : L.ofRevenue}`)]),
@@ -22889,6 +23377,7 @@ var __async = (__this, __arguments, generator) => {
     ].filter(c => c.series.some(sr => sr.values.some(v => v != null)));
 
     Object.assign(m, forecastTables(R));
+    if (m.val?.chart) m.charts.push(m.val.chart);
     if (S) {
       const names = ['base', 'upside', 'downside'];
       m.charts.push({ title: L.fc.cash, kind: 'line', labels: [p, ...S.base.years.map(y => y.period)], fmt: money,
@@ -22904,12 +23393,29 @@ var __async = (__this, __arguments, generator) => {
     const m = model(R), L = L_(R.lang), id = k => `${pre}-${R.lang}-${k}`;
     const li = arr => arr.map(t => `<li>${esc(t)}</li>`).join('');
     const tbl = (head, rows, opts = {}) => `<div class="table-wrap"><table${opts.cls ? ` class="${opts.cls}"` : ''}><thead><tr>${head.map((h, i) => `<th${i ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
-    const plainRows = rows => rows.map(r => `<tr>${r.map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`);
+    const plainRows = (rows, sub) => rows.map((r, k) => `<tr${sub?.[k] ? ' class="subtotal"' : ''}>${r.map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`);
+    const T = t => !t ? '' : `<div class="table-wrap"><table><thead><tr>${t.head.map((h, i) => `<th${i >= (t.text || 1) ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${t.rows.map((r, k) =>
+      `<tr${t.sub?.[k] ? ' class="subtotal"' : ''}>${r.map((c, i) => `<td${i >= (t.text || 1) ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    const v = m.val, VL = CFO.UI[R.lang].val;
+    const planHTML = !v ? '' : `<section class="fa-sec" id="${id('plan')}"><h2>${esc(L.secPlan)}</h2><p class="muted small">${esc(VL.planHint)}</p>
+        ${v.plan.rows.length ? `<div class="table-wrap"><table class="plan"><thead><tr>${v.plan.head.map((h, i) => `<th${i >= 6 ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${v.plan.items.map(it =>
+          `<tr><td>${it.n}</td><td><span class="pill ${it.sev}">${esc(it.sevText)}</span></td><td>${esc(it.horizon)}</td><td>${esc(it.areaText)}</td><td><b>${esc(it.title)}</b><div class="meaning">${esc(it.action)}</div></td><td>${esc(it.kpi)}</td><td class="n">${esc(it.current)}</td><td class="n">${esc(it.target)}</td></tr>`).join('')}</tbody></table></div>` : `<p>${esc(L.noFlags)}</p>`}
+        ${v.levers?.rows.length ? `<h3>${esc(VL.levers)}</h3><p class="muted small">${esc(VL.leversHint)}</p>${T(v.levers)}` : ''}</section>`;
+    const valHTML = !v ? '' : `<section class="fa-sec" id="${id('valuation')}"><h2>${esc(L.secValuation)}</h2><p class="muted small">${esc(VL.hint)}</p>
+        ${v.missing ? `<p>${esc(v.missing)}</p>` : `
+        ${v.headline ? `<div class="kpis"><div class="kpi"><span class="kpi-label">${esc(VL.ev)}</span><span class="kpi-value">${esc(v.headline.ev)}</span></div><div class="kpi"><span class="kpi-label">${esc(VL.equity)}</span><span class="kpi-value">${esc(v.headline.equity)}</span></div><div class="kpi"><span class="kpi-label">WACC</span><span class="kpi-value">${esc(v.headline.wacc)}</span></div>${v.headline.perShare ? `<div class="kpi"><span class="kpi-label">${esc(VL.perShare)}</span><span class="kpi-value">${esc(v.headline.perShare)}</span></div>` : ''}</div>` : ''}
+        ${v.warnings.map(w => `<div class="note" role="status">${esc(w)}</div>`).join('')}
+        <div class="grid-2"><div>${T(v.wacc)}</div><div>${v.bridge ? T(v.bridge) + T(v.multiples) : ''}</div></div>
+        <h3>${esc(VL.fcffTitle)}</h3>${T(v.fcff)}
+        ${v.sens ? `<h3>${esc(VL.sens)}</h3><p class="muted small">${esc(VL.sensHint)}</p>${T(v.sens)}` : ''}
+        ${v.scen ? `<h3>${esc(VL.scen)}</h3>${T(v.scen)}` : ''}
+        <h3>${esc(VL.evaTitle)}</h3><p class="muted small">${esc(VL.evaHint)}</p>${T(v.eva)}
+        <p class="muted small">${esc(v.assumptions)}</p>`}</section>`;
     const stmtRows = t => t.rows.map(r => `<tr class="${r.sub ? 'subtotal' : ''}">${r.cells.map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}${!i && !r.mapped ? ' <span class="muted small">*</span>' : ''}</td>`).join('')}</tr>`);
     const sections = [
       ['summary', L.secSummary], ...(m.ai ? [['ai', L.aiSection]] : []), ['ratios', L.secRatios], ['dupont', L.secDupont],
       ['vertical', L.tabs.vertical], ['horizontal', L.tabs.horizontal], ['flags', L.flagsRecs],
-      ...(m.forecast ? [['forecast', L.fcSection]] : []), ['checks', L.needsReview],
+      ...(m.val ? [['plan', L.secPlan]] : []), ...(m.forecast ? [['forecast', L.fcSection]] : []), ...(m.val ? [['valuation', L.secValuation]] : []), ['checks', L.needsReview],
     ];
     const h = m.health;
     const hColor = h.score == null ? 'var(--muted)' : h.score >= 65 ? 'var(--good)' : h.score >= 45 ? 'var(--warn)' : 'var(--bad)';
@@ -22926,14 +23432,17 @@ var __async = (__this, __arguments, generator) => {
       ${m.ai ? `<section class="fa-sec" id="${id('ai')}"><h2>${esc(L.aiSection)}</h2><div class="ai-text">${CFO.md ? CFO.md(m.ai) : esc(m.ai)}</div><p class="muted small">${esc(L.ai.note)}</p></section>` : ''}
       <section class="fa-sec" id="${id('ratios')}"><h2>${esc(L.secRatios)}</h2><p class="muted small">${esc(L.sectorNote)}</p>${ratioTables}</section>
       <section class="fa-sec" id="${id('dupont')}"><h2>${esc(L.secDupont)}</h2><p class="muted small">${esc(L.dupontHint)}</p>${tbl(m.dupont.head, plainRows(m.dupont.rows))}
+        <h3>${esc(L.dupont5)}</h3>${T(m.dupont5)}
         <p><b>${esc(CFO.ratioName('altman_z', R.lang))}: ${esc(m.altman.value)}</b> <span class="pill ${m.altman.status}">${esc(L.status[m.altman.status] || '')}</span><br>${esc(m.altman.meaning)}<br><span class="muted small">${esc(m.altman.zones)}</span></p></section>
       <section class="fa-sec" id="${id('vertical')}"><h2>${esc(L.tabs.vertical)}</h2><p class="muted small">${esc(L.verticalHint)}</p>${m.vertical.map(t => `<h3>${esc(t.title)}</h3>` + tbl(t.head, stmtRows(t))).join('')}</section>
       <section class="fa-sec" id="${id('horizontal')}"><h2>${esc(L.tabs.horizontal)}</h2>${m.horizontal.map(t => `<h3>${esc(t.title)}</h3>` + tbl(t.head, stmtRows(t))).join('')}</section>
       <section class="fa-sec" id="${id('flags')}"><h2>${esc(L.flagsRecs)}</h2>
         ${m.flags.length ? `<div class="list">${m.flags.map(f => `<article class="flag ${f.sev}"><div class="flag-head"><span class="pill ${f.sev}">${esc(f.sevText)}</span><h3>${esc(f.title)}</h3></div><dl><dt>${esc(L.evidence)}</dt><dd class="ev">${esc(f.ev)}</dd><dt>${esc(L.action)}</dt><dd>${esc(f.rec)}</dd></dl></article>`).join('')}</div>` : `<p>${esc(L.noFlags)}</p>`}
         ${m.strengths.length ? `<h3>${esc(L.strengths)}</h3><ul>${li(m.strengths)}</ul>` : ''}</section>
+      ${planHTML}
       ${m.forecast ? `<section class="fa-sec" id="${id('forecast')}"><h2>${esc(L.fcSection)}</h2>${tbl(m.forecast.head, plainRows(m.forecast.rows))}
         <h3>${esc(L.fc.detail)}</h3>${tbl(m.forecastDetail.head, plainRows(m.forecastDetail.rows))}<p class="muted small">${esc(m.forecast.note)}</p></section>` : ''}
+      ${valHTML}
       <section class="fa-sec" id="${id('checks')}"><h2>${esc(L.needsReview)}</h2>
         ${m.checks.length ? `<h3>${esc(L.issues)}</h3><ul>${li(m.checks)}</ul>` : ''}
         <ul>${li(m.review)}</ul><h3>${esc(L.assumptions)}</h3><ul>${li(m.assumptions)}</ul><h3>${esc(L.nextSteps)}</h3><ol>${li(m.next)}</ol></section>`;
@@ -22946,13 +23455,32 @@ var __async = (__this, __arguments, generator) => {
     if (m.ai) lines.push(`## ${L.aiSection}`, m.ai, '', `_${L.ai.note}_`, '');
     lines.push(`## ${L.secRatios}`);
     m.groups.forEach(g => lines.push('', `### ${g.title}`, ...mdTable(g.head, g.rows.map(r => [r.name, ...r.values, r.typical, r.statusText]))));
-    lines.push('', `## ${L.secDupont}`, ...mdTable(m.dupont.head, m.dupont.rows), '', `${CFO.ratioName('altman_z', R.lang)}: ${m.altman.value} — ${m.altman.meaning}`);
+    lines.push('', `## ${L.secDupont}`, ...mdTable(m.dupont.head, m.dupont.rows), '', `### ${L.dupont5}`, ...mdTable(m.dupont5.head, m.dupont5.rows), '', `${CFO.ratioName('altman_z', R.lang)}: ${m.altman.value} — ${m.altman.meaning}`);
     lines.push('', `## ${L.tabs.vertical}`); m.vertical.forEach(t => lines.push('', `### ${t.title}`, ...mdTable(t.head, t.rows.map(r => r.cells))));
     lines.push('', `## ${L.tabs.horizontal}`); m.horizontal.forEach(t => lines.push('', `### ${t.title}`, ...mdTable(t.head, t.rows.map(r => r.cells))));
     lines.push('', `## ${L.flagsRecs}`);
     m.flags.length ? m.flags.forEach((f, i) => lines.push(`${i + 1}. **[${f.sevText}] ${f.title}** — ${f.ev}  \n   ${f.rec}`)) : lines.push(L.noFlags);
     if (m.strengths.length) lines.push('', `### ${L.strengths}`, ...m.strengths.map(t => `- ${t}`));
+    const v = m.val, VL = CFO.UI[R.lang].val;
+    if (v) {
+      lines.push('', `## ${L.secPlan}`, `_${VL.planHint}_`);
+      v.plan.items.forEach(it => lines.push(`${it.n}. **[${it.sevText} · ${it.horizon} · ${it.areaText}] ${it.title}** — ${it.action}  \n   ${it.kpi}: ${it.current} → ${it.target}`));
+      if (v.levers?.rows.length) lines.push('', `### ${VL.levers}`, ...mdTable(v.levers.head, v.levers.rows));
+    }
     if (m.forecast) lines.push('', `## ${L.fcSection}`, ...mdTable(m.forecast.head, m.forecast.rows), '', `### ${L.fc.detail}`, ...mdTable(m.forecastDetail.head, m.forecastDetail.rows));
+    if (v) {
+      lines.push('', `## ${L.secValuation}`, `_${VL.hint}_`);
+      if (v.missing) lines.push(v.missing);
+      else {
+        v.warnings.forEach(w => lines.push(`> ${w}`));
+        lines.push('', ...mdTable(v.wacc.head, v.wacc.rows));
+        if (v.bridge) lines.push('', ...mdTable(v.bridge.head, v.bridge.rows), '', ...mdTable(v.multiples.head, v.multiples.rows));
+        lines.push('', `### ${VL.fcffTitle}`, ...mdTable(v.fcff.head, v.fcff.rows));
+        if (v.sens) lines.push('', `### ${VL.sens}`, ...mdTable(v.sens.head, v.sens.rows));
+        if (v.scen) lines.push('', `### ${VL.scen}`, ...mdTable(v.scen.head, v.scen.rows));
+        lines.push('', `### ${VL.evaTitle}`, ...mdTable(v.eva.head, v.eva.rows), '', `_${v.assumptions}_`);
+      }
+    }
     lines.push('', `## ${L.needsReview}`, ...m.checks.map(t => `- ${t}`), ...m.review.map(t => `- ${t}`), '', `## ${L.assumptions}`, ...m.assumptions.map(t => `- ${t}`),
       '', `## ${L.nextSteps}`, ...m.next.map((t, i) => `${i + 1}. ${t}`));
     return lines.join('\n');
@@ -23021,8 +23549,8 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       margins: { top: 40, bottom: 40, left: 80, right: 80 },
       children: [new D.Paragraph({ bidirectional: rtl, alignment: o.num ? (rtl ? D.AlignmentType.LEFT : D.AlignmentType.RIGHT) : align, children: [run(text, { bold: o.head, size: 18 })] })] });
     const tbl = t => new D.Table({ width: { size: 100, type: D.WidthType.PERCENTAGE }, visuallyRightToLeft: rtl,
-      rows: [new D.TableRow({ tableHeader: true, children: t.head.map((c, i) => cell(c, { head: true, num: i > 0 })) }),
-        ...t.rows.map(r => new D.TableRow({ children: r.map((c, i) => cell(c, { num: i > 0 && i < t.head.length - (t.textCols || 0) })) }))] });
+      rows: [new D.TableRow({ tableHeader: true, children: t.head.map((c, i) => cell(c, { head: true, num: i >= (t.text || 1) })) }),
+        ...t.rows.map(r => new D.TableRow({ children: r.map((c, i) => cell(c, { num: i >= (t.text || 1) && i < t.head.length - (t.textCols || 0) })) }))] });
     const list = (items, numbered) => items.map((t, i) => para(numbered ? `${i + 1}. ${t}` : t, { bullet: !numbered }));
     const aiParas = text => String(text).split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => {
       const hd = l.match(/^#{1,4}\s+(.*)$/); if (hd) return h(hd[1].replace(/\*\*/g, ''), D.HeadingLevel.HEADING_3);
@@ -23031,6 +23559,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     });
 
     const H1 = t => h(t, D.HeadingLevel.HEADING_1), H2 = t => h(t, D.HeadingLevel.HEADING_2);
+    const v = m.val, VL = CFO.UI[R.lang].val;
     const muted = t => para(t, { size: 18, color: '586664' });
     const children = [
       h(m.title, D.HeadingLevel.TITLE), muted(m.meta),
@@ -23039,7 +23568,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       ...(m.ai ? [H1(L.aiSection), ...aiParas(m.ai), muted(L.ai.note)] : []),
       H1(L.secRatios), muted(L.sectorNote),
       ...m.groups.flatMap(g => [H2(g.title), tbl({ head: [...g.head, L.meaning], textCols: 2, rows: g.rows.map(r => [r.name, ...r.values, r.typical, r.statusText, r.meaning]) })]),
-      H1(L.secDupont), muted(L.dupontHint), tbl(m.dupont),
+      H1(L.secDupont), muted(L.dupontHint), tbl(m.dupont), H2(L.dupont5), tbl(m.dupont5),
       para([run(`${CFO.ratioName('altman_z', R.lang)}: ${m.altman.value}  `, { bold: true }), run(m.altman.meaning)]), muted(m.altman.zones),
       H1(L.tabs.vertical), muted(L.verticalHint), ...m.vertical.flatMap(t => [H2(t.title), tbl({ head: t.head, rows: t.rows.map(r => r.cells) })]),
       H1(L.tabs.horizontal), ...m.horizontal.flatMap(t => [H2(t.title), tbl({ head: t.head, rows: t.rows.map(r => r.cells) })]),
@@ -23047,7 +23576,13 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       ...(m.flags.length ? m.flags.flatMap(f => [para([run(`[${f.sevText}] `, { bold: true, color: f.sev === 'high' ? 'B42318' : f.sev === 'med' ? '9A6500' : '586664' }), run(f.title, { bold: true })]),
         para(`${L.evidence}: ${f.ev}`, { size: 19 }), para(`${L.action}: ${f.rec}`, { size: 19 })]) : [para(L.noFlags)]),
       ...(m.strengths.length ? [H2(L.strengths), ...list(m.strengths)] : []),
+      ...(v ? [H1(L.secPlan), muted(VL.planHint), ...(v.plan.rows.length ? [tbl({ head: v.plan.head, rows: v.plan.rows, textCols: 7 })] : []),
+        ...(v.levers?.rows.length ? [H2(VL.levers), muted(VL.leversHint), tbl(v.levers)] : [])] : []),
       ...(m.forecast ? [H1(L.fcSection), tbl(m.forecast), H2(L.fc.detail), tbl(m.forecastDetail), muted(m.forecast.note)] : []),
+      ...(v ? [H1(L.secValuation), muted(VL.hint), ...(v.missing ? [para(v.missing)] : [
+        ...v.warnings.map(w => para(w, { color: '9A6500' })), tbl(v.wacc), ...(v.bridge ? [tbl(v.bridge), tbl(v.multiples)] : []),
+        H2(VL.fcffTitle), tbl(v.fcff), ...(v.sens ? [H2(VL.sens), muted(VL.sensHint), tbl(v.sens)] : []), ...(v.scen ? [H2(VL.scen), tbl(v.scen)] : []),
+        H2(VL.evaTitle), muted(VL.evaHint), tbl(v.eva), muted(v.assumptions)])] : []),
       H1(L.needsReview), ...(m.checks.length ? [H2(L.issues), ...list(m.checks)] : []), ...list(m.review),
       H1(L.assumptions), ...list(m.assumptions),
       H1(L.nextSteps), ...list(m.next, true),
@@ -23130,6 +23665,19 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       }
       add('Forecast', rows);
     }
+    const v = m.val, VL = CFO.UI[lang].val;
+    if (v?.plan.rows.length) add('Action plan', [v.plan.head, ...v.plan.rows]);
+    if (v && !v.missing) {
+      const V = v.V, rows = [[VL.title], [VL.hint], ...v.warnings.map(w => [w]), [], ...v.wacc.rows.map(([k]) => [k]).map((r, i) => [r[0], [V.inputs.rf, V.inputs.erp, V.inputs.beta, V.ke, V.inputs.kd, V.inputs.tax, V.kdAt, V.inputs.wd, V.wacc, V.inputs.g, V.ronic][i]]), [],
+        ['', ...V.rows.map(r => r.period)], ...['revenue', 'growth', 'ebit', 'nopat', 'dna', 'capex', 'dNwc', 'fcff', 'df', 'pv'].map(k => [k === 'revenue' ? CFO.itemName('revenue', lang) : VL[k], ...V.rows.map(r => r[k])])];
+      if (!V.error) {
+        rows.push([], [VL.sumPv, V.sumPv], [VL.pvTv, V.pvTv], [VL.ev, V.ev], [VL.netDebt, V.netDebt], [VL.equity, V.equity], [VL.perShare, V.perShare ?? ''], [VL.upside, V.upside ?? ''], [VL.tvShare, V.tvShare ?? ''],
+          [VL.evEbitda, V.evEbitda ?? ''], [VL.pe, V.pe ?? ''], [], [VL.sens], ['WACC \\ g', ...V.sens.gs], ...V.sens.waccs.map((w, i) => [w, ...V.sens.grid[i].map(x => x ?? '')]));
+        if (v.levers?.rows.length) rows.push([], [VL.levers], ...v.levers.rows);
+      }
+      rows.push([], [VL.evaTitle], v.eva.head, ...V.eva.map(e => [e.period, e.nopat ?? '', e.ic ?? '', e.roic ?? '', V.wacc, e.roic == null ? '' : e.roic - V.wacc, e.eva ?? '']));
+      add('Valuation', rows);
+    }
     if (R.ai) add('Claude', [[L.aiSection], [L.ai.note], ...String(R.ai).split(/\r?\n/).map(l => [l])]);
     add('Mapping', [[L.source, L.rawLabel, L.mappedTo, ...P], ...ds.lines.map(l => [l.source, l.label, l.key ? CFO.itemName(l.key, lang) : '', ...P.map(p => l.values[p] ?? '')])]);
     const bytes = X.write(wb, { type: 'array', bookType: 'xlsx' });
@@ -23159,12 +23707,13 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
  */
 (function (CFO) {
   const KEY = ['current_ratio', 'quick_ratio', 'gross_margin', 'operating_margin', 'net_margin', 'roe', 'roce', 'asset_turnover', 'dso', 'dio', 'ccc',
-    'debt_to_equity', 'interest_coverage', 'net_debt_to_ebitda', 'fcf', 'cash_conversion', 'payout_ratio', 'altman_z'];
+    'debt_to_equity', 'interest_coverage', 'net_debt_to_ebitda', 'fcf', 'cash_conversion', 'payout_ratio', 'altman_z',
+    'roic', 'revenue_growth', 'net_income_growth', 'debt_to_ebitda', 'cfo_margin', 'defensive_interval', 'sustainable_growth', 'accruals_ratio', 'piotroski_f'];
   const ITEMS = ['revenue', 'gross_profit', 'operating_income', 'net_income', 'cash', 'receivables', 'inventory', 'total_assets', 'total_liabilities', 'equity', 'cfo', 'capex', 'dividends'];
   const r3 = v => (v == null || !isFinite(v) ? null : Math.round(v * 1000) / 1000);
 
   /** Compact, language-neutral facts for the prompt. */
-  function context(A, F, S) {
+  function context(A, F, S, V) {
     const ds = A.ds, P = ds.periods;
     const facts = {
       sector: CFO.sectorName(CFO.getSector(), 'en'),
@@ -23183,6 +23732,13 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
         funding_required: Math.round(y.fundingNeed), current_ratio: r3(sc.A.ratios.current_ratio[y.period].value),
         debt_to_equity: r3(sc.A.ratios.debt_to_equity[y.period].value) }))]));
       facts.forecast_drivers_base = Object.fromEntries(Object.entries(S.base.drivers).map(([k, v]) => [k, r3(v)]));
+    }
+    if (V && !V.missing) {
+      const n = v => (v == null || !isFinite(v) ? null : Math.round(v));
+      facts.dcf_valuation = { note: 'market inputs (risk-free rate, equity risk premium, beta) are placeholders unless the user changed them',
+        inputs: Object.fromEntries(Object.entries(V.inputs).map(([k, v]) => [k, r3(v)])), wacc: r3(V.wacc), error: V.error || null, warnings: V.warnings,
+        enterprise_value: n(V.ev), net_debt: n(V.netDebt), equity_value: n(V.equity), terminal_value_share: r3(V.tvShare),
+        eva_by_year: V.eva.map(e => ({ period: e.period, roic: r3(e.roic), eva: n(e.eva) })) };
     }
     return facts;
   }
@@ -23219,10 +23775,10 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
   }
 
   /** Ask Claude; streams through onText({ text }). Rejects with { code, message, text? }. */
-  async function ask(A, F, S, lang, question, { onText, signal } = {}) {
+  async function ask(A, F, S, lang, question, { onText, signal, V } = {}) {
     const sample = await getSample();
     if (!sample) throw { code: 'unavailable', message: 'sample unavailable' };
-    const { text, truncated } = await sample(prompt(context(A, F, S), lang, question), { onText, signal, modelTier: 'default' });
+    const { text, truncated } = await sample(prompt(context(A, F, S, V), lang, question), { onText, signal, modelTier: 'default' });
     return { text, truncated };
   }
 
@@ -23261,7 +23817,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     get(k) { try { return localStorage.getItem('cfo-lens:' + k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem('cfo-lens:' + k, v); } catch (e) { /* storage unavailable */ } },
   };
-  const TABS = ['full', 'overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'review'];
+  const TABS = ['full', 'overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'valuation', 'review'];
   const SUBTOTALS = CFO.SUBTOTALS;   // defined in js/report.js
 
   const state = {
@@ -23272,23 +23828,25 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     hMode: 'pct', A: null, F: [],
     sector: CFO.SECTORS[store.get('sector')] ? store.get('sector') : 'general',
     drivers: null, fcYears: 3, S: null,            // forecast: drivers (null = from history), scenarios
+    dcf: {}, V: null,                               // valuation: inputs the user changed, result
     ai: { text: '', busy: false, err: '', ctl: null }, aiOn: false,
     diagNumbers: false, diagOpen: false,
     periodRename: {},   // { tableSource: { detected period: year typed by the user } }
   };
   CFO.setSector(state.sector);
   // Anything that changes the data starts the forecast and the commentary afresh.
-  const dataChanged = () => { state.drivers = null; state.ai.ctl?.abort(); state.ai = { text: '', busy: false, err: '', ctl: null }; };
+  // Company-specific valuation inputs go back to their defaults; market inputs (rf, ERP, beta, g) are kept.
+  const dataChanged = () => { state.drivers = null; for (const k of ['kd', 'tax', 'wd', 'shares', 'price']) delete state.dcf[k]; state.ai.ctl?.abort(); state.ai = { text: '', busy: false, err: '', ctl: null }; };
   // Everything the report and the exports need, in one object.
   // Claude's commentary is shown and exported only in the language it was written in (aiAll keeps it for the bilingual HTML).
-  const ctx = () => ({ A: state.A, F: state.F, S: state.S, lang: state.lang,
+  const ctx = () => ({ A: state.A, F: state.F, S: state.S, V: state.V, drivers: state.drivers, dcf: state.dcf, lang: state.lang,
     ai: !state.ai.lang || state.ai.lang === state.lang ? state.ai.text : '', aiAll: state.ai.text, aiLang: state.ai.lang });
 
   // pdf.js runs on the main thread when its worker script is loaded as a plain script (globalThis.pdfjsWorker),
   // which avoids web-worker restrictions in sandboxed frames. Otherwise fall back to the CDN worker.
   if (globalThis.pdfjsLib && !globalThis.pdfjsWorker) globalThis.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-  CFO.BUILD = '2026-10-03.6';
+  CFO.BUILD = '2026-10-12.1';
 
   /* ---------- intake ---------- */
   // What happened to each attempt, for the diagnostics box (Data review) the user can copy to support.
@@ -23547,7 +24105,11 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
 
   function renderFlags() {
     const L = T(), lang = state.lang, S = CFO.strengths(state.A, lang);
-    $('p-flags').innerHTML = `<div class="section-head"><h2>${L.flagsTitle}</h2><span class="muted small">${state.F.length}</span></div>
+    const VL = L.val, plan = CFO.actionPlan(state.A, state.F, state.V && !state.V.missing ? state.V : null, lang);
+    const planCard = plan.length ? `<div class="card"><h3>${esc(VL.planTitle)}</h3><p class="muted small">${esc(VL.planHint)}</p>
+      <div class="table-wrap"><table class="plan"><thead><tr><th>#</th><th>${esc(VL.priority)}</th><th>${esc(VL.when)}</th><th>${esc(VL.owner)}</th><th>${esc(VL.recommendation)}</th><th>${esc(VL.kpi)}</th><th class="n">${esc(VL.current)}</th><th class="n">${esc(VL.target)}</th></tr></thead>
+      <tbody>${plan.map(it => `<tr><td>${it.n}</td><td>${pill(it.sev, it.sevText)}</td><td>${esc(it.horizon)}</td><td>${esc(it.areaText)}</td><td><b>${esc(it.title)}</b><div class="meaning">${esc(it.action)}</div></td><td>${esc(it.kpi)}</td><td class="n">${esc(it.current)}</td><td class="n">${esc(it.target)}</td></tr>`).join('')}</tbody></table></div></div>` : '';
+    $('p-flags').innerHTML = planCard + `<div class="section-head"><h2>${L.flagsTitle}</h2><span class="muted small">${state.F.length}</span></div>
       <div class="list">${state.F.length ? state.F.map(flagCard).join('') : `<p>${L.noFlags}</p>`}</div>
       <div class="card"><h3>${L.strengths}</h3><div class="list" style="margin-top:8px">${S.length ? S.map(s => `<div class="strength"><span>${esc(s.text)}</span></div>`).join('') : '<span class="muted">—</span>'}</div></div>`;
   }
@@ -23628,7 +24190,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     refreshAi();
     try {
       const { text } = await CFO.askClaude(state.A, state.F, state.S, state.lang, question, {
-        signal: ctl.signal, onText: ({ text }) => { if (state.ai.ctl === ctl) { state.ai.text = text; refreshAiText(); } },
+        signal: ctl.signal, V: state.V, onText: ({ text }) => { if (state.ai.ctl === ctl) { state.ai.text = text; refreshAiText(); } },
       });
       if (state.ai.ctl === ctl) state.ai.text = text;
     } catch (e) {
@@ -23677,6 +24239,39 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     requestAnimationFrame(() => CFO.drawForecastCharts(state.S, ds, lang));
   }
 
+  /* ---------- valuation ---------- */
+  function renderValuation() {
+    const L = T(), VL = L.val, lang = state.lang;
+    const m = CFO.valuationModel(ctx());
+    if (m.missing) { $('p-valuation').innerHTML = `<div class="card"><h2>${esc(VL.title)}</h2><p>${esc(m.missing)}</p></div>`; return; }
+    const V = m.V, inp = V.inputs;
+    const shown = (k, v) => v == null ? '' : CFO.DCF_INPUTS[k][3] === '%' ? +(v * 100).toFixed(2) : +(+v).toFixed(4);
+    const inputs = Object.entries(CFO.DCF_INPUTS).map(([k, [lo, hi, step, unit]]) => {
+      const pct = unit === '%', edited = state.dcf[k] != null;
+      return `<label class="driver${edited ? ' edited' : ''}"><span>${esc(VL.in[k])}</span><span class="driver-in"><input type="number" data-dcf="${k}" id="dcf-${k}" value="${shown(k, inp[k])}"
+        min="${pct ? lo * 100 : lo}"${hi != null ? ` max="${pct ? hi * 100 : hi}"` : ''} step="${pct ? +(step * 100).toFixed(2) : step}"><em>${pct ? '%' : ''}</em></span></label>`;
+    }).join('');
+    const tbl = (t, cls = '') => !t ? '' : `<div class="table-wrap"><table${cls ? ` class="${cls}"` : ''}><thead><tr>${t.head.map((h, i) => `<th${i >= (t.text || 1) ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead>
+      <tbody>${t.rows.map((r, k) => `<tr class="${t.sub?.[k] ? 'subtotal' : ''}">${r.map((c, i) => `<td class="${i >= (t.text || 1) ? 'n' : ''}${t.center != null && k === t.center && i === t.center + 1 ? ' base-cell' : ''}">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    const h = m.headline;
+    $('p-valuation').innerHTML = `<div class="card"><div class="section-head"><h2>${esc(VL.title)}</h2><button class="btn" type="button" data-dcf-reset>${esc(VL.reset)}</button></div>
+        <p class="muted small">${esc(VL.hint)}</p>
+        <h3 style="margin-top:12px">${esc(VL.inputs)}</h3><div class="drivers">${inputs}</div></div>
+      ${m.warnings.map(w => `<div class="note" role="status">${esc(w)}</div>`).join('')}
+      ${h ? `<div class="kpis"><div class="kpi"><span class="kpi-label">${esc(VL.ev)}</span><span class="kpi-value">${esc(h.ev)}</span></div>
+        <div class="kpi"><span class="kpi-label">${esc(VL.equity)}</span><span class="kpi-value">${esc(h.equity)}</span></div>
+        <div class="kpi"><span class="kpi-label">WACC</span><span class="kpi-value">${esc(h.wacc)}</span></div>
+        ${h.perShare ? `<div class="kpi"><span class="kpi-label">${esc(VL.perShare)}</span><span class="kpi-value">${esc(h.perShare)}</span></div>` : ''}</div>` : ''}
+      <div class="grid-2"><div class="card"><h3>${esc(VL.wacc)}</h3>${tbl(m.wacc)}</div>
+        <div class="card">${m.bridge ? `${tbl(m.bridge)}${tbl(m.multiples)}` : ''}</div></div>
+      <div class="card"><h3>${esc(VL.fcffTitle)}</h3>${tbl(m.fcff)}${m.chart ? CFO.svgChart(m.chart) : ''}</div>
+      ${m.sens ? `<div class="grid-2"><div class="card"><h3>${esc(VL.sens)}</h3><p class="muted small">${esc(VL.sensHint)}</p>${tbl(m.sens, 'sens')}</div>
+        <div class="card"><h3>${esc(VL.scen)}</h3>${tbl(m.scen)}</div></div>` : ''}
+      ${m.levers?.rows.length ? `<div class="card"><h3>${esc(VL.levers)}</h3><p class="muted small">${esc(VL.leversHint)}</p>${tbl(m.levers)}</div>` : ''}
+      <div class="card"><h3>${esc(VL.evaTitle)}</h3><p class="muted small">${esc(VL.evaHint)}</p>${tbl(m.eva)}</div>
+      <p class="muted small">${esc(m.assumptions)}</p>`;
+  }
+
   /* ---------- shell ---------- */
   function renderChrome() {
     const L = T();
@@ -23703,7 +24298,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       state.notes.map(n => `<div class="note" role="status">${esc(n())}</div>`).join('');
   }
 
-  const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, review: renderReview };
+  const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, valuation: renderValuation, review: renderReview };
 
   /** The tables with any years the user typed in Data review applied. */
   function tablesWithYears() {
@@ -23724,6 +24319,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       state.drivers = state.drivers || CFO.defaultDrivers(ds);
       state.S = CFO.runScenarios(ds, state.drivers, state.fcYears);
     }
+    state.V = ds.periods.length ? CFO.valuation(ds, state.drivers, state.dcf) : null;
     renderChrome();
     if (!ds.periods.length) { $('p-' + state.tab).innerHTML = ''; return; }
     PANELS[state.tab]();
@@ -23760,6 +24356,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       return;
     }
     if (e.target.closest('[data-fc="reset"]')) { state.drivers = null; return render(); }
+    if (e.target.closest('[data-dcf-reset]')) { state.dcf = {}; return render(); }
     if (e.target.closest('[data-years="reset"]')) { state.periodRename = {}; dataChanged(); return render(); }
     if (e.target.closest('[data-paste="go"]')) { addPastedTable($('paste-in').value); $('paste-in').value = ''; return; }
     if (e.target.closest('[data-diag="copy"]')) {
@@ -23792,6 +24389,12 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     if (e.target.matches('[data-driver]')) {
       const k = e.target.dataset.driver, unit = CFO.FORECAST_DRIVERS[k][3], v = parseFloat(e.target.value);
       if (isFinite(v)) { state.drivers = { ...state.drivers, [k]: CFO.clampDriver(k, unit === '%' ? v / 100 : v) }; render(); }
+    }
+    if (e.target.matches('[data-dcf]')) {
+      const k = e.target.dataset.dcf, raw = e.target.value.trim(), v = parseFloat(raw);
+      if (raw === '') { const d = { ...state.dcf }; delete d[k]; state.dcf = d; return render(); }
+      if (isFinite(v)) { state.dcf = { ...state.dcf, [k]: CFO.clampDcf(k, CFO.DCF_INPUTS[k][3] === '%' ? v / 100 : v) }; render(); }
+      return;
     }
     if (e.target.id === 'fc-years') { state.fcYears = +e.target.value; render(); }
     if (e.target.matches('.year-in')) {

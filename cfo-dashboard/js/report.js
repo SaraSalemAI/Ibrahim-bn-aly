@@ -11,9 +11,15 @@
   /** Key figures with their history and the change on the prior year (shared by Overview and the Full analysis). */
   function kpiList(A, lang) {
     const L = CFO.UI[lang], P = A.ds.periods, ds = A.ds, prevP = P[P.length - 2];
-    return [['revenue', 'money', q => ds.data[q].revenue, true], ['net_income', 'money', q => ds.data[q].net_income, true],
-      ['fcf', 'money', q => A.ratios.fcf[q].value, true], ['current_ratio', 'x', q => A.ratios.current_ratio[q].value, true],
-      ['debt_to_equity', 'x', q => A.ratios.debt_to_equity[q].value, false], ['roe', '%', q => A.ratios.roe[q].value, true]]
+    const e = q => CFO.enrich(ds.data[q]), rv = id => q => A.ratios[id][q].value;
+    return [['revenue', 'money', q => ds.data[q].revenue, true], ['gross_profit', 'money', q => ds.data[q].gross_profit, true],
+      ['ebitda', 'money', q => e(q).ebitda, true], ['net_income', 'money', q => ds.data[q].net_income, true],
+      ['cfo', 'money', q => ds.data[q].cfo, true], ['fcf', 'money', rv('fcf'), true], ['cash', 'money', q => ds.data[q].cash, true],
+      ['total_debt', 'money', q => e(q).total_debt, false], ['working_capital', 'money', rv('working_capital'), true],
+      ['revenue_growth', '%', rv('revenue_growth'), true], ['current_ratio', 'x', rv('current_ratio'), true],
+      ['debt_to_equity', 'x', rv('debt_to_equity'), false], ['roe', '%', rv('roe'), true], ['roic', '%', rv('roic'), true]]
+      // Figures the statements cannot give are left out rather than shown as a row of dashes.
+      .filter(([, , get]) => P.some(q => get(q) != null && isFinite(get(q))))
       .map(([k, unit, get, highGood]) => {
         const series = P.map(q => get(q) ?? null), cur = series[series.length - 1], prev = series[series.length - 2];
         let change = '', dir = 'flat', up = true;
@@ -105,6 +111,10 @@
       health: A.health || {}, kpis, groups,
       dupont: { head: [L.period, CFO.ratioName('net_margin', lang), CFO.ratioName('asset_turnover', lang), CFO.ratioName('equity_multiplier', lang), 'ROE'],
         rows: A.dupont.map(r => [r.period, CFO.fmtPct(r.net_margin, lang), CFO.fmtVal('x', r.asset_turnover, lang), CFO.fmtVal('x', r.equity_multiplier, lang), CFO.fmtPct(r.roe, lang)]) },
+      dupont5: { head: [L.period, L.taxBurden, L.interestBurden, L.ebitMargin, CFO.ratioName('asset_turnover', lang), CFO.ratioName('equity_multiplier', lang), 'ROE'],
+        rows: A.dupont.map(r => [r.period, CFO.fmtVal('x', r.tax_burden, lang), CFO.fmtVal('x', r.interest_burden, lang), CFO.fmtPct(r.ebit_margin, lang),
+          CFO.fmtVal('x', r.asset_turnover, lang), CFO.fmtVal('x', r.equity_multiplier, lang), CFO.fmtPct(r.roe, lang)]) },
+      val: CFO.valuationModel ? CFO.valuationModel(R) : null,
       altman: { value: CFO.fmtVal('score', z, lang), meaning: z != null ? CFO.meaning('altman_z', z, lang) : L.notAvail, zones: L.zZones,
         status: z == null ? 'na' : A.ratios.altman_z[p].status },
       vertical: byStatement(A.vertical, r => P.map(q => r.pct[q] == null ? '—' : `${CFO.fmtPct(r.pct[q], lang)}`), st => [L.item, ...P.map(q => `${q} · ${st === 'BS' ? L.ofAssets : L.ofRevenue}`)]),
@@ -132,6 +142,7 @@
     ].filter(c => c.series.some(sr => sr.values.some(v => v != null)));
 
     Object.assign(m, forecastTables(R));
+    if (m.val?.chart) m.charts.push(m.val.chart);
     if (S) {
       const names = ['base', 'upside', 'downside'];
       m.charts.push({ title: L.fc.cash, kind: 'line', labels: [p, ...S.base.years.map(y => y.period)], fmt: money,
@@ -147,12 +158,29 @@
     const m = model(R), L = L_(R.lang), id = k => `${pre}-${R.lang}-${k}`;
     const li = arr => arr.map(t => `<li>${esc(t)}</li>`).join('');
     const tbl = (head, rows, opts = {}) => `<div class="table-wrap"><table${opts.cls ? ` class="${opts.cls}"` : ''}><thead><tr>${head.map((h, i) => `<th${i ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
-    const plainRows = rows => rows.map(r => `<tr>${r.map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`);
+    const plainRows = (rows, sub) => rows.map((r, k) => `<tr${sub?.[k] ? ' class="subtotal"' : ''}>${r.map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`);
+    const T = t => !t ? '' : `<div class="table-wrap"><table><thead><tr>${t.head.map((h, i) => `<th${i >= (t.text || 1) ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${t.rows.map((r, k) =>
+      `<tr${t.sub?.[k] ? ' class="subtotal"' : ''}>${r.map((c, i) => `<td${i >= (t.text || 1) ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    const v = m.val, VL = CFO.UI[R.lang].val;
+    const planHTML = !v ? '' : `<section class="fa-sec" id="${id('plan')}"><h2>${esc(L.secPlan)}</h2><p class="muted small">${esc(VL.planHint)}</p>
+        ${v.plan.rows.length ? `<div class="table-wrap"><table class="plan"><thead><tr>${v.plan.head.map((h, i) => `<th${i >= 6 ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${v.plan.items.map(it =>
+          `<tr><td>${it.n}</td><td><span class="pill ${it.sev}">${esc(it.sevText)}</span></td><td>${esc(it.horizon)}</td><td>${esc(it.areaText)}</td><td><b>${esc(it.title)}</b><div class="meaning">${esc(it.action)}</div></td><td>${esc(it.kpi)}</td><td class="n">${esc(it.current)}</td><td class="n">${esc(it.target)}</td></tr>`).join('')}</tbody></table></div>` : `<p>${esc(L.noFlags)}</p>`}
+        ${v.levers?.rows.length ? `<h3>${esc(VL.levers)}</h3><p class="muted small">${esc(VL.leversHint)}</p>${T(v.levers)}` : ''}</section>`;
+    const valHTML = !v ? '' : `<section class="fa-sec" id="${id('valuation')}"><h2>${esc(L.secValuation)}</h2><p class="muted small">${esc(VL.hint)}</p>
+        ${v.missing ? `<p>${esc(v.missing)}</p>` : `
+        ${v.headline ? `<div class="kpis"><div class="kpi"><span class="kpi-label">${esc(VL.ev)}</span><span class="kpi-value">${esc(v.headline.ev)}</span></div><div class="kpi"><span class="kpi-label">${esc(VL.equity)}</span><span class="kpi-value">${esc(v.headline.equity)}</span></div><div class="kpi"><span class="kpi-label">WACC</span><span class="kpi-value">${esc(v.headline.wacc)}</span></div>${v.headline.perShare ? `<div class="kpi"><span class="kpi-label">${esc(VL.perShare)}</span><span class="kpi-value">${esc(v.headline.perShare)}</span></div>` : ''}</div>` : ''}
+        ${v.warnings.map(w => `<div class="note" role="status">${esc(w)}</div>`).join('')}
+        <div class="grid-2"><div>${T(v.wacc)}</div><div>${v.bridge ? T(v.bridge) + T(v.multiples) : ''}</div></div>
+        <h3>${esc(VL.fcffTitle)}</h3>${T(v.fcff)}
+        ${v.sens ? `<h3>${esc(VL.sens)}</h3><p class="muted small">${esc(VL.sensHint)}</p>${T(v.sens)}` : ''}
+        ${v.scen ? `<h3>${esc(VL.scen)}</h3>${T(v.scen)}` : ''}
+        <h3>${esc(VL.evaTitle)}</h3><p class="muted small">${esc(VL.evaHint)}</p>${T(v.eva)}
+        <p class="muted small">${esc(v.assumptions)}</p>`}</section>`;
     const stmtRows = t => t.rows.map(r => `<tr class="${r.sub ? 'subtotal' : ''}">${r.cells.map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}${!i && !r.mapped ? ' <span class="muted small">*</span>' : ''}</td>`).join('')}</tr>`);
     const sections = [
       ['summary', L.secSummary], ...(m.ai ? [['ai', L.aiSection]] : []), ['ratios', L.secRatios], ['dupont', L.secDupont],
       ['vertical', L.tabs.vertical], ['horizontal', L.tabs.horizontal], ['flags', L.flagsRecs],
-      ...(m.forecast ? [['forecast', L.fcSection]] : []), ['checks', L.needsReview],
+      ...(m.val ? [['plan', L.secPlan]] : []), ...(m.forecast ? [['forecast', L.fcSection]] : []), ...(m.val ? [['valuation', L.secValuation]] : []), ['checks', L.needsReview],
     ];
     const h = m.health;
     const hColor = h.score == null ? 'var(--muted)' : h.score >= 65 ? 'var(--good)' : h.score >= 45 ? 'var(--warn)' : 'var(--bad)';
@@ -169,14 +197,17 @@
       ${m.ai ? `<section class="fa-sec" id="${id('ai')}"><h2>${esc(L.aiSection)}</h2><div class="ai-text">${CFO.md ? CFO.md(m.ai) : esc(m.ai)}</div><p class="muted small">${esc(L.ai.note)}</p></section>` : ''}
       <section class="fa-sec" id="${id('ratios')}"><h2>${esc(L.secRatios)}</h2><p class="muted small">${esc(L.sectorNote)}</p>${ratioTables}</section>
       <section class="fa-sec" id="${id('dupont')}"><h2>${esc(L.secDupont)}</h2><p class="muted small">${esc(L.dupontHint)}</p>${tbl(m.dupont.head, plainRows(m.dupont.rows))}
+        <h3>${esc(L.dupont5)}</h3>${T(m.dupont5)}
         <p><b>${esc(CFO.ratioName('altman_z', R.lang))}: ${esc(m.altman.value)}</b> <span class="pill ${m.altman.status}">${esc(L.status[m.altman.status] || '')}</span><br>${esc(m.altman.meaning)}<br><span class="muted small">${esc(m.altman.zones)}</span></p></section>
       <section class="fa-sec" id="${id('vertical')}"><h2>${esc(L.tabs.vertical)}</h2><p class="muted small">${esc(L.verticalHint)}</p>${m.vertical.map(t => `<h3>${esc(t.title)}</h3>` + tbl(t.head, stmtRows(t))).join('')}</section>
       <section class="fa-sec" id="${id('horizontal')}"><h2>${esc(L.tabs.horizontal)}</h2>${m.horizontal.map(t => `<h3>${esc(t.title)}</h3>` + tbl(t.head, stmtRows(t))).join('')}</section>
       <section class="fa-sec" id="${id('flags')}"><h2>${esc(L.flagsRecs)}</h2>
         ${m.flags.length ? `<div class="list">${m.flags.map(f => `<article class="flag ${f.sev}"><div class="flag-head"><span class="pill ${f.sev}">${esc(f.sevText)}</span><h3>${esc(f.title)}</h3></div><dl><dt>${esc(L.evidence)}</dt><dd class="ev">${esc(f.ev)}</dd><dt>${esc(L.action)}</dt><dd>${esc(f.rec)}</dd></dl></article>`).join('')}</div>` : `<p>${esc(L.noFlags)}</p>`}
         ${m.strengths.length ? `<h3>${esc(L.strengths)}</h3><ul>${li(m.strengths)}</ul>` : ''}</section>
+      ${planHTML}
       ${m.forecast ? `<section class="fa-sec" id="${id('forecast')}"><h2>${esc(L.fcSection)}</h2>${tbl(m.forecast.head, plainRows(m.forecast.rows))}
         <h3>${esc(L.fc.detail)}</h3>${tbl(m.forecastDetail.head, plainRows(m.forecastDetail.rows))}<p class="muted small">${esc(m.forecast.note)}</p></section>` : ''}
+      ${valHTML}
       <section class="fa-sec" id="${id('checks')}"><h2>${esc(L.needsReview)}</h2>
         ${m.checks.length ? `<h3>${esc(L.issues)}</h3><ul>${li(m.checks)}</ul>` : ''}
         <ul>${li(m.review)}</ul><h3>${esc(L.assumptions)}</h3><ul>${li(m.assumptions)}</ul><h3>${esc(L.nextSteps)}</h3><ol>${li(m.next)}</ol></section>`;
@@ -189,13 +220,32 @@
     if (m.ai) lines.push(`## ${L.aiSection}`, m.ai, '', `_${L.ai.note}_`, '');
     lines.push(`## ${L.secRatios}`);
     m.groups.forEach(g => lines.push('', `### ${g.title}`, ...mdTable(g.head, g.rows.map(r => [r.name, ...r.values, r.typical, r.statusText]))));
-    lines.push('', `## ${L.secDupont}`, ...mdTable(m.dupont.head, m.dupont.rows), '', `${CFO.ratioName('altman_z', R.lang)}: ${m.altman.value} — ${m.altman.meaning}`);
+    lines.push('', `## ${L.secDupont}`, ...mdTable(m.dupont.head, m.dupont.rows), '', `### ${L.dupont5}`, ...mdTable(m.dupont5.head, m.dupont5.rows), '', `${CFO.ratioName('altman_z', R.lang)}: ${m.altman.value} — ${m.altman.meaning}`);
     lines.push('', `## ${L.tabs.vertical}`); m.vertical.forEach(t => lines.push('', `### ${t.title}`, ...mdTable(t.head, t.rows.map(r => r.cells))));
     lines.push('', `## ${L.tabs.horizontal}`); m.horizontal.forEach(t => lines.push('', `### ${t.title}`, ...mdTable(t.head, t.rows.map(r => r.cells))));
     lines.push('', `## ${L.flagsRecs}`);
     m.flags.length ? m.flags.forEach((f, i) => lines.push(`${i + 1}. **[${f.sevText}] ${f.title}** — ${f.ev}  \n   ${f.rec}`)) : lines.push(L.noFlags);
     if (m.strengths.length) lines.push('', `### ${L.strengths}`, ...m.strengths.map(t => `- ${t}`));
+    const v = m.val, VL = CFO.UI[R.lang].val;
+    if (v) {
+      lines.push('', `## ${L.secPlan}`, `_${VL.planHint}_`);
+      v.plan.items.forEach(it => lines.push(`${it.n}. **[${it.sevText} · ${it.horizon} · ${it.areaText}] ${it.title}** — ${it.action}  \n   ${it.kpi}: ${it.current} → ${it.target}`));
+      if (v.levers?.rows.length) lines.push('', `### ${VL.levers}`, ...mdTable(v.levers.head, v.levers.rows));
+    }
     if (m.forecast) lines.push('', `## ${L.fcSection}`, ...mdTable(m.forecast.head, m.forecast.rows), '', `### ${L.fc.detail}`, ...mdTable(m.forecastDetail.head, m.forecastDetail.rows));
+    if (v) {
+      lines.push('', `## ${L.secValuation}`, `_${VL.hint}_`);
+      if (v.missing) lines.push(v.missing);
+      else {
+        v.warnings.forEach(w => lines.push(`> ${w}`));
+        lines.push('', ...mdTable(v.wacc.head, v.wacc.rows));
+        if (v.bridge) lines.push('', ...mdTable(v.bridge.head, v.bridge.rows), '', ...mdTable(v.multiples.head, v.multiples.rows));
+        lines.push('', `### ${VL.fcffTitle}`, ...mdTable(v.fcff.head, v.fcff.rows));
+        if (v.sens) lines.push('', `### ${VL.sens}`, ...mdTable(v.sens.head, v.sens.rows));
+        if (v.scen) lines.push('', `### ${VL.scen}`, ...mdTable(v.scen.head, v.scen.rows));
+        lines.push('', `### ${VL.evaTitle}`, ...mdTable(v.eva.head, v.eva.rows), '', `_${v.assumptions}_`);
+      }
+    }
     lines.push('', `## ${L.needsReview}`, ...m.checks.map(t => `- ${t}`), ...m.review.map(t => `- ${t}`), '', `## ${L.assumptions}`, ...m.assumptions.map(t => `- ${t}`),
       '', `## ${L.nextSteps}`, ...m.next.map((t, i) => `${i + 1}. ${t}`));
     return lines.join('\n');
@@ -264,8 +314,8 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       margins: { top: 40, bottom: 40, left: 80, right: 80 },
       children: [new D.Paragraph({ bidirectional: rtl, alignment: o.num ? (rtl ? D.AlignmentType.LEFT : D.AlignmentType.RIGHT) : align, children: [run(text, { bold: o.head, size: 18 })] })] });
     const tbl = t => new D.Table({ width: { size: 100, type: D.WidthType.PERCENTAGE }, visuallyRightToLeft: rtl,
-      rows: [new D.TableRow({ tableHeader: true, children: t.head.map((c, i) => cell(c, { head: true, num: i > 0 })) }),
-        ...t.rows.map(r => new D.TableRow({ children: r.map((c, i) => cell(c, { num: i > 0 && i < t.head.length - (t.textCols || 0) })) }))] });
+      rows: [new D.TableRow({ tableHeader: true, children: t.head.map((c, i) => cell(c, { head: true, num: i >= (t.text || 1) })) }),
+        ...t.rows.map(r => new D.TableRow({ children: r.map((c, i) => cell(c, { num: i >= (t.text || 1) && i < t.head.length - (t.textCols || 0) })) }))] });
     const list = (items, numbered) => items.map((t, i) => para(numbered ? `${i + 1}. ${t}` : t, { bullet: !numbered }));
     const aiParas = text => String(text).split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(l => {
       const hd = l.match(/^#{1,4}\s+(.*)$/); if (hd) return h(hd[1].replace(/\*\*/g, ''), D.HeadingLevel.HEADING_3);
@@ -274,6 +324,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
     });
 
     const H1 = t => h(t, D.HeadingLevel.HEADING_1), H2 = t => h(t, D.HeadingLevel.HEADING_2);
+    const v = m.val, VL = CFO.UI[R.lang].val;
     const muted = t => para(t, { size: 18, color: '586664' });
     const children = [
       h(m.title, D.HeadingLevel.TITLE), muted(m.meta),
@@ -282,7 +333,7 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       ...(m.ai ? [H1(L.aiSection), ...aiParas(m.ai), muted(L.ai.note)] : []),
       H1(L.secRatios), muted(L.sectorNote),
       ...m.groups.flatMap(g => [H2(g.title), tbl({ head: [...g.head, L.meaning], textCols: 2, rows: g.rows.map(r => [r.name, ...r.values, r.typical, r.statusText, r.meaning]) })]),
-      H1(L.secDupont), muted(L.dupontHint), tbl(m.dupont),
+      H1(L.secDupont), muted(L.dupontHint), tbl(m.dupont), H2(L.dupont5), tbl(m.dupont5),
       para([run(`${CFO.ratioName('altman_z', R.lang)}: ${m.altman.value}  `, { bold: true }), run(m.altman.meaning)]), muted(m.altman.zones),
       H1(L.tabs.vertical), muted(L.verticalHint), ...m.vertical.flatMap(t => [H2(t.title), tbl({ head: t.head, rows: t.rows.map(r => r.cells) })]),
       H1(L.tabs.horizontal), ...m.horizontal.flatMap(t => [H2(t.title), tbl({ head: t.head, rows: t.rows.map(r => r.cells) })]),
@@ -290,7 +341,13 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
       ...(m.flags.length ? m.flags.flatMap(f => [para([run(`[${f.sevText}] `, { bold: true, color: f.sev === 'high' ? 'B42318' : f.sev === 'med' ? '9A6500' : '586664' }), run(f.title, { bold: true })]),
         para(`${L.evidence}: ${f.ev}`, { size: 19 }), para(`${L.action}: ${f.rec}`, { size: 19 })]) : [para(L.noFlags)]),
       ...(m.strengths.length ? [H2(L.strengths), ...list(m.strengths)] : []),
+      ...(v ? [H1(L.secPlan), muted(VL.planHint), ...(v.plan.rows.length ? [tbl({ head: v.plan.head, rows: v.plan.rows, textCols: 7 })] : []),
+        ...(v.levers?.rows.length ? [H2(VL.levers), muted(VL.leversHint), tbl(v.levers)] : [])] : []),
       ...(m.forecast ? [H1(L.fcSection), tbl(m.forecast), H2(L.fc.detail), tbl(m.forecastDetail), muted(m.forecast.note)] : []),
+      ...(v ? [H1(L.secValuation), muted(VL.hint), ...(v.missing ? [para(v.missing)] : [
+        ...v.warnings.map(w => para(w, { color: '9A6500' })), tbl(v.wacc), ...(v.bridge ? [tbl(v.bridge), tbl(v.multiples)] : []),
+        H2(VL.fcffTitle), tbl(v.fcff), ...(v.sens ? [H2(VL.sens), muted(VL.sensHint), tbl(v.sens)] : []), ...(v.scen ? [H2(VL.scen), tbl(v.scen)] : []),
+        H2(VL.evaTitle), muted(VL.evaHint), tbl(v.eva), muted(v.assumptions)])] : []),
       H1(L.needsReview), ...(m.checks.length ? [H2(L.issues), ...list(m.checks)] : []), ...list(m.review),
       H1(L.assumptions), ...list(m.assumptions),
       H1(L.nextSteps), ...list(m.next, true),
@@ -372,6 +429,19 @@ document.addEventListener('click',function(e){var t=e.target.closest('[data-l]')
         rows.push([L.fc.funding, ...sc.years.map(y => y.fundingNeed)]);
       }
       add('Forecast', rows);
+    }
+    const v = m.val, VL = CFO.UI[lang].val;
+    if (v?.plan.rows.length) add('Action plan', [v.plan.head, ...v.plan.rows]);
+    if (v && !v.missing) {
+      const V = v.V, rows = [[VL.title], [VL.hint], ...v.warnings.map(w => [w]), [], ...v.wacc.rows.map(([k]) => [k]).map((r, i) => [r[0], [V.inputs.rf, V.inputs.erp, V.inputs.beta, V.ke, V.inputs.kd, V.inputs.tax, V.kdAt, V.inputs.wd, V.wacc, V.inputs.g, V.ronic][i]]), [],
+        ['', ...V.rows.map(r => r.period)], ...['revenue', 'growth', 'ebit', 'nopat', 'dna', 'capex', 'dNwc', 'fcff', 'df', 'pv'].map(k => [k === 'revenue' ? CFO.itemName('revenue', lang) : VL[k], ...V.rows.map(r => r[k])])];
+      if (!V.error) {
+        rows.push([], [VL.sumPv, V.sumPv], [VL.pvTv, V.pvTv], [VL.ev, V.ev], [VL.netDebt, V.netDebt], [VL.equity, V.equity], [VL.perShare, V.perShare ?? ''], [VL.upside, V.upside ?? ''], [VL.tvShare, V.tvShare ?? ''],
+          [VL.evEbitda, V.evEbitda ?? ''], [VL.pe, V.pe ?? ''], [], [VL.sens], ['WACC \\ g', ...V.sens.gs], ...V.sens.waccs.map((w, i) => [w, ...V.sens.grid[i].map(x => x ?? '')]));
+        if (v.levers?.rows.length) rows.push([], [VL.levers], ...v.levers.rows);
+      }
+      rows.push([], [VL.evaTitle], v.eva.head, ...V.eva.map(e => [e.period, e.nopat ?? '', e.ic ?? '', e.roic ?? '', V.wacc, e.roic == null ? '' : e.roic - V.wacc, e.eva ?? '']));
+      add('Valuation', rows);
     }
     if (R.ai) add('Claude', [[L.aiSection], [L.ai.note], ...String(R.ai).split(/\r?\n/).map(l => [l])]);
     add('Mapping', [[L.source, L.rawLabel, L.mappedTo, ...P], ...ds.lines.map(l => [l.source, l.label, l.key ? CFO.itemName(l.key, lang) : '', ...P.map(p => l.values[p] ?? '')])]);

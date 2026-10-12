@@ -4,12 +4,13 @@
  */
 (function (CFO) {
   const KEY = ['current_ratio', 'quick_ratio', 'gross_margin', 'operating_margin', 'net_margin', 'roe', 'roce', 'asset_turnover', 'dso', 'dio', 'ccc',
-    'debt_to_equity', 'interest_coverage', 'net_debt_to_ebitda', 'fcf', 'cash_conversion', 'payout_ratio', 'altman_z'];
+    'debt_to_equity', 'interest_coverage', 'net_debt_to_ebitda', 'fcf', 'cash_conversion', 'payout_ratio', 'altman_z',
+    'roic', 'revenue_growth', 'net_income_growth', 'debt_to_ebitda', 'cfo_margin', 'defensive_interval', 'sustainable_growth', 'accruals_ratio', 'piotroski_f'];
   const ITEMS = ['revenue', 'gross_profit', 'operating_income', 'net_income', 'cash', 'receivables', 'inventory', 'total_assets', 'total_liabilities', 'equity', 'cfo', 'capex', 'dividends'];
   const r3 = v => (v == null || !isFinite(v) ? null : Math.round(v * 1000) / 1000);
 
   /** Compact, language-neutral facts for the prompt. */
-  function context(A, F, S) {
+  function context(A, F, S, V) {
     const ds = A.ds, P = ds.periods;
     const facts = {
       sector: CFO.sectorName(CFO.getSector(), 'en'),
@@ -28,6 +29,13 @@
         funding_required: Math.round(y.fundingNeed), current_ratio: r3(sc.A.ratios.current_ratio[y.period].value),
         debt_to_equity: r3(sc.A.ratios.debt_to_equity[y.period].value) }))]));
       facts.forecast_drivers_base = Object.fromEntries(Object.entries(S.base.drivers).map(([k, v]) => [k, r3(v)]));
+    }
+    if (V && !V.missing) {
+      const n = v => (v == null || !isFinite(v) ? null : Math.round(v));
+      facts.dcf_valuation = { note: 'market inputs (risk-free rate, equity risk premium, beta) are placeholders unless the user changed them',
+        inputs: Object.fromEntries(Object.entries(V.inputs).map(([k, v]) => [k, r3(v)])), wacc: r3(V.wacc), error: V.error || null, warnings: V.warnings,
+        enterprise_value: n(V.ev), net_debt: n(V.netDebt), equity_value: n(V.equity), terminal_value_share: r3(V.tvShare),
+        eva_by_year: V.eva.map(e => ({ period: e.period, roic: r3(e.roic), eva: n(e.eva) })) };
     }
     return facts;
   }
@@ -64,10 +72,10 @@
   }
 
   /** Ask Claude; streams through onText({ text }). Rejects with { code, message, text? }. */
-  async function ask(A, F, S, lang, question, { onText, signal } = {}) {
+  async function ask(A, F, S, lang, question, { onText, signal, V } = {}) {
     const sample = await getSample();
     if (!sample) throw { code: 'unavailable', message: 'sample unavailable' };
-    const { text, truncated } = await sample(prompt(context(A, F, S), lang, question), { onText, signal, modelTier: 'default' });
+    const { text, truncated } = await sample(prompt(context(A, F, S, V), lang, question), { onText, signal, modelTier: 'default' });
     return { text, truncated };
   }
 

@@ -4,16 +4,19 @@ Drop one or more financial statements (Excel, CSV or PDF), or paste the cells fr
 
 Everything is computed instantly and entirely in your browser:
 
-- **30 ratios** in six groups — liquidity, profitability, efficiency, leverage & solvency, cash flow, distress (Altman Z'') — each with its formula, value for every year, trend arrow, health status and a plain-language sentence explaining what the number means.
-- **DuPont breakdown** of return on equity.
+- **60 ratios** in eight groups — liquidity, profitability (incl. ROIC, NOPAT margin), efficiency (turnovers and days), leverage & solvency (debt/capital, debt/EBITDA, cash flow/debt…), cash flow, growth (revenue, EBITDA, net income, equity, sustainable growth), earnings quality (accruals, retention, Piotroski F-score) and distress (Altman Z'') — each with its formula, value for every year, sector typical value, trend arrow, health status and a plain-language sentence explaining what the number means.
+- **14 key figures (KPIs)**: revenue, gross profit, EBITDA, net income, operating cash flow, free cash flow, cash, total debt, working capital, revenue growth, current ratio, debt/equity, ROE, ROIC — with sparkline and change on the prior year.
+- **DuPont breakdown** of return on equity, 3-step and 5-step (tax burden × interest burden × EBIT margin × asset turnover × equity multiplier).
 - **Vertical (common-size) analysis** — every line as % of revenue (income statement, cash flow) or % of total assets (balance sheet).
 - **Horizontal (trend) analysis** — year-over-year change in amount and %, index vs the first year (=100), and CAGR.
 - **Sector benchmarks**: pick the sector (general, trading & retail, manufacturing, services & technology, construction & real estate, food & beverage, healthcare). Ratings and red flags use that sector's limits, and the Ratios tab shows a typical sector value beside each ratio. The values are indicative rules of thumb, not published statistics; banks and insurers are not covered.
 - **Red flags** (17 rules) with the evidence numbers and a recommended action, plus a list of strengths.
 - **Forecast & scenarios**: 1–3 projected years from editable drivers (growth, margins, opex, depreciation, collection / stock / supplier days, capex, interest, tax, payout, new borrowing), defaulting to the company's own history. Base, upside and downside run side by side through the same ratios and red flags. The projected balance sheet balances with cash as the balancing item; a shortfall is shown as funding required.
+- **Valuation (DCF)**: free cash flow to the firm from the forecast (growth fading to the long-run rate over 3–10 years), WACC from CAPM and the after-tax cost of debt, terminal value by the value-driver formula NOPAT × (1 − g ÷ RONIC) ÷ (WACC − g), enterprise value → equity value (→ per share and upside vs price when you enter shares and price), implied multiples, a 5 × 5 WACC × growth sensitivity grid, equity value under each scenario, and **EVA** (NOPAT − WACC × invested capital) for every year. Market inputs (risk-free rate, equity risk premium, beta) depend on the country and currency, so they are editable placeholders; cost of debt, tax rate and debt weight default to the company's own figures.
+- **Action plan**: every recommendation in one prioritised table — red flags, returns below the cost of capital, and weak or watch ratios — with urgency (0–3, 3–6, 6–12 months), owner (treasury, sales, procurement, operations, finance, management, board), the KPI to track, its current value and the target. **Value levers** rank six operational changes (growth, gross margin, opex, collection days, stock days, capex) by the equity value each adds. These are proposals: nothing is sent, paid or posted.
 - **CFO commentary by Claude** (on the claude.ai link): a board-style commentary in Arabic or English, or an answer to your own question, written from the computed figures only (the files themselves are not sent). It asks for your permission the first time and is marked as machine-generated in the report.
 - **Financial health score** (0–100, grade A–E) and an executive summary.
-- **Reports** (on the claude.ai link the viewer asks before saving a file): **full-analysis HTML** (English + Arabic in one file, inline charts, works offline), **PDF** (drawn from the on-screen report, so Arabic looks exactly as on screen; text is not selectable), **Word** (.docx, editable, right-to-left for Arabic), **Excel** workbook (Summary, Data, Ratios, Vertical, Horizontal, Red flags, Forecast, Claude, Mapping), HTML, and a Markdown summary to paste into email or chat.
+- **Reports** (on the claude.ai link the viewer asks before saving a file): **full-analysis HTML** (English + Arabic in one file, inline charts, works offline), **PDF** (drawn from the on-screen report, so Arabic looks exactly as on screen; text is not selectable), **Word** (.docx, editable, right-to-left for Arabic), **Excel** workbook (Summary, Data, Ratios, Vertical, Horizontal, Red flags, Forecast, Action plan, Valuation, Claude, Mapping), HTML, and a Markdown summary to paste into email or chat.
 - **English / Arabic** (full right-to-left layout), light / dark theme, works on phones.
 
 No data leaves your computer: there is no server and no upload.
@@ -60,7 +63,9 @@ Examples in `sample/`: three English CSVs, a 3-sheet Excel workbook, an Arabic C
 - Turnover, ROA, ROE, DSO, DIO, DPO use the **average** of opening and closing balances when the prior year exists.
 - Expenses are stored as positive costs whatever sign the file uses.
 - Missing subtotals are derived from accounting identities (e.g. gross profit = revenue − cost of sales) and tagged *derived*.
-- Status colours (Healthy / Watch / Weak) use **general rules of thumb**, not industry benchmarks. Edit `good`/`bad` thresholds in `RATIOS` in `js/analysis.js` for your sector. Red-flag rules are in `js/insights.js`.
+- Status colours (Healthy / Watch / Weak) use the selected sector's limits in `js/benchmarks.js` (rules of thumb, not market statistics), falling back to the `good`/`bad` thresholds in `RATIOS` in `js/analysis.js`.
+- Growth ratios compare each year with the one before; ROIC uses average debt + equity; the Piotroski F-score runs the tests the statements allow (share issuance is not read) and scales the result to 9.
+- DCF: end-of-year discounting; the return on new investment in the terminal value is the higher of the latest ROIC and WACC; WACC must exceed terminal growth by at least 0.5 points. Red-flag rules are in `js/insights.js`.
 - Altman Z'' is the non-manufacturing / emerging-market version: 6.56·WC/TA + 3.26·RE/TA + 6.72·EBIT/TA + 1.05·Equity/TL.
 
 ## Project layout
@@ -74,6 +79,7 @@ js/mapper.js          merge files, derive subtotals, data checks
 js/analysis.js        ratios, DuPont, Altman, vertical, horizontal, health score
 js/benchmarks.js      sector limits and typical values
 js/forecast.js        driver-based forecast and scenarios
+js/valuation.js       DCF, WACC, sensitivity, EVA, value levers, action plan
 js/ai.js              Claude commentary (claude.ai viewer only)
 js/i18n.js            UI text, ratio names and meanings (EN/AR), formatting
 js/insights.js        red-flag rules, strengths, executive summary

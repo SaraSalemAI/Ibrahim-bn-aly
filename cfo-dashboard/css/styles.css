@@ -201,6 +201,11 @@ textarea#md-out { width: 100%; min-height: 140px; font: 0.8rem/1.4 var(--font-nu
 .driver-in { display: flex; align-items: center; gap: 6px; }
 .driver input { width: 100%; min-width: 0; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); font-family: var(--font-num); }
 .driver em { font-style: normal; color: var(--muted); min-width: 2.5em; }
+.driver.edited input { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+td.base-cell { font-weight: 700; background: var(--sunk); }
+table.plan td { vertical-align: top; }
+table.plan td:nth-child(5) { min-width: 18rem; }
+table.plan td:nth-child(3), table.plan td:nth-child(4) { white-space: nowrap; }
 .ai-ask { display: flex; gap: 8px; flex-wrap: wrap; }
 .ai-ask input { flex: 1 1 260px; min-width: 0; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); }
 .ai-out { margin-top: 12px; }

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import vm from 'node:vm';
 
 const dir = fileURLToPath(new URL('../js/', import.meta.url));
-for (const f of ['catalog', 'parsers', 'mapper', 'analysis', 'benchmarks', 'i18n', 'insights', 'sample', 'forecast', 'charts', 'report', 'ai']) {
+for (const f of ['catalog', 'parsers', 'mapper', 'analysis', 'benchmarks', 'i18n', 'insights', 'sample', 'forecast', 'valuation', 'charts', 'report', 'ai']) {
   vm.runInThisContext(readFileSync(dir + f + '.js', 'utf8'), { filename: f + '.js' });
 }
 const CFO = globalThis.CFO;
@@ -22,8 +22,8 @@ test('the full analysis model holds every analysis', () => {
     assert.equal(m.horizontal.reduce((n, t) => n + t.rows.length, 0), A.horizontal.length, 'every horizontal line');
     assert.equal(m.dupont.rows.length, ds.periods.length);
     assert.ok(m.altman.value && m.altman.meaning);
-    assert.equal(m.kpis.length, 6);
-    assert.equal(m.charts.length, 5, 'four history charts + forecast cash');
+    assert.equal(m.kpis.length, 14);
+    assert.equal(m.charts.length, 6, 'four history charts + FCFF + forecast cash');
     assert.ok(m.forecast.rows.length >= 10 && m.forecastDetail.rows.length > 10);
     assert.ok(m.flags.length > 0 && m.next.length === 3);
   }
@@ -36,7 +36,7 @@ test('the HTML file carries both languages, its own switch, and nothing from out
   assert.match(html, /data-lang="ar" lang="ar" dir="rtl">/);
   assert.ok(html.includes('Full financial analysis') && html.includes('التحليل المالي الكامل'));
   assert.ok(html.includes('data-l="en"') && html.includes('data-l="ar"') && html.includes('data-theme-toggle'));
-  assert.equal((html.match(/<svg class="svg-chart"/g) || []).length, 10, '5 charts in each language');
+  assert.equal((html.match(/<svg class="svg-chart"/g) || []).length, 12, '6 charts in each language');
   assert.ok(!/<script[^>]+src=|<link[^>]+href=|https?:\/\//.test(html), 'no external scripts, styles or links');
   assert.equal((html.match(/<h2>Summary<\/h2>|<h4>Summary<\/h4>/g) || []).length, 1, 'Claude text only in the language it was written in');
   assert.ok(new Set([...html.matchAll(/ id="([^"]+)"/g)].map(m => m[1])).size === [...html.matchAll(/ id="([^"]+)"/g)].length, 'ids are unique');
