@@ -6,13 +6,14 @@
     get(k) { try { return localStorage.getItem('cfo-lens:' + k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem('cfo-lens:' + k, v); } catch (e) { /* storage unavailable */ } },
   };
-  const TABS = ['overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'review', 'report'];
-  const SUBTOTALS = new Set(['gross_profit', 'operating_income', 'pretax_income', 'net_income', 'current_assets', 'total_assets', 'current_liabilities', 'total_liabilities', 'equity', 'cfo', 'cfi', 'cff']);
+  const TABS = ['full', 'overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'review'];
+  const SUBTOTALS = CFO.SUBTOTALS;   // defined in js/report.js
 
   const state = {
     tables: [], files: [], overrides: {}, errors: [], notes: [], isSample: true,
     lang: store.get('lang') === 'ar' ? 'ar' : 'en',
-    tab: TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview',
+    // Old links to #report land on the Full analysis, which replaced it.
+    tab: location.hash === '#report' ? 'full' : TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'full',
     hMode: 'pct', A: null, F: [],
     sector: CFO.SECTORS[store.get('sector')] ? store.get('sector') : 'general',
     drivers: null, fcYears: 3, S: null,            // forecast: drivers (null = from history), scenarios
@@ -23,7 +24,9 @@
   // Anything that changes the data starts the forecast and the commentary afresh.
   const dataChanged = () => { state.drivers = null; state.ai.ctl?.abort(); state.ai = { text: '', busy: false, err: '', ctl: null }; };
   // Everything the report and the exports need, in one object.
-  const ctx = () => ({ A: state.A, F: state.F, S: state.S, ai: state.ai.text, lang: state.lang });
+  // Claude's commentary is shown and exported only in the language it was written in (aiAll keeps it for the bilingual HTML).
+  const ctx = () => ({ A: state.A, F: state.F, S: state.S, lang: state.lang,
+    ai: !state.ai.lang || state.ai.lang === state.lang ? state.ai.text : '', aiAll: state.ai.text, aiLang: state.ai.lang });
 
   // pdf.js runs on the main thread when its worker script is loaded as a plain script (globalThis.pdfjsWorker),
   // which avoids web-worker restrictions in sandboxed frames. Otherwise fall back to the CDN worker.
@@ -79,7 +82,8 @@
         state.tables = [...kept.tables.filter(t => !names.has(t.file)), ...added.flatMap(a => a.tables)];
         state.files = [...kept.files.filter(n => !names.has(n)), ...added.map(a => a.name)];
         state.overrides = {}; state.isSample = false; dataChanged();
-        if (!added.some(a => a.matched)) { state.tab = 'review'; state.diagOpen = true; }
+        // Everything is analysed at once: open the full analysis, or Data review when nothing was recognised.
+        if (!added.some(a => a.matched)) { state.tab = 'review'; state.diagOpen = true; } else state.tab = 'full';
       } else if (wasSample) {
         state.notes.push(() => L().keptExample);
         state.diagOpen = true;
@@ -185,25 +189,9 @@
         <div class="group-bars">${Object.entries(h.groups || {}).map(([g, v]) => `<span><i style="--w:${v}%;--c:${v >= 65 ? 'var(--good)' : v >= 45 ? 'var(--warn)' : 'var(--bad)'}"></i>${L.groups[g]}</span>`).join('')}</div>
       </div>`;
 
-    const kpis = [
-      ['revenue', 'money', P.map(q => A.ds.data[q].revenue ?? null), true],
-      ['net_income', 'money', P.map(q => A.ds.data[q].net_income ?? null), true],
-      ['fcf', 'money', P.map(q => A.ratios.fcf[q].value), true],
-      ['current_ratio', 'x', P.map(q => A.ratios.current_ratio[q].value), true],
-      ['debt_to_equity', 'x', P.map(q => A.ratios.debt_to_equity[q].value), false],
-      ['roe', '%', P.map(q => A.ratios.roe[q].value), true],
-    ];
-    $('kpis').innerHTML = kpis.map(([k, unit, vals, highGood]) => {
-      const cur = vals[vals.length - 1], prev = vals[vals.length - 2];
-      let delta = '';
-      if (cur != null && prev != null && prev !== 0) {
-        const ch = unit === 'money' ? (cur - prev) / Math.abs(prev) : cur - prev;
-        const good = (ch >= 0) === highGood;
-        const txt = unit === 'money' ? CFO.fmtPct(ch, lang) : unit === '%' ? `${(ch * 100).toFixed(1)} ${L.pts}` : CFO.fmtVal('x', ch, lang);
-        delta = `<span class="kpi-delta ${Math.abs(ch) < 1e-9 ? 'flat' : good ? 'up' : 'down'}">${ch >= 0 ? '▲' : '▼'} ${txt.replace(/^\((.*)\)$/, '$1')} <span class="muted">${L.vs} ${P[P.length - 2]}</span></span>`;
-      }
-      return `<div class="kpi"><span class="kpi-label">${L.kpi[k]}</span><span class="kpi-value">${CFO.fmtVal(unit, cur, lang)}</span>${delta || '<span class="kpi-delta muted">&nbsp;</span>'}${CFO.sparkline(vals)}</div>`;
-    }).join('');
+    $('kpis').innerHTML = CFO.kpiList(A, lang).map(k => `<div class="kpi"><span class="kpi-label">${esc(k.label)}</span><span class="kpi-value">${esc(k.value)}</span>`
+      + (k.change ? `<span class="kpi-delta ${k.dir}">${k.arrow} ${esc(k.change)} <span class="muted">${esc(k.vs)}</span></span>` : '<span class="kpi-delta muted">&nbsp;</span>')
+      + `${CFO.sparkline(k.series)}</div>`).join('');
 
     const top = F.slice(0, 3);
     $('top-flags').innerHTML = `<div class="section-head"><h3>${L.flagsTitle}</h3><button class="btn" type="button" data-go="flags">${F.length} →</button></div>
@@ -320,18 +308,18 @@
         ${P.map(p => `<td class="n">${CFO.fmtNum(l.values[p], 0, lang)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   }
 
-  function renderReport() {
+  function renderFull() {
     const L = T();
-    $('p-report').innerHTML = `<div class="actions">
-        <button class="btn primary" type="button" data-export="pdf">${L.exportPdf}</button>
-        <button class="btn primary" type="button" data-export="docx">${L.exportDocx}</button>
+    $('p-full').innerHTML = `<div class="actions fa-actions">
+        <button class="btn primary" type="button" data-export="html">${L.exportHtml}</button>
+        <button class="btn" type="button" data-export="pdf">${L.exportPdf}</button>
+        <button class="btn" type="button" data-export="docx">${L.exportDocx}</button>
         <button class="btn" type="button" data-export="xlsx">${L.exportXlsx}</button>
-        <button class="btn" type="button" data-export="html">${L.exportHtml}</button>
         <button class="btn" type="button" id="x-md">${L.copyMd}</button><span id="copy-msg" class="muted small" role="status"></span>
       </div>
       ${state.aiOn ? `<div class="card" id="ai-report">${aiPanel()}</div>` : ''}
-      <article class="card report" id="report-doc">${CFO.reportHTML(ctx())}</article>
-      <textarea id="md-out" readonly aria-label="Markdown">${esc(CFO.reportMarkdown(ctx()))}</textarea>`;
+      <article class="card report full" id="report-doc">${CFO.fullHTML(ctx())}</article>
+      <details class="small"><summary class="muted">Markdown</summary><textarea id="md-out" readonly aria-label="Markdown"></textarea></details>`;
   }
 
   /* ---------- Claude commentary ---------- */
@@ -359,7 +347,7 @@
     if (aiFrame) return;
     aiFrame = requestAnimationFrame(() => {
       aiFrame = 0;
-      const out = document.querySelector(`#${state.tab === 'report' ? 'ai-report' : 'ai-overview'} .ai-out`);
+      const out = document.querySelector(`#${state.tab === 'full' ? 'ai-report' : 'ai-overview'} .ai-out`);
       if (out) out.innerHTML = `<div class="ai-text">${CFO.md(state.ai.text)}</div>`;
     });
   }
@@ -367,7 +355,7 @@
   async function runAi(question) {
     if (state.ai.busy) return;
     const ctl = new AbortController();
-    state.ai = { text: '', busy: true, err: '', ctl };
+    state.ai = { text: '', busy: true, err: '', ctl, lang: state.lang };
     refreshAi();
     try {
       const { text } = await CFO.askClaude(state.A, state.F, state.S, state.lang, question, {
@@ -381,7 +369,7 @@
       const stopped = ctl.signal.aborted || e?.code === 'cancelled' || e?.name === 'AbortError';
       state.ai.err = stopped ? '' : (errs[e?.code] || errs.other);
     } finally {
-      if (state.ai.ctl === ctl) { state.ai.busy = false; state.ai.ctl = null; refreshAi(); if (state.tab === 'report') renderReport(); }
+      if (state.ai.ctl === ctl) { state.ai.busy = false; state.ai.ctl = null; refreshAi(); if (state.tab === 'full') renderFull(); }
     }
   }
 
@@ -397,13 +385,11 @@
       return `<label class="driver"><span>${esc(F.d[k])}</span><span class="driver-in"><input type="number" data-driver="${k}" id="drv-${k}" value="${fmtDriver(k, dr[k])}"
         ${lo != null ? `min="${pct ? lo * 100 : lo}" max="${pct ? hi * 100 : hi}" step="${pct ? +(step * 100).toFixed(2) : step}"` : 'step="100"'}><em>${pct ? '%' : unit === 'days' ? esc(L.days) : ''}</em></span></label>`;
     }).join('');
-    const fc = CFO.reportModel(ctx()).forecast;   // the same comparison the report uses
+    const { forecast: fc, forecastDetail: fd } = CFO.forecastTables(ctx());   // the same tables the Full analysis uses
     const compare = `<div class="table-wrap"><table><thead><tr>${fc.head.map((h, i) => `<th${i ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead>
       <tbody>${fc.rows.map(r => `<tr>${r.map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
-    const lines = ['revenue', 'gross_profit', 'operating_income', 'interest', 'net_income', 'cash', 'receivables', 'inventory', 'total_assets', 'short_debt', 'long_debt', 'total_liabilities', 'equity', 'cfo', 'capex', 'dividends'];
-    const detail = `<div class="table-wrap"><table><thead><tr><th>${esc(L.item)}</th><th class="n">${last}</th>${S.base.years.map(y => `<th class="n">${y.period}</th>`).join('')}</tr></thead>
-      <tbody>${lines.map(k => `<tr class="${SUBTOTALS.has(k) ? 'subtotal' : ''}"><td>${esc(CFO.itemName(k, lang))}</td><td class="n">${CFO.fmtNum(ds.data[last][k], 0, lang)}</td>${S.base.years.map(y => `<td class="n">${CFO.fmtNum(y.data[k], 0, lang)}</td>`).join('')}</tr>`).join('')}
-      <tr><td>${esc(F.funding)}</td><td class="n">—</td>${S.base.years.map(y => `<td class="n${y.fundingNeed ? ' heat-down' : ''}">${CFO.fmtNum(y.fundingNeed, 0, lang)}</td>`).join('')}</tr></tbody></table></div>`;
+    const detail = `<div class="table-wrap"><table><thead><tr>${fd.head.map((h, i) => `<th${i ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead>
+      <tbody>${fd.rows.map((r, k) => `<tr class="${fd.sub[k] ? 'subtotal' : ''}">${r.map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
     const down = S.downside.F.slice(0, 4);
     $('p-forecast').innerHTML = `<div class="card"><div class="section-head"><h2>${esc(F.title)}</h2>
         <span class="actions"><label class="small">${esc(F.years)} <select id="fc-years">${[1, 2, 3].map(n => `<option${n === state.fcYears ? ' selected' : ''}>${n}</option>`).join('')}</select></label>
@@ -448,7 +434,7 @@
       state.notes.map(n => `<div class="note" role="status">${esc(n())}</div>`).join('');
   }
 
-  const PANELS = { overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, review: renderReview, report: renderReport };
+  const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, review: renderReview };
 
   function render() {
     const ds = CFO.buildDataset(state.tables, state.overrides);
@@ -506,7 +492,7 @@
     if (e.target.closest('[data-ai="stop"]')) { state.ai.ctl?.abort(); return; }
     if (e.target.closest('#x-md')) {
       const text = CFO.reportMarkdown(ctx()), msg = $('copy-msg');
-      const fail = () => { msg.textContent = T().copyFail; $('md-out').select(); };
+      const fail = () => { msg.textContent = T().copyFail; const box = $('md-out'); box.value = text; box.closest('details').open = true; box.select(); };
       try { navigator.clipboard.writeText(text).then(() => { msg.textContent = T().copied; }, fail); } catch (err) { fail(); }
     }
   });
@@ -576,7 +562,7 @@
     .filter(([, g]) => !globalThis[g]).map(([n]) => n);
 
   // Claude commentary appears only where the claude.ai viewer offers it.
-  CFO.aiAvailable().then(on => { state.aiOn = on; if (on && ['overview', 'report'].includes(state.tab)) PANELS[state.tab](); });
+  CFO.aiAvailable().then(on => { state.aiOn = on; if (on && ['overview', 'full'].includes(state.tab)) PANELS[state.tab](); });
   loadSample();
   if (missing.length) state.errors.push(() => T().libMissing(missing.join(', ')));
   render();

@@ -231,6 +231,25 @@ textarea#md-out { width: 100%; min-height: 140px; font: 0.8rem/1.4 var(--font-nu
 .missing-card { border-inline-start: 4px solid var(--warn); }
 .missing-card p { margin: 6px 0 10px; }
 
+/* Full analysis (tab, PDF and exported HTML) */
+.report.full { max-width: none; display: grid; gap: 4px; }
+.fa-head h2 { font-size: 1.6rem; }
+.fa-toc { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 10px 12px; background: var(--sunk); border-radius: var(--radius); font-size: 0.88rem; }
+.fa-toc b { width: 100%; }
+.fa-toc a { color: var(--accent); text-decoration: none; }
+.fa-toc a:hover { text-decoration: underline; }
+.fa-sec { display: grid; gap: 10px; padding-block: 18px; border-top: 1px solid var(--line); scroll-margin-top: 140px;   /* clears the sticky top bar and export bar */ min-width: 0; }
+.fa-sec h2 { font-size: 1.3rem; }
+.fa-sec h3 { margin-top: 6px; }
+.fa-health { display: flex; gap: 16px; align-items: center; }
+.fa-health p { margin: 4px 0 0; max-width: 78ch; }
+.fa-score { flex: none; width: 74px; height: 74px; border-radius: 50%; border: 6px solid; display: grid; place-items: center; font: 600 1.5rem var(--font-num); }
+.fa-charts figure { margin: 0; display: grid; gap: 6px; }
+.svg-chart { width: 100%; height: auto; display: block; font-family: var(--font-body); }
+.fa-actions { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 58px); z-index: 4; background: var(--bg); padding-block: 6px; }
+@media (max-width: 560px) { .fa-health { flex-direction: column; align-items: flex-start; } .fa-actions { position: static; } }
+@media print { .fa-toc, .fa-actions { display: none !important; } .fa-sec { break-inside: auto; } }
+
 </style>
 </head>
 <body>
@@ -272,18 +291,19 @@ textarea#md-out { width: 100%; min-height: 140px; font: 0.8rem/1.4 var(--font-nu
   </section>
 
   <nav class="tabs" role="tablist" id="tabs">
-    <button class="tab" role="tab" data-tab="overview" aria-selected="true">Overview</button>
+    <button class="tab" role="tab" data-tab="full" aria-selected="true">Full analysis</button>
+    <button class="tab" role="tab" data-tab="overview">Overview</button>
     <button class="tab" role="tab" data-tab="ratios">Ratios</button>
     <button class="tab" role="tab" data-tab="vertical">Vertical</button>
     <button class="tab" role="tab" data-tab="horizontal">Horizontal</button>
     <button class="tab" role="tab" data-tab="flags">Red flags</button>
     <button class="tab" role="tab" data-tab="forecast">Forecast</button>
     <button class="tab" role="tab" data-tab="review">Data review</button>
-    <button class="tab" role="tab" data-tab="report">Report</button>
   </nav>
 
   <main>
-    <section class="panel" id="p-overview" role="tabpanel">
+    <section class="panel" id="p-full" role="tabpanel"></section>
+    <section class="panel" id="p-overview" role="tabpanel" hidden>
       <div class="card missing-card" id="missing-card" role="status" hidden></div>
       <div class="card hero" id="hero"></div>
       <div class="kpis" id="kpis"></div>
@@ -302,7 +322,6 @@ textarea#md-out { width: 100%; min-height: 140px; font: 0.8rem/1.4 var(--font-nu
     <section class="panel" id="p-flags" role="tabpanel" hidden></section>
     <section class="panel" id="p-forecast" role="tabpanel" hidden></section>
     <section class="panel" id="p-review" role="tabpanel" hidden></section>
-    <section class="panel" id="p-report" role="tabpanel" hidden></section>
   </main>
 </div>
 <div class="loading" id="loading" hidden><span data-t="reading">Reading files…</span></div>
@@ -21792,8 +21811,10 @@ var __async = (__this, __arguments, generator) => {
       diag: { title: 'Diagnostics', hint: 'If something does not work, press Copy and paste the text in the chat. By default it contains only line labels and counts, not your figures.', withNumbers: 'Include figures', copy: 'Copy diagnostics' },
       browse: 'Choose files', exampleTag: 'Example', vs: 'vs', pts: 'pts', sampleNotice: 'Example data (fictional company, EGP thousands). Drop your own files to replace it.',
       loadSample: 'Reload example', clear: 'Clear', filesLoaded: 'Files', reading: 'Reading files…',
-      tabs: { overview: 'Overview', ratios: 'Ratios', vertical: 'Vertical', horizontal: 'Horizontal', flags: 'Red flags', forecast: 'Forecast', review: 'Data review', report: 'Report' },
+      tabs: { full: 'Full analysis', overview: 'Overview', ratios: 'Ratios', vertical: 'Vertical', horizontal: 'Horizontal', flags: 'Red flags', forecast: 'Forecast', review: 'Data review' },
       sector: 'Sector', typical: 'Sector typical',
+      fullTitle: 'Full financial analysis', flagsRecs: 'Red flags and recommendations', toc: 'Contents', secSummary: 'Summary and key figures', secRatios: 'All financial ratios',
+      secDupont: 'DuPont analysis and distress score', verticalHint: 'Each line as a share of revenue (income statement, cash flow) or of total assets (balance sheet). * = line not matched to a standard item.',
       sectorNote: 'Sector limits and typical values are indicative rules of thumb from common practice, not published market statistics. Banks and insurers use different ratios and are not covered.',
       fc: {
         title: 'Forecast and scenarios', hint: 'Projected from the latest year using the drivers below. Defaults come from the company\'s own history; change any of them and everything updates. Cash balances the projected balance sheet; a shortfall is borrowed short term and shown as funding required.',
@@ -21834,7 +21855,7 @@ var __async = (__this, __arguments, generator) => {
       },
       reportTitle: 'Financial analysis report', execSummary: 'Executive summary', keyRatios: 'Key ratios', assumptions: 'Assumptions and limits',
       needsReview: 'Items for human review', nextSteps: 'Next steps',
-      exportXlsx: 'Download Excel workbook', exportDocx: 'Download Word report', exportPdf: 'Download PDF report', exportHtml: 'Download HTML report', building: 'Preparing the file…', aiSection: 'CFO commentary (Claude)', fcSection: 'Forecast (base, upside, downside)', copyMd: 'Copy summary', saveStatus: { saved: 'Saved', declined: 'Not saved', unavailable: 'Saving files is not available here. Use Copy summary, or open dist/cfo-lens.html on your computer.' }, copied: 'Copied', copyFail: 'Copy blocked: select the text below and copy it.',
+      exportXlsx: 'Download Excel workbook', exportDocx: 'Download Word report', exportPdf: 'Download PDF report', exportHtml: 'Download full analysis (HTML, English + Arabic)', building: 'Preparing the file…', aiSection: 'CFO commentary (Claude)', fcSection: 'Forecast (base, upside, downside)', copyMd: 'Copy summary', saveStatus: { saved: 'Saved', declined: 'Not saved', unavailable: 'Saving files is not available here. Use Copy summary, or open dist/cfo-lens.html on your computer.' }, copied: 'Copied', copyFail: 'Copy blocked: select the text below and copy it.',
       dupont: 'DuPont breakdown of ROE', dupontHint: 'Return on equity = net margin × asset turnover × equity multiplier (closing balances).',
       zZones: 'Safe > 2.6 · Grey 1.1–2.6 · Distress < 1.1',
       errUnsupported: ext => `“.${ext}” files are not supported. Use .xlsx, .xls, .csv or .pdf.`,
@@ -21872,8 +21893,10 @@ var __async = (__this, __arguments, generator) => {
       diag: { title: 'التشخيص', hint: 'إذا لم يعمل شيء، اضغط نسخ والصق النص في المحادثة. افتراضياً يحتوي على أسماء البنود والأعداد فقط، وليس أرقامك.', withNumbers: 'تضمين الأرقام', copy: 'نسخ التشخيص' },
       browse: 'اختر الملفات', exampleTag: 'مثال', vs: 'مقابل', pts: 'نقطة', sampleNotice: 'بيانات تجريبية (شركة افتراضية، بالألف جنيه). أسقط ملفاتك لاستبدالها.',
       loadSample: 'إعادة البيانات التجريبية', clear: 'مسح', filesLoaded: 'الملفات', reading: 'جارٍ قراءة الملفات…',
-      tabs: { overview: 'نظرة عامة', ratios: 'النسب المالية', vertical: 'التحليل الرأسي', horizontal: 'التحليل الأفقي', flags: 'إشارات الخطر', forecast: 'التوقعات', review: 'مراجعة البيانات', report: 'التقرير' },
+      tabs: { full: 'التحليل الكامل', overview: 'نظرة عامة', ratios: 'النسب المالية', vertical: 'التحليل الرأسي', horizontal: 'التحليل الأفقي', flags: 'إشارات الخطر', forecast: 'التوقعات', review: 'مراجعة البيانات' },
       sector: 'القطاع', typical: 'المعتاد في القطاع',
+      fullTitle: 'التحليل المالي الكامل', flagsRecs: 'إشارات الخطر والتوصيات', toc: 'المحتويات', secSummary: 'الملخص والأرقام الرئيسية', secRatios: 'جميع النسب المالية',
+      secDupont: 'تحليل ديبونت ومؤشر التعثر', verticalHint: 'كل بند كنسبة من الإيرادات (قائمة الدخل والتدفقات) أو من إجمالي الأصول (الميزانية). * = بند غير مربوط ببند قياسي.',
       sectorNote: 'حدود القطاع والقيم المعتادة استرشادية من الممارسة الشائعة، وليست إحصاءات سوق منشورة. البنوك وشركات التأمين تستخدم نسباً مختلفة وليست مشمولة.',
       fc: {
         title: 'التوقعات والسيناريوهات', hint: 'التوقع مبني على آخر سنة باستخدام المحركات أدناه. القيم الافتراضية من تاريخ الشركة نفسها؛ غيّر أياً منها ويتحدث كل شيء. النقدية هي البند الموازن للميزانية المتوقعة؛ وأي عجز يُقترض قصير الأجل ويظهر كتمويل مطلوب.',
@@ -21914,7 +21937,7 @@ var __async = (__this, __arguments, generator) => {
       },
       reportTitle: 'تقرير التحليل المالي', execSummary: 'الملخص التنفيذي', keyRatios: 'أهم النسب', assumptions: 'الافتراضات والحدود',
       needsReview: 'بنود تحتاج مراجعة بشرية', nextSteps: 'الخطوات التالية',
-      exportXlsx: 'تنزيل ملف Excel', exportDocx: 'تنزيل تقرير Word', exportPdf: 'تنزيل تقرير PDF', exportHtml: 'تنزيل تقرير HTML', building: 'جارٍ تجهيز الملف…', aiSection: 'تعليق المدير المالي (Claude)', fcSection: 'التوقعات (أساسي، متفائل، متشائم)', copyMd: 'نسخ الملخص', saveStatus: { saved: 'تم الحفظ', declined: 'لم يتم الحفظ', unavailable: 'حفظ الملفات غير متاح هنا. استخدم نسخ الملخص، أو افتح dist/cfo-lens.html على جهازك.' }, copied: 'تم النسخ', copyFail: 'النسخ ممنوع: حدد النص بالأسفل وانسخه.',
+      exportXlsx: 'تنزيل ملف Excel', exportDocx: 'تنزيل تقرير Word', exportPdf: 'تنزيل تقرير PDF', exportHtml: 'تنزيل التحليل الكامل (HTML بالعربية والإنجليزية)', building: 'جارٍ تجهيز الملف…', aiSection: 'تعليق المدير المالي (Claude)', fcSection: 'التوقعات (أساسي، متفائل، متشائم)', copyMd: 'نسخ الملخص', saveStatus: { saved: 'تم الحفظ', declined: 'لم يتم الحفظ', unavailable: 'حفظ الملفات غير متاح هنا. استخدم نسخ الملخص، أو افتح dist/cfo-lens.html على جهازك.' }, copied: 'تم النسخ', copyFail: 'النسخ ممنوع: حدد النص بالأسفل وانسخه.',
       dupont: 'تحليل ديبونت للعائد على حقوق الملكية', dupontHint: 'العائد على حقوق الملكية = هامش صافي الربح × دوران الأصول × مضاعف حقوق الملكية (أرصدة آخر المدة).',
       zZones: 'آمن > 2.6 · رمادي 1.1–2.6 · تعثر < 1.1',
       errUnsupported: ext => `ملفات “.${ext}” غير مدعومة. استخدم xlsx أو xls أو csv أو pdf.`,
@@ -22551,6 +22574,65 @@ var __async = (__this, __arguments, generator) => {
     put('c-fc-ni', { type: 'line', data: { labels, datasets: series('net_income') }, options: base(lang) });
   }
 
+  /* ---------- Inline SVG charts (no library): used by the Full analysis and the exported HTML ---------- */
+  const escX = t => CFO.esc(t);   // defined in js/report.js, available by the time charts are drawn
+  function niceStep(span) {
+    const raw = span / 4 || 1, mag = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / mag;
+    return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * mag;
+  }
+  /** { kind: 'bar' | 'line' | 'stack', labels, series: [{ name, values, color }], fmt, title } -> SVG string.
+   * One axis, at most three series, a legend, and a native tooltip (<title>) on every mark. */
+  function svgChart({ kind = 'bar', labels, series, fmt = v => String(v), title = '', max100 = false }) {
+    const W = 560, H = 236, L = 64, R = 14, T = 34, B = 26;
+    const ok = v => v != null && isFinite(v);
+    let lo = 0, hi = 0;
+    if (kind === 'stack') labels.forEach((_, i) => { const t = series.reduce((a, s) => a + (ok(s.values[i]) ? s.values[i] : 0), 0); hi = Math.max(hi, t); });
+    else series.forEach(s => s.values.forEach(v => { if (ok(v)) { lo = Math.min(lo, v); hi = Math.max(hi, v); } }));
+    if (max100) hi = Math.max(hi, 1);
+    if (hi === lo) hi = lo + 1;
+    const step = niceStep(hi - lo), y0 = Math.floor(lo / step) * step, y1 = Math.ceil(hi / step) * step;
+    const y = v => T + (y1 - v) / (y1 - y0) * (H - T - B);
+    const band = (W - L - R) / Math.max(1, labels.length), cx = i => L + band * (i + 0.5);
+    const out = [];
+    for (let v = y0; v <= y1 + step / 2; v += step) {
+      out.push(`<line x1="${L}" x2="${W - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="var(--line)" stroke-width="${Math.abs(v) < step / 2 ? 1.2 : 0.6}"/>`,
+        `<text x="${L - 6}" y="${(y(v) + 3.5).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--muted)">${escX(fmt(Math.abs(v) < step / 1e6 ? 0 : v))}</text>`);
+    }
+    labels.forEach((lab, i) => out.push(`<text x="${cx(i).toFixed(1)}" y="${H - 8}" text-anchor="middle" font-size="10.5" fill="var(--muted)">${escX(lab)}</text>`));
+    if (kind === 'bar') {
+      const gw = band * 0.72, bw = Math.max(4, gw / series.length - 2);
+      series.forEach((s, k) => s.values.forEach((v, i) => {
+        if (!ok(v)) return;
+        const x = cx(i) - gw / 2 + k * (bw + 2), top = y(Math.max(v, 0)), h = Math.max(1, Math.abs(y(v) - y(0)));
+        out.push(`<rect x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${s.color}"><title>${escX(`${s.name} · ${labels[i]}: ${fmt(v)}`)}</title></rect>`);
+      }));
+    } else if (kind === 'stack') {
+      const bw = Math.min(46, band * 0.5);
+      labels.forEach((lab, i) => {
+        let acc = 0;
+        series.forEach(s => {
+          const v = s.values[i]; if (!ok(v) || v <= 0) return;
+          const top = y(acc + v), h = y(acc) - top;
+          out.push(`<rect x="${(cx(i) - bw / 2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0, h - 2).toFixed(1)}" fill="${s.color}"><title>${escX(`${s.name} · ${lab}: ${fmt(v)}`)}</title></rect>`);
+          acc += v;
+        });
+      });
+    } else {
+      series.forEach(s => {
+        const pts = s.values.map((v, i) => ok(v) ? [cx(i), y(v), v, i] : null).filter(Boolean);
+        if (pts.length > 1) out.push(`<path d="${pts.map((p, j) => `${j ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ')}" fill="none" stroke="${s.color}" stroke-width="2"/>`);
+        pts.forEach(p => out.push(`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="4" fill="${s.color}" stroke="var(--surface)" stroke-width="2"><title>${escX(`${s.name} · ${labels[p[3]]}: ${fmt(p[2])}`)}</title></circle>`));
+      });
+    }
+    let lx = L;
+    series.forEach(s => {
+      out.push(`<rect x="${lx}" y="10" width="10" height="10" rx="2" fill="${s.color}"/><text x="${lx + 14}" y="19" font-size="11" fill="var(--ink)">${escX(s.name)}</text>`);
+      lx += 26 + s.name.length * 6.4;
+    });
+    return `<svg class="svg-chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escX(title)}" style="direction:ltr">${out.join('')}</svg>`;
+  }
+
+  CFO.svgChart = svgChart;
   CFO.drawCharts = draw;
   CFO.drawForecastCharts = drawForecast;
   CFO.sparkline = sparkline;
@@ -22564,8 +22646,62 @@ var __async = (__this, __arguments, generator) => {
  */
 (function (CFO) {
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const KEY_RATIOS = ['current_ratio', 'quick_ratio', 'gross_margin', 'operating_margin', 'net_margin', 'roe', 'roce', 'dso', 'ccc', 'debt_to_equity', 'interest_coverage', 'net_debt_to_ebitda', 'fcf', 'cash_conversion', 'altman_z'];
-  const VERTICAL_ITEMS = ['revenue', 'cogs', 'gross_profit', 'opex', 'operating_income', 'net_income', 'cash', 'receivables', 'inventory', 'current_assets', 'ppe', 'total_assets', 'current_liabilities', 'total_liabilities', 'equity'];
+  // Subtotal lines, shown in bold wherever statements are listed (also used by js/app.js).
+  const SUBTOTALS = new Set(['gross_profit', 'operating_income', 'pretax_income', 'net_income', 'current_assets', 'total_assets', 'current_liabilities', 'total_liabilities', 'equity', 'cfo', 'cfi', 'cff']);
+  const FORECAST_LINES = ['revenue', 'gross_profit', 'operating_income', 'interest', 'net_income', 'cash', 'receivables', 'inventory', 'total_assets', 'short_debt', 'long_debt', 'total_liabilities', 'equity', 'cfo', 'capex', 'dividends'];
+
+  /** Key figures with their history and the change on the prior year (shared by Overview and the Full analysis). */
+  function kpiList(A, lang) {
+    const L = CFO.UI[lang], P = A.ds.periods, ds = A.ds, prevP = P[P.length - 2];
+    return [['revenue', 'money', q => ds.data[q].revenue, true], ['net_income', 'money', q => ds.data[q].net_income, true],
+      ['fcf', 'money', q => A.ratios.fcf[q].value, true], ['current_ratio', 'x', q => A.ratios.current_ratio[q].value, true],
+      ['debt_to_equity', 'x', q => A.ratios.debt_to_equity[q].value, false], ['roe', '%', q => A.ratios.roe[q].value, true]]
+      .map(([k, unit, get, highGood]) => {
+        const series = P.map(q => get(q) ?? null), cur = series[series.length - 1], prev = series[series.length - 2];
+        let change = '', dir = 'flat', up = true;
+        if (cur != null && prev != null && prev !== 0) {
+          const ch = unit === 'money' ? (cur - prev) / Math.abs(prev) : cur - prev;
+          up = ch >= 0;
+          dir = Math.abs(ch) < 1e-9 ? 'flat' : up === highGood ? 'up' : 'down';
+          change = unit === 'money' ? CFO.fmtPct(Math.abs(ch), lang) : unit === '%' ? `${CFO.fmtNum(Math.abs(ch * 100), 1, lang)} ${L.pts}` : CFO.fmtVal('x', Math.abs(ch), lang);
+        }
+        return { key: k, label: L.kpi[k], value: CFO.fmtVal(unit, cur, lang), series, dir,
+          arrow: change ? (up ? '▲' : '▼') : '', change, vs: change ? `${L.vs} ${prevP}` : '',
+          delta: change ? `${up ? '▲' : '▼'} ${change} ${L.vs} ${prevP}` : '' };
+      });
+  }
+
+  /** Scenario comparison and base projected statements (shared by the Forecast tab and the Full analysis). */
+  function forecastTables(R) {
+    const { A, F, S, lang } = R, L = CFO.UI[lang], Fc = L.fc, ds = A.ds, p = A.latest;
+    if (!S) return { forecast: null, forecastDetail: null };
+    const names = ['base', 'upside', 'downside'], end = S.base.years[S.base.years.length - 1].period;
+    const v = (sc, k) => sc ? sc.years[sc.years.length - 1].data[k] : ds.data[p][k];
+    const r = (sc, id) => (sc ? sc.A.ratios[id][end] : A.ratios[id][p]).value;
+    return {
+      forecast: {
+        head: ['', `${Fc.actual} ${p}`, ...names.map(n => `${Fc.sc[n]} ${end}`)],
+        rows: [
+          [CFO.itemName('revenue', lang), sc => CFO.fmtNum(v(sc, 'revenue'), 0, lang)],
+          [CFO.itemName('net_income', lang), sc => CFO.fmtNum(v(sc, 'net_income'), 0, lang)],
+          [CFO.ratioName('net_margin', lang), sc => CFO.fmtPct(r(sc, 'net_margin'), lang)],
+          [CFO.ratioName('fcf', lang), sc => CFO.fmtNum(r(sc, 'fcf'), 0, lang)],
+          [CFO.itemName('cash', lang), sc => CFO.fmtNum(v(sc, 'cash'), 0, lang)],
+          [Fc.funding, sc => sc ? CFO.fmtNum(sc.years.reduce((t, y) => t + y.fundingNeed, 0), 0, lang) : '—'],
+          [CFO.ratioName('current_ratio', lang), sc => CFO.fmtVal('x', r(sc, 'current_ratio'), lang)],
+          [CFO.ratioName('debt_to_equity', lang), sc => CFO.fmtVal('x', r(sc, 'debt_to_equity'), lang)],
+          [CFO.ratioName('interest_coverage', lang), sc => CFO.fmtVal('x', r(sc, 'interest_coverage'), lang)],
+          [CFO.ratioName('roe', lang), sc => CFO.fmtPct(r(sc, 'roe'), lang)],
+          [Fc.health, sc => String((sc ? sc.A.health : A.health)?.score ?? '—')],
+          [Fc.flags, sc => String((sc ? sc.F : F).length)],
+        ].map(([lab, f]) => [lab, f(null), ...names.map(n => f(S[n]))]),
+        note: `${Fc.scHint} ${Fc.note}`,
+      },
+      forecastDetail: { head: [L.item, p, ...S.base.years.map(y => y.period)], sub: [...FORECAST_LINES.map(k => SUBTOTALS.has(k)), false],
+        rows: [...FORECAST_LINES.map(k => [CFO.itemName(k, lang), CFO.fmtNum(ds.data[p][k], 0, lang), ...S.base.years.map(y => CFO.fmtNum(y.data[k], 0, lang))]),
+          [Fc.funding, '—', ...S.base.years.map(y => CFO.fmtNum(y.fundingNeed, 0, lang))]] },
+    };
+  }
 
   /** Items a person should check before the report is used for decisions. */
   function reviewItems(A, F, lang, ai) {
@@ -22581,94 +22717,129 @@ var __async = (__this, __arguments, generator) => {
     return out;
   }
 
-  /** Everything the report says, as plain data. */
+  /** Everything the full analysis says, as plain data (one model for the page, HTML, Word, PDF, Markdown). */
   function model(R) {
     const { A, F, S, ai, lang } = R, L = CFO.UI[lang], P = A.ds.periods, p = A.latest, ds = A.ds;
-    const statusText = (id, cell) => L.status[cell.status || (cell.value != null && !CFO.RATIO[id].dir ? 'info' : 'na')];
+    const statusOf = (id, cell) => cell.status || (cell.value != null && !CFO.RATIO[id].dir ? 'info' : 'na');
+    const label = r => r.key ? CFO.itemName(r.key, lang) : r.label;
+    const kpis = kpiList(A, lang);
+
+    const groups = CFO.GROUPS.map(g => ({
+      group: g, title: L.groups[g],
+      head: [L.item, ...P, L.typical, p],
+      rows: CFO.RATIOS.filter(r => r.group === g).map(def => {
+        const cell = A.ratios[def.id][p], st = statusOf(def.id, cell);
+        const missing = def.needs.filter(k => P.every(q => ds.data[q][k] == null));
+        return { id: def.id, name: CFO.ratioName(def.id, lang), values: P.map(q => CFO.fmtVal(def.unit, A.ratios[def.id][q].value, lang)),
+          typical: CFO.fmtVal(def.unit, CFO.bench(def.id).typical, lang), status: st, statusText: L.status[st], formula: def.f,
+          meaning: cell.value != null ? CFO.meaning(def.id, cell.value, lang) : `${L.notAvail}: ${missing.map(k => CFO.itemName(k, lang)).join(lang === 'ar' ? '، ' : ', ') || '—'}` };
+      }),
+    }));
+
+    const byStatement = (rows, cells, head) => ['IS', 'BS', 'CF'].map(st => ({ st, title: L.st[st], head: head(st),
+      rows: rows.filter(r => r.st === st).map(r => ({ sub: SUBTOTALS.has(r.key), mapped: !!r.key, cells: [label(r), ...cells(r)] })) })).filter(t => t.rows.length);
+
+    const z = A.ratios.altman_z[p]?.value;
     const m = {
-      lang, title: L.reportTitle,
+      lang, title: L.fullTitle, latest: p, periods: P,
       meta: `${ds.sources.join(' · ')} · ${P.join(', ')} · ${L.sector}: ${CFO.sectorName(CFO.getSector(), lang)}`,
       summary: CFO.summary(A, F, lang),
-      ratios: {
-        head: [L.item, ...P, L.typical, p, L.meaning],
-        rows: KEY_RATIOS.map(id => { const def = CFO.RATIO[id], cell = A.ratios[id][p];
-          return [CFO.ratioName(id, lang), ...P.map(q => CFO.fmtVal(def.unit, A.ratios[id][q].value, lang)), CFO.fmtVal(def.unit, CFO.bench(id).typical, lang), statusText(id, cell), CFO.meaning(id, cell.value, lang)]; }),
-        status: KEY_RATIOS.map(id => A.ratios[id][p].status || 'na'),
-      },
-      vertical: {
-        head: [L.item, ...P.map(q => `${q} %`)],
-        rows: VERTICAL_ITEMS.map(k => A.vertical.find(r => r.key === k)).filter(Boolean).map(r => [CFO.itemName(r.key, lang), ...P.map(q => CFO.fmtPct(r.pct[q], lang))]),
-      },
-      horizontal: {
-        head: [L.item, ...P.slice(1).map(q => `${q} ${L.yoy}`), L.cagr],
-        rows: VERTICAL_ITEMS.map(k => A.horizontal.find(r => r.key === k)).filter(Boolean).map(r => [CFO.itemName(r.key, lang), ...P.slice(1).map(q => CFO.fmtPct(r.yoy[q]?.pct, lang)), CFO.fmtPct(r.cagr, lang)]),
-      },
+      health: A.health || {}, kpis, groups,
+      dupont: { head: [L.period, CFO.ratioName('net_margin', lang), CFO.ratioName('asset_turnover', lang), CFO.ratioName('equity_multiplier', lang), 'ROE'],
+        rows: A.dupont.map(r => [r.period, CFO.fmtPct(r.net_margin, lang), CFO.fmtVal('x', r.asset_turnover, lang), CFO.fmtVal('x', r.equity_multiplier, lang), CFO.fmtPct(r.roe, lang)]) },
+      altman: { value: CFO.fmtVal('score', z, lang), meaning: z != null ? CFO.meaning('altman_z', z, lang) : L.notAvail, zones: L.zZones,
+        status: z == null ? 'na' : A.ratios.altman_z[p].status },
+      vertical: byStatement(A.vertical, r => P.map(q => r.pct[q] == null ? '—' : `${CFO.fmtPct(r.pct[q], lang)}`), st => [L.item, ...P.map(q => `${q} · ${st === 'BS' ? L.ofAssets : L.ofRevenue}`)]),
+      horizontal: byStatement(A.horizontal, r => [...P.map(q => CFO.fmtNum(r.values[q], 0, lang)), ...P.slice(1).map(q => r.yoy[q]?.pct == null ? '—' : `${r.yoy[q].pct > 0 ? '+' : ''}${CFO.fmtPct(r.yoy[q].pct, lang)}`), CFO.fmtPct(r.cagr, lang)],
+        () => [L.item, ...P, ...P.slice(1).map(q => `${L.yoy} ${q}`), L.cagr]),
       flags: F.map(f => ({ sev: f.sev, sevText: L.sev[f.sev], title: f.title[lang], ev: f.ev(lang), rec: f.rec[lang] })),
       strengths: CFO.strengths(A, lang).map(s => s.text),
-      forecast: null,
       ai: ai || '',
+      checks: ds.issues.map(i => L.issue[i.type](i, k => CFO.itemName(k, lang))),
       review: reviewItems(A, F, lang, ai),
       assumptions: L.assumptionList,
       next: L.nextList,
     };
+
+    // Chart data (drawn as inline SVG, so the HTML file needs no library).
+    const val = k => P.map(q => ds.data[q][k] ?? null), rat = id => P.map(q => A.ratios[id][q].value);
+    // Axis labels drop a zero decimal in either digit system: "20.0%" -> "20%", "٢٠٫٠%" -> "٢٠%".
+    const money = v => CFO.fmtNum(v, 0, lang), pctf = v => CFO.fmtPct(v, lang).replace(/[.,٫][0٠]%$/, '%');
+    const shareOf = (k, q) => { const d = ds.data[q]; const v = k === 'ncl' ? (d.total_liabilities != null && d.current_liabilities != null ? d.total_liabilities - d.current_liabilities : null) : d[k]; return d.total_assets && v != null ? v / d.total_assets : null; };
+    m.charts = [
+      { title: L.chart.revenueProfit, kind: 'bar', labels: P, fmt: money, series: [{ name: CFO.itemName('revenue', lang), values: val('revenue'), color: 'var(--s1)' }, { name: CFO.itemName('net_income', lang), values: val('net_income'), color: 'var(--s2)' }] },
+      { title: L.chart.margins, kind: 'line', labels: P, fmt: pctf, series: [{ name: CFO.ratioName('gross_margin', lang), values: rat('gross_margin'), color: 'var(--s1)' }, { name: CFO.ratioName('operating_margin', lang), values: rat('operating_margin'), color: 'var(--s2)' }, { name: CFO.ratioName('net_margin', lang), values: rat('net_margin'), color: 'var(--s3)' }] },
+      { title: L.chart.structure, kind: 'stack', max100: true, labels: P, fmt: pctf, series: [{ name: CFO.itemName('equity', lang), values: P.map(q => shareOf('equity', q)), color: 'var(--s1)' }, { name: lang === 'ar' ? 'التزامات غير متداولة' : 'Non-current liabilities', values: P.map(q => shareOf('ncl', q)), color: 'var(--s2)' }, { name: CFO.itemName('current_liabilities', lang), values: P.map(q => shareOf('current_liabilities', q)), color: 'var(--s3)' }] },
+      { title: L.chart.cash, kind: 'bar', labels: P, fmt: money, series: [{ name: CFO.itemName('cfo', lang), values: val('cfo'), color: 'var(--s1)' }, { name: CFO.itemName('capex', lang), values: P.map(q => ds.data[q].capex != null ? -ds.data[q].capex : null), color: 'var(--s2)' }, { name: L.kpi.fcf, values: rat('fcf'), color: 'var(--s3)' }] },
+    ].filter(c => c.series.some(sr => sr.values.some(v => v != null)));
+
+    Object.assign(m, forecastTables(R));
     if (S) {
-      const Fc = L.fc, names = ['base', 'upside', 'downside'], end = S.base.years[S.base.years.length - 1].period;
-      const v = (sc, k) => sc ? sc.years[sc.years.length - 1].data[k] : ds.data[p][k];
-      const r = (sc, id) => (sc ? sc.A.ratios[id][end] : A.ratios[id][p]).value;
-      m.forecast = {
-        head: ['', `${Fc.actual} ${p}`, ...names.map(n => `${Fc.sc[n]} ${end}`)],
-        rows: [
-          [CFO.itemName('revenue', lang), sc => CFO.fmtNum(v(sc, 'revenue'), 0, lang)],
-          [CFO.itemName('net_income', lang), sc => CFO.fmtNum(v(sc, 'net_income'), 0, lang)],
-          [CFO.ratioName('net_margin', lang), sc => CFO.fmtPct(r(sc, 'net_margin'), lang)],
-          [CFO.ratioName('fcf', lang), sc => CFO.fmtNum(r(sc, 'fcf'), 0, lang)],
-          [CFO.itemName('cash', lang), sc => CFO.fmtNum(v(sc, 'cash'), 0, lang)],
-          [Fc.funding, sc => sc ? CFO.fmtNum(sc.years.reduce((t, y) => t + y.fundingNeed, 0), 0, lang) : '—'],
-          [CFO.ratioName('current_ratio', lang), sc => CFO.fmtVal('x', r(sc, 'current_ratio'), lang)],
-          [CFO.ratioName('debt_to_equity', lang), sc => CFO.fmtVal('x', r(sc, 'debt_to_equity'), lang)],
-          [CFO.ratioName('interest_coverage', lang), sc => CFO.fmtVal('x', r(sc, 'interest_coverage'), lang)],
-          [CFO.ratioName('roe', lang), sc => CFO.fmtPct(r(sc, 'roe'), lang)],
-          [Fc.health, sc => String((sc ? sc.A.health : A.health)?.score ?? '—')],
-          [Fc.flags, sc => String((sc ? sc.F : F).length)],
-        ].map(([label, f]) => [label, f(null), ...names.map(n => f(S[n]))]),
-        note: `${Fc.scHint} ${Fc.note}`,
-      };
+      const names = ['base', 'upside', 'downside'];
+      m.charts.push({ title: L.fc.cash, kind: 'line', labels: [p, ...S.base.years.map(y => y.period)], fmt: money,
+        series: names.map((n, i) => ({ name: L.fc.sc[n], values: [ds.data[p].cash ?? null, ...S[n].years.map(y => y.data.cash)], color: `var(--s${i + 1})` })) });
     }
     return m;
   }
 
   const L_ = lang => CFO.UI[lang];
-  const table = (t, cls = '') => `<div class="table-wrap"><table class="${cls}"><thead><tr>${t.head.map((h, i) => `<th${i ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${t.rows.map(r => `<tr>${r.map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 
-  function reportHTML(R) {
-    const m = model(R), L = L_(R.lang);
-    const ratioRows = m.ratios.rows.map((r, i) => `<tr><td>${esc(r[0])}</td>${r.slice(1, -2).map(c => `<td class="n">${esc(c)}</td>`).join('')}<td><span class="pill ${m.ratios.status[i]}">${esc(r[r.length - 2])}</span></td><td class="small">${esc(r[r.length - 1])}</td></tr>`).join('');
+  /** The full analysis as HTML. `pre` makes ids unique when both languages share one document. */
+  function fullHTML(R, pre = 'fa') {
+    const m = model(R), L = L_(R.lang), id = k => `${pre}-${R.lang}-${k}`;
+    const li = arr => arr.map(t => `<li>${esc(t)}</li>`).join('');
+    const tbl = (head, rows, opts = {}) => `<div class="table-wrap"><table${opts.cls ? ` class="${opts.cls}"` : ''}><thead><tr>${head.map((h, i) => `<th${i ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+    const plainRows = rows => rows.map(r => `<tr>${r.map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`);
+    const stmtRows = t => t.rows.map(r => `<tr class="${r.sub ? 'subtotal' : ''}">${r.cells.map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}${!i && !r.mapped ? ' <span class="muted small">*</span>' : ''}</td>`).join('')}</tr>`);
+    const sections = [
+      ['summary', L.secSummary], ...(m.ai ? [['ai', L.aiSection]] : []), ['ratios', L.secRatios], ['dupont', L.secDupont],
+      ['vertical', L.tabs.vertical], ['horizontal', L.tabs.horizontal], ['flags', L.flagsRecs],
+      ...(m.forecast ? [['forecast', L.fcSection]] : []), ['checks', L.needsReview],
+    ];
+    const h = m.health;
+    const hColor = h.score == null ? 'var(--muted)' : h.score >= 65 ? 'var(--good)' : h.score >= 45 ? 'var(--warn)' : 'var(--bad)';
+    const ratioTables = m.groups.map(g => `<h3>${esc(g.title)}</h3>` + tbl(g.head, g.rows.map(r =>
+      `<tr><td><div class="ratio-name">${esc(r.name)}</div><div class="meaning">${esc(r.meaning)}</div><div class="formula" dir="ltr">${esc(r.formula)}</div></td>${r.values.map(v => `<td class="n">${esc(v)}</td>`).join('')}<td class="n muted">${esc(r.typical)}</td><td><span class="pill ${r.status}">${esc(r.statusText)}</span></td></tr>`))).join('');
     return `
-      <h2>${esc(m.title)}</h2>
-      <p class="muted small">${esc(m.meta)}</p>
-      <section><h3>${L.execSummary}</h3><p>${esc(m.summary)}</p></section>
-      ${m.ai ? `<section><h3>${L.aiSection}</h3><div class="ai-text">${CFO.md ? CFO.md(m.ai) : esc(m.ai)}</div><p class="muted small">${esc(L.ai.note)}</p></section>` : ''}
-      <section><h3>${L.keyRatios}</h3><div class="table-wrap"><table><thead><tr>${m.ratios.head.map((h, i) => `<th${i && i < m.ratios.head.length - 2 ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead><tbody>${ratioRows}</tbody></table></div></section>
-      <section><h3>${L.flagsTitle} & ${L.recs}</h3>${m.flags.length ? `<ol>${m.flags.map(f => `<li><span class="pill ${f.sev}">${esc(f.sevText)}</span> <b>${esc(f.title)}</b> — <span class="small">${esc(f.ev)}</span><br>${esc(f.rec)}</li>`).join('')}</ol>` : `<p>${L.noFlags}</p>`}</section>
-      ${m.strengths.length ? `<section><h3>${L.strengths}</h3><ul>${m.strengths.map(s => `<li>${esc(s)}</li>`).join('')}</ul></section>` : ''}
-      <section><h3>${L.tabs.vertical}</h3>${table(m.vertical)}</section>
-      <section><h3>${L.tabs.horizontal}</h3>${table(m.horizontal)}</section>
-      ${m.forecast ? `<section><h3>${L.fcSection}</h3>${table(m.forecast)}<p class="muted small">${esc(m.forecast.note)}</p></section>` : ''}
-      <section><h3>${L.needsReview}</h3><ul>${m.review.map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>
-      <section><h3>${L.assumptions}</h3><ul>${m.assumptions.map(t => `<li>${esc(t)}</li>`).join('')}</ul></section>
-      <section><h3>${L.nextSteps}</h3><ol>${m.next.map(t => `<li>${esc(t)}</li>`).join('')}</ol></section>`;
+      <header class="fa-head"><h2>${esc(m.title)}</h2><p class="muted small">${esc(m.meta)}</p></header>
+      <nav class="fa-toc" aria-label="${esc(L.toc)}"><b>${esc(L.toc)}</b>${sections.map(([k, t], i) => `<a href="#${id(k)}">${i + 1}. ${esc(t)}</a>`).join('')}</nav>
+      <section class="fa-sec" id="${id('summary')}"><h2>${esc(L.secSummary)}</h2>
+        <div class="fa-health"><span class="fa-score" style="border-color:${hColor};color:${hColor}">${h.score ?? '—'}</span><div><b>${esc(L.health)}${h.grade ? ` · ${h.grade}` : ''}</b><p>${esc(m.summary)}</p></div></div>
+        <div class="kpis">${m.kpis.map(k => `<div class="kpi"><span class="kpi-label">${esc(k.label)}</span><span class="kpi-value">${esc(k.value)}</span><span class="kpi-delta ${k.dir}">${esc(k.delta) || '&nbsp;'}</span></div>`).join('')}</div>
+        <div class="grid-2 fa-charts">${m.charts.map(c => `<figure class="card"><figcaption><b>${esc(c.title)}</b></figcaption>${CFO.svgChart(c)}</figure>`).join('')}</div>
+      </section>
+      ${m.ai ? `<section class="fa-sec" id="${id('ai')}"><h2>${esc(L.aiSection)}</h2><div class="ai-text">${CFO.md ? CFO.md(m.ai) : esc(m.ai)}</div><p class="muted small">${esc(L.ai.note)}</p></section>` : ''}
+      <section class="fa-sec" id="${id('ratios')}"><h2>${esc(L.secRatios)}</h2><p class="muted small">${esc(L.sectorNote)}</p>${ratioTables}</section>
+      <section class="fa-sec" id="${id('dupont')}"><h2>${esc(L.secDupont)}</h2><p class="muted small">${esc(L.dupontHint)}</p>${tbl(m.dupont.head, plainRows(m.dupont.rows))}
+        <p><b>${esc(CFO.ratioName('altman_z', R.lang))}: ${esc(m.altman.value)}</b> <span class="pill ${m.altman.status}">${esc(L.status[m.altman.status] || '')}</span><br>${esc(m.altman.meaning)}<br><span class="muted small">${esc(m.altman.zones)}</span></p></section>
+      <section class="fa-sec" id="${id('vertical')}"><h2>${esc(L.tabs.vertical)}</h2><p class="muted small">${esc(L.verticalHint)}</p>${m.vertical.map(t => `<h3>${esc(t.title)}</h3>` + tbl(t.head, stmtRows(t))).join('')}</section>
+      <section class="fa-sec" id="${id('horizontal')}"><h2>${esc(L.tabs.horizontal)}</h2>${m.horizontal.map(t => `<h3>${esc(t.title)}</h3>` + tbl(t.head, stmtRows(t))).join('')}</section>
+      <section class="fa-sec" id="${id('flags')}"><h2>${esc(L.flagsRecs)}</h2>
+        ${m.flags.length ? `<div class="list">${m.flags.map(f => `<article class="flag ${f.sev}"><div class="flag-head"><span class="pill ${f.sev}">${esc(f.sevText)}</span><h3>${esc(f.title)}</h3></div><dl><dt>${esc(L.evidence)}</dt><dd class="ev">${esc(f.ev)}</dd><dt>${esc(L.action)}</dt><dd>${esc(f.rec)}</dd></dl></article>`).join('')}</div>` : `<p>${esc(L.noFlags)}</p>`}
+        ${m.strengths.length ? `<h3>${esc(L.strengths)}</h3><ul>${li(m.strengths)}</ul>` : ''}</section>
+      ${m.forecast ? `<section class="fa-sec" id="${id('forecast')}"><h2>${esc(L.fcSection)}</h2>${tbl(m.forecast.head, plainRows(m.forecast.rows))}
+        <h3>${esc(L.fc.detail)}</h3>${tbl(m.forecastDetail.head, plainRows(m.forecastDetail.rows))}<p class="muted small">${esc(m.forecast.note)}</p></section>` : ''}
+      <section class="fa-sec" id="${id('checks')}"><h2>${esc(L.needsReview)}</h2>
+        ${m.checks.length ? `<h3>${esc(L.issues)}</h3><ul>${li(m.checks)}</ul>` : ''}
+        <ul>${li(m.review)}</ul><h3>${esc(L.assumptions)}</h3><ul>${li(m.assumptions)}</ul><h3>${esc(L.nextSteps)}</h3><ol>${li(m.next)}</ol></section>`;
   }
 
   function reportMarkdown(R) {
     const m = model(R), L = L_(R.lang);
-    const mdTable = t => [`| ${t.head.join(' | ')} |`, `|${t.head.map((_, i) => i ? '---:' : '---').join('|')}|`, ...t.rows.map(r => `| ${r.join(' | ')} |`)];
-    const lines = [`# ${m.title}`, m.meta, '', `## ${L.execSummary}`, m.summary, ''];
+    const mdTable = (head, rows) => [`| ${head.join(' | ')} |`, `|${head.map((_, i) => i ? '---:' : '---').join('|')}|`, ...rows.map(r => `| ${r.join(' | ')} |`)];
+    const lines = [`# ${m.title}`, m.meta, '', `## ${L.secSummary}`, m.summary, '', ...m.kpis.map(k => `- **${k.label}**: ${k.value} ${k.delta}`), ''];
     if (m.ai) lines.push(`## ${L.aiSection}`, m.ai, '', `_${L.ai.note}_`, '');
-    lines.push(`## ${L.keyRatios}`, ...mdTable({ head: m.ratios.head.slice(0, -1), rows: m.ratios.rows.map(r => r.slice(0, -1)) }), '');
-    lines.push(`## ${L.flagsTitle} & ${L.recs}`);
+    lines.push(`## ${L.secRatios}`);
+    m.groups.forEach(g => lines.push('', `### ${g.title}`, ...mdTable(g.head, g.rows.map(r => [r.name, ...r.values, r.typical, r.statusText]))));
+    lines.push('', `## ${L.secDupont}`, ...mdTable(m.dupont.head, m.dupont.rows), '', `${CFO.ratioName('altman_z', R.lang)}: ${m.altman.value} — ${m.altman.meaning}`);
+    lines.push('', `## ${L.tabs.vertical}`); m.vertical.forEach(t => lines.push('', `### ${t.title}`, ...mdTable(t.head, t.rows.map(r => r.cells))));
+    lines.push('', `## ${L.tabs.horizontal}`); m.horizontal.forEach(t => lines.push('', `### ${t.title}`, ...mdTable(t.head, t.rows.map(r => r.cells))));
+    lines.push('', `## ${L.flagsRecs}`);
     m.flags.length ? m.flags.forEach((f, i) => lines.push(`${i + 1}. **[${f.sevText}] ${f.title}** — ${f.ev}  \n   ${f.rec}`)) : lines.push(L.noFlags);
-    if (m.forecast) lines.push('', `## ${L.fcSection}`, ...mdTable(m.forecast));
-    lines.push('', `## ${L.needsReview}`, ...m.review.map(t => `- ${t}`), '', `## ${L.nextSteps}`, ...m.next.map((t, i) => `${i + 1}. ${t}`));
+    if (m.strengths.length) lines.push('', `### ${L.strengths}`, ...m.strengths.map(t => `- ${t}`));
+    if (m.forecast) lines.push('', `## ${L.fcSection}`, ...mdTable(m.forecast.head, m.forecast.rows), '', `### ${L.fc.detail}`, ...mdTable(m.forecastDetail.head, m.forecastDetail.rows));
+    lines.push('', `## ${L.needsReview}`, ...m.checks.map(t => `- ${t}`), ...m.review.map(t => `- ${t}`), '', `## ${L.assumptions}`, ...m.assumptions.map(t => `- ${t}`),
+      '', `## ${L.nextSteps}`, ...m.next.map((t, i) => `${i + 1}. ${t}`));
     return lines.join('\n');
   }
 
@@ -22691,10 +22862,33 @@ var __async = (__this, __arguments, generator) => {
 
   const fileName = (R, ext) => `cfo-report-${R.A.latest || 'analysis'}-${R.lang}.${ext}`;
 
+  /** A standalone HTML document with the full analysis in English and Arabic and its own switches.
+   * Needs nothing from the internet; `css` is the dashboard's stylesheet text. */
+  function fullDocument(R, css = '') {
+    const parts = ['en', 'ar'].map(lang => {
+      // Claude's commentary appears only in the language it was written in.
+      const text = R.aiAll ?? R.ai;
+      const RL = { ...R, lang, ai: R.aiLang && R.aiLang !== lang ? '' : text };
+      return `<div class="fa-doc" data-lang="${lang}" lang="${lang}" dir="${lang === 'ar' ? 'rtl' : 'ltr'}"${lang === R.lang ? '' : ' hidden'}>${fullHTML(RL)}</div>`;
+    }).join('');
+    const title = `${CFO.UI[R.lang].fullTitle} · ${R.A.latest || ''}`;
+    const script = `(function(){var d=document.documentElement;function setL(l){var a=document.querySelectorAll('[data-lang]');for(var i=0;i<a.length;i++){a[i].hidden=a[i].getAttribute('data-lang')!==l;}d.lang=l;d.dir=l==='ar'?'rtl':'ltr';var b=document.querySelectorAll('[data-l]');for(var j=0;j<b.length;j++){b[j].setAttribute('aria-pressed',String(b[j].getAttribute('data-l')===l));}try{localStorage.setItem('cfo-lens-lang',l);}catch(e){}}
+var s=null;try{s=localStorage.getItem('cfo-lens-lang');}catch(e){}setL(s==='en'||s==='ar'?s:'${R.lang}');
+document.addEventListener('click',function(e){var t=e.target.closest('[data-l]');if(t){setL(t.getAttribute('data-l'));return;}if(e.target.closest('[data-theme-toggle]')){var dark=d.getAttribute('data-theme')?d.getAttribute('data-theme')==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;d.setAttribute('data-theme',dark?'light':'dark');}});})();`;
+    // Light by default: it is a document people print; the switch offers dark.
+    return `<!doctype html><html lang="${R.lang}" dir="${R.lang === 'ar' ? 'rtl' : 'ltr'}" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(title)}</title>
+<style>${css}
+.fa-bar{position:sticky;top:0;z-index:5;display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.fa-bar b{margin-inline-end:auto;font-family:var(--font-display);font-size:1.1rem}
+.fa-bar button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+@media print{.fa-bar{display:none}}</style></head>
+<body><div class="fa-bar"><b>CFO Lens</b><button class="btn" type="button" data-l="en">English</button><button class="btn" type="button" data-l="ar">العربية</button><button class="btn ghost" type="button" data-theme-toggle aria-label="Theme">◐</button></div>
+<main class="wrap"><article class="report full">${parts}</article></main><script>${script}<\/script></body></html>`;
+  }
+
   function exportHTML(R) {
-    const styles = [...document.styleSheets].map(s => { try { return [...s.cssRules].map(r => r.cssText).join('\n'); } catch (e) { return ''; } }).join('\n');
-    const doc = `<!doctype html><html lang="${R.lang}" dir="${R.lang === 'ar' ? 'rtl' : 'ltr'}" data-theme="light"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(L_(R.lang).reportTitle)}</title><style>${styles}</style></head><body><main class="wrap"><article class="report">${reportHTML(R)}</article></main></body></html>`;
-    return download(fileName(R, 'html'), new Blob([doc], { type: 'text/html' }));
+    const css = [...document.styleSheets].map(s => { try { return [...s.cssRules].map(r => r.cssText).join('\n'); } catch (e) { return ''; } }).join('\n');
+    return download(`cfo-full-analysis-${R.A.latest || 'report'}.html`, new Blob([fullDocument(R, css)], { type: 'text/html' }));
   }
 
   /* Word: real text with right-to-left paragraphs for Arabic (Word shapes the Arabic letters itself). */
@@ -22721,21 +22915,27 @@ var __async = (__this, __arguments, generator) => {
       return para(rich(l));
     });
 
+    const H1 = t => h(t, D.HeadingLevel.HEADING_1), H2 = t => h(t, D.HeadingLevel.HEADING_2);
+    const muted = t => para(t, { size: 18, color: '586664' });
     const children = [
-      h(m.title, D.HeadingLevel.TITLE), para(m.meta, { size: 18, color: '586664' }),
-      h(L.execSummary, D.HeadingLevel.HEADING_1), para(m.summary),
-      ...(m.ai ? [h(L.aiSection, D.HeadingLevel.HEADING_1), ...aiParas(m.ai), para(L.ai.note, { size: 18, color: '586664' })] : []),
-      h(L.keyRatios, D.HeadingLevel.HEADING_1), tbl({ ...m.ratios, textCols: 2 }),
-      h(`${L.flagsTitle} & ${L.recs}`, D.HeadingLevel.HEADING_1),
+      h(m.title, D.HeadingLevel.TITLE), muted(m.meta),
+      H1(L.secSummary), para(m.summary),
+      tbl({ head: [L.item, m.latest, ''], rows: m.kpis.map(k => [k.label, k.value, k.delta]) }),
+      ...(m.ai ? [H1(L.aiSection), ...aiParas(m.ai), muted(L.ai.note)] : []),
+      H1(L.secRatios), muted(L.sectorNote),
+      ...m.groups.flatMap(g => [H2(g.title), tbl({ head: [...g.head, L.meaning], textCols: 2, rows: g.rows.map(r => [r.name, ...r.values, r.typical, r.statusText, r.meaning]) })]),
+      H1(L.secDupont), muted(L.dupontHint), tbl(m.dupont),
+      para([run(`${CFO.ratioName('altman_z', R.lang)}: ${m.altman.value}  `, { bold: true }), run(m.altman.meaning)]), muted(m.altman.zones),
+      H1(L.tabs.vertical), muted(L.verticalHint), ...m.vertical.flatMap(t => [H2(t.title), tbl({ head: t.head, rows: t.rows.map(r => r.cells) })]),
+      H1(L.tabs.horizontal), ...m.horizontal.flatMap(t => [H2(t.title), tbl({ head: t.head, rows: t.rows.map(r => r.cells) })]),
+      H1(L.flagsRecs),
       ...(m.flags.length ? m.flags.flatMap(f => [para([run(`[${f.sevText}] `, { bold: true, color: f.sev === 'high' ? 'B42318' : f.sev === 'med' ? '9A6500' : '586664' }), run(f.title, { bold: true })]),
         para(`${L.evidence}: ${f.ev}`, { size: 19 }), para(`${L.action}: ${f.rec}`, { size: 19 })]) : [para(L.noFlags)]),
-      ...(m.strengths.length ? [h(L.strengths, D.HeadingLevel.HEADING_1), ...list(m.strengths)] : []),
-      h(L.tabs.vertical, D.HeadingLevel.HEADING_1), tbl(m.vertical),
-      h(L.tabs.horizontal, D.HeadingLevel.HEADING_1), tbl(m.horizontal),
-      ...(m.forecast ? [h(L.fcSection, D.HeadingLevel.HEADING_1), tbl(m.forecast), para(m.forecast.note, { size: 18, color: '586664' })] : []),
-      h(L.needsReview, D.HeadingLevel.HEADING_1), ...list(m.review),
-      h(L.assumptions, D.HeadingLevel.HEADING_1), ...list(m.assumptions),
-      h(L.nextSteps, D.HeadingLevel.HEADING_1), ...list(m.next, true),
+      ...(m.strengths.length ? [H2(L.strengths), ...list(m.strengths)] : []),
+      ...(m.forecast ? [H1(L.fcSection), tbl(m.forecast), H2(L.fc.detail), tbl(m.forecastDetail), muted(m.forecast.note)] : []),
+      H1(L.needsReview), ...(m.checks.length ? [H2(L.issues), ...list(m.checks)] : []), ...list(m.review),
+      H1(L.assumptions), ...list(m.assumptions),
+      H1(L.nextSteps), ...list(m.next, true),
     ];
     const doc = new D.Document({ creator: 'CFO Lens', title: m.title, sections: [{ properties: { page: { margin: { top: 1000, bottom: 1000, left: 1000, right: 1000 } } }, children }] });
     return download(fileName(R, 'docx'), await D.Packer.toBlob(doc));
@@ -22747,29 +22947,49 @@ var __async = (__this, __arguments, generator) => {
     if (!el) throw new Error('report not on screen');
     const root = document.documentElement, theme = root.getAttribute('data-theme');
     root.setAttribute('data-theme', 'light');                       // print on white whatever the screen theme
-    let canvas;
-    // Keep the canvas under ~16M pixels (Safari / iOS refuse larger ones); long reports get a lower scale.
-    const scale = Math.max(0.75, Math.min(2, Math.sqrt(16e6 / Math.max(1, el.scrollWidth * el.scrollHeight))));
-    try { canvas = await globalThis.html2canvas(el, { scale, backgroundColor: '#ffffff', useCORS: true, logging: false }); }
-    finally { theme == null ? root.removeAttribute('data-theme') : root.setAttribute('data-theme', theme); }
+    // html2canvas draws each SVG as a separate image that cannot see the page's CSS variables,
+    // so chart colours are written out as literal values for the capture and put back afterwards.
+    const tokens = getComputedStyle(root), restore = [];
+    el.querySelectorAll('svg.svg-chart [fill^="var("], svg.svg-chart [stroke^="var("]').forEach(node => {
+      for (const attr of ['fill', 'stroke']) {
+        const v = node.getAttribute(attr), m = v && v.match(/^var\((--[\w-]+)\)$/);
+        if (m) { restore.push([node, attr, v]); node.setAttribute(attr, tokens.getPropertyValue(m[1]).trim() || '#000'); }
+      }
+    });
+    const width = el.style.width; el.style.width = '860px';           // A4-friendly text size
     const { jsPDF } = globalThis.jspdf;
     const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
     const margin = 10, w = 210 - 2 * margin, pageH = 297 - 2 * margin - 6;
-    const pxPerMm = canvas.width / w, slicePx = Math.floor(pageH * pxPerMm);
-    const pages = Math.max(1, Math.ceil(canvas.height / slicePx));
-    for (let i = 0; i < pages; i++) {
-      const part = document.createElement('canvas');
-      part.width = canvas.width; part.height = Math.min(slicePx, canvas.height - i * slicePx);
-      const g = part.getContext('2d');
-      g.fillStyle = '#ffffff'; g.fillRect(0, 0, part.width, part.height);
-      g.drawImage(canvas, 0, i * slicePx, part.width, part.height, 0, 0, part.width, part.height);
-      if (i) pdf.addPage();
-      pdf.addImage(part.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, w, part.height / pxPerMm);
-      pdf.setFontSize(8); pdf.setTextColor(120);
-      pdf.text(`${i + 1} / ${pages}`, 105, 297 - 6, { align: 'center' });
+    let y = 0, page = 1;
+    try {
+      // One block at a time keeps every canvas well under the ~16M-pixel limit of Safari / iOS.
+      for (const block of el.children) {
+        if (!block.offsetHeight) continue;
+        const scale = Math.min(2, Math.sqrt(16e6 / Math.max(1, block.scrollWidth * block.scrollHeight)));
+        const canvas = await globalThis.html2canvas(block, { scale, backgroundColor: '#ffffff', useCORS: true, logging: false });
+        const pxPerMm = canvas.width / w;
+        let srcY = 0;
+        while (srcY < canvas.height) {
+          if (y >= pageH - 4) { pdf.addPage(); page++; y = 0; }
+          const take = Math.min(canvas.height - srcY, Math.floor((pageH - y) * pxPerMm));
+          const part = document.createElement('canvas');
+          part.width = canvas.width; part.height = take;
+          const g = part.getContext('2d');
+          g.fillStyle = '#ffffff'; g.fillRect(0, 0, part.width, part.height);
+          g.drawImage(canvas, 0, srcY, part.width, take, 0, 0, part.width, take);
+          pdf.addImage(part.toDataURL('image/jpeg', 0.9), 'JPEG', margin, margin + y, w, take / pxPerMm);
+          y += take / pxPerMm + 2; srcY += take;
+        }
+      }
+    } finally {
+      el.style.width = width;
+      restore.forEach(([node, attr, v]) => node.setAttribute(attr, v));
+      theme == null ? root.removeAttribute('data-theme') : root.setAttribute('data-theme', theme);
     }
+    for (let i = 1; i <= page; i++) { pdf.setPage(i); pdf.setFontSize(8); pdf.setTextColor(120); pdf.text(`${i} / ${page}`, 105, 297 - 6, { align: 'center' }); }
     return download(fileName(R, 'pdf'), pdf.output('blob'));
   }
+
 
   function exportXLSX(R) {
     const { A, F, S, lang } = R;
@@ -22802,7 +23022,12 @@ var __async = (__this, __arguments, generator) => {
   }
 
   CFO.reportModel = model;
-  CFO.reportHTML = reportHTML;
+  CFO.kpiList = kpiList;
+  CFO.forecastTables = forecastTables;
+  CFO.SUBTOTALS = SUBTOTALS;
+  CFO.reportHTML = fullHTML;
+  CFO.fullHTML = fullHTML;
+  CFO.fullDocument = fullDocument;
   CFO.reportMarkdown = reportMarkdown;
   CFO.exportHTML = exportHTML;
   CFO.exportXLSX = exportXLSX;
@@ -22921,13 +23146,14 @@ var __async = (__this, __arguments, generator) => {
     get(k) { try { return localStorage.getItem('cfo-lens:' + k); } catch (e) { return null; } },
     set(k, v) { try { localStorage.setItem('cfo-lens:' + k, v); } catch (e) { /* storage unavailable */ } },
   };
-  const TABS = ['overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'review', 'report'];
-  const SUBTOTALS = new Set(['gross_profit', 'operating_income', 'pretax_income', 'net_income', 'current_assets', 'total_assets', 'current_liabilities', 'total_liabilities', 'equity', 'cfo', 'cfi', 'cff']);
+  const TABS = ['full', 'overview', 'ratios', 'vertical', 'horizontal', 'flags', 'forecast', 'review'];
+  const SUBTOTALS = CFO.SUBTOTALS;   // defined in js/report.js
 
   const state = {
     tables: [], files: [], overrides: {}, errors: [], notes: [], isSample: true,
     lang: store.get('lang') === 'ar' ? 'ar' : 'en',
-    tab: TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview',
+    // Old links to #report land on the Full analysis, which replaced it.
+    tab: location.hash === '#report' ? 'full' : TABS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'full',
     hMode: 'pct', A: null, F: [],
     sector: CFO.SECTORS[store.get('sector')] ? store.get('sector') : 'general',
     drivers: null, fcYears: 3, S: null,            // forecast: drivers (null = from history), scenarios
@@ -22938,7 +23164,9 @@ var __async = (__this, __arguments, generator) => {
   // Anything that changes the data starts the forecast and the commentary afresh.
   const dataChanged = () => { state.drivers = null; state.ai.ctl?.abort(); state.ai = { text: '', busy: false, err: '', ctl: null }; };
   // Everything the report and the exports need, in one object.
-  const ctx = () => ({ A: state.A, F: state.F, S: state.S, ai: state.ai.text, lang: state.lang });
+  // Claude's commentary is shown and exported only in the language it was written in (aiAll keeps it for the bilingual HTML).
+  const ctx = () => ({ A: state.A, F: state.F, S: state.S, lang: state.lang,
+    ai: !state.ai.lang || state.ai.lang === state.lang ? state.ai.text : '', aiAll: state.ai.text, aiLang: state.ai.lang });
 
   // pdf.js runs on the main thread when its worker script is loaded as a plain script (globalThis.pdfjsWorker),
   // which avoids web-worker restrictions in sandboxed frames. Otherwise fall back to the CDN worker.
@@ -22994,7 +23222,8 @@ var __async = (__this, __arguments, generator) => {
         state.tables = [...kept.tables.filter(t => !names.has(t.file)), ...added.flatMap(a => a.tables)];
         state.files = [...kept.files.filter(n => !names.has(n)), ...added.map(a => a.name)];
         state.overrides = {}; state.isSample = false; dataChanged();
-        if (!added.some(a => a.matched)) { state.tab = 'review'; state.diagOpen = true; }
+        // Everything is analysed at once: open the full analysis, or Data review when nothing was recognised.
+        if (!added.some(a => a.matched)) { state.tab = 'review'; state.diagOpen = true; } else state.tab = 'full';
       } else if (wasSample) {
         state.notes.push(() => L().keptExample);
         state.diagOpen = true;
@@ -23100,25 +23329,9 @@ var __async = (__this, __arguments, generator) => {
         <div class="group-bars">${Object.entries(h.groups || {}).map(([g, v]) => `<span><i style="--w:${v}%;--c:${v >= 65 ? 'var(--good)' : v >= 45 ? 'var(--warn)' : 'var(--bad)'}"></i>${L.groups[g]}</span>`).join('')}</div>
       </div>`;
 
-    const kpis = [
-      ['revenue', 'money', P.map(q => A.ds.data[q].revenue ?? null), true],
-      ['net_income', 'money', P.map(q => A.ds.data[q].net_income ?? null), true],
-      ['fcf', 'money', P.map(q => A.ratios.fcf[q].value), true],
-      ['current_ratio', 'x', P.map(q => A.ratios.current_ratio[q].value), true],
-      ['debt_to_equity', 'x', P.map(q => A.ratios.debt_to_equity[q].value), false],
-      ['roe', '%', P.map(q => A.ratios.roe[q].value), true],
-    ];
-    $('kpis').innerHTML = kpis.map(([k, unit, vals, highGood]) => {
-      const cur = vals[vals.length - 1], prev = vals[vals.length - 2];
-      let delta = '';
-      if (cur != null && prev != null && prev !== 0) {
-        const ch = unit === 'money' ? (cur - prev) / Math.abs(prev) : cur - prev;
-        const good = (ch >= 0) === highGood;
-        const txt = unit === 'money' ? CFO.fmtPct(ch, lang) : unit === '%' ? `${(ch * 100).toFixed(1)} ${L.pts}` : CFO.fmtVal('x', ch, lang);
-        delta = `<span class="kpi-delta ${Math.abs(ch) < 1e-9 ? 'flat' : good ? 'up' : 'down'}">${ch >= 0 ? '▲' : '▼'} ${txt.replace(/^\((.*)\)$/, '$1')} <span class="muted">${L.vs} ${P[P.length - 2]}</span></span>`;
-      }
-      return `<div class="kpi"><span class="kpi-label">${L.kpi[k]}</span><span class="kpi-value">${CFO.fmtVal(unit, cur, lang)}</span>${delta || '<span class="kpi-delta muted">&nbsp;</span>'}${CFO.sparkline(vals)}</div>`;
-    }).join('');
+    $('kpis').innerHTML = CFO.kpiList(A, lang).map(k => `<div class="kpi"><span class="kpi-label">${esc(k.label)}</span><span class="kpi-value">${esc(k.value)}</span>`
+      + (k.change ? `<span class="kpi-delta ${k.dir}">${k.arrow} ${esc(k.change)} <span class="muted">${esc(k.vs)}</span></span>` : '<span class="kpi-delta muted">&nbsp;</span>')
+      + `${CFO.sparkline(k.series)}</div>`).join('');
 
     const top = F.slice(0, 3);
     $('top-flags').innerHTML = `<div class="section-head"><h3>${L.flagsTitle}</h3><button class="btn" type="button" data-go="flags">${F.length} →</button></div>
@@ -23235,18 +23448,18 @@ var __async = (__this, __arguments, generator) => {
         ${P.map(p => `<td class="n">${CFO.fmtNum(l.values[p], 0, lang)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
   }
 
-  function renderReport() {
+  function renderFull() {
     const L = T();
-    $('p-report').innerHTML = `<div class="actions">
-        <button class="btn primary" type="button" data-export="pdf">${L.exportPdf}</button>
-        <button class="btn primary" type="button" data-export="docx">${L.exportDocx}</button>
+    $('p-full').innerHTML = `<div class="actions fa-actions">
+        <button class="btn primary" type="button" data-export="html">${L.exportHtml}</button>
+        <button class="btn" type="button" data-export="pdf">${L.exportPdf}</button>
+        <button class="btn" type="button" data-export="docx">${L.exportDocx}</button>
         <button class="btn" type="button" data-export="xlsx">${L.exportXlsx}</button>
-        <button class="btn" type="button" data-export="html">${L.exportHtml}</button>
         <button class="btn" type="button" id="x-md">${L.copyMd}</button><span id="copy-msg" class="muted small" role="status"></span>
       </div>
       ${state.aiOn ? `<div class="card" id="ai-report">${aiPanel()}</div>` : ''}
-      <article class="card report" id="report-doc">${CFO.reportHTML(ctx())}</article>
-      <textarea id="md-out" readonly aria-label="Markdown">${esc(CFO.reportMarkdown(ctx()))}</textarea>`;
+      <article class="card report full" id="report-doc">${CFO.fullHTML(ctx())}</article>
+      <details class="small"><summary class="muted">Markdown</summary><textarea id="md-out" readonly aria-label="Markdown"></textarea></details>`;
   }
 
   /* ---------- Claude commentary ---------- */
@@ -23274,7 +23487,7 @@ var __async = (__this, __arguments, generator) => {
     if (aiFrame) return;
     aiFrame = requestAnimationFrame(() => {
       aiFrame = 0;
-      const out = document.querySelector(`#${state.tab === 'report' ? 'ai-report' : 'ai-overview'} .ai-out`);
+      const out = document.querySelector(`#${state.tab === 'full' ? 'ai-report' : 'ai-overview'} .ai-out`);
       if (out) out.innerHTML = `<div class="ai-text">${CFO.md(state.ai.text)}</div>`;
     });
   }
@@ -23282,7 +23495,7 @@ var __async = (__this, __arguments, generator) => {
   async function runAi(question) {
     if (state.ai.busy) return;
     const ctl = new AbortController();
-    state.ai = { text: '', busy: true, err: '', ctl };
+    state.ai = { text: '', busy: true, err: '', ctl, lang: state.lang };
     refreshAi();
     try {
       const { text } = await CFO.askClaude(state.A, state.F, state.S, state.lang, question, {
@@ -23296,7 +23509,7 @@ var __async = (__this, __arguments, generator) => {
       const stopped = ctl.signal.aborted || e?.code === 'cancelled' || e?.name === 'AbortError';
       state.ai.err = stopped ? '' : (errs[e?.code] || errs.other);
     } finally {
-      if (state.ai.ctl === ctl) { state.ai.busy = false; state.ai.ctl = null; refreshAi(); if (state.tab === 'report') renderReport(); }
+      if (state.ai.ctl === ctl) { state.ai.busy = false; state.ai.ctl = null; refreshAi(); if (state.tab === 'full') renderFull(); }
     }
   }
 
@@ -23312,13 +23525,11 @@ var __async = (__this, __arguments, generator) => {
       return `<label class="driver"><span>${esc(F.d[k])}</span><span class="driver-in"><input type="number" data-driver="${k}" id="drv-${k}" value="${fmtDriver(k, dr[k])}"
         ${lo != null ? `min="${pct ? lo * 100 : lo}" max="${pct ? hi * 100 : hi}" step="${pct ? +(step * 100).toFixed(2) : step}"` : 'step="100"'}><em>${pct ? '%' : unit === 'days' ? esc(L.days) : ''}</em></span></label>`;
     }).join('');
-    const fc = CFO.reportModel(ctx()).forecast;   // the same comparison the report uses
+    const { forecast: fc, forecastDetail: fd } = CFO.forecastTables(ctx());   // the same tables the Full analysis uses
     const compare = `<div class="table-wrap"><table><thead><tr>${fc.head.map((h, i) => `<th${i ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead>
       <tbody>${fc.rows.map(r => `<tr>${r.map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
-    const lines = ['revenue', 'gross_profit', 'operating_income', 'interest', 'net_income', 'cash', 'receivables', 'inventory', 'total_assets', 'short_debt', 'long_debt', 'total_liabilities', 'equity', 'cfo', 'capex', 'dividends'];
-    const detail = `<div class="table-wrap"><table><thead><tr><th>${esc(L.item)}</th><th class="n">${last}</th>${S.base.years.map(y => `<th class="n">${y.period}</th>`).join('')}</tr></thead>
-      <tbody>${lines.map(k => `<tr class="${SUBTOTALS.has(k) ? 'subtotal' : ''}"><td>${esc(CFO.itemName(k, lang))}</td><td class="n">${CFO.fmtNum(ds.data[last][k], 0, lang)}</td>${S.base.years.map(y => `<td class="n">${CFO.fmtNum(y.data[k], 0, lang)}</td>`).join('')}</tr>`).join('')}
-      <tr><td>${esc(F.funding)}</td><td class="n">—</td>${S.base.years.map(y => `<td class="n${y.fundingNeed ? ' heat-down' : ''}">${CFO.fmtNum(y.fundingNeed, 0, lang)}</td>`).join('')}</tr></tbody></table></div>`;
+    const detail = `<div class="table-wrap"><table><thead><tr>${fd.head.map((h, i) => `<th${i ? ' class="n"' : ''}>${esc(h)}</th>`).join('')}</tr></thead>
+      <tbody>${fd.rows.map((r, k) => `<tr class="${fd.sub[k] ? 'subtotal' : ''}">${r.map((c, i) => `<td${i ? ' class="n"' : ''}>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
     const down = S.downside.F.slice(0, 4);
     $('p-forecast').innerHTML = `<div class="card"><div class="section-head"><h2>${esc(F.title)}</h2>
         <span class="actions"><label class="small">${esc(F.years)} <select id="fc-years">${[1, 2, 3].map(n => `<option${n === state.fcYears ? ' selected' : ''}>${n}</option>`).join('')}</select></label>
@@ -23363,7 +23574,7 @@ var __async = (__this, __arguments, generator) => {
       state.notes.map(n => `<div class="note" role="status">${esc(n())}</div>`).join('');
   }
 
-  const PANELS = { overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, review: renderReview, report: renderReport };
+  const PANELS = { full: renderFull, overview: renderOverview, ratios: renderRatios, vertical: renderVertical, horizontal: renderHorizontal, flags: renderFlags, forecast: renderForecast, review: renderReview };
 
   function render() {
     const ds = CFO.buildDataset(state.tables, state.overrides);
@@ -23421,7 +23632,7 @@ var __async = (__this, __arguments, generator) => {
     if (e.target.closest('[data-ai="stop"]')) { state.ai.ctl?.abort(); return; }
     if (e.target.closest('#x-md')) {
       const text = CFO.reportMarkdown(ctx()), msg = $('copy-msg');
-      const fail = () => { msg.textContent = T().copyFail; $('md-out').select(); };
+      const fail = () => { msg.textContent = T().copyFail; const box = $('md-out'); box.value = text; box.closest('details').open = true; box.select(); };
       try { navigator.clipboard.writeText(text).then(() => { msg.textContent = T().copied; }, fail); } catch (err) { fail(); }
     }
   });
@@ -23491,7 +23702,7 @@ var __async = (__this, __arguments, generator) => {
     .filter(([, g]) => !globalThis[g]).map(([n]) => n);
 
   // Claude commentary appears only where the claude.ai viewer offers it.
-  CFO.aiAvailable().then(on => { state.aiOn = on; if (on && ['overview', 'report'].includes(state.tab)) PANELS[state.tab](); });
+  CFO.aiAvailable().then(on => { state.aiOn = on; if (on && ['overview', 'full'].includes(state.tab)) PANELS[state.tab](); });
   loadSample();
   if (missing.length) state.errors.push(() => T().libMissing(missing.join(', ')));
   render();

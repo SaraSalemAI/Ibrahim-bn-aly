@@ -48,18 +48,19 @@
   </section>
 
   <nav class="tabs" role="tablist" id="tabs">
-    <button class="tab" role="tab" data-tab="overview" aria-selected="true">Overview</button>
+    <button class="tab" role="tab" data-tab="full" aria-selected="true">Full analysis</button>
+    <button class="tab" role="tab" data-tab="overview">Overview</button>
     <button class="tab" role="tab" data-tab="ratios">Ratios</button>
     <button class="tab" role="tab" data-tab="vertical">Vertical</button>
     <button class="tab" role="tab" data-tab="horizontal">Horizontal</button>
     <button class="tab" role="tab" data-tab="flags">Red flags</button>
     <button class="tab" role="tab" data-tab="forecast">Forecast</button>
     <button class="tab" role="tab" data-tab="review">Data review</button>
-    <button class="tab" role="tab" data-tab="report">Report</button>
   </nav>
 
   <main>
-    <section class="panel" id="p-overview" role="tabpanel">
+    <section class="panel" id="p-full" role="tabpanel"></section>
+    <section class="panel" id="p-overview" role="tabpanel" hidden>
       <div class="card missing-card" id="missing-card" role="status" hidden></div>
       <div class="card hero" id="hero"></div>
       <div class="kpis" id="kpis"></div>
@@ -78,7 +79,6 @@
     <section class="panel" id="p-flags" role="tabpanel" hidden></section>
     <section class="panel" id="p-forecast" role="tabpanel" hidden></section>
     <section class="panel" id="p-review" role="tabpanel" hidden></section>
-    <section class="panel" id="p-report" role="tabpanel" hidden></section>
   </main>
 </div>
 <div class="loading" id="loading" hidden><span data-t="reading">Reading files…</span></div>

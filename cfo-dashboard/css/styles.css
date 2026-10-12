@@ -220,3 +220,22 @@ textarea#md-out { width: 100%; min-height: 140px; font: 0.8rem/1.4 var(--font-nu
 #diag summary { cursor: pointer; }
 .missing-card { border-inline-start: 4px solid var(--warn); }
 .missing-card p { margin: 6px 0 10px; }
+
+/* Full analysis (tab, PDF and exported HTML) */
+.report.full { max-width: none; display: grid; gap: 4px; }
+.fa-head h2 { font-size: 1.6rem; }
+.fa-toc { display: flex; flex-wrap: wrap; gap: 6px 14px; padding: 10px 12px; background: var(--sunk); border-radius: var(--radius); font-size: 0.88rem; }
+.fa-toc b { width: 100%; }
+.fa-toc a { color: var(--accent); text-decoration: none; }
+.fa-toc a:hover { text-decoration: underline; }
+.fa-sec { display: grid; gap: 10px; padding-block: 18px; border-top: 1px solid var(--line); scroll-margin-top: 140px;   /* clears the sticky top bar and export bar */ min-width: 0; }
+.fa-sec h2 { font-size: 1.3rem; }
+.fa-sec h3 { margin-top: 6px; }
+.fa-health { display: flex; gap: 16px; align-items: center; }
+.fa-health p { margin: 4px 0 0; max-width: 78ch; }
+.fa-score { flex: none; width: 74px; height: 74px; border-radius: 50%; border: 6px solid; display: grid; place-items: center; font: 600 1.5rem var(--font-num); }
+.fa-charts figure { margin: 0; display: grid; gap: 6px; }
+.svg-chart { width: 100%; height: auto; display: block; font-family: var(--font-body); }
+.fa-actions { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 58px); z-index: 4; background: var(--bg); padding-block: 6px; }
+@media (max-width: 560px) { .fa-health { flex-direction: column; align-items: flex-start; } .fa-actions { position: static; } }
+@media print { .fa-toc, .fa-actions { display: none !important; } .fa-sec { break-inside: auto; } }
