@@ -22,6 +22,8 @@ Design and reference implementation for the fictional company's recruitment depa
 | Error isolation per step, blocking PROCESSING_ERROR | **Implemented, tested** via injected faults | TC-17, TC-18 |
 | JSONL audit log (no CV content) | **Implemented, tested** | `audit.py` (TC-19) |
 | CLI for one candidate record | **Implemented, tested** | `__main__.py` (TC-20) |
+| Arabic CVs: Arabic section headings and Arabic protected-characteristic terms | **Implemented, tested** with constructed examples, in both the Python package and the browser page. Not tested on real Arabic CVs | `cv.py` (TC-22 to TC-24) |
+| English/Arabic interface with right-to-left layout | **Implemented, tested** in headless Chromium | `web/` |
 | Browser page (`web/candidate_review.html`): form, JSON input, record view | **Implemented, tested** in headless Chromium. Its JavaScript engine matched the Python package on 33 shared inputs | `web/` |
 | Browser file upload: CV from PDF, .docx, .txt or .md; requirements from CSV or JSON | **Implemented, tested** in headless Chromium with generated files. Not tested on real-world CVs | `web/` |
 | PDF and DOCX CV parsing in the Python package, and OCR for scanned CVs anywhere | **Proposed, not built, not tested** | Section 9 |
@@ -107,6 +109,7 @@ Each step is isolated. An exception in a step is logged as `error` with only the
 - **No email and no phone**: `MISSING_CONTACT`, review. Phone numbers need at least 9 digits, which excludes date ranges such as `2019-2024`. This was a real bug caught by TC-05.
 - **No headings found**: `SECTIONS_NOT_DETECTED`, info. All text is then "unsectioned", so it can only give weak mentions.
 - Recognised headings include Experience, Education, Skills, Certifications, Projects, Languages, Summary, Profile and Interests. Each line keeps its original line number.
+- Arabic headings are recognised too, for example الخبرة, الخبرة العملية, التعليم, المؤهلات العلمية, المهارات, الشهادات, المشاريع, اللغات and نبذة. Arabic protected-characteristic terms (for example العمر, تاريخ الميلاد, الجنسية, الحالة الاجتماعية, الديانة, إعاقة) are matched as substrings, because Arabic attaches prefixes to words. Ambiguous words need a following colon: `الدين:` (الدين also appears in names such as نور الدين) and `السن:` (السن is inside السنة).
 
 **Protected-characteristic indicators.** A line that matches an indicator (for example date of birth, age, gender, marital status, nationality, religion, disability, pregnancy) is excluded from matching. The record stores only the category and line number, never the text. A `PROTECTED_CONTENT_EXCLUDED` review item sends the CV to a human to confirm whether that content belongs there at all. The agent never guesses a characteristic from names, photos or other cues. These are keyword rules and will produce false positives (for example, "age" in an unrelated sentence). A false positive costs a human check, not a wrong decision.
 
@@ -150,7 +153,7 @@ Each step is isolated. An exception in a step is logged as `error` with only the
 
 ## 10. Test cases and success criteria
 
-Run with `python -m unittest` from the repository root. All 21 cases pass.
+Run with `python -m unittest` from the repository root. All 24 cases pass.
 
 | ID | Case | Success criterion |
 |---|---|---|
@@ -175,8 +178,11 @@ Run with `python -m unittest` from the repository root. All 21 cases pass.
 | TC-19 | Audit log | Expected steps present; no CV content in the log |
 | TC-20 | CLI on sample input | Exit 0; valid JSON; expected candidate ID |
 | TC-21 | Determinism | Same input gives an identical record |
+| TC-22 | Arabic CV headings | Arabic sections give documented evidence with correct line references |
+| TC-23 | Arabic protected lines | Excluded with the right category; a name containing الدين is not flagged; excluded text never appears in output |
+| TC-24 | Arabic non-job-related requirement | "العمر أقل من 35 سنة" is not matched and is flagged for rewording |
 
-**Overall success criteria:** all 21 cases pass; no output field can carry a rejection or hiring decision; no evidence is produced without a CV citation; every run ends with a pending human review.
+**Overall success criteria:** all 24 cases pass; no output field can carry a rejection or hiring decision; no evidence is produced without a CV citation; every run ends with a pending human review.
 
 **Not yet tested:** real-world CVs (PDF, DOCX, multiple languages), synonym matching, scale, and any integration. The sample candidate in `examples/` is fictional.
 
@@ -197,7 +203,7 @@ Run with `python -m unittest` from the repository root. All 21 cases pass.
 ## 12. Running it
 
 ```bash
-python -m unittest                                              # 21 tests
+python -m unittest                                              # 24 tests
 python -m candidate_review_agent --input examples/sample_input.json \
        --audit-log out/audit.jsonl                              # one record to stdout
 ```

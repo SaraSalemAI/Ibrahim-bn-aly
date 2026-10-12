@@ -1,9 +1,9 @@
 <title>Candidate Record Review</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,600&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,600&family=Public+Sans:wght@400;500;600;700&display=swap">
 <style>
-/* Layout: a working form on the left, the review record on the right; one column on phones. */
+/* Layout: a working form on the left, the review record on the right; one column on phones. Mirrors for Arabic. */
 :root {
   --bg: #f3f5f3;
   --surface: #ffffff;
@@ -22,6 +22,10 @@
   --font-body: "Public Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --radius: 6px;
+}
+:root[lang="ar"] {
+  --font-display: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif;
+  --font-body: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, system-ui, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -42,20 +46,32 @@
 
 * { box-sizing: border-box; }
 body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5; }
+:root[lang="ar"] body { line-height: 1.7; }
 .wrap { max-width: 1320px; margin-inline: auto; padding-inline: clamp(16px, 3vw, 32px); }
 
-.masthead { padding-block: 28px 20px; border-bottom: 1px solid var(--line); }
+.fatal { margin: 12px auto 0; max-width: 1320px; padding: 12px 16px; border-radius: var(--radius); background: var(--bad-bg); color: var(--bad); font-weight: 600; }
+
+.masthead { padding-block: 24px 20px; border-bottom: 1px solid var(--line); }
+.mast-top { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
 .eyebrow { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-h1 { margin: 6px 0 8px; font-family: var(--font-display); font-weight: 600; font-size: clamp(28px, 4vw, 38px); line-height: 1.1; text-wrap: balance; }
+h1 { margin: 6px 0 8px; font-family: var(--font-display); font-weight: 600; font-size: clamp(28px, 4vw, 38px); line-height: 1.15; text-wrap: balance; }
 .lede { margin: 0; max-width: 68ch; color: var(--ink); }
 .privacy { margin: 10px 0 0; font-size: 13px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
 .privacy::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none; }
+
+.lang-switch { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--surface); }
+.lang-switch button { border: 0; background: none; color: var(--muted); font-size: 13px; font-weight: 600; padding: 4px 14px; border-radius: 999px; }
+.lang-switch button[lang="ar"] { font-family: "IBM Plex Sans Arabic", "Segoe UI", Tahoma, sans-serif; }
+.lang-switch button[lang="en"] { font-family: "Public Sans", system-ui, sans-serif; }
+.lang-switch button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 
 .layout { display: grid; gap: 24px; padding-block: 24px 48px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 1000px) { .layout { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: start; } }
 
 h2 { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 h3 { margin: 0; font-size: 15px; font-weight: 600; }
+:root[lang="ar"] .eyebrow, :root[lang="ar"] h2, :root[lang="ar"] .next-label, :root[lang="ar"] .sev { letter-spacing: 0; text-transform: none; }
+:root[lang="ar"] h2 { font-size: 14px; }
 .panel { min-width: 0; display: grid; gap: 16px; align-content: start; }
 .panel-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; }
 .example-note { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
@@ -68,13 +84,30 @@ input[type="text"], textarea {
   width: 100%; font: inherit; font-weight: 400; font-size: 14px; color: var(--ink); background: var(--bg);
   border: 1px solid var(--line); border-radius: 4px; padding: 7px 9px; min-width: 0;
 }
-textarea { font-family: var(--font-mono); font-size: 13px; line-height: 1.55; resize: vertical; }
+textarea { font-family: var(--font-mono), "IBM Plex Sans Arabic", monospace; font-size: 13px; line-height: 1.6; resize: vertical; }
 input:focus-visible, textarea:focus-visible, button:focus-visible, summary:focus-visible, input[type="checkbox"]:focus-visible {
   outline: 2px solid var(--focus); outline-offset: 2px;
 }
 fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 10px; min-width: 0; }
 legend { padding: 0; margin-bottom: 4px; font-size: 13px; font-weight: 700; }
 fieldset > .hint { margin: -6px 0 0; }
+
+.uploads { gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.drop-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.drop { position: relative; display: grid; gap: 4px; align-content: start; padding: 14px; border: 1.5px dashed var(--line); border-radius: var(--radius); background: var(--bg); cursor: pointer; font-weight: 400; }
+.drop:hover, .drop.dragover { border-color: var(--accent); background: var(--sunken); }
+.drop:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
+.drop.busy { opacity: 0.7; cursor: progress; }
+.drop input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.drop-title { font-weight: 700; font-size: 14px; }
+.drop-action { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.drop-status { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.drop-status:empty { display: none; }
+.ok-msg { color: var(--ok); }
+.error-msg { color: var(--bad); }
+.csv-help pre, pre.json { direction: ltr; text-align: left; }
+.csv-help pre { margin: 0; overflow-x: auto; background: var(--sunken); border: 1px solid var(--line); border-radius: 4px; padding: 10px; font-family: var(--font-mono); font-size: 12px; }
+.csv-help p { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
 
 .row-list { display: grid; gap: 8px; }
 .item-row { display: grid; gap: 8px; padding: 10px; background: var(--sunken); border: 1px solid var(--line); border-radius: 4px; }
@@ -93,45 +126,28 @@ button { font: inherit; cursor: pointer; }
 .remove:hover { color: var(--bad); }
 
 details { border-top: 1px solid var(--line); padding-top: 12px; }
+details.csv-help { border-top: 0; padding-top: 0; }
 summary { cursor: pointer; font-size: 13px; font-weight: 700; }
 details[open] summary { margin-bottom: 10px; }
-.uploads { gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
-.drop-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
-.drop { position: relative; display: grid; gap: 4px; align-content: start; padding: 14px; border: 1.5px dashed var(--line); border-radius: var(--radius); background: var(--bg); cursor: pointer; font-weight: 400; }
-.drop:hover, .drop.dragover { border-color: var(--accent); background: var(--sunken); }
-.drop:focus-within { outline: 2px solid var(--focus); outline-offset: 2px; }
-.drop.busy { opacity: 0.7; cursor: progress; }
-.drop input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-.drop-title { font-weight: 700; font-size: 14px; }
-.drop-action { font-size: 13px; font-weight: 600; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
-.drop-status { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
-.drop-status:empty { display: none; }
-.drop-status.ok { color: var(--ok); }
-.drop-status.error { color: var(--bad); }
-.csv-help { border-top: 0; padding-top: 0; }
-.csv-help pre { margin: 0; overflow-x: auto; background: var(--sunken); border: 1px solid var(--line); border-radius: 4px; padding: 10px; font-family: var(--font-mono); font-size: 12px; }
-.csv-help p { margin: 0 0 8px; font-size: 13px; color: var(--muted); }
 .json-tools { display: grid; gap: 8px; }
-.json-tools .buttons { display: flex; flex-wrap: wrap; gap: 8px; }
+.json-tools .buttons { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .msg { font-size: 13px; color: var(--muted); margin: 0; }
-.msg.error { color: var(--bad); }
 
 /* Record */
 .record { display: grid; gap: 18px; }
 .summary { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 14px; }
-.ids { display: flex; flex-wrap: wrap; gap: 6px 20px; font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
-.ids b { color: var(--ink); font-weight: 500; }
+.ids { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; color: var(--muted); }
+.ids b { color: var(--ink); font-weight: 500; font-family: var(--font-mono); }
 .next-label { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0; }
-.next-step { margin: 2px 0 0; font-family: var(--font-display); font-size: 22px; font-weight: 600; line-height: 1.25; text-wrap: balance; }
+.next-step { margin: 2px 0 0; font-family: var(--font-display); font-size: 22px; font-weight: 600; line-height: 1.3; text-wrap: balance; }
 .code { font-family: var(--font-mono); font-size: 12px; color: var(--muted); word-break: break-word; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; background: var(--sunken); color: var(--ink); border: 1px solid var(--line); white-space: nowrap; }
 .chip.pending { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
 .tally { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.tally span b { color: var(--ink); }
+.tally b { color: var(--ink); }
 
-.section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
-.req-list, .exc-list { display: grid; gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.req-list, .exc-list { display: grid; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
 .req { display: grid; gap: 8px; padding: 14px 16px; border-top: 1px solid var(--line); min-width: 0; }
 .req:first-child { border-top: 0; }
 .req-top { display: flex; gap: 8px 12px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
@@ -145,16 +161,18 @@ details[open] summary { margin-bottom: 10px; }
 .s-not_found { background: var(--bad-bg); color: var(--bad); }
 .s-not_assessable { background: var(--na-bg); color: var(--na); }
 .evidence { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-.evidence li { display: grid; gap: 2px; padding-left: 12px; border-left: 2px solid var(--line); min-width: 0; }
+.evidence li { display: grid; gap: 2px; padding-inline-start: 12px; border-inline-start: 2px solid var(--line); min-width: 0; }
 .evidence q { quotes: "\201C" "\201D"; overflow-wrap: anywhere; }
+:root[lang="ar"] .evidence q { quotes: "\00AB" "\00BB"; }
 .ref { font-family: var(--font-mono); font-size: 12px; color: var(--accent); }
+:root[lang="ar"] .ref { font-family: var(--font-body); }
 .sub { font-size: 12px; font-weight: 600; color: var(--muted); margin: 2px 0 0; }
 .missing { margin: 0; font-size: 14px; color: var(--muted); }
 .missing b { color: var(--ink); font-weight: 600; }
 
-.exc { display: grid; grid-template-columns: 4px minmax(0, 1fr); gap: 12px; padding: 12px 16px 12px 0; border-top: 1px solid var(--line); }
+.exc { display: grid; grid-template-columns: 4px minmax(0, 1fr); gap: 12px; padding-block: 12px; padding-inline: 0 16px; border-top: 1px solid var(--line); }
 .exc:first-child { border-top: 0; }
-.exc::before { content: ""; border-radius: 0 2px 2px 0; background: var(--na); }
+.exc::before { content: ""; border-radius: 2px; background: var(--na); }
 .exc.blocking::before { background: var(--bad); }
 .exc.review::before { background: var(--warn); }
 .exc-body { display: grid; gap: 3px; min-width: 0; }
@@ -165,7 +183,7 @@ details[open] summary { margin-bottom: 10px; }
 .exc p { margin: 0; font-size: 14px; }
 .empty { padding: 14px 16px; margin: 0; color: var(--muted); font-size: 14px; }
 
-.audit { margin: 0; padding: 0; list-style: none; font-family: var(--font-mono); font-size: 12px; display: grid; gap: 4px; }
+.audit { margin: 0; padding: 0; list-style: none; font-family: var(--font-mono); font-size: 12px; display: grid; gap: 4px; direction: ltr; }
 .audit li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; }
 .audit .ok { color: var(--ok); } .audit .error, .audit .rejected { color: var(--bad); }
 pre.json { margin: 0; max-height: 420px; overflow: auto; background: var(--sunken); border: 1px solid var(--line); border-radius: 4px; padding: 12px; font-family: var(--font-mono); font-size: 12px; line-height: 1.5; }
@@ -174,49 +192,69 @@ pre.json { margin: 0; max-height: 420px; overflow: auto; background: var(--sunke
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
 </style>
 
+<div class="wrap"><div id="fatal" class="fatal" role="alert" hidden></div></div>
+<script>
+  // Shows any script failure on the page instead of leaving a page that silently does nothing.
+  window.addEventListener("error", function (event) {
+    var box = document.getElementById("fatal");
+    if (!box) return;
+    box.hidden = false;
+    box.textContent = "This page hit an error and may not work: " + (event.message || "unknown error") +
+      ". Reload the page, or open it in a current version of Chrome, Edge, Safari or Firefox. " +
+      "حدث خطأ في هذه الصفحة وقد لا تعمل. أعد تحميل الصفحة أو افتحها في إصدار حديث من المتصفح.";
+  });
+</script>
+<noscript><p class="wrap fatal">This page needs JavaScript. تحتاج هذه الصفحة إلى تفعيل JavaScript.</p></noscript>
+
 <header class="masthead">
   <div class="wrap">
-    <p class="eyebrow">Recruitment department · fictional company</p>
-    <h1>Candidate Record Review</h1>
-    <p class="lede">Compare a candidate's CV with the vacancy's approved, job-related requirements. You get a record of the documented evidence, with CV line references, for a recruiter to review. It never rejects, ranks or hires anyone, and it never guesses personal characteristics.</p>
-    <p class="privacy">Runs entirely in this browser tab. Nothing you enter is saved or sent anywhere.</p>
+    <div class="mast-top">
+      <p class="eyebrow" data-i18n="eyebrow">Recruitment department · fictional company</p>
+      <div class="lang-switch" role="group" aria-label="Language / اللغة">
+        <button type="button" data-lang="en" lang="en" dir="ltr" aria-pressed="true">English</button>
+        <button type="button" data-lang="ar" lang="ar" dir="rtl" aria-pressed="false">العربية</button>
+      </div>
+    </div>
+    <h1 data-i18n="title">Candidate Record Review</h1>
+    <p class="lede" data-i18n="lede">Compare a candidate's CV with the vacancy's approved, job-related requirements. You get a record of the documented evidence, with CV line references, for a recruiter to review. It never rejects, ranks or hires anyone, and it never guesses personal characteristics.</p>
+    <p class="privacy" data-i18n="privacy">Runs entirely in this browser tab. Nothing you enter is saved or sent anywhere.</p>
   </div>
 </header>
 
 <main class="wrap layout">
   <section class="panel" aria-labelledby="input-heading">
     <div class="panel-head">
-      <h2 id="input-heading">Input</h2>
+      <h2 id="input-heading" data-i18n="input_heading">Input</h2>
       <div class="example-note">
-        <span id="example-status">Filled with a fictional example candidate.</span>
-        <button type="button" class="link" id="clear-btn">Clear form</button>
-        <button type="button" class="link" id="sample-btn">Load example</button>
+        <span id="example-status"></span>
+        <button type="button" class="link" id="clear-btn" data-i18n="clear">Clear form</button>
+        <button type="button" class="link" id="sample-btn" data-i18n="load_example">Load example</button>
       </div>
     </div>
 
     <form id="review-form" novalidate>
       <fieldset class="uploads">
-        <legend>Upload files</legend>
-        <p class="hint">Start here, or type into the form below. Files are read inside this browser tab and are not sent to any server.</p>
+        <legend data-i18n="uploads_legend">Upload files</legend>
+        <p class="hint" data-i18n="uploads_hint">Start here, or type into the form below. Files are read inside this browser tab and are not sent to any server.</p>
         <div class="drop-grid">
           <label class="drop" id="cv-drop" for="cv_file">
-            <span class="drop-title">CV file</span>
-            <span class="hint">PDF, Word (.docx), or text (.txt, .md)</span>
-            <span class="drop-action">Choose a file or drop it here</span>
+            <span class="drop-title" data-i18n="cv_file_title">CV file</span>
+            <span class="hint" data-i18n="cv_file_hint">PDF, Word (.docx), or text (.txt, .md)</span>
+            <span class="drop-action" data-i18n="drop_action">Choose a file or drop it here</span>
             <input type="file" id="cv_file" accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown">
             <span class="drop-status" id="cv-file-status" role="status"></span>
           </label>
           <label class="drop" id="req-drop" for="req_file">
-            <span class="drop-title">Requirements file</span>
-            <span class="hint">CSV or JSON. A full review input JSON also works.</span>
-            <span class="drop-action">Choose a file or drop it here</span>
+            <span class="drop-title" data-i18n="req_file_title">Requirements file</span>
+            <span class="hint" data-i18n="req_file_hint">CSV or JSON. A full review input JSON also works.</span>
+            <span class="drop-action" data-i18n="drop_action">Choose a file or drop it here</span>
             <input type="file" id="req_file" accept=".csv,.json,text/csv,application/json">
             <span class="drop-status" id="req-file-status" role="status"></span>
           </label>
         </div>
         <details class="csv-help">
-          <summary>Requirements CSV format</summary>
-          <p>One requirement per row. Only <code>text</code> is required. <code>required</code> accepts yes or no and defaults to yes. Separate match terms with semicolons.</p>
+          <summary data-i18n="csv_summary">Requirements CSV format</summary>
+          <p data-i18n-html="csv_help">One requirement per row. Only <code>text</code> is required. <code>required</code> accepts yes or no and defaults to yes. Separate match terms with semicolons.</p>
           <pre>requirement_id,text,required,match_terms
 REQ-01,Hands-on experience with Python,yes,Python
 REQ-02,Experience with SQL databases,yes,SQL;PostgreSQL
@@ -225,54 +263,54 @@ REQ-03,Project management certification,no,PMP;Project Management Professional</
       </fieldset>
 
       <div class="field-row">
-        <label for="candidate_id">Candidate ID
-          <input type="text" id="candidate_id" autocomplete="off" spellcheck="false">
+        <label for="candidate_id"><span data-i18n="f_candidate_id">Candidate ID</span>
+          <input type="text" id="candidate_id" dir="auto" autocomplete="off" spellcheck="false">
         </label>
-        <label for="vacancy_id">Vacancy ID
-          <input type="text" id="vacancy_id" autocomplete="off" spellcheck="false">
+        <label for="vacancy_id"><span data-i18n="f_vacancy_id">Vacancy ID</span>
+          <input type="text" id="vacancy_id" dir="auto" autocomplete="off" spellcheck="false">
         </label>
       </div>
-      <label for="candidate_name">Candidate name <span class="hint">Optional. Used only to spot duplicate records.</span>
-        <input type="text" id="candidate_name" autocomplete="off">
+      <label for="candidate_name"><span data-i18n="f_candidate_name">Candidate name</span> <span class="hint" data-i18n="f_candidate_name_hint">Optional. Used only to spot duplicate records.</span>
+        <input type="text" id="candidate_name" dir="auto" autocomplete="off">
       </label>
-      <label for="cv_text">CV text <span class="hint">Filled in from your uploaded CV, or paste the text. Check it before building the record: the record's line numbers refer to this text. Headings such as Experience, Education and Skills help.</span>
-        <textarea id="cv_text" rows="14" spellcheck="false"></textarea>
+      <label for="cv_text"><span data-i18n="f_cv_text">CV text</span> <span class="hint" data-i18n="f_cv_text_hint">Filled in from your uploaded CV, or paste the text. Check it before building the record: the record's line numbers refer to this text. Headings such as Experience, Education and Skills help.</span>
+        <textarea id="cv_text" rows="14" dir="auto" spellcheck="false"></textarea>
       </label>
 
       <fieldset>
-        <legend>Requirements</legend>
-        <p class="hint">Match terms are the exact words to look for, separated by commas. Leave them empty when a person has to assess the requirement.</p>
+        <legend data-i18n="reqs_legend">Requirements</legend>
+        <p class="hint" data-i18n="reqs_hint">Match terms are the exact words to look for, separated by commas. Leave them empty when a person has to assess the requirement.</p>
         <div class="row-list" id="req-list"></div>
-        <button type="button" class="btn" id="add-req">Add requirement</button>
+        <button type="button" class="btn" id="add-req" data-i18n="add_req">Add requirement</button>
       </fieldset>
 
       <fieldset>
-        <legend>Existing records</legend>
-        <p class="hint">Optional. Records already on file, checked for duplicates. Nothing is merged.</p>
+        <legend data-i18n="known_legend">Existing records</legend>
+        <p class="hint" data-i18n="known_hint">Optional. Records already on file, checked for duplicates. Nothing is merged.</p>
         <div class="row-list" id="known-list"></div>
-        <button type="button" class="btn" id="add-known">Add existing record</button>
+        <button type="button" class="btn" id="add-known" data-i18n="add_known">Add existing record</button>
       </fieldset>
 
       <details id="json-details">
-        <summary>Input as JSON</summary>
+        <summary data-i18n="json_summary">Input as JSON</summary>
         <div class="json-tools">
-          <label for="json_input">Paste input JSON in the agent's input format, or copy the form as JSON.
-            <textarea id="json_input" rows="8" spellcheck="false"></textarea>
+          <label for="json_input"><span data-i18n="json_label">Paste input JSON in the agent's input format, or copy the form as JSON.</span>
+            <textarea id="json_input" rows="8" dir="ltr" spellcheck="false"></textarea>
           </label>
           <div class="buttons">
-            <button type="button" class="btn" id="json-load">Load JSON into form</button>
-            <button type="button" class="btn" id="json-copy">Copy form as JSON</button>
+            <button type="button" class="btn" id="json-load" data-i18n="json_load">Load JSON into form</button>
+            <button type="button" class="btn" id="json-copy" data-i18n="json_copy">Copy form as JSON</button>
           </div>
           <p class="msg" id="json-msg" role="status"></p>
         </div>
       </details>
 
-      <button type="submit" class="primary">Build review record</button>
+      <button type="submit" class="primary" data-i18n="submit">Build review record</button>
     </form>
   </section>
 
   <section class="panel" aria-labelledby="record-heading">
-    <h2 id="record-heading">Review record</h2>
+    <h2 id="record-heading" data-i18n="record_heading">Review record</h2>
     <div id="record" aria-live="polite"></div>
   </section>
 </main>
@@ -297,16 +335,25 @@ const Engine = (() => {
     ["projects", "projects"], ["languages", "languages"],
     ["summary", "summary"], ["profile", "summary"], ["professional summary", "summary"], ["objective", "summary"],
     ["interests", "interests"],
+    ["الخبرة", "experience"], ["الخبرات", "experience"], ["الخبرة العملية", "experience"], ["الخبرات العملية", "experience"],
+    ["الخبرة المهنية", "experience"], ["الخبرات المهنية", "experience"],
+    ["التعليم", "education"], ["المؤهلات العلمية", "education"], ["المؤهل العلمي", "education"], ["التحصيل العلمي", "education"],
+    ["المهارات", "skills"], ["المهارات التقنية", "skills"],
+    ["الشهادات", "certifications"], ["الشهادات المهنية", "certifications"], ["الدورات التدريبية", "certifications"],
+    ["المشاريع", "projects"], ["اللغات", "languages"],
+    ["الملخص", "summary"], ["الملخص المهني", "summary"], ["نبذة", "summary"], ["نبذة عني", "summary"],
+    ["الملف الشخصي", "summary"], ["الهدف الوظيفي", "summary"],
+    ["الاهتمامات", "interests"], ["الهوايات", "interests"],
   ]);
   const DOCUMENTED_SECTIONS = new Set(["experience", "education", "skills", "certifications", "projects", "languages"]);
   const PROTECTED_PATTERNS = [
-    ["date_of_birth", /\bdate of birth\b|\bd\.o\.b\b/i],
-    ["age", /\bage\b/i],
-    ["gender_or_sex", /\b(gender|sex)\b/i],
-    ["marital_status", /\bmarital\b/i],
-    ["nationality_or_origin", /\b(nationality|ethnicity|ethnic origin)\b/i],
-    ["religion", /\breligio(n|us)\b/i],
-    ["disability", /\bdisabilit(y|ies)\b/i],
+    ["date_of_birth", /\bdate of birth\b|\bd\.o\.b\b|تاريخ الميلاد|مواليد/i],
+    ["age", /\bage\b|العمر|السن\s*:/i],
+    ["gender_or_sex", /\b(gender|sex)\b|الجنس(?!ي)/i],
+    ["marital_status", /\bmarital\b|الحالة الاجتماعية|متزوج|أعزب|عزباء/i],
+    ["nationality_or_origin", /\b(nationality|ethnicity|ethnic origin)\b|الجنسية/i],
+    ["religion", /\breligio(n|us)\b|الديانة|الدين\s*:/i],
+    ["disability", /\bdisabilit(y|ies)\b|إعاقة/i],
     ["sexual_orientation", /\bsexual orientation\b/i],
     ["pregnancy_or_family", /\bpregnan(t|cy)\b/i],
   ];
@@ -435,7 +482,8 @@ const Engine = (() => {
   }
 
   // ---------- requirement-to-evidence matching ----------
-  const termPattern = (term) => new RegExp(`(?<![A-Za-z0-9])${escapeRe(term)}(?![A-Za-z0-9])`, "iu");
+  // "(?:^|[^A-Za-z0-9])" instead of a lookbehind, which older Safari versions cannot parse.
+  const termPattern = (term) => new RegExp(`(?:^|[^A-Za-z0-9])${escapeRe(term)}(?![A-Za-z0-9])`, "iu");
   const excerpt = (text) => {
     const cps = Array.from(text);
     return cps.length <= MAX_EXCERPT_CHARS ? text : cps.slice(0, MAX_EXCERPT_CHARS - 1).join("") + "…";
@@ -691,37 +739,394 @@ const Engine = (() => {
   "use strict";
   const SAMPLE = {"candidate_id": "CND-1001", "vacancy_id": "VAC-2026-07", "candidate_name": "Jordan Example", "cv_text": "Jordan Example\njordan.example@mail.example | +44 20 7946 0958\n\nSummary\nData analyst with an interest in machine learning and open-source tooling.\n\nExperience\nData Analyst, Example Retail Ltd (2021-2025)\n- Built weekly reporting pipelines in Python and pandas\n- Maintained SQL queries against PostgreSQL for sales dashboards\n\nEducation\nBSc Statistics, Example University (2020)\n\nSkills\nPython, SQL, Excel, Git\n\nLanguages\nEnglish (fluent), Arabic (native)\n\nAge: 31\n", "requirements": [{"requirement_id": "REQ-01", "text": "Hands-on experience with Python", "required": true, "match_terms": ["Python"]}, {"requirement_id": "REQ-02", "text": "Experience with SQL databases", "required": true, "match_terms": ["SQL", "PostgreSQL"]}, {"requirement_id": "REQ-03", "text": "Bachelor's degree in a quantitative field", "required": true, "match_terms": ["BSc", "Bachelor"]}, {"requirement_id": "REQ-04", "text": "Project management certification", "required": false, "match_terms": ["PMP", "Project Management Professional"]}, {"requirement_id": "REQ-05", "text": "Fluent English", "required": true, "match_terms": ["English"]}, {"requirement_id": "REQ-06", "text": "Strong collaboration skills in cross-functional teams", "required": true, "match_terms": []}, {"requirement_id": "REQ-07", "text": "Age under 35", "required": true, "match_terms": []}], "known_candidates": [{"candidate_id": "CND-0412", "name": "J. Example", "email": "jordan.example@mail.example"}]};
 
-  const NEXT_STEP_LABELS = {
-    obtain_valid_input_and_rerun: "Fix the input and run the review again",
-    human_resolve_duplicate_record: "A person checks whether this is a duplicate record",
-    request_candidate_or_recruiter_confirmation: "Confirm the missing evidence with the candidate or recruiter",
-    human_investigate_processing_error: "A person investigates the processing error",
-    recruiter_review_of_documented_evidence: "Recruiter reviews the documented evidence",
+  // ---------- language ----------
+  const ISOLATE_START = String.fromCharCode(0x2068);
+  const ISOLATE_END = String.fromCharCode(0x2069);
+  const I18N = {
+    en: {
+      eyebrow: "Recruitment department · fictional company",
+      title: "Candidate Record Review",
+      lede: "Compare a candidate's CV with the vacancy's approved, job-related requirements. You get a record of the documented evidence, with CV line references, for a recruiter to review. It never rejects, ranks or hires anyone, and it never guesses personal characteristics.",
+      privacy: "Runs entirely in this browser tab. Nothing you enter is saved or sent anywhere.",
+      input_heading: "Input",
+      example_sample: "Filled with a fictional example candidate.",
+      example_files: "Using your files. Example data cleared.",
+      example_cleared: "Form cleared. Upload files or enter the candidate's details.",
+      example_json: "Filled from your JSON.",
+      example_from_file: "Filled from {name}.",
+      clear: "Clear form",
+      load_example: "Load example",
+      uploads_legend: "Upload files",
+      uploads_hint: "Start here, or type into the form below. Files are read inside this browser tab and are not sent to any server.",
+      cv_file_title: "CV file",
+      cv_file_hint: "PDF, Word (.docx), or text (.txt, .md)",
+      drop_action: "Choose a file or drop it here",
+      req_file_title: "Requirements file",
+      req_file_hint: "CSV or JSON. A full review input JSON also works.",
+      csv_summary: "Requirements CSV format",
+      csv_help: "One requirement per row. Only <code>text</code> is required. <code>required</code> accepts yes or no and defaults to yes. Separate match terms with semicolons.",
+      f_candidate_id: "Candidate ID",
+      f_vacancy_id: "Vacancy ID",
+      f_candidate_name: "Candidate name",
+      f_candidate_name_hint: "Optional. Used only to spot duplicate records.",
+      f_cv_text: "CV text",
+      f_cv_text_hint: "Filled in from your uploaded CV, or paste the text. Check it before building the record: the record's line numbers refer to this text. Headings such as Experience, Education and Skills help.",
+      reqs_legend: "Requirements",
+      reqs_hint: "Match terms are the exact words to look for, separated by commas. Leave them empty when a person has to assess the requirement.",
+      add_req: "Add requirement",
+      known_legend: "Existing records",
+      known_hint: "Optional. Records already on file, checked for duplicates. Nothing is merged.",
+      add_known: "Add existing record",
+      json_summary: "Input as JSON",
+      json_label: "Paste input JSON in the agent's input format, or copy the form as JSON.",
+      json_load: "Load JSON into form",
+      json_copy: "Copy form as JSON",
+      submit: "Build review record",
+      record_heading: "Review record",
+      row_req_id: "Requirement ID",
+      row_required: "Required",
+      row_remove: "Remove",
+      row_requirement: "Requirement",
+      row_terms: "Match terms",
+      row_terms_placeholder: "e.g. Python, pandas",
+      row_record_id: "Record ID",
+      row_name: "Name",
+      row_email: "Email",
+      row_phone: "Phone",
+      rec_candidate: "Candidate",
+      rec_vacancy: "Vacancy",
+      rec_next: "Recommended next step",
+      rec_pending: "Pending human review",
+      rec_requirements: "Requirements",
+      rec_optional: "optional",
+      rec_weak: "Weak mentions",
+      rec_missing: "Missing:",
+      rec_no_reqs: "No requirements were assessed. Fix the input problems listed below and run the review again.",
+      rec_exceptions: "Exceptions",
+      rec_no_exceptions: "No exceptions.",
+      rec_json: "Record JSON",
+      rec_copy: "Copy record JSON",
+      rec_audit: "Audit trail",
+      rec_disclaimer: "This record is for human review only. It contains no decision about the candidate. Evidence is quoted word for word from the CV, and every quote gives its CV line number.",
+      rec_empty: "Add the candidate and vacancy IDs, check the CV text and requirements, then choose Build review record.",
+      copied: "Copied.",
+      copy_blocked: "Copying is blocked here. The text is selected; copy it with your keyboard.",
+      next_obtain_valid_input_and_rerun: "Fix the input and run the review again",
+      next_human_resolve_duplicate_record: "A person checks whether this is a duplicate record",
+      next_request_candidate_or_recruiter_confirmation: "Confirm the missing evidence with the candidate or recruiter",
+      next_human_investigate_processing_error: "A person investigates the processing error",
+      next_recruiter_review_of_documented_evidence: "Recruiter reviews the documented evidence",
+      cp_recruiter_review: "Recruiter review",
+      cp_input_correction: "Input correction",
+      cp_duplicate_review: "Duplicate review",
+      cp_protected_content_check: "Protected content check",
+      cp_requirement_wording_review: "Requirement wording review",
+      cp_evidence_confirmation: "Evidence confirmation",
+      cp_processing_error_review: "Processing error review",
+      st_documented: "Documented",
+      st_weak_mention: "Weak mention",
+      st_not_found: "Not found",
+      st_not_assessable: "Not assessable",
+      sev_blocking: "Blocking",
+      sev_review: "Needs review",
+      sev_info: "Info",
+      reading: "Reading {name}…",
+      too_big_cv: "{name} is larger than 10 MB. Use a smaller file or paste the text.",
+      too_big: "{name} is larger than 10 MB.",
+      old_doc: "Older Word .doc files can't be read here. Save the CV as .docx or PDF and upload it again.",
+      bad_cv_format: "{name} isn't a supported CV format. Use PDF, .docx, .txt or .md.",
+      scan: "{name}: only {n} characters of text found. A scanned CV is an image, which this page can't read. Paste the text instead.",
+      cv_ok: "{name}: {n} characters of text extracted into the CV box below. Check it before building the record.",
+      cv_failed: "Couldn't read {name}. The file may be damaged or password-protected. Try another format or paste the text.",
+      lib_failed: "The file reader could not be downloaded. Check your connection and try again, or paste the text instead.",
+      csv_short: "The CSV needs a header row and at least one requirement row.",
+      csv_no_text: 'The CSV header needs a "text" column (the requirement). See the format example below.',
+      bad_required_row: 'Row {n}: "required" must be yes or no, not "{value}".',
+      bad_required_item: 'Requirement {n}: "required" must be yes or no, not "{value}".',
+      json_req_not_object: "Requirement {n} in the JSON is not an object.",
+      json_invalid_file: "{name} is not valid JSON ({detail}).",
+      json_shape: "The JSON must be a list of requirements, or an object with a requirements list.",
+      full_loaded: "{name}: full review input loaded (IDs, CV and requirements). Check the form, then build the record.",
+      bad_req_format: "{name} isn't a requirements file. Use .csv or .json.",
+      no_reqs: "No requirements found in {name}.",
+      reqs_loaded: (p) => `${p.name}: ${p.n} requirement${p.n === 1 ? "" : "s"} loaded${p.k ? `, ${p.k} without match terms (a person will assess those)` : ""}. Check them below.`,
+      req_failed: "Couldn't read {name}. Check that it is a .csv or .json file.",
+      json_invalid_paste: "That is not valid JSON ({detail}). Check for missing quotes or commas.",
+      json_must_object: "The JSON must be one object with candidate_id, vacancy_id, cv_text and requirements.",
+      json_loaded: "Loaded into the form.",
+    },
+    ar: {
+      eyebrow: "قسم التوظيف · شركة افتراضية",
+      title: "مراجعة سجل المرشح",
+      lede: "قارن السيرة الذاتية للمرشح بمتطلبات الوظيفة المعتمدة والمرتبطة بالعمل. تحصل على سجل بالأدلة الموثقة، مع الإشارة إلى أسطر السيرة الذاتية، ليراجعه مسؤول التوظيف. لا ترفض هذه الأداة أي مرشح ولا ترتّبه ولا توظّفه، ولا تخمّن أي صفات شخصية.",
+      privacy: "تعمل بالكامل داخل علامة التبويب هذه. لا يُحفظ أي شيء تُدخله ولا يُرسل إلى أي مكان.",
+      input_heading: "المدخلات",
+      example_sample: "النموذج معبأ ببيانات مرشح افتراضي للتجربة.",
+      example_files: "يتم استخدام ملفاتك. حُذفت بيانات المثال.",
+      example_cleared: "تم مسح النموذج. ارفع الملفات أو أدخل بيانات المرشح.",
+      example_json: "تمت التعبئة من JSON الذي أدخلته.",
+      example_from_file: "تمت التعبئة من {name}.",
+      clear: "مسح النموذج",
+      load_example: "تحميل المثال",
+      uploads_legend: "رفع الملفات",
+      uploads_hint: "ابدأ من هنا، أو اكتب مباشرة في النموذج أدناه. تُقرأ الملفات داخل علامة التبويب هذه ولا تُرسل إلى أي خادم.",
+      cv_file_title: "ملف السيرة الذاتية",
+      cv_file_hint: "PDF أو Word (DOCX) أو ملف نصي (TXT أو MD)",
+      drop_action: "اختر ملفًا أو أفلته هنا",
+      req_file_title: "ملف المتطلبات",
+      req_file_hint: "CSV أو JSON. يمكن أيضًا استخدام ملف JSON كامل لمدخلات المراجعة.",
+      csv_summary: "صيغة ملف CSV للمتطلبات",
+      csv_help: "متطلب واحد في كل صف. العمود الإلزامي الوحيد هو <code>text</code>. يقبل العمود <code>required</code> القيمة yes أو no، والقيمة الافتراضية yes. افصل بين كلمات المطابقة بفاصلة منقوطة (;). يمكن كتابة المتطلبات والكلمات بالعربية.",
+      f_candidate_id: "رقم المرشح",
+      f_vacancy_id: "رقم الوظيفة",
+      f_candidate_name: "اسم المرشح",
+      f_candidate_name_hint: "اختياري. يُستخدم فقط لاكتشاف السجلات المكررة.",
+      f_cv_text: "نص السيرة الذاتية",
+      f_cv_text_hint: "يُعبأ من السيرة الذاتية التي رفعتها، أو الصق النص هنا. راجعه قبل إنشاء السجل، فأرقام الأسطر في السجل تشير إلى هذا النص. تساعد العناوين مثل «الخبرة» و«التعليم» و«المهارات» على دقة التحليل.",
+      reqs_legend: "المتطلبات",
+      reqs_hint: "كلمات المطابقة هي الكلمات الدقيقة التي يُبحث عنها، مفصولة بفواصل. اتركها فارغة إذا كان يجب أن يقيّم شخصٌ هذا المتطلب.",
+      add_req: "إضافة متطلب",
+      known_legend: "السجلات الحالية",
+      known_hint: "اختياري. سجلات موجودة مسبقًا يُتحقق منها لاكتشاف التكرار. لا يُدمج أي شيء.",
+      add_known: "إضافة سجل حالي",
+      json_summary: "المدخلات بصيغة JSON",
+      json_label: "الصق مدخلات JSON بصيغة مدخلات الوكيل، أو انسخ النموذج بصيغة JSON.",
+      json_load: "تحميل JSON إلى النموذج",
+      json_copy: "نسخ النموذج بصيغة JSON",
+      submit: "إنشاء سجل المراجعة",
+      record_heading: "سجل المراجعة",
+      row_req_id: "رقم المتطلب",
+      row_required: "إلزامي",
+      row_remove: "حذف",
+      row_requirement: "المتطلب",
+      row_terms: "كلمات المطابقة",
+      row_terms_placeholder: "مثال: Python, pandas",
+      row_record_id: "رقم السجل",
+      row_name: "الاسم",
+      row_email: "البريد الإلكتروني",
+      row_phone: "الهاتف",
+      rec_candidate: "المرشح",
+      rec_vacancy: "الوظيفة",
+      rec_next: "الخطوة التالية المقترحة",
+      rec_pending: "بانتظار المراجعة البشرية",
+      rec_requirements: "المتطلبات",
+      rec_optional: "اختياري",
+      rec_weak: "إشارات ضعيفة",
+      rec_missing: "الناقص:",
+      rec_no_reqs: "لم يُقيَّم أي متطلب. صحّح مشكلات المدخلات المذكورة أدناه ثم أعد تشغيل المراجعة.",
+      rec_exceptions: "الاستثناءات",
+      rec_no_exceptions: "لا توجد استثناءات.",
+      rec_json: "السجل بصيغة JSON",
+      rec_copy: "نسخ السجل بصيغة JSON",
+      rec_audit: "سجل التدقيق",
+      rec_disclaimer: "هذا السجل للمراجعة البشرية فقط، ولا يتضمن أي قرار بشأن المرشح. الأدلة منقولة حرفيًا من السيرة الذاتية، ومع كل اقتباس رقم سطره. يبقى السجل بصيغة JSON بالإنجليزية لأنه صيغة البيانات الموحدة.",
+      rec_empty: "أضف رقم المرشح ورقم الوظيفة، وراجع نص السيرة الذاتية والمتطلبات، ثم اختر «إنشاء سجل المراجعة».",
+      copied: "تم النسخ.",
+      copy_blocked: "النسخ محظور هنا. تم تحديد النص؛ انسخه باستخدام لوحة المفاتيح.",
+      next_obtain_valid_input_and_rerun: "صحّح المدخلات وأعد تشغيل المراجعة",
+      next_human_resolve_duplicate_record: "يتحقق شخص مما إذا كان هذا سجلًا مكررًا",
+      next_request_candidate_or_recruiter_confirmation: "أكّد الأدلة الناقصة مع المرشح أو مسؤول التوظيف",
+      next_human_investigate_processing_error: "يحقق شخص في خطأ المعالجة",
+      next_recruiter_review_of_documented_evidence: "يراجع مسؤول التوظيف الأدلة الموثقة",
+      cp_recruiter_review: "مراجعة مسؤول التوظيف",
+      cp_input_correction: "تصحيح المدخلات",
+      cp_duplicate_review: "مراجعة التكرار",
+      cp_protected_content_check: "فحص المحتوى المحمي",
+      cp_requirement_wording_review: "مراجعة صياغة المتطلب",
+      cp_evidence_confirmation: "تأكيد الأدلة",
+      cp_processing_error_review: "مراجعة خطأ المعالجة",
+      st_documented: "موثّق",
+      st_weak_mention: "إشارة ضعيفة",
+      st_not_found: "غير موجود",
+      st_not_assessable: "غير قابل للتقييم",
+      sev_blocking: "مانع",
+      sev_review: "يحتاج مراجعة",
+      sev_info: "معلومة",
+      sec_experience: "الخبرة",
+      sec_education: "التعليم",
+      sec_skills: "المهارات",
+      sec_certifications: "الشهادات",
+      sec_projects: "المشاريع",
+      sec_languages: "اللغات",
+      sec_summary: "الملخص",
+      sec_interests: "الاهتمامات",
+      sec_unsectioned: "بدون قسم",
+      ref_line_section: "السطر {n} · {section}",
+      ref_line: "السطر {n}",
+      ref_req: "المتطلب {id}",
+      ref_record: "السجل {id}",
+      cat_date_of_birth: "تاريخ الميلاد",
+      cat_age: "العمر",
+      cat_gender_or_sex: "الجنس",
+      cat_marital_status: "الحالة الاجتماعية",
+      cat_nationality_or_origin: "الجنسية أو الأصل",
+      cat_religion: "الديانة",
+      cat_disability: "الإعاقة",
+      cat_sexual_orientation: "الميول الجنسية",
+      cat_pregnancy_or_family: "الحمل أو الأسرة",
+      shared_email: "البريد الإلكتروني",
+      shared_phone: "رقم الهاتف",
+      "shared_email and phone": "البريد الإلكتروني ورقم الهاتف",
+      x_cv_empty: "نص السيرة الذاتية فارغ.",
+      x_cv_unreadable: "يبدو أن نص السيرة الذاتية ثنائي أو تالف.",
+      x_cv_too_short: "نص السيرة الذاتية أقل من 40 حرفًا، وقد يكون ناقصًا.",
+      x_missing_contact: "لم يُعثر على بريد إلكتروني أو رقم هاتف في السيرة الذاتية.",
+      x_sections: "لم تُكتشف عناوين أقسام معروفة، لذا يُعامل النص كله على أنه بدون قسم (إشارات ضعيفة فقط).",
+      x_protected: "استُبعد هذا السطر من المطابقة (فئة المؤشر: {cat}). لم يُحفظ نصه، وعلى شخص أن يتأكد مما إذا كان ينبغي وجوده في السيرة الذاتية أصلًا.",
+      x_non_job: "يتضمن المتطلب {id} صياغة تتعلق بصفة محمية (الفئة: {cat}) ولم تتم مطابقته. أعد صياغته كمتطلب مرتبط بالعمل.",
+      x_not_assessable: "لا توجد كلمات مطابقة للمتطلب {id}، ويجب أن يقيّمه شخص.",
+      x_not_documented: "المتطلب {id} غير موثق في قسم مؤهِّل من السيرة الذاتية (الحالة: {status}). هذه فجوة يجب تأكيدها، وليست حكمًا ضد المرشح.",
+      x_dup_strong: "يشترك في {shared} مع السجل الحالي {id}. لم يُدمج السجلان؛ يجب أن يقرر شخص ما إذا كانا لنفس الشخص.",
+      x_dup_possible: "الاسم مشابه جدًا للسجل الحالي {id} (دون بيانات اتصال مشتركة). يُنصح بتحقق بشري.",
+      x_processing: "فشلت الخطوة {step} ({type}). يلزم تحقيق بشري.",
+      x_schema: "المدخلات غير مكتملة أو غير صالحة: {errors}",
+      se_payload: "يجب أن تكون المدخلات كائن JSON",
+      se_required_field: "أدخل {field}",
+      se_cv_text: "يجب أن يكون نص السيرة الذاتية نصًا",
+      se_name: "يجب أن يكون اسم المرشح نصًا أو يُترك فارغًا",
+      se_known: "يجب أن تكون السجلات الحالية قائمة، ولكل سجل رقم",
+      se_reqs_empty: "أضف متطلبًا واحدًا على الأقل",
+      se_req_object: "المتطلب {n} غير صالح",
+      se_req_requirement_id: "المتطلب {n}: أدخل رقم المتطلب",
+      se_req_text: "المتطلب {n}: أدخل نص المتطلب",
+      se_req_match_terms: "المتطلب {n}: يجب أن تكون كلمات المطابقة كلمات غير فارغة",
+      se_req_required: "المتطلب {n}: يجب أن تكون قيمة «إلزامي» نعم أو لا",
+      mi_not_found: "لا يوجد نص في السيرة الذاتية يطابق الكلمات: {terms}.",
+      mi_weak: "تظهر الكلمات ({terms}) فقط في الملخص أو الاهتمامات أو نص بدون قسم. تأكّد من خبرة المرشح فيها.",
+      mi_no_terms: "لا توجد كلمات مطابقة؛ يجب أن يقيّم مراجعٌ هذا المتطلب يدويًا.",
+      mi_non_job: "صياغة المتطلب غير مرتبطة بالعمل، ولم يُقيَّم.",
+      mi_blocked: "تعذّر التحقق من المدخلات أو السيرة الذاتية، ولم يُقيَّم المتطلب.",
+      mi_match_failed: "فشلت المطابقة، ولم يُقيَّم المتطلب.",
+      reading: "جارٍ قراءة {name}…",
+      too_big_cv: "حجم {name} أكبر من 10 ميغابايت. استخدم ملفًا أصغر أو الصق النص.",
+      too_big: "حجم {name} أكبر من 10 ميغابايت.",
+      old_doc: "لا يمكن قراءة ملفات Word القديمة بصيغة DOC هنا. احفظ السيرة الذاتية بصيغة DOCX أو PDF ثم ارفعها مجددًا.",
+      bad_cv_format: "صيغة {name} غير مدعومة للسيرة الذاتية. استخدم PDF أو DOCX أو TXT أو MD.",
+      scan: "{name}: عُثر على {n} حرفًا فقط من النص. السيرة الذاتية الممسوحة ضوئيًا صورة لا تستطيع هذه الصفحة قراءتها. الصق النص بدلًا من ذلك.",
+      cv_ok: "{name}: استُخرج {n} حرفًا من النص إلى خانة السيرة الذاتية أدناه. راجعه قبل إنشاء السجل.",
+      cv_failed: "تعذّرت قراءة {name}. قد يكون الملف تالفًا أو محميًا بكلمة مرور. جرّب صيغة أخرى أو الصق النص.",
+      lib_failed: "تعذّر تنزيل قارئ الملفات. تحقق من اتصالك وحاول مرة أخرى، أو الصق النص بدلًا من ذلك.",
+      csv_short: "يحتاج ملف CSV إلى صف عناوين وصف واحد على الأقل للمتطلبات.",
+      csv_no_text: "يجب أن يحتوي صف العناوين في ملف CSV على عمود text (نص المتطلب). راجع المثال أدناه.",
+      bad_required_row: "الصف {n}: يجب أن تكون قيمة required هي yes أو no، وليس «{value}».",
+      bad_required_item: "المتطلب {n}: يجب أن تكون قيمة required هي yes أو no، وليس «{value}».",
+      json_req_not_object: "المتطلب {n} في ملف JSON ليس كائنًا.",
+      json_invalid_file: "{name} ليس ملف JSON صالحًا ({detail}).",
+      json_shape: "يجب أن يكون ملف JSON قائمة متطلبات، أو كائنًا يحتوي على قائمة requirements.",
+      full_loaded: "{name}: حُمّلت مدخلات المراجعة كاملة (الأرقام والسيرة الذاتية والمتطلبات). راجع النموذج ثم أنشئ السجل.",
+      bad_req_format: "{name} ليس ملف متطلبات. استخدم ملف CSV أو JSON.",
+      no_reqs: "لم يُعثر على متطلبات في {name}.",
+      reqs_loaded: (p) => `${p.name}: حُمّل عدد ${p.n} من المتطلبات${p.k ? `، منها ${p.k} بدون كلمات مطابقة (سيقيّمها شخص)` : ""}. راجعها أدناه.`,
+      req_failed: "تعذّرت قراءة {name}. تأكد من أنه ملف CSV أو JSON.",
+      json_invalid_paste: "هذا ليس JSON صالحًا ({detail}). تحقق من علامات الاقتباس أو الفواصل الناقصة.",
+      json_must_object: "يجب أن يكون JSON كائنًا واحدًا يحتوي على candidate_id وvacancy_id وcv_text وrequirements.",
+      json_loaded: "تم التحميل إلى النموذج.",
+    },
   };
-  const CHECKPOINT_LABELS = {
-    recruiter_review: "Recruiter review",
-    input_correction: "Input correction",
-    duplicate_review: "Duplicate review",
-    protected_content_check: "Protected content check",
-    requirement_wording_review: "Requirement wording review",
-    evidence_confirmation: "Evidence confirmation",
-    processing_error_review: "Processing error review",
-  };
-  const STATUS_LABELS = {
-    documented: "Documented",
-    weak_mention: "Weak mention",
-    not_found: "Not found",
-    not_assessable: "Not assessable",
-  };
-  const SEVERITY_LABELS = { blocking: "Blocking", review: "Needs review", info: "Info" };
 
+  const storage = {
+    get(key) { try { return window.localStorage.getItem(key); } catch { return null; } },
+    set(key, value) { try { window.localStorage.setItem(key, value); } catch { /* storage unavailable */ } },
+  };
+  let lang = storage.get("crr-lang") || ((navigator.language || "").toLowerCase().startsWith("ar") ? "ar" : "en");
+  if (!I18N[lang]) lang = "en";
+
+  // Parameters such as IDs and file names are wrapped in bidi isolates in Arabic so Latin text keeps its order.
+  function t(key, params = {}) {
+    const entry = I18N[lang][key] ?? I18N.en[key] ?? key;
+    const p = {};
+    for (const [k, v] of Object.entries(params)) p[k] = lang === "ar" && typeof v === "string" ? ISOLATE_START + v + ISOLATE_END : v;
+    return typeof entry === "function" ? entry(p) : entry.replace(/\{(\w+)\}/g, (_, k) => (p[k] ?? ""));
+  }
+  const fmtNumber = (n) => n.toLocaleString("en-US");
+
+  // ---------- localised record text ----------
+  // The record itself stays in English (it is the agent's data format); only its display is translated.
+  const arabicLabel = (prefix, value) => (lang === "ar" ? (I18N.ar[prefix + value] ?? value) : value);
+
+  function refText(ref) {
+    if (!ref || lang === "en") return ref || "";
+    let x;
+    if ((x = ref.match(/^cv:L(\d+) \(section: (\w+)\)$/))) return t("ref_line_section", { n: x[1], section: arabicLabel("sec_", x[2]) });
+    if ((x = ref.match(/^cv:L(\d+)$/))) return t("ref_line", { n: x[1] });
+    if ((x = ref.match(/^requirement:(.+)$/))) return t("ref_req", { id: x[1] });
+    if ((x = ref.match(/^record:(.+)$/))) return t("ref_record", { id: x[1] });
+    return ref;
+  }
+
+  function schemaErrorText(err) {
+    let x;
+    if (err === "payload must be a JSON object") return t("se_payload");
+    if ((x = err.match(/^(candidate_id|vacancy_id) must be a non-empty string$/))) return t("se_required_field", { field: I18N.ar[x[1] === "candidate_id" ? "f_candidate_id" : "f_vacancy_id"] });
+    if (err.startsWith("cv_text must be a string")) return t("se_cv_text");
+    if (err.startsWith("candidate_name must be")) return t("se_name");
+    if (err.startsWith("known_candidates must be")) return t("se_known");
+    if (err === "requirements must be a non-empty list") return t("se_reqs_empty");
+    if ((x = err.match(/^requirements\[(\d+)\](?:\.(requirement_id|text|match_terms|required))? must/))) {
+      return t(x[2] ? `se_req_${x[2]}` : "se_req_object", { n: String(Number(x[1]) + 1) });
+    }
+    return err;
+  }
+
+  function exceptionText(e) {
+    if (lang === "en") return e.message;
+    const m = e.message;
+    let x;
+    switch (e.code) {
+      case "CV_EMPTY": return t("x_cv_empty");
+      case "CV_UNREADABLE": return t("x_cv_unreadable");
+      case "CV_TOO_SHORT": return t("x_cv_too_short");
+      case "MISSING_CONTACT": return t("x_missing_contact");
+      case "SECTIONS_NOT_DETECTED": return t("x_sections");
+      case "PROTECTED_CONTENT_EXCLUDED":
+        if ((x = m.match(/indicator category: (\w+)\)/))) return t("x_protected", { cat: arabicLabel("cat_", x[1]) });
+        break;
+      case "NON_JOB_RELATED_REQUIREMENT":
+        if ((x = m.match(/^Requirement (.+) contains protected-characteristic wording \(category: (\w+)\)/))) return t("x_non_job", { id: x[1], cat: arabicLabel("cat_", x[2]) });
+        break;
+      case "REQUIREMENT_NOT_ASSESSABLE":
+        if ((x = m.match(/^Requirement (.+) has no match terms; a human must assess it\.$/))) return t("x_not_assessable", { id: x[1] });
+        break;
+      case "REQUIREMENT_NOT_DOCUMENTED":
+        if ((x = m.match(/^Requirement (.+) is not documented in a qualifying CV section \(status: (\w+)\)/))) return t("x_not_documented", { id: x[1], status: t("st_" + x[2]) });
+        break;
+      case "DUPLICATE_STRONG":
+        if ((x = m.match(/^Shares (email and phone|email|phone) with existing record (.+)\. Not merged;/))) return t("x_dup_strong", { shared: I18N.ar["shared_" + x[1]], id: x[2] });
+        break;
+      case "DUPLICATE_POSSIBLE":
+        if ((x = m.match(/^Name is very similar to existing record (.+) \(no shared contact details\)/))) return t("x_dup_possible", { id: x[1] });
+        break;
+      case "PROCESSING_ERROR":
+        if ((x = m.match(/^Step '(.+)' failed \((.+)\)\./))) return t("x_processing", { step: x[1], type: x[2] });
+        break;
+      case "SCHEMA_INVALID": {
+        const prefix = "Input does not match the schema: ";
+        if (m.startsWith(prefix)) return t("x_schema", { errors: m.slice(prefix.length).split("; ").map(schemaErrorText).join("؛ ") });
+        break;
+      }
+    }
+    return m;
+  }
+
+  function missingText(text) {
+    if (!text || lang === "en") return text;
+    let x;
+    if ((x = text.match(/^No CV text matches the terms: (.+)\.$/))) return t("mi_not_found", { terms: x[1] });
+    if ((x = text.match(/^Terms \((.+)\) appear only in summary, interests or unsectioned text\./))) return t("mi_weak", { terms: x[1] });
+    if (text.startsWith("No match terms defined")) return t("mi_no_terms");
+    if (text.startsWith("Requirement wording is not job-related")) return t("mi_non_job");
+    if (text.startsWith("Input or CV could not be validated")) return t("mi_blocked");
+    if (text.startsWith("Matching failed")) return t("mi_match_failed");
+    return text;
+  }
+
+  // ---------- helpers ----------
   const $ = (id) => document.getElementById(id);
   function h(tag, attrs = {}, ...children) {
     const node = document.createElement(tag);
     for (const [k, v] of Object.entries(attrs)) {
       if (v === null || v === undefined || v === false) continue;
       if (k === "class") node.className = v;
-      else if (k === "text") node.textContent = v;
       else if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
       else node.setAttribute(k, v === true ? "" : v);
     }
@@ -732,21 +1137,37 @@ const Engine = (() => {
     return node;
   }
 
+  // Messages are stored as keys so they can be re-rendered when the language changes.
+  function say(el, key, params = {}, kind = "") {
+    el.dataset.msg = key ? JSON.stringify({ key, params, kind }) : "";
+    renderSay(el);
+  }
+  function renderSay(el) {
+    const msg = el.dataset.msg ? JSON.parse(el.dataset.msg) : null;
+    el.textContent = msg ? t(msg.key, msg.params) : "";
+    el.classList.toggle("ok-msg", !!msg && msg.kind === "ok");
+    el.classList.toggle("error-msg", !!msg && msg.kind === "error");
+  }
+
+  class UserError extends Error {
+    constructor(key, params = {}) { super(key); this.key = key; this.params = params; }
+  }
+
   // ---------- form rows ----------
   let rowCounter = 0;
   function requirementRow(req = {}) {
     const n = ++rowCounter;
     const row = h("div", { class: "item-row", "data-kind": "req" },
       h("div", { class: "top" },
-        h("label", { for: `req-id-${n}` }, "Requirement ID",
-          h("input", { type: "text", id: `req-id-${n}`, "data-field": "requirement_id", spellcheck: "false", autocomplete: "off" })),
+        h("label", { for: `req-id-${n}` }, h("span", { "data-i18n": "row_req_id" }, t("row_req_id")),
+          h("input", { type: "text", id: `req-id-${n}`, dir: "auto", "data-field": "requirement_id", spellcheck: "false", autocomplete: "off" })),
         h("label", { class: "check", for: `req-required-${n}` },
-          h("input", { type: "checkbox", id: `req-required-${n}`, "data-field": "required" }), "Required"),
-        h("button", { type: "button", class: "remove", onclick: () => row.remove() }, "Remove")),
-      h("label", { for: `req-text-${n}` }, "Requirement",
-        h("input", { type: "text", id: `req-text-${n}`, "data-field": "text", autocomplete: "off" })),
-      h("label", { for: `req-terms-${n}` }, "Match terms",
-        h("input", { type: "text", id: `req-terms-${n}`, "data-field": "match_terms", spellcheck: "false", autocomplete: "off", placeholder: "e.g. Python, pandas" })));
+          h("input", { type: "checkbox", id: `req-required-${n}`, "data-field": "required" }), h("span", { "data-i18n": "row_required" }, t("row_required"))),
+        h("button", { type: "button", class: "remove", "data-i18n": "row_remove", onclick: () => row.remove() }, t("row_remove"))),
+      h("label", { for: `req-text-${n}` }, h("span", { "data-i18n": "row_requirement" }, t("row_requirement")),
+        h("input", { type: "text", id: `req-text-${n}`, dir: "auto", "data-field": "text", autocomplete: "off" })),
+      h("label", { for: `req-terms-${n}` }, h("span", { "data-i18n": "row_terms" }, t("row_terms")),
+        h("input", { type: "text", id: `req-terms-${n}`, dir: "auto", "data-field": "match_terms", spellcheck: "false", autocomplete: "off", "data-i18n-placeholder": "row_terms_placeholder", placeholder: t("row_terms_placeholder") })));
     row.querySelector('[data-field="requirement_id"]').value = req.requirement_id ?? `REQ-${String(n).padStart(2, "0")}`;
     row.querySelector('[data-field="text"]').value = req.text ?? "";
     row.querySelector('[data-field="required"]').checked = req.required ?? true;
@@ -756,12 +1177,12 @@ const Engine = (() => {
 
   function knownRow(rec = {}) {
     const n = ++rowCounter;
-    const field = (key, label) => h("label", { for: `known-${key}-${n}` }, label,
-      h("input", { type: "text", id: `known-${key}-${n}`, "data-field": key, spellcheck: "false", autocomplete: "off" }));
+    const field = (key, labelKey) => h("label", { for: `known-${key}-${n}` }, h("span", { "data-i18n": labelKey }, t(labelKey)),
+      h("input", { type: "text", id: `known-${key}-${n}`, dir: "auto", "data-field": key, spellcheck: "false", autocomplete: "off" }));
     const row = h("div", { class: "item-row", "data-kind": "known" },
       h("div", { class: "known-grid" },
-        field("candidate_id", "Record ID"), field("name", "Name"), field("email", "Email"), field("phone", "Phone")),
-      h("button", { type: "button", class: "remove", onclick: () => row.remove() }, "Remove"));
+        field("candidate_id", "row_record_id"), field("name", "row_name"), field("email", "row_email"), field("phone", "row_phone")),
+      h("button", { type: "button", class: "remove", "data-i18n": "row_remove", onclick: () => row.remove() }, t("row_remove")));
     for (const key of ["candidate_id", "name", "email", "phone"]) {
       row.querySelector(`[data-field="${key}"]`).value = rec[key] ?? "";
     }
@@ -786,7 +1207,7 @@ const Engine = (() => {
         requirement_id: row.querySelector('[data-field="requirement_id"]').value,
         text: row.querySelector('[data-field="text"]').value,
         required: row.querySelector('[data-field="required"]').checked,
-        match_terms: row.querySelector('[data-field="match_terms"]').value.split(",").map((t) => t.trim()).filter(Boolean),
+        match_terms: row.querySelector('[data-field="match_terms"]').value.split(/[,،]/).map((s) => s.trim()).filter(Boolean),
       })),
       known_candidates: [...$("known-list").children]
         .map((row) => {
@@ -806,9 +1227,11 @@ const Engine = (() => {
   }
 
   // ---------- record rendering ----------
+  let lastResult = null;
+
   function evidenceList(items) {
     return h("ul", { class: "evidence" }, items.map((item) =>
-      h("li", {}, h("q", {}, item.excerpt), h("span", { class: "ref" }, item.source_ref))));
+      h("li", {}, h("q", { dir: "auto" }, item.excerpt), h("span", { class: "ref" }, refText(item.source_ref)))));
   }
 
   function renderRecord(record, audit) {
@@ -818,69 +1241,74 @@ const Engine = (() => {
 
     const summary = h("div", { class: "summary" },
       h("div", { class: "ids" },
-        h("span", {}, "Candidate ", h("b", {}, record.candidate_id)),
-        h("span", {}, "Vacancy ", h("b", {}, record.vacancy_id))),
+        h("span", {}, t("rec_candidate"), " ", h("bdi", {}, h("b", {}, record.candidate_id))),
+        h("span", {}, t("rec_vacancy"), " ", h("bdi", {}, h("b", {}, record.vacancy_id)))),
       h("div", {},
-        h("p", { class: "next-label" }, "Recommended next step"),
-        h("p", { class: "next-step" }, NEXT_STEP_LABELS[record.recommended_next_step] ?? record.recommended_next_step),
-        h("span", { class: "code" }, record.recommended_next_step)),
+        h("p", { class: "next-label" }, t("rec_next")),
+        h("p", { class: "next-step" }, t("next_" + record.recommended_next_step)),
+        h("span", { class: "code", dir: "ltr" }, record.recommended_next_step)),
       h("div", { class: "chips" },
-        h("span", { class: "chip pending" }, "Pending human review"),
-        record.review_checkpoints.map((c) => h("span", { class: "chip" }, CHECKPOINT_LABELS[c] ?? c))),
+        h("span", { class: "chip pending" }, t("rec_pending")),
+        record.review_checkpoints.map((c) => h("span", { class: "chip" }, t("cp_" + c)))),
       reviews.length
-        ? h("div", { class: "tally" }, Object.keys(STATUS_LABELS).filter((s) => counts[s]).map((s) =>
-            h("span", {}, h("b", {}, counts[s]), ` ${STATUS_LABELS[s].toLowerCase()}`)))
+        ? h("div", { class: "tally" }, ["documented", "weak_mention", "not_found", "not_assessable"].filter((s) => counts[s]).map((s) =>
+            h("span", {}, h("b", {}, fmtNumber(counts[s])), " ", t("st_" + s))))
         : null);
 
     const reqSection = h("section", { class: "panel", "aria-labelledby": "req-heading" },
-      h("div", { class: "section-head" }, h("h3", { id: "req-heading" }, "Requirements")),
+      h("h3", { id: "req-heading" }, t("rec_requirements")),
       reviews.length
         ? h("div", { class: "req-list" }, reviews.map((r) => h("article", { class: "req" },
             h("div", { class: "req-top" },
               h("div", { class: "req-title" },
-                h("span", { class: "req-id" }, r.requirement_id),
-                h("span", { class: "req-text" }, r.requirement),
-                r.required ? null : h("span", { class: "optional" }, "optional")),
-              h("span", { class: `status s-${r.evidence_status}` }, STATUS_LABELS[r.evidence_status] ?? r.evidence_status)),
+                h("bdi", { class: "req-id" }, r.requirement_id),
+                h("span", { class: "req-text", dir: "auto" }, r.requirement),
+                r.required ? null : h("span", { class: "optional" }, t("rec_optional"))),
+              h("span", { class: `status s-${r.evidence_status}` }, t("st_" + r.evidence_status))),
             r.documented_evidence.length ? evidenceList(r.documented_evidence) : null,
-            r.weak_mentions.length ? [h("p", { class: "sub" }, "Weak mentions"), evidenceList(r.weak_mentions)] : null,
-            r.missing_information ? h("p", { class: "missing" }, h("b", {}, "Missing: "), r.missing_information) : null)))
-        : h("div", { class: "req-list" }, h("p", { class: "empty" }, "No requirements were assessed. Fix the input problems listed below and run the review again.")));
+            r.weak_mentions.length ? [h("p", { class: "sub" }, t("rec_weak")), evidenceList(r.weak_mentions)] : null,
+            r.missing_information ? h("p", { class: "missing" }, h("b", {}, t("rec_missing")), " ", missingText(r.missing_information)) : null)))
+        : h("div", { class: "req-list" }, h("p", { class: "empty" }, t("rec_no_reqs"))));
 
     const excSection = h("section", { class: "panel", "aria-labelledby": "exc-heading" },
-      h("div", { class: "section-head" }, h("h3", { id: "exc-heading" }, "Exceptions")),
+      h("h3", { id: "exc-heading" }, t("rec_exceptions")),
       h("div", { class: "exc-list" }, record.exceptions.length
         ? record.exceptions.map((e) => h("div", { class: `exc ${e.severity}` },
             h("div", { class: "exc-body" },
               h("div", { class: "exc-head" },
-                h("span", { class: "exc-code" }, e.code),
-                h("span", { class: `sev ${e.severity}` }, SEVERITY_LABELS[e.severity] ?? e.severity),
-                e.source_ref ? h("span", { class: "ref" }, e.source_ref) : null),
-              h("p", {}, e.message))))
-        : h("p", { class: "empty" }, "No exceptions.")));
+                h("span", { class: "exc-code", dir: "ltr" }, e.code),
+                h("span", { class: `sev ${e.severity}` }, t("sev_" + e.severity)),
+                e.source_ref ? h("span", { class: "ref" }, refText(e.source_ref)) : null),
+              h("p", {}, exceptionText(e)))))
+        : h("p", { class: "empty" }, t("rec_no_exceptions"))));
 
     const json = JSON.stringify(record, null, 2);
-    const jsonPre = h("pre", { class: "json", tabindex: "0" }, json);
+    const jsonPre = h("pre", { class: "json", tabindex: "0", dir: "ltr" }, json);
     const copyMsg = h("span", { class: "msg", role: "status" });
-    const copyBtn = h("button", { type: "button", class: "btn", onclick: () => copyText(json, jsonPre, copyMsg) }, "Copy record JSON");
+    const copyBtn = h("button", { type: "button", class: "btn", onclick: () => copyText(json, jsonPre, copyMsg) }, t("rec_copy"));
 
     const detailsSection = h("section", { class: "panel" },
       h("details", {},
-        h("summary", {}, "Record JSON"),
+        h("summary", {}, t("rec_json")),
         h("div", { class: "json-tools" }, h("div", { class: "buttons" }, copyBtn, copyMsg), jsonPre)),
       h("details", {},
-        h("summary", {}, "Audit trail"),
+        h("summary", {}, t("rec_audit")),
         h("ol", { class: "audit" }, audit.map((a) =>
           h("li", {}, h("span", {}, `${a.timestamp.slice(11, 19)}  ${a.step}`), h("span", { class: a.outcome }, a.outcome))))),
-      h("p", { class: "disclaimer" }, "This record is for human review only. It contains no decision about the candidate. Evidence is quoted word for word from the CV, and every quote gives its CV line number."));
+      h("p", { class: "disclaimer" }, t("rec_disclaimer")));
 
     $("record").replaceChildren(h("div", { class: "record" }, summary, reqSection, excSection, detailsSection));
+  }
+
+  function showEmptyRecord() {
+    lastResult = null;
+    $("record").replaceChildren(h("div", { class: "req-list" }, h("p", { class: "empty", "data-i18n": "rec_empty" }, t("rec_empty"))));
   }
 
   async function copyText(text, selectTarget, msgEl) {
     try {
       await navigator.clipboard.writeText(text);
-      msgEl.textContent = "Copied.";
+      say(msgEl, "copied");
     } catch {
       if (typeof selectTarget.select === "function") {
         selectTarget.focus();
@@ -892,61 +1320,88 @@ const Engine = (() => {
         sel.removeAllRanges();
         sel.addRange(range);
       }
-      msgEl.textContent = "Copying is blocked here. The text is selected; copy it with your keyboard.";
+      say(msgEl, "copy_blocked");
     }
   }
 
   function run({ scroll = false } = {}) {
-    const { record, audit } = Engine.review(readForm());
-    renderRecord(record, audit);
+    lastResult = Engine.review(readForm());
+    renderRecord(lastResult.record, lastResult.audit);
     if (scroll && window.matchMedia("(max-width: 999px)").matches) {
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       $("record-heading").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
     }
   }
 
-  // ---------- file uploads ----------
-  const PDFJS_BASE = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/";
-  const MAMMOTH_SRC = "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js";
-  const MAX_FILE_BYTES = 10 * 1024 * 1024;
-  class UserError extends Error {}
+  // ---------- language switching ----------
+  function applyLanguage() {
+    const root = document.documentElement;
+    root.lang = lang;
+    root.dir = lang === "ar" ? "rtl" : "ltr";
+    document.title = t("title");
+    for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n);
+    for (const el of document.querySelectorAll("[data-i18n-html]")) el.innerHTML = t(el.dataset.i18nHtml);
+    for (const el of document.querySelectorAll("[data-i18n-placeholder]")) el.placeholder = t(el.dataset.i18nPlaceholder);
+    for (const el of document.querySelectorAll("[data-msg]")) renderSay(el);
+    for (const button of document.querySelectorAll(".lang-switch button")) button.setAttribute("aria-pressed", String(button.dataset.lang === lang));
+    if (lastResult) renderRecord(lastResult.record, lastResult.audit);
+  }
+  for (const button of document.querySelectorAll(".lang-switch button")) {
+    button.addEventListener("click", () => {
+      lang = button.dataset.lang;
+      storage.set("crr-lang", lang);
+      applyLanguage();
+    });
+  }
 
+  // ---------- file uploads ----------
+  // jsDelivr serves the exact npm builds; cdnjs is the fallback.
+  const LIBS = {
+    pdfWorker: ["https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js", "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"],
+    pdf: ["https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js", "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"],
+    mammoth: ["https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js", "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"],
+  };
+  const MAX_FILE_BYTES = 10 * 1024 * 1024;
   let showingExample = true;
   const BLANK_FORM = { requirements: [{ requirement_id: "REQ-01", text: "", required: true, match_terms: [] }] };
-  const emptyRecord = () => h("div", { class: "req-list" },
-    h("p", { class: "empty" }, "Add the candidate and vacancy IDs, check the CV text and requirements, then choose Build review record."));
+
+  function setExampleStatus(key, params) { say($("example-status"), key, params); }
 
   function leaveExample() {
     if (!showingExample) return;
     showingExample = false;
     fillForm(BLANK_FORM);
-    $("record").replaceChildren(emptyRecord());
-    $("example-status").textContent = "Using your files. Example data cleared.";
-  }
-
-  function setStatus(el, message, kind = "") {
-    el.textContent = message;
-    el.className = `drop-status${kind ? " " + kind : ""}`;
+    showEmptyRecord();
+    setExampleStatus("example_files");
   }
 
   const scriptLoads = {};
-  function loadScript(src) {
-    if (!scriptLoads[src]) {
-      scriptLoads[src] = new Promise((resolve, reject) => {
-        const s = document.createElement("script");
-        s.src = src;
-        s.onload = resolve;
-        s.onerror = () => { delete scriptLoads[src]; s.remove(); reject(new UserError("The file reader could not be downloaded. Check your connection and try again, or paste the text instead.")); };
-        document.head.append(s);
-      });
+  function loadOne(src) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = () => { s.remove(); reject(new Error("load failed")); };
+      document.head.append(s);
+    });
+  }
+  function loadLibrary(name) {
+    if (!scriptLoads[name]) {
+      scriptLoads[name] = (async () => {
+        for (const src of LIBS[name]) {
+          try { await loadOne(src); return; } catch { /* try the next source */ }
+        }
+        delete scriptLoads[name];
+        throw new UserError("lib_failed");
+      })();
     }
-    return scriptLoads[src];
+    return scriptLoads[name];
   }
 
   async function pdfToText(buffer) {
     // Loading the worker script on the page lets pdf.js run without a separate worker file.
-    await loadScript(PDFJS_BASE + "pdf.worker.min.js");
-    await loadScript(PDFJS_BASE + "pdf.min.js");
+    await loadLibrary("pdfWorker");
+    await loadLibrary("pdf");
     const pdf = await window.pdfjsLib.getDocument({ data: buffer, isEvalSupported: false }).promise;
     const pages = [];
     for (let p = 1; p <= pdf.numPages; p++) {
@@ -969,7 +1424,7 @@ const Engine = (() => {
   }
 
   async function docxToText(buffer) {
-    await loadScript(MAMMOTH_SRC);
+    await loadLibrary("mammoth");
     const result = await window.mammoth.extractRawText({ arrayBuffer: buffer });
     return result.value.replace(/\n\n/g, "\n");
   }
@@ -981,27 +1436,25 @@ const Engine = (() => {
     const drop = $("cv-drop");
     if (!file) return;
     drop.classList.add("busy");
-    setStatus(status, `Reading ${file.name}…`);
+    say(status, "reading", { name: file.name });
     try {
-      if (file.size > MAX_FILE_BYTES) throw new UserError(`${file.name} is larger than 10 MB. Use a smaller file or paste the text.`);
+      if (file.size > MAX_FILE_BYTES) throw new UserError("too_big_cv", { name: file.name });
       const ext = extensionOf(file.name);
       let text;
       if (ext === "pdf") text = await pdfToText(await file.arrayBuffer());
       else if (ext === "docx") text = await docxToText(await file.arrayBuffer());
       else if (ext === "txt" || ext === "md" || file.type.startsWith("text/")) text = await file.text();
-      else if (ext === "doc") throw new UserError("Older Word .doc files can't be read here. Save the CV as .docx or PDF and upload it again.");
-      else throw new UserError(`${file.name} isn't a supported CV format. Use PDF, .docx, .txt or .md.`);
+      else if (ext === "doc") throw new UserError("old_doc");
+      else throw new UserError("bad_cv_format", { name: file.name });
 
       leaveExample();
       $("cv_text").value = text;
       const chars = text.trim().length;
-      if (chars < 40) {
-        setStatus(status, `${file.name}: only ${chars} characters of text found. A scanned CV is an image, which this page can't read. Paste the text instead.`, "error");
-      } else {
-        setStatus(status, `${file.name}: ${chars.toLocaleString()} characters of text extracted into the CV box below. Check it before building the record.`, "ok");
-      }
+      if (chars < 40) say(status, "scan", { name: file.name, n: fmtNumber(chars) }, "error");
+      else say(status, "cv_ok", { name: file.name, n: fmtNumber(chars) }, "ok");
     } catch (err) {
-      setStatus(status, err instanceof UserError ? err.message : `Couldn't read ${file.name}. The file may be damaged or password-protected. Try another format or paste the text.`, "error");
+      if (err instanceof UserError) say(status, err.key, err.params, "error");
+      else say(status, "cv_failed", { name: file.name }, "error");
     } finally {
       drop.classList.remove("busy");
       $("cv_file").value = "";
@@ -1010,7 +1463,7 @@ const Engine = (() => {
 
   // Minimal RFC 4180 reader; also accepts semicolon-delimited files from spreadsheet exports.
   function parseCsv(text) {
-    text = text.replace(/^﻿/, "");
+    if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
     const firstLine = text.split(/\r?\n/, 1)[0];
     const delimiter = firstLine.includes(",") || !firstLine.includes(";") ? "," : ";";
     const rows = [];
@@ -1033,46 +1486,46 @@ const Engine = (() => {
   }
 
   const HEADER_ALIASES = {
-    requirement_id: ["requirement_id", "requirement id", "id", "req_id"],
-    text: ["text", "requirement", "description"],
-    required: ["required", "mandatory"],
-    match_terms: ["match_terms", "match terms", "terms", "keywords"],
+    requirement_id: ["requirement_id", "requirement id", "id", "req_id", "رقم المتطلب"],
+    text: ["text", "requirement", "description", "المتطلب", "النص"],
+    required: ["required", "mandatory", "إلزامي", "الزامي"],
+    match_terms: ["match_terms", "match terms", "terms", "keywords", "كلمات المطابقة", "الكلمات"],
   };
-  const splitTerms = (value) => value.split(/[;,|]/).map((t) => t.trim()).filter(Boolean);
-  function parseRequired(value, where) {
+  const splitTerms = (value) => value.split(/[;,|،؛]/).map((s) => s.trim()).filter(Boolean);
+  function parseRequired(value, errorKey, n) {
     const v = String(value ?? "").trim().toLowerCase();
-    if (!v || ["yes", "y", "true", "1", "required", "mandatory"].includes(v)) return true;
-    if (["no", "n", "false", "0", "optional"].includes(v)) return false;
-    throw new UserError(`${where}: "required" must be yes or no, not "${value}".`);
+    if (!v || ["yes", "y", "true", "1", "required", "mandatory", "نعم", "إلزامي", "الزامي"].includes(v)) return true;
+    if (["no", "n", "false", "0", "optional", "لا", "اختياري"].includes(v)) return false;
+    throw new UserError(errorKey, { n: String(n), value: String(value) });
   }
 
   function requirementsFromCsv(text) {
     const rows = parseCsv(text);
-    if (rows.length < 2) throw new UserError("The CSV needs a header row and at least one requirement row.");
+    if (rows.length < 2) throw new UserError("csv_short");
     const header = rows[0].map((c) => c.trim().toLowerCase());
     const col = {};
     for (const [key, aliases] of Object.entries(HEADER_ALIASES)) {
       const index = header.findIndex((c) => aliases.includes(c));
       if (index >= 0) col[key] = index;
     }
-    if (col.text === undefined) throw new UserError('The CSV header needs a "text" column (the requirement). See the format example below.');
+    if (col.text === undefined) throw new UserError("csv_no_text");
     return rows.slice(1).map((r, i) => {
       const cell = (key) => (col[key] === undefined ? "" : (r[col[key]] ?? "").trim());
       return {
         requirement_id: cell("requirement_id") || `REQ-${String(i + 1).padStart(2, "0")}`,
         text: cell("text"),
-        required: parseRequired(cell("required"), `Row ${i + 2}`),
+        required: parseRequired(cell("required"), "bad_required_row", i + 2),
         match_terms: splitTerms(cell("match_terms")),
       };
     });
   }
 
   function normaliseJsonRequirement(r, i) {
-    if (r === null || typeof r !== "object" || Array.isArray(r)) throw new UserError(`Requirement ${i + 1} in the JSON is not an object.`);
+    if (r === null || typeof r !== "object" || Array.isArray(r)) throw new UserError("json_req_not_object", { n: String(i + 1) });
     return {
       requirement_id: typeof r.requirement_id === "string" && r.requirement_id.trim() ? r.requirement_id : `REQ-${String(i + 1).padStart(2, "0")}`,
       text: typeof r.text === "string" ? r.text : "",
-      required: typeof r.required === "boolean" ? r.required : parseRequired(r.required, `Requirement ${i + 1}`),
+      required: typeof r.required === "boolean" ? r.required : parseRequired(r.required, "bad_required_item", i + 1),
       match_terms: Array.isArray(r.match_terms) ? r.match_terms.map(String) : typeof r.match_terms === "string" ? splitTerms(r.match_terms) : [],
     };
   }
@@ -1082,42 +1535,43 @@ const Engine = (() => {
     const drop = $("req-drop");
     if (!file) return;
     drop.classList.add("busy");
-    setStatus(status, `Reading ${file.name}…`);
+    say(status, "reading", { name: file.name });
     try {
-      if (file.size > MAX_FILE_BYTES) throw new UserError(`${file.name} is larger than 10 MB.`);
+      if (file.size > MAX_FILE_BYTES) throw new UserError("too_big", { name: file.name });
       const ext = extensionOf(file.name);
       const text = await file.text();
       let reqs;
       let vacancyId = null;
       if (ext === "json" || file.type === "application/json") {
         let data;
-        try { data = JSON.parse(text); } catch (err) { throw new UserError(`${file.name} is not valid JSON (${err.message}).`); }
+        try { data = JSON.parse(text); } catch (err) { throw new UserError("json_invalid_file", { name: file.name, detail: err.message }); }
         if (data && typeof data === "object" && !Array.isArray(data) && "cv_text" in data) {
           showingExample = false;
           fillForm(data);
-          $("example-status").textContent = `Filled from ${file.name}.`;
-          $("record").replaceChildren(emptyRecord());
-          setStatus(status, `${file.name}: full review input loaded (IDs, CV and requirements). Check the form, then build the record.`, "ok");
+          setExampleStatus("example_from_file", { name: file.name });
+          showEmptyRecord();
+          say(status, "full_loaded", { name: file.name }, "ok");
           return;
         }
         const list = Array.isArray(data) ? data : data && Array.isArray(data.requirements) ? data.requirements : null;
-        if (!list) throw new UserError("The JSON must be a list of requirements, or an object with a requirements list.");
+        if (!list) throw new UserError("json_shape");
         reqs = list.map(normaliseJsonRequirement);
         if (data && typeof data.vacancy_id === "string") vacancyId = data.vacancy_id;
       } else if (ext === "csv" || file.type === "text/csv") {
         reqs = requirementsFromCsv(text);
       } else {
-        throw new UserError(`${file.name} isn't a requirements file. Use .csv or .json.`);
+        throw new UserError("bad_req_format", { name: file.name });
       }
-      if (!reqs.length) throw new UserError(`No requirements found in ${file.name}.`);
+      if (!reqs.length) throw new UserError("no_reqs", { name: file.name });
 
       leaveExample();
       $("req-list").replaceChildren(...reqs.map(requirementRow));
       if (vacancyId) $("vacancy_id").value = vacancyId;
-      const noTerms = reqs.filter((r) => !r.match_terms.length).length;
-      setStatus(status, `${file.name}: ${reqs.length} requirement${reqs.length === 1 ? "" : "s"} loaded${noTerms ? `, ${noTerms} without match terms (a person will assess those)` : ""}. Check them below.`, "ok");
+      const withoutTerms = reqs.filter((r) => !r.match_terms.length).length;
+      say(status, "reqs_loaded", { name: file.name, n: reqs.length, k: withoutTerms }, "ok");
     } catch (err) {
-      setStatus(status, err instanceof UserError ? err.message : `Couldn't read ${file.name}. Check that it is a .csv or .json file.`, "error");
+      if (err instanceof UserError) say(status, err.key, err.params, "error");
+      else say(status, "req_failed", { name: file.name }, "error");
     } finally {
       drop.classList.remove("busy");
       $("req_file").value = "";
@@ -1146,35 +1600,32 @@ const Engine = (() => {
   $("clear-btn").addEventListener("click", () => {
     showingExample = false;
     fillForm(BLANK_FORM);
-    $("example-status").textContent = "Form cleared. Upload files or enter the candidate's details.";
-    $("record").replaceChildren(emptyRecord());
+    setExampleStatus("example_cleared");
+    showEmptyRecord();
   });
   $("sample-btn").addEventListener("click", () => {
     showingExample = true;
     fillForm(SAMPLE);
-    $("example-status").textContent = "Filled with a fictional example candidate.";
+    setExampleStatus("example_sample");
     run();
   });
   $("json-load").addEventListener("click", () => {
     const msg = $("json-msg");
-    msg.classList.remove("error");
     let data;
     try {
       data = JSON.parse($("json_input").value);
     } catch (err) {
-      msg.textContent = `That is not valid JSON (${err.message}). Check for missing quotes or commas.`;
-      msg.classList.add("error");
+      say(msg, "json_invalid_paste", { detail: err.message }, "error");
       return;
     }
     if (data === null || typeof data !== "object" || Array.isArray(data)) {
-      msg.textContent = "The JSON must be one object with candidate_id, vacancy_id, cv_text and requirements.";
-      msg.classList.add("error");
+      say(msg, "json_must_object", {}, "error");
       return;
     }
     showingExample = false;
     fillForm(data);
-    $("example-status").textContent = "Filled from your JSON.";
-    msg.textContent = "Loaded into the form.";
+    setExampleStatus("example_json");
+    say(msg, "json_loaded");
     run();
   });
   $("json-copy").addEventListener("click", () => {
@@ -1184,6 +1635,8 @@ const Engine = (() => {
   });
 
   fillForm(SAMPLE);
+  setExampleStatus("example_sample");
   run();
+  applyLanguage();
 })();
 </script>

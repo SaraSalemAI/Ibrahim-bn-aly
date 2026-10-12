@@ -37,6 +37,32 @@ SECTION_HEADINGS = {
     "professional summary": "summary",
     "objective": "summary",
     "interests": "interests",
+    # Arabic headings
+    "الخبرة": "experience",
+    "الخبرات": "experience",
+    "الخبرة العملية": "experience",
+    "الخبرات العملية": "experience",
+    "الخبرة المهنية": "experience",
+    "الخبرات المهنية": "experience",
+    "التعليم": "education",
+    "المؤهلات العلمية": "education",
+    "المؤهل العلمي": "education",
+    "التحصيل العلمي": "education",
+    "المهارات": "skills",
+    "المهارات التقنية": "skills",
+    "الشهادات": "certifications",
+    "الشهادات المهنية": "certifications",
+    "الدورات التدريبية": "certifications",
+    "المشاريع": "projects",
+    "اللغات": "languages",
+    "الملخص": "summary",
+    "الملخص المهني": "summary",
+    "نبذة": "summary",
+    "نبذة عني": "summary",
+    "الملف الشخصي": "summary",
+    "الهدف الوظيفي": "summary",
+    "الاهتمامات": "interests",
+    "الهوايات": "interests",
 }
 
 # Sections whose text can count as documented evidence. Summary, interests and
@@ -45,14 +71,17 @@ DOCUMENTED_SECTIONS = {"experience", "education", "skills", "certifications", "p
 
 # Protected-characteristic indicators. These are only used to EXCLUDE a line
 # or flag a requirement. The agent never infers any of these characteristics.
+# Arabic terms are matched as substrings because Arabic attaches prefixes such
+# as و and ال to words. Ambiguous words (for example الدين, which appears in
+# names like نور الدين, and السن, which is inside السنة) need a following colon.
 PROTECTED_PATTERNS: dict[str, re.Pattern[str]] = {
-    "date_of_birth": re.compile(r"\bdate of birth\b|\bd\.o\.b\b", re.IGNORECASE),
-    "age": re.compile(r"\bage\b", re.IGNORECASE),
-    "gender_or_sex": re.compile(r"\b(gender|sex)\b", re.IGNORECASE),
-    "marital_status": re.compile(r"\bmarital\b", re.IGNORECASE),
-    "nationality_or_origin": re.compile(r"\b(nationality|ethnicity|ethnic origin)\b", re.IGNORECASE),
-    "religion": re.compile(r"\breligio(n|us)\b", re.IGNORECASE),
-    "disability": re.compile(r"\bdisabilit(y|ies)\b", re.IGNORECASE),
+    "date_of_birth": re.compile(r"\bdate of birth\b|\bd\.o\.b\b|تاريخ الميلاد|مواليد", re.IGNORECASE),
+    "age": re.compile(r"\bage\b|العمر|السن\s*:", re.IGNORECASE),
+    "gender_or_sex": re.compile(r"\b(gender|sex)\b|الجنس(?!ي)", re.IGNORECASE),
+    "marital_status": re.compile(r"\bmarital\b|الحالة الاجتماعية|متزوج|أعزب|عزباء", re.IGNORECASE),
+    "nationality_or_origin": re.compile(r"\b(nationality|ethnicity|ethnic origin)\b|الجنسية", re.IGNORECASE),
+    "religion": re.compile(r"\breligio(n|us)\b|الديانة|الدين\s*:", re.IGNORECASE),
+    "disability": re.compile(r"\bdisabilit(y|ies)\b|إعاقة", re.IGNORECASE),
     "sexual_orientation": re.compile(r"\bsexual orientation\b", re.IGNORECASE),
     "pregnancy_or_family": re.compile(r"\bpregnan(t|cy)\b", re.IGNORECASE),
 }

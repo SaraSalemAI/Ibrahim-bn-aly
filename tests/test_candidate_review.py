@@ -265,5 +265,54 @@ class AuditTests(unittest.TestCase):
         self.assertEqual(data["recommended_next_step"], NextStep.RESOLVE_DUPLICATE.value)
 
 
+ARABIC_CV = (
+    "نور الدين مثال\n"
+    "nour@mail.example\n\n"
+    "الخبرة العملية:\n"
+    "محلل بيانات في شركة مثال، استخدام Python و SQL\n\n"
+    "التعليم\n"
+    "بكالوريوس إحصاء، جامعة مثال\n\n"
+    "اللغات\n"
+    "العربية، English\n\n"
+    "البيانات الشخصية\n"
+    "العمر: ٣١\n"
+    "الجنسية: مثال\n"
+    "الحالة الاجتماعية: متزوج\n"
+)
+
+
+class ArabicTests(unittest.TestCase):
+    def test_tc22_arabic_headings_give_documented_evidence(self):
+        reqs = [
+            {"requirement_id": "R1", "text": "Python", "match_terms": ["Python"]},
+            {"requirement_id": "R2", "text": "بكالوريوس", "match_terms": ["بكالوريوس"]},
+            {"requirement_id": "R3", "text": "العربية", "match_terms": ["العربية"]},
+        ]
+        record = review_candidate(payload(cv_text=ARABIC_CV, requirements=reqs, candidate_name="نور الدين مثال"))
+        refs = {r.requirement_id: (r.evidence_status, r.documented_evidence[0].source_ref if r.documented_evidence else None) for r in record.requirement_reviews}
+        self.assertEqual(refs["R1"], (EvidenceStatus.DOCUMENTED, "cv:L5 (section: experience)"))
+        self.assertEqual(refs["R2"], (EvidenceStatus.DOCUMENTED, "cv:L8 (section: education)"))
+        self.assertEqual(refs["R3"], (EvidenceStatus.DOCUMENTED, "cv:L11 (section: languages)"))
+        self.assertNotIn(ExceptionCode.SECTIONS_NOT_DETECTED, codes(record))
+
+    def test_tc23_arabic_protected_lines_excluded_with_categories(self):
+        record = review_candidate(payload(cv_text=ARABIC_CV, requirements=[{"requirement_id": "R1", "text": "x", "match_terms": ["مثال"]}]))
+        excluded = {e.source_ref: e.message for e in record.exceptions if e.code is ExceptionCode.PROTECTED_CONTENT_EXCLUDED}
+        self.assertIn("age", excluded["cv:L14"])
+        self.assertIn("nationality_or_origin", excluded["cv:L15"])
+        self.assertIn("marital_status", excluded["cv:L16"])
+        # A name containing الدين is not treated as religion, and excluded lines never become evidence.
+        self.assertNotIn("cv:L1", excluded)
+        cited = {item.source_ref for r in record.requirement_reviews for item in r.documented_evidence + r.weak_mentions}
+        self.assertFalse(any(ref.startswith(("cv:L14 ", "cv:L15 ", "cv:L16 ")) for ref in cited))
+        self.assertNotIn("الجنسية: مثال", json.dumps(record.to_dict(), ensure_ascii=False))
+
+    def test_tc24_arabic_non_job_related_requirement_is_flagged(self):
+        reqs = [{"requirement_id": "R1", "text": "العمر أقل من 35 سنة", "match_terms": ["Python"]}]
+        record = review_candidate(payload(requirements=reqs))
+        self.assertIs(record.requirement_reviews[0].evidence_status, EvidenceStatus.NOT_ASSESSABLE)
+        self.assertIn(ExceptionCode.NON_JOB_RELATED_REQUIREMENT, codes(record))
+
+
 if __name__ == "__main__":
     unittest.main()
