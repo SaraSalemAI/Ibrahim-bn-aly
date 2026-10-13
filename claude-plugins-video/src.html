@@ -1,0 +1,682 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Claude Plugins Video</title>
+<style>
+/*BASE*/
+/*EXTRA*/
+/* ---------- mcp-specific ---------- */
+.nxm{position:absolute;left:110px;right:110px;top:300px;display:grid;grid-template-columns:1fr 1fr;gap:60px}
+.nx{position:relative;height:560px;padding:30px 34px}
+.nx h3{margin:0;font-size:34px;font-weight:800}
+.nx .sub{font-size:22px;color:var(--muted);margin-top:6px}
+.nx .badge{position:absolute;right:30px;top:30px;font:800 30px "DejaVu Sans Mono",monospace;padding:8px 18px;border-radius:14px}
+.nx.bad .badge{color:#FF8A80;background:rgba(255,110,110,.12)}
+.nx.good .badge{color:var(--peach);background:rgba(217,119,87,.15)}
+.nx svg{position:absolute;left:0;top:110px;width:100%;height:440px;overflow:visible}
+.reqb{position:absolute;left:50%;top:255px;transform:translateX(-50%);white-space:nowrap}
+.bubble{display:inline-flex;align-items:center;gap:14px;padding:16px 28px;border-radius:20px 20px 20px 6px;background:#2B2A3A;border:1px solid rgba(255,255,255,.14);font-size:26px;color:#EEE}
+.bubble i{color:var(--peach);font-size:28px}
+pre.md.py{font-size:20px}
+.json .p{color:#A99BFF}
+.links{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:visible}
+</style>
+</head>
+<body>
+<canvas id="bg" width="1920" height="1080"></canvas>
+
+<!-- S1 INTRO -->
+<section class="scene" id="s1" data-hook="intro" data-start="0" data-dur="10" data-name="Introduction">
+  <div class="wrap">
+    <div class="cubeWrap a" data-fx="zoom" data-d="0.2" data-t="1.4">
+      <div class="cube" id="cube">
+        <div class="f" style="transform:translateZ(110px)"><i data-ic="puzzle"></i></div>
+        <div class="f" style="transform:rotateY(90deg) translateZ(110px)"><i data-ic="terminal"></i></div>
+        <div class="f" style="transform:rotateY(180deg) translateZ(110px)"><i data-ic="users"></i></div>
+        <div class="f" style="transform:rotateY(-90deg) translateZ(110px)"><i data-ic="book"></i></div>
+        <div class="f" style="transform:rotateX(90deg) translateZ(110px)"><i data-ic="zap"></i></div>
+        <div class="f" style="transform:rotateX(-90deg) translateZ(110px)"><i data-ic="plug"></i></div>
+      </div>
+    </div>
+    <div class="kicker a" data-fx="up" data-d="1.0">The Complete Visual Guide</div>
+    <div class="title3d" id="title3d" style="margin:26px 0 34px">Claude Plugins</div>
+    <div class="lead a" data-fx="up" data-d="c2" style="text-align:center">Package, install &amp; share your best Claude workflows — in one bundle</div>
+    <div class="chip a" data-fx="pop" data-d="c1" style="margin-top:44px;font-size:28px;padding:14px 32px"><i data-ic="pen"></i>Prepared by Sara Salem</div>
+  </div>
+</section>
+
+<!-- S2 WHY -->
+<section class="scene" id="s2" data-start="0" data-dur="10" data-name="Why Plugins?">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 01</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">Why Do We Need <span class="grad">Plugins?</span></h2>
+  </div>
+  <div class="cols">
+    <div class="col no card a" data-fx="rotY" data-d="c1" data-t="1.1">
+      <h3><i data-ic="x"></i>Without Plugins</h3>
+      <div class="li a" data-fx="up" data-d="c1+0.8"><i data-ic="x"></i>Everyone sets up Claude alone</div>
+      <div class="li a" data-fx="up" data-d="c1+1.8"><i data-ic="x"></i>Commands &amp; agents in scattered files</div>
+      <div class="li a" data-fx="up" data-d="c1+2.8"><i data-ic="x"></i>Tool connections configured by hand</div>
+      <div class="li a" data-fx="up" data-d="c1+3.8"><i data-ic="x"></i>Hard to share &amp; keep in sync</div>
+    </div>
+    <div class="col yes card a" data-fx="rotY" data-d="c2" data-t="1.1">
+      <h3><i data-ic="check"></i>With Plugins</h3>
+      <div class="li a" data-fx="up" data-d="c2+0.8"><i data-ic="check"></i>Everything packaged in one bundle</div>
+      <div class="li a" data-fx="up" data-d="c2+1.8"><i data-ic="check"></i>Installed with a single command</div>
+      <div class="li a" data-fx="up" data-d="c2+2.8"><i data-ic="check"></i>The whole team gets the same setup</div>
+      <div class="li a" data-fx="up" data-d="c2+3.8"><i data-ic="check"></i>Versioned &amp; easy to update</div>
+    </div>
+  </div>
+  <div class="tipbar"><div class="chip a" data-fx="pop" data-d="c3"><i data-ic="bulb"></i>Your best workflows — shareable, reusable, always up to date</div></div>
+</section>
+
+<!-- S3 WHAT -->
+<section class="scene" id="s3" data-start="0" data-dur="10" data-name="What is a Plugin?">
+  <div class="split" style="grid-template-columns:760px 1fr">
+    <div>
+      <div class="kicker a" data-fx="left">Chapter 02</div>
+      <h2 class="h2 a" data-fx="left" data-d="0.2" style="margin:18px 0 24px">What is a <span class="grad">Plugin?</span></h2>
+      <div class="lead a" data-fx="left" data-d="c1">A <b style="color:#fff">package that extends Claude</b> — a folder with a standard structure Claude knows how to read.</div>
+      <div class="bul a" data-fx="left" data-d="c2"><i data-ic="doc"></i><span>A manifest: <b style="color:var(--peach)">plugin.json</b> — name, version, description</span></div>
+      <div class="bul a" data-fx="left" data-d="c3"><i data-ic="puzzle"></i><span>Components: commands, agents, skills, hooks &amp; MCP</span></div>
+      <div class="bul a" data-fx="left" data-d="c4"><i data-ic="zap"></i><span>Install it — Claude gains everything inside. Turn it off — gone.</span></div>
+    </div>
+    <div style="display:grid;place-items:center;transform-style:preserve-3d">
+      <div class="win a" data-fx="rotY" data-d="0.6" data-t="1.4" data-base="rotateY(-16deg) rotateX(6deg)" data-float="2" style="width:820px">
+        <div class="mbar"><i></i><i></i><i></i><span>plugins / finance-toolkit</span></div>
+        <div class="tree">
+          <div class="frow a" data-fx="right" data-d="c1+0.5"><i data-ic="folder"></i><b>finance-toolkit/</b><small>the plugin</small></div>
+          <div class="frow d1 a" data-fx="right" data-d="c2"><i data-ic="folder"></i>.claude-plugin/</div>
+          <div class="frow d2 hl a" data-fx="right" data-d="c2+0.4"><i data-ic="doc"></i><b>plugin.json</b><small class="req">manifest</small></div>
+          <div class="frow d1 a" data-fx="right" data-d="c3"><i data-ic="terminal"></i>commands/</div>
+          <div class="frow d1 a" data-fx="right" data-d="c3+0.4"><i data-ic="users"></i>agents/</div>
+          <div class="frow d1 a" data-fx="right" data-d="c3+0.8"><i data-ic="book"></i>skills/</div>
+          <div class="frow d1 a" data-fx="right" data-d="c3+1.2"><i data-ic="zap"></i>hooks/hooks.json<small>optional</small></div>
+          <div class="frow d1 a" data-fx="right" data-d="c3+1.6"><i data-ic="plug"></i>.mcp.json<small>optional</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S4 COMPONENTS -->
+<section class="scene" id="s4" data-hook="carousel" data-start="0" data-dur="10" data-name="Plugin Components">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 03</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">What's Inside a <span class="grad">Plugin</span></h2>
+  </div>
+  <div class="stage3d"><div class="ring">
+    <div class="tcard card"><div class="icbox"><i data-ic="terminal"></i></div><h3>Slash Commands</h3><p>Shortcuts you type — each one a Markdown file of instructions.</p><span class="tag">/review · /close-checklist</span></div>
+    <div class="tcard card"><div class="icbox v"><i data-ic="users"></i></div><h3>Subagents</h3><p>Specialized assistants with their own focus &amp; tools.</p><span class="tag">agents/</span></div>
+    <div class="tcard card"><div class="icbox t"><i data-ic="book"></i></div><h3>Skills</h3><p>Know-how Claude loads automatically when a task needs it.</p><span class="tag">skills/</span></div>
+    <div class="tcard card"><div class="icbox g"><i data-ic="zap"></i></div><h3>Hooks</h3><p>Automatic rules that run at key moments.</p><span class="tag">hooks/hooks.json</span></div>
+    <div class="tcard card"><div class="icbox v"><i data-ic="plug"></i></div><h3>MCP Servers</h3><p>Connections to external tools &amp; data.</p><span class="tag">.mcp.json</span></div>
+    <div class="tcard card"><div class="icbox"><i data-ic="box"></i></div><h3>Manifest</h3><p>Ties it all together into one installable package.</p><span class="tag">plugin.json</span></div>
+  </div></div>
+  <div class="tcount a" data-fx="up" data-d="0.6"><span class="tname">01 / 06</span><div class="dotsRow"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+</section>
+
+<!-- S5 COMPARE -->
+<section class="scene" id="s5" data-hook="compare" data-start="0" data-dur="10" data-name="Plugins vs. Skills, MCP & Hooks">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 04</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">How It All <span class="grad">Fits Together</span></h2>
+  </div>
+  <div class="cmp">
+    <div class="cm card a" data-fx="rotY" data-d="c1"><div class="icbox"><i data-ic="box"></i></div><h3>Plugin</h3><div class="q">“The bundle”</div><div class="r"><b>ROLE</b>Holds everything, ready to install</div><div class="r"><b>SHARED VIA</b>Marketplaces</div></div>
+    <div class="cm card a" data-fx="rotY" data-d="c2"><div class="icbox v"><i data-ic="book"></i></div><h3>Skills</h3><div class="q">“The know-how”</div><div class="r"><b>ROLE</b>Instructions for specific tasks</div><div class="r"><b>LOADS</b>Automatically, when relevant</div></div>
+    <div class="cm card a" data-fx="rotY" data-d="c3"><div class="icbox t"><i data-ic="plug"></i></div><h3>MCP</h3><div class="q">“The connections”</div><div class="r"><b>ROLE</b>Access to outside tools &amp; data</div><div class="r"><b>EXAMPLES</b>Databases, CRM, design tools</div></div>
+    <div class="cm card a" data-fx="rotY" data-d="c4"><div class="icbox g"><i data-ic="zap"></i></div><h3>Hooks</h3><div class="q">“The guardrails”</div><div class="r"><b>ROLE</b>Automatic actions at key moments</div><div class="r"><b>EXAMPLES</b>Lint, test, notify</div></div>
+  </div>
+  <div class="tipbar" style="bottom:120px"><div class="chip a" data-fx="pop" data-d="c5"><i data-ic="box"></i>One plugin can package skills, MCP, hooks, commands &amp; agents together</div></div>
+</section>
+
+<!-- S6 STRUCTURE -->
+<section class="scene" id="s6" data-hook="code" data-start="0" data-dur="10" data-name="Plugin Structure">
+  <div class="center-head" style="top:110px">
+    <div class="kicker a" data-fx="up">Chapter 05</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">Inside the <span class="grad">Plugin Folder</span></h2>
+  </div>
+  <div style="position:absolute;left:110px;top:290px;width:1010px;transform-style:preserve-3d">
+    <div class="win a" data-fx="rotY" data-d="0.5" data-t="1.2" data-base="rotateY(8deg)">
+      <div class="mbar"><i></i><i></i><i></i><span>.claude-plugin/plugin.json</span></div>
+      <pre class="md"><div class="hlbar"></div><span class="mdtxt"></span></pre>
+    </div>
+  </div>
+  <div class="callouts" style="position:absolute;left:1170px;right:110px;top:300px">
+    <div class="co card a" data-fx="right" data-d="c1"><div class="n">1</div><div><h4>The Manifest</h4><p><b>.claude-plugin/plugin.json</b></p></div></div>
+    <div class="co card a" data-fx="right" data-d="c2"><div class="n">2</div><div><h4>Identity</h4><p>Name, version, description &amp; author</p></div></div>
+    <div class="co card a" data-fx="right" data-d="c3"><div class="n">3</div><div><h4>Standard Folders</h4><p>commands · agents · skills</p></div></div>
+    <div class="co card a" data-fx="right" data-d="c4"><div class="n">4</div><div><h4>Hooks &amp; MCP</h4><p>hooks.json · .mcp.json</p></div></div>
+  </div>
+</section>
+
+<!-- S7 MARKETPLACES -->
+<section class="scene" id="s7" data-hook="hub" data-start="0" data-dur="10" data-name="Plugin Marketplaces">
+  <div class="left7">
+    <div class="kicker a" data-fx="left">Chapter 06</div>
+    <h2 class="h2 a" data-fx="left" data-d="0.2" style="margin:16px 0 26px">Plugin <span class="grad">Marketplaces</span></h2>
+    <div class="lead a" data-fx="left" data-d="c1">A marketplace is a <b style="color:#fff">catalog of plugins</b> — a repository with a <b style="color:var(--peach)">marketplace.json</b> listing each one.</div>
+    <div class="bul a" data-fx="left" data-d="c2"><i data-ic="star"></i><span>Official plugins from Anthropic</span></div>
+    <div class="bul a" data-fx="left" data-d="c3"><i data-ic="building"></i><span>Private marketplaces for your company</span></div>
+    <div class="bul a" data-fx="left" data-d="c4"><i data-ic="shield"></i><span>Community plugins — check the source first</span></div>
+  </div>
+  <svg class="links"></svg>
+  <div class="hub a" data-fx="zoom" data-d="0.8" data-t="1.2">
+    <div class="orbit" style="left:-330px;top:-330px;width:660px;height:660px"></div>
+    <div class="core"><i data-ic="store"></i></div>
+    <div class="sat card"><div class="icbox"><i data-ic="star"></i></div><div>Official<small>From Anthropic</small></div></div>
+    <div class="sat card"><div class="icbox v"><i data-ic="building"></i></div><div>Your Company<small>Private catalog</small></div></div>
+    <div class="sat card"><div class="icbox t"><i data-ic="globe"></i></div><div>Community<small>Open source</small></div></div>
+    <div class="sat card"><div class="icbox g"><i data-ic="pen"></i></div><div>Your Own<small>Build &amp; publish</small></div></div>
+  </div>
+</section>
+
+<!-- S8 INSTALL -->
+<section class="scene" id="s8" data-hook="term" data-start="0" data-dur="10" data-name="Installing Plugins">
+  <div class="center-head" style="top:110px">
+    <div class="kicker a" data-fx="up">Chapter 07</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">Install a Plugin in <span class="grad">Claude Code</span></h2>
+  </div>
+  <div class="term">
+    <div class="win a" data-fx="rotY" data-d="0.5" data-t="1.2" data-base="rotateY(10deg)">
+      <div class="mbar"><i></i><i></i><i></i><span>Claude Code</span></div>
+      <pre class="tt"></pre>
+    </div>
+  </div>
+  <div class="vsteps">
+    <div class="vs card a" data-fx="right" data-d="c1"><div class="icbox"><i data-ic="store"></i></div><div><h4>1 · Add a Marketplace</h4><p>/plugin marketplace add &lt;repo&gt;</p></div></div>
+    <div class="vs card a" data-fx="right" data-d="c2"><div class="icbox v"><i data-ic="download"></i></div><div><h4>2 · Install</h4><p>/plugin install &lt;name&gt;@&lt;marketplace&gt;</p></div></div>
+    <div class="vs card a" data-fx="right" data-d="c3"><div class="icbox t"><i data-ic="settings"></i></div><div><h4>3 · Manage</h4><p>/plugin — browse, enable, disable</p></div></div>
+    <div class="vs card a" data-fx="right" data-d="c4"><div class="icbox g"><i data-ic="zap"></i></div><div><h4>4 · Use It</h4><p>New commands, agents &amp; skills — ready</p></div></div>
+  </div>
+</section>
+
+<!-- S9 COWORK ROLE PLUGINS -->
+<section class="scene" id="s9" data-hook="tilt" data-start="0" data-dur="10" data-name="Role-Based Plugins">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 08</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">Plugins for Every Team in <span class="grad">Cowork</span></h2>
+  </div>
+  <div class="tilt">
+    <div class="grid4" style="transform:translateY(-50%)">
+      <div class="uc card a" data-fx="depth" data-d="c1+1"><div class="icbox"><i data-ic="trend"></i></div><h4>Sales</h4><p>Call prep, pipeline &amp; outreach</p></div>
+      <div class="uc card a" data-fx="depth" data-d="c1+2.2"><div class="icbox v"><i data-ic="bank"></i></div><h4>Finance</h4><p>Reconciliations &amp; month-end close</p></div>
+      <div class="uc card a" data-fx="depth" data-d="c1+3.4"><div class="icbox t"><i data-ic="scale"></i></div><h4>Legal</h4><p>Contract review &amp; risk flags</p></div>
+      <div class="uc card a" data-fx="depth" data-d="c1+4.6"><div class="icbox g"><i data-ic="megaphone"></i></div><h4>Marketing</h4><p>Campaigns &amp; content</p></div>
+      <div class="uc card a" data-fx="depth" data-d="c2"><div class="icbox v"><i data-ic="chart"></i></div><h4>Data</h4><p>Queries, analysis &amp; dashboards</p></div>
+      <div class="uc card a" data-fx="depth" data-d="c2+1.2"><div class="icbox"><i data-ic="msg"></i></div><h4>Customer Support</h4><p>Ticket triage &amp; replies</p></div>
+      <div class="uc card a" data-fx="depth" data-d="c2+2.4"><div class="icbox g"><i data-ic="layout"></i></div><h4>Product Mgmt</h4><p>Specs, roadmaps &amp; research</p></div>
+      <div class="uc card a" data-fx="depth" data-d="c2+3.6"><div class="icbox t"><i data-ic="check"></i></div><h4>Productivity</h4><p>Tasks, notes &amp; daily planning</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- S10 IN ACTION -->
+<section class="scene" id="s10" data-hook="pipeline" data-start="0" data-dur="10" data-name="A Plugin in Action">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 09</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">A Plugin <span class="grad">in Action</span></h2>
+  </div>
+  <div class="reqb a" data-fx="pop" data-d="c0+1"><div class="bubble"><i data-ic="bank"></i>Finance team · month-end close plugin</div></div>
+  <div class="floor a" data-fx="depth" data-d="0.4" data-t="1.2" data-base="rotateX(14deg)" style="top:420px">
+    <div class="pipe"><div class="fill"></div><div class="pulse"></div></div>
+    <div class="nodes">
+      <div class="node"><div class="orb"><i data-ic="download"></i></div><div class="step">STEP 1</div><h4>Install</h4><p>Once, for the whole team</p></div>
+      <div class="node"><div class="orb"><i data-ic="puzzle"></i></div><div class="step">STEP 2</div><h4>Load</h4><p>Commands, agents, skills &amp; MCP</p></div>
+      <div class="node"><div class="orb"><i data-ic="terminal"></i></div><div class="step">STEP 3</div><h4>Trigger</h4><p>/close-checklist</p></div>
+      <div class="node"><div class="orb"><i data-ic="users"></i></div><div class="step">STEP 4</div><h4>Work</h4><p>Agent + skills + accounting data</p></div>
+      <div class="node"><div class="orb"><i data-ic="shield"></i></div><div class="step">STEP 5</div><h4>Check</h4><p>Hooks verify · consistent result</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- S11 HOOKS -->
+<section class="scene" id="s11" data-hook="code" data-start="0" data-dur="10" data-name="Hooks: Automatic Guardrails">
+  <div class="center-head" style="top:110px">
+    <div class="kicker a" data-fx="up">Chapter 10</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">Hooks: <span class="grad">Automatic Guardrails</span></h2>
+  </div>
+  <div style="position:absolute;left:110px;top:290px;width:1010px;transform-style:preserve-3d">
+    <div class="win a" data-fx="rotY" data-d="0.5" data-t="1.2" data-base="rotateY(8deg)">
+      <div class="mbar"><i></i><i></i><i></i><span>hooks/hooks.json</span></div>
+      <pre class="md"><div class="hlbar"></div><span class="mdtxt"></span></pre>
+    </div>
+  </div>
+  <div class="callouts" style="position:absolute;left:1170px;right:110px;top:300px">
+    <div class="co card a" data-fx="right" data-d="c1"><div class="n">1</div><div><h4>Event</h4><p><b>PostToolUse</b> · PreToolUse · SessionStart · Stop</p></div></div>
+    <div class="co card a" data-fx="right" data-d="c2"><div class="n">2</div><div><h4>Matcher</h4><p>Which tools — here <b>Edit | Write</b></p></div></div>
+    <div class="co card a" data-fx="right" data-d="c3"><div class="n">3</div><div><h4>Action</h4><p>A command that runs automatically</p></div></div>
+    <div class="co card a" data-fx="right" data-d="c4"><div class="n">4</div><div><h4>Result</h4><p>Checks happen every single time</p></div></div>
+  </div>
+</section>
+
+<!-- S12 BUILD -->
+<section class="scene" id="s12" data-hook="term" data-start="0" data-dur="10" data-name="Build Your Own Plugin">
+  <div class="center-head" style="top:110px">
+    <div class="kicker a" data-fx="up">Chapter 11</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">Build Your <span class="grad">Own Plugin</span></h2>
+  </div>
+  <div class="term">
+    <div class="win a" data-fx="rotY" data-d="0.5" data-t="1.2" data-base="rotateY(10deg)">
+      <div class="mbar"><i></i><i></i><i></i><span>terminal</span></div>
+      <pre class="tt"></pre>
+    </div>
+  </div>
+  <div class="vsteps">
+    <div class="vs card a" data-fx="right" data-d="c1"><div class="icbox"><i data-ic="folder"></i></div><div><h4>1 · Create</h4><p>Folder + .claude-plugin/plugin.json</p></div></div>
+    <div class="vs card a" data-fx="right" data-d="c2"><div class="icbox v"><i data-ic="terminal"></i></div><div><h4>2 · Add Components</h4><p>One Markdown file per command</p></div></div>
+    <div class="vs card a" data-fx="right" data-d="c3"><div class="icbox t"><i data-ic="check"></i></div><div><h4>3 · Test Locally</h4><p>Try every command &amp; agent</p></div></div>
+    <div class="vs card a" data-fx="right" data-d="c4"><div class="icbox g"><i data-ic="upload"></i></div><div><h4>4 · Publish</h4><p>Add it to a marketplace</p></div></div>
+  </div>
+</section>
+
+<!-- S13 SHARING LEVELS -->
+<section class="scene" id="s13" data-hook="layers" data-start="0" data-dur="10" data-name="Sharing Across Teams">
+  <div class="center-head" style="top:110px">
+    <div class="kicker a" data-fx="up">Chapter 12</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">Share at <span class="grad">Every Level</span></h2>
+  </div>
+  <div class="layers a" data-fx="depth" data-d="0.4" data-t="1.2">
+    <div class="lstack">
+      <div class="slab l3">ORG</div>
+      <div class="slab l2">TEAM</div>
+      <div class="slab l1">YOU</div>
+    </div>
+  </div>
+  <div class="lvls">
+    <div class="lv card a" data-fx="right" data-d="c1"><span class="tg">L1</span><div><h4>Personal</h4><p>Plugins you install for your own work</p></div><span class="tok"><i data-ic="user" style="font-size:40px"></i></span></div>
+    <div class="lv card a" data-fx="right" data-d="c2"><span class="tg">L2</span><div><h4>Project &amp; Team</h4><p>Repo settings recommend the same plugins</p></div><span class="tok"><i data-ic="users" style="font-size:40px"></i></span></div>
+    <div class="lv card a" data-fx="right" data-d="c3"><span class="tg">L3</span><div><h4>Organization</h4><p>Admins manage private marketplaces</p></div><span class="tok"><i data-ic="building" style="font-size:40px"></i></span></div>
+    <div class="chip a" data-fx="pop" data-d="c4" style="align-self:flex-start;margin-top:10px"><i data-ic="globe"></i>Best workflows spread — safely &amp; consistently</div>
+  </div>
+</section>
+
+<!-- S14 TIPS -->
+<section class="scene" id="s14" data-start="0" data-dur="10" data-name="Best Practices">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 13</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">6 Best Practices for <span class="grad">Plugins</span></h2>
+  </div>
+  <div class="tips">
+    <div class="tip card a" data-fx="left" data-d="c1"><div class="big grad">1</div><div><h4>Trusted Marketplaces</h4><p>Install only from sources you trust</p></div></div>
+    <div class="tip card a" data-fx="right" data-d="c2"><div class="big grad">2</div><div><h4>Review What's Inside</h4><p>Hooks &amp; MCP servers can run code</p></div></div>
+    <div class="tip card a" data-fx="left" data-d="c3"><div class="big grad">3</div><div><h4>Keep It Focused</h4><p>One clear purpose per plugin</p></div></div>
+    <div class="tip card a" data-fx="right" data-d="c4"><div class="big grad">4</div><div><h4>Version Everything</h4><p>Version numbers &amp; a changelog</p></div></div>
+    <div class="tip card a" data-fx="left" data-d="c5"><div class="big grad">5</div><div><h4>Clear Descriptions</h4><p>For every command, agent &amp; skill</p></div></div>
+    <div class="tip card a" data-fx="right" data-d="c6"><div class="big grad">6</div><div><h4>Disable Unused Plugins</h4><p>Keep Claude fast &amp; focused</p></div></div>
+  </div>
+</section>
+
+<!-- S15 RECAP -->
+<section class="scene" id="s15" data-hook="recap" data-start="0" data-dur="10" data-name="Recap">
+  <div class="recap">
+    <div class="kicker a" data-fx="up">In One Line</div>
+    <div class="extr" id="extr" style="margin:34px 0 10px"><span>Package</span><span><em>·</em></span><span>Install</span><span><em>·</em></span><span>Share</span></div>
+    <div class="lead a" data-fx="up" data-d="c1" style="text-align:center;max-width:1400px">Claude plugins bundle commands, agents, skills, hooks &amp; connections — turning your best workflows into tools everyone can use.</div>
+    <div class="pills">
+      <span class="chip a" data-fx="pop" data-d="c1+1.5"><i data-ic="terminal"></i>Commands</span>
+      <span class="chip a" data-fx="pop" data-d="c1+1.7"><i data-ic="users"></i>Agents</span>
+      <span class="chip a" data-fx="pop" data-d="c1+1.9"><i data-ic="book"></i>Skills</span>
+      <span class="chip a" data-fx="pop" data-d="c1+2.1"><i data-ic="zap"></i>Hooks</span>
+      <span class="chip a" data-fx="pop" data-d="c1+2.3"><i data-ic="plug"></i>MCP</span>
+      <span class="chip a" data-fx="pop" data-d="c1+2.5"><i data-ic="store"></i>Marketplaces</span>
+    </div>
+  </div>
+</section>
+
+<!-- S16 OUTRO -->
+<section class="scene" id="s16" data-hook="outro" data-start="0" data-dur="10" data-name="Thank You">
+  <div class="outro">
+    <div class="photoStage">
+      <div class="ringO" id="ro1" style="width:760px;height:760px;margin:-380px 0 0 -380px"></div>
+      <div class="ringO" id="ro2" style="width:900px;height:900px;margin:-450px 0 0 -450px;border-color:rgba(139,124,246,.35)"></div>
+      <div class="photoCard a" id="photo" data-fx="rotYin" data-d="0.3" data-t="1.6">
+        <img src="assets/sara-portrait.png" alt="Sara Salem">
+        <div class="shine" id="shine"></div>
+      </div>
+    </div>
+    <div>
+      <div class="byline a" data-fx="right" data-d="1.2">Prepared by</div>
+      <div class="name a" data-fx="right" data-d="1.5"><span class="grad">Sara<br>Salem</span></div>
+      <div class="thanks a" data-fx="right" data-d="2.2">Thank you for watching!<br><span style="color:var(--muted)">Claude Plugins — The Complete Visual Guide</span></div>
+      <div class="sig">
+        <span class="chip a" data-fx="pop" data-d="3.0"><i data-ic="box"></i>Package</span>
+        <span class="chip a" data-fx="pop" data-d="3.2"><i data-ic="download"></i>Install</span>
+        <span class="chip a" data-fx="pop" data-d="3.4"><i data-ic="share"></i>Share</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="hud">
+  <div id="brandTL"><span class="star"><i data-ic="spark"></i></span>Claude Plugins</div>
+  <div id="chapter"><b id="chn">00</b><span id="chname"></span></div>
+  <div id="credit"><img src="assets/sara-face.png" alt=""><span>Prepared by <b>Sara Salem</b></span></div>
+  <div id="tick"></div>
+  <div id="prog"></div>
+</div>
+
+<script>
+const IC={
+ puzzle:'<path d="M10 3h4v3a2 2 0 1 0 4 0V3h3v7h-3a2 2 0 1 0 0 4h3v7h-7v-3a2 2 0 1 0-4 0v3H3v-7h3a2 2 0 1 0 0-4H3V3z"/>',
+ terminal:'<rect x="2" y="3" width="20" height="18" rx="2"/><path d="M6 9l4 3-4 3M12 16h6"/>',
+ book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
+ zap:'<path d="M13 2L3 14h9l-1 8 10-12h-9z"/>',
+ box:'<path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z"/><path d="M3.3 7L12 12l8.7-5M12 22V12"/>',
+ store:'<path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M9 20v-6h6v6"/>',
+ building:'<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/>',
+ download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+ upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
+ share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/>',
+ scale:'<path d="M12 3v18M7 21h10M5 7h14M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0z"/>',
+ megaphone:'<path d="M3 11v2a1 1 0 0 0 1 1h3l5 4V6L7 10H4a1 1 0 0 0-1 1zM16 8a5 5 0 0 1 0 8M19 5a9 9 0 0 1 0 14"/>',
+ user:'<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>',
+ code:'<path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/>',
+ doc:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/>',
+ globe:'<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>',
+ pen:'<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18z"/><circle cx="11" cy="11" r="2"/>',
+ folder:'<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+ grid:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',
+ settings:'<circle cx="12" cy="12" r="3"/><path d="M12 1v3M12 20v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1 12h3M20 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>',
+ spark:'<path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"/>',
+ plug:'<path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/>',
+ chart:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-6"/>',
+ trend:'<path d="M23 6l-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/>',
+ layout:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
+ msg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+ users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+ check:'<path d="M20 6L9 17l-5-5"/>', x:'<path d="M18 6L6 18M6 6l12 12"/>',
+ bulb:'<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>',
+ db:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/>',
+ server:'<rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01M6 18h.01"/>',
+ bank:'<path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/>',
+ briefcase:'<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
+ link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+ wrench:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>',
+ monitor:'<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
+ cloud:'<path d="M18 10h-1.3A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>',
+ star:'<path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/>',
+ shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/>',
+ lock:'<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+ eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>',
+ clock:'<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+ pie:'<path d="M21 15.9A10 10 0 1 1 8 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>'
+};
+document.querySelectorAll('i[data-ic]').forEach(el=>{el.innerHTML='<svg class="ic" viewBox="0 0 24 24">'+IC[el.dataset.ic]+'</svg>'});
+
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const eOut=x=>1-Math.pow(1-x,3);
+const eIO=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const eBack=x=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+let seed=23;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};
+const $=id=>document.getElementById(id);
+
+const T=$('title3d');
+T.innerHTML=[...T.textContent].map(c=>c===' '?'<span class="sp"></span>':`<span class="grad">${c}</span>`).join('');
+const letters=[...T.children];
+const EX=[...$('extr').children];
+
+const TM={};(window.TIMING||{scenes:[]}).scenes.forEach(x=>TM[x.id]=x);
+const pd=(v,cues)=>{v=v||'0';if(v[0]!=='c')return +v;const m=v.match(/^c(\d+)([+-][\d.]+)?$/);return cues[+m[1]]+(+(m[2]||0))};
+let acc=0;
+const SC=[...document.querySelectorAll('.scene')].map((el,i)=>{const tm=TM[el.id];const cues=tm?tm.cues:[0,1,2,3,4,5,6];
+  const start=tm?tm.start:acc,dur=tm?tm.dur:+el.dataset.dur;acc=start+dur;
+  return {el,i,cues,start,dur,name:el.dataset.name,hook:el.dataset.hook,
+  items:[...el.querySelectorAll('.a')].map(n=>({n,d:pd(n.dataset.d,cues),t:+(n.dataset.t||0.9),fx:n.dataset.fx||'up',base:n.dataset.base||'',fl:+(n.dataset.float||0)}))}});
+const LAST=SC[SC.length-1];const TOTAL=LAST.start+LAST.dur;const OUT=LAST.start;const INTRO_END=SC[1].start;
+window.TOTAL=TOTAL;
+
+function fx(it,l){
+  const raw=clamp((l-it.d)/it.t), p=eOut(raw); let tr='',op=p;
+  switch(it.fx){
+    case 'up':tr=`translate3d(0,${(1-p)*70}px,0)`;break;
+    case 'left':tr=`translate3d(${-(1-p)*160}px,0,0)`;break;
+    case 'right':tr=`translate3d(${(1-p)*160}px,0,0)`;break;
+    case 'zoom':tr=`scale(${.4+.6*p})`;break;
+    case 'pop':{const b=raw<=0?0:eBack(raw);tr=`scale(${b})`;op=clamp(raw*3);if(it.n.classList.contains("reqb"))tr='translateX(-50%) '+tr;break}
+    case 'flip':tr=`rotateX(${(1-p)*95}deg)`;break;
+    case 'rotY':tr=`translateZ(${-(1-p)*300}px) rotateY(${(1-p)*-75}deg)`;break;
+    case 'rotYin':tr=`rotateY(${(1-p)*-160}deg) scale(${.7+.3*p})`;op=clamp(raw*2.5);break;
+    case 'depth':tr=`translate3d(0,${(1-p)*60}px,${-(1-p)*700}px)`;break;
+  }
+  if(it.fl) tr+=` rotateY(${Math.sin(l*.55)*it.fl}deg) rotateX(${Math.cos(l*.45)*it.fl*.6}deg)`;
+  it.n.style.transform=(it.base+' '+tr).trim();
+  it.n.style.opacity=op;
+}
+
+/* background */
+const cv=$('bg'),cx=cv.getContext('2d'),W=1920,H=1080;
+const PTS=[];for(let i=0;i<420;i++){const u=rnd()*2-1,th=rnd()*Math.PI*2,r=600+rnd()*900;const s=Math.sqrt(1-u*u);PTS.push([r*s*Math.cos(th),r*u,r*s*Math.sin(th),rnd()])}
+const ph=(1+Math.sqrt(5))/2;const IV=[[-1,ph,0],[1,ph,0],[-1,-ph,0],[1,-ph,0],[0,-1,ph],[0,1,ph],[0,-1,-ph],[0,1,-ph],[ph,0,-1],[ph,0,1],[-ph,0,-1],[-ph,0,1]];
+const IE=[];for(let a=0;a<12;a++)for(let b=a+1;b<12;b++){const d=Math.hypot(IV[a][0]-IV[b][0],IV[a][1]-IV[b][1],IV[a][2]-IV[b][2]);if(Math.abs(d-2)<.01)IE.push([a,b])}
+function rot(p,ay,ax){let [x,y,z]=p;const cy=Math.cos(ay),sy=Math.sin(ay);[x,z]=[x*cy+z*sy,-x*sy+z*cy];const c2=Math.cos(ax),s2=Math.sin(ax);[y,z]=[y*c2-z*s2,y*s2+z*c2];return [x,y,z]}
+function drawBG(t){
+  const g=cx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0B0C18');g.addColorStop(1,'#0F1124');cx.fillStyle=g;cx.fillRect(0,0,W,H);
+  const glow=(x,y,r,c)=>{const rg=cx.createRadialGradient(x,y,0,x,y,r);rg.addColorStop(0,c);rg.addColorStop(1,'rgba(0,0,0,0)');cx.fillStyle=rg;cx.fillRect(0,0,W,H)};
+  glow(W*.5+Math.sin(t*.13)*520,H*.35+Math.cos(t*.11)*160,820,'rgba(217,119,87,.25)');
+  glow(W*.5+Math.cos(t*.09)*640,H*.6+Math.sin(t*.12)*200,900,'rgba(139,124,246,.20)');
+  glow(W*.15+Math.sin(t*.07)*200,H*.85,650,'rgba(60,200,180,.11)');
+  const hz=H*.66,vx=W/2;cx.lineWidth=1;
+  for(let i=-24;i<=24;i++){const a=.10*(1-Math.abs(i)/26);cx.strokeStyle=`rgba(242,164,126,${a})`;cx.beginPath();cx.moveTo(vx+i*6,hz);cx.lineTo(vx+i*170,H+260);cx.stroke()}
+  const off=(t*.6)%1;
+  for(let k=0;k<16;k++){const z=k+1-off;const y=hz+380/z-380/16;if(y<hz||y>H)continue;cx.strokeStyle=`rgba(242,164,126,${clamp(.16*(1-z/16))})`;cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);cx.stroke()}
+  const hg=cx.createLinearGradient(0,hz-60,0,hz+160);hg.addColorStop(0,'rgba(14,12,28,0)');hg.addColorStop(.3,'rgba(14,12,28,.85)');hg.addColorStop(1,'rgba(14,12,28,0)');cx.fillStyle=hg;cx.fillRect(0,hz-60,W,220);
+  const ay=t*.06,ax=.25+Math.sin(t*.05)*.1;
+  for(const p of PTS){const [x,y,z]=rot(p,ay,ax);const zz=z+1700;if(zz<50)continue;const f=900/zz;const sx=W/2+x*f,sy=H/2+y*f;if(sx<0||sx>W||sy<0||sy>H)continue;
+    const tw=.5+.5*Math.sin(t*2+p[3]*20);cx.fillStyle=p[3]>.8?`rgba(242,164,126,${.75*f*tw})`:`rgba(220,215,255,${.6*f*tw})`;cx.beginPath();cx.arc(sx,sy,Math.max(.6,2.4*f),0,6.283);cx.fill()}
+  const IE_=INTRO_END;let vis=.10; if(t<IE_)vis=.10+.35*clamp(t/2)*clamp((IE_-t)/1.2); if(t>OUT)vis=.10+.25*clamp((t-OUT)/2);
+  const S=t<IE_?330:(t>OUT?300:260), cxp=t<IE_?W/2:(t>OUT?W*.27:W*.86), cyp=t<IE_?H*.43:(t>OUT?H*.5:H*.28);
+  cx.strokeStyle=`rgba(242,164,126,${vis})`;cx.lineWidth=1.5;
+  const PV=IV.map(v=>{const [x,y,z]=rot(v,t*.25,t*.17);const f=4/(z+6);return [cxp+x*S*f,cyp+y*S*f]});
+  cx.beginPath();for(const [a,b] of IE){cx.moveTo(...PV[a]);cx.lineTo(...PV[b])}cx.stroke();
+  cx.fillStyle=`rgba(255,220,200,${vis*1.6})`;for(const p of PV){cx.beginPath();cx.arc(p[0],p[1],3,0,6.283);cx.fill()}
+  const vg=cx.createRadialGradient(W/2,H/2,H*.45,W/2,H/2,H*1.05);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.55)');cx.fillStyle=vg;cx.fillRect(0,0,W,H);
+}
+
+/* typing */
+function typed(lines,n){
+  let out='',left=n;
+  for(const line of lines){ if(left<=0)break;
+    let i=0,res='';
+    while(i<line.length&&left>0){ if(line[i]==='<'){const j=line.indexOf('>',i);res+=line.slice(i,j+1);i=j+1;continue}
+      if(line[i]==='&'){const j=line.indexOf(';',i);res+=line.slice(i,j+1);i=j+1;left--;continue}
+      res+=line[i];i++;left--; }
+    const o=(res.match(/<span/g)||[]).length,c=(res.match(/<\/span>/g)||[]).length;res+='</span>'.repeat(Math.max(0,o-c));
+    out+=res+(left>0?'\n':'');left--; }
+  return out;
+}
+const vlen=lines=>lines.reduce((a,l)=>a+l.replace(/<[^>]+>/g,'').replace(/&[a-z]+;/g,'x').length+1,0);
+const CODE={
+ s6:{fs:21,lines:[
+  '<span class="c">// .claude-plugin/plugin.json</span>',
+  '{',
+  '  <span class="k">"name"</span>: <span class="s">"finance-toolkit"</span>,',
+  '  <span class="k">"version"</span>: <span class="s">"1.2.0"</span>,',
+  '  <span class="k">"description"</span>: <span class="s">"Month-end close commands,</span>',
+  '    <span class="s">agents and skills"</span>,',
+  '  <span class="k">"author"</span>: { <span class="k">"name"</span>: <span class="s">"Sara Salem"</span> }',
+  '}',
+  '<span class="c">// folder layout</span>',
+  '<span class="f">commands/</span>   close-checklist.md',
+  '<span class="f">agents/</span>     reconciler.md',
+  '<span class="f">skills/</span>     variance-analysis/SKILL.md',
+  '<span class="f">hooks/</span>      hooks.json',
+  '<span class="f">.mcp.json</span>   accounting system connection'
+ ],hl:[[0,1],[2,6],[8,11],[12,13]]},
+ s11:{fs:21,lines:[
+  '{',
+  '  <span class="k">"hooks"</span>: {',
+  '    <span class="k">"PostToolUse"</span>: [',
+  '      {',
+  '        <span class="k">"matcher"</span>: <span class="s">"Edit|Write"</span>,',
+  '        <span class="k">"hooks"</span>: [',
+  '          {',
+  '            <span class="k">"type"</span>: <span class="s">"command"</span>,',
+  '            <span class="k">"command"</span>: <span class="s">"npm run lint"</span>',
+  '          }',
+  '        ]',
+  '      }',
+  '    ]',
+  '  }',
+  '}'
+ ],hl:[[2,2],[4,4],[7,8],[0,14]]}
+};
+for(const k in CODE)CODE[k].n=vlen(CODE[k].lines);
+const TERMS={
+ s8:[
+  '<span class="cm2"># 1 · add a marketplace</span>',
+  '<span class="p">&gt;</span> /plugin marketplace add your-org/claude-plugins',
+  '<span class="p">✓</span> Marketplace "your-org" added',
+  '',
+  '<span class="cm2"># 2 · install a plugin</span>',
+  '<span class="p">&gt;</span> /plugin install finance-toolkit@your-org',
+  '<span class="p">✓</span> Installed finance-toolkit v1.2.0',
+  '',
+  '<span class="cm2"># 3 · manage · 4 · use it</span>',
+  '<span class="p">&gt;</span> /plugin',
+  '<span class="p">&gt;</span> /close-checklist'
+ ],
+ s12:[
+  '<span class="p">$</span> mkdir -p my-plugin/.claude-plugin',
+  '<span class="p">$</span> nano my-plugin/.claude-plugin/plugin.json',
+  '',
+  '<span class="p">$</span> mkdir my-plugin/commands',
+  '<span class="p">$</span> nano my-plugin/commands/weekly-report.md',
+  '',
+  '<span class="cm2"># test locally in Claude Code</span>',
+  '<span class="p">✓</span> /weekly-report works as expected',
+  '',
+  '<span class="cm2"># publish: list it in your marketplace.json</span>',
+  '<span class="p">$</span> git push origin main'
+ ]
+};
+for(const k in TERMS)TERMS[k+'n']=vlen(TERMS[k]);
+
+/* N×M diagram */
+function buildNXM(){
+  const A=$('svgA'),B=$('svgB');
+  const apps=[60,160,260,360],srcs=[40,130,220,310,400];
+  let a='';
+  apps.forEach((y1,i)=>srcs.forEach((y2,j)=>{a+=`<path class="ln" d="M120 ${y1} C 380 ${y1}, 410 ${y2}, 670 ${y2}" stroke="#FF8A80" stroke-opacity=".55" stroke-width="2" fill="none" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1" data-k="${i*5+j}"/>`}));
+  apps.forEach(y=>a+=`<rect x="40" y="${y-24}" width="80" height="48" rx="12" fill="#2B2A3A" stroke="rgba(255,255,255,.3)"/><text x="80" y="${y+7}" fill="#fff" font-size="18" font-weight="700" text-anchor="middle">AI</text>`);
+  srcs.forEach(y=>a+=`<rect x="670" y="${y-22}" width="80" height="44" rx="12" fill="#1E2A2E" stroke="rgba(60,200,180,.6)"/><text x="710" y="${y+7}" fill="#7ED6C4" font-size="16" font-weight="700" text-anchor="middle">DATA</text>`);
+  A.innerHTML=a;
+  let b='';
+  apps.forEach(y=>b+=`<path class="ln" d="M120 ${y} C 250 ${y}, 260 220, 355 220" stroke="#F2A47E" stroke-width="3" fill="none" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1"/>`);
+  srcs.forEach(y=>b+=`<path class="ln" d="M435 220 C 530 220, 540 ${y}, 670 ${y}" stroke="#F2A47E" stroke-width="3" fill="none" pathLength="1" stroke-dasharray="1 1" stroke-dashoffset="1"/>`);
+  apps.forEach(y=>b+=`<rect x="40" y="${y-24}" width="80" height="48" rx="12" fill="#2B2A3A" stroke="rgba(255,255,255,.3)"/><text x="80" y="${y+7}" fill="#fff" font-size="18" font-weight="700" text-anchor="middle">AI</text>`);
+  srcs.forEach(y=>b+=`<rect x="670" y="${y-22}" width="80" height="44" rx="12" fill="#1E2A2E" stroke="rgba(60,200,180,.6)"/><text x="710" y="${y+7}" fill="#7ED6C4" font-size="16" font-weight="700" text-anchor="middle">DATA</text>`);
+  b+=`<circle class="mcphub" cx="395" cy="220" r="56" fill="url(#hg)"/><defs><radialGradient id="hg" cx=".35" cy=".3"><stop offset="0" stop-color="#FFC9A8"/><stop offset=".5" stop-color="#D97757"/><stop offset="1" stop-color="#6E2E1C"/></radialGradient></defs><text x="395" y="229" fill="#fff" font-size="26" font-weight="800" text-anchor="middle">MCP</text>`;
+  B.innerHTML=b;
+}
+
+const ciOf=(l,c)=>{let k=-1;for(let i=0;i<c.length;i++)if(l>=c[i])k=i;return k};
+const steps=(l,c,from)=>{let f=0;for(let i=from;i<c.length;i++)f+=eIO(clamp((l-c[i])/.8));return f};
+
+const HOOKS={
+ intro(l,c,ci,el){
+   $('cube').style.transform=`rotateX(${-20+Math.sin(l*.7)*10}deg) rotateY(${l*48}deg)`;
+   letters.forEach((s,i)=>{const p=clamp((l-1.4-i*.08)/.8);const e=eBack(p);s.style.opacity=clamp(p*3);
+     s.style.transform=`translateY(${(1-eOut(p))*-120}px) rotateX(${(1-e)*-90}deg) translateZ(${Math.sin(l*1.6+i*.5)*10}px)`});
+ },
+ nxm(l,c,ci,el){
+   el.querySelectorAll('#svgA .ln').forEach((p,k)=>{p.style.strokeDashoffset=1-eOut(clamp((l-c[1]-0.8-k*.22)/.6))});
+   el.querySelectorAll('#svgB .ln').forEach((p,k)=>{p.style.strokeDashoffset=1-eOut(clamp((l-c[2]-0.8-k*.25)/.6))});
+   const h=el.querySelector('.mcphub');if(h){const s=1+Math.sin(l*2.4)*.05;h.setAttribute('r',56*s)}
+ },
+ compare(l,c,ci,el){
+   el.querySelectorAll('.cm').forEach((e,i)=>{e.style.transform+=` translateY(${Math.sin(l*1.4-i*.8)*8}px)`;e.classList.toggle('star',i===ci-1||(ci>=5))});
+ },
+ pipeline(l,c,ci,el){
+   const p=steps(l,c,2)/4,nodes=el.querySelectorAll('.orb');
+   el.querySelector('.fill').style.width=(p*100)+'%';const pu=el.querySelector('.pulse');pu.style.left=(p*100)+'%';pu.style.opacity=l>=c[1]&&p<1?1:0;
+   nodes.forEach((o,i)=>{const on=l>=c[i+1];o.className='orb'+(on?' on':'');
+     const b=on?clamp((l-c[i+1])/.5):0;o.style.transform=`translateZ(${on?Math.sin(b*Math.PI)*60+20:0}px) rotateY(${on?(1-eOut(b))*180:0}deg)`});
+ },
+ hub(l,c,ci,el){
+   const R=310,RY=290,HX=1340,HY=570,base=l*.35;const pts=[];
+   el.querySelectorAll('.sat').forEach((s,i)=>{const a=base+i*Math.PI/2;const x=Math.cos(a)*R,y=Math.sin(a)*RY,z=Math.sin(a);
+     const p=eOut(clamp((l-c[0]-1-i*.3)/.8));
+     s.style.transform=`translate3d(${x*p}px,${y*p}px,${z*80}px) scale(${(.85+.15*(z+1)/2)*p})`;s.style.opacity=p;pts.push([HX+x*p,HY+y*p,p])});
+   el.querySelector('.orbit').style.transform=`rotateX(52deg) rotateZ(${l*20}deg)`;
+   el.querySelector('.core').style.transform=`scale(${1+Math.sin(l*2.4)*.04}) rotateY(${l*40}deg)`;
+   const hp=eOut(clamp((l-.8)/1.2));
+   el.querySelector('.links').innerHTML=pts.map(([x,y,p],i)=>`<line x1="${HX}" y1="${HY}" x2="${x}" y2="${y}" stroke="rgba(242,164,126,${.5*p*hp})" stroke-width="2" stroke-dasharray="6 8" stroke-dashoffset="${-l*40}"/>`+
+     `<circle cx="${HX+(x-HX)*((l*.6+i*.25)%1)}" cy="${HY+(y-HY)*((l*.6+i*.25)%1)}" r="5" fill="rgba(255,220,200,${p*hp})"/>`).join('');
+ },
+ code(l,c,ci,el){
+   const C=CODE[el.id],LH=C.fs*1.62,PAD=24;
+   const n=Math.floor(clamp((l-1.0)/(c[1]+ (c[2]-c[1])*.6 -1.0))*C.n);
+   el.querySelector('.mdtxt').innerHTML=typed(C.lines,n)+(n<C.n&&Math.floor(l*3)%2?'<span class="cursor"></span>':'');
+   const k=ci-1;el.querySelectorAll('.co').forEach((e,i)=>e.classList.toggle('on',i===k));
+   const hb=el.querySelector('.hlbar');
+   if(k>=0){const [a,b]=C.hl[k];hb.style.top=(PAD+a*LH-3)+'px';hb.style.height=((b-a+1)*LH+6)+'px';hb.style.opacity=1}else hb.style.opacity=0;
+ },
+ term(l,c,ci,el){
+   const TL=TERMS[el.id],TN=TERMS[el.id+'n'];const n=Math.floor(clamp((l-c[1])/(c[4]-c[1]))*TN);
+   el.querySelector('.tt').innerHTML=typed(TL,n)+(n<TN&&Math.floor(l*3)%2?'<span class="cursor"></span>':'');
+   el.querySelectorAll('.vs').forEach((e,i)=>e.style.borderColor=i===ci-1?'rgba(242,164,126,.85)':'rgba(255,255,255,.14)');
+ },
+ carousel(l,c,ci,el){
+   const ang=-(1-eOut(clamp(l/1.3)))*120-steps(l,c,2)*60;
+   const ring=el.querySelector('.ring');ring.style.transform=`translateZ(-560px) rotateX(-6deg) rotateY(${ang}deg)`;
+   const cards=ring.children;let front=0,best=-9;
+   for(let i=0;i<6;i++){const cc=Math.cos((i*60+ang)*Math.PI/180);if(cc>best){best=cc;front=i}
+     cards[i].style.transform=`rotateY(${i*60}deg) translateZ(560px)`;cards[i].style.opacity=(.18+.82*clamp(cc));
+     cards[i].style.borderColor=cc>.95?'rgba(242,164,126,.8)':'rgba(255,255,255,.14)';}
+   el.querySelector('.tname').textContent=`0${front+1} / 06`;[...el.querySelector('.dotsRow').children].forEach((d,i)=>d.className=i===front?'on':'');
+ },
+ tilt(l,c,ci,el){
+   el.querySelector('.tilt').style.transform=`rotateX(${22-eOut(clamp(l/3))*10}deg) rotateY(${Math.sin(l*.4)*7}deg) rotateZ(${Math.sin(l*.3)*-1.5}deg)`;
+   el.querySelectorAll('.uc').forEach((e,i)=>{e.style.transform+=` translateZ(${Math.sin(l*1.8-i*.7)*26}px)`});
+ },
+ layers(l,c,ci,el){
+   const k=Math.min(ci-1,2),cur=ci-1,spread=eOut(clamp((l-1)/1.5));
+   el.querySelector('.lstack').style.transform=`rotateX(58deg) rotateZ(${-34+Math.sin(l*.4)*6}deg)`;
+   const sl=[el.querySelector('.l1'),el.querySelector('.l2'),el.querySelector('.l3')];
+   sl.forEach((s,i)=>{const on=i<=k;s.classList.toggle('on',on);
+     const lift=(on&&i===cur)?Math.sin(clamp((l-c[i+1])/.6)*Math.PI)*40:0;
+     s.style.transform=`translateZ(${-i*130*spread+170*spread+lift}px)`});
+   el.querySelectorAll('.lv').forEach((e,i)=>{e.style.borderColor=i===cur?'rgba(242,164,126,.85)':'rgba(255,255,255,.14)';
+     const tg=e.querySelector('.tg');tg.style.background=i<=k?['#D97757','#8B7CF6','#3CC8B4'][i]:'rgba(255,255,255,.08)';tg.style.color=i<=k?'#fff':''});
+ },
+ recap(l){
+   EX.forEach((s,i)=>{const p=clamp((l-.5-i*.25)/.9);s.style.opacity=clamp(p*3);
+     s.style.transform=`translateZ(${(1-eOut(p))*-900}px) rotateY(${(1-eOut(p))*60}deg) rotateX(${Math.sin(l*1.2+i)*6}deg)`});
+   $('extr').style.transform=`rotateY(${Math.sin(l*.5)*8}deg)`;
+ },
+ outro(l){
+   if(l>1.9)$('photo').style.transform+=` rotateY(${Math.sin((l-1.9)*.7)*9}deg) rotateX(${Math.cos((l-1.9)*.6)*3}deg) translateY(${Math.sin(l*1.1)*10}px)`;
+   const sh=((l-1.5)*.35)%1.6;$('shine').style.transform=`translateX(${-120+sh*160}%)`;
+   $('ro1').style.transform=`rotateX(70deg) rotateZ(${l*25}deg)`;$('ro2').style.transform=`rotateX(64deg) rotateY(18deg) rotateZ(${-l*18}deg)`;
+   const rp=eOut(clamp((l-.6)/1.4));$('ro1').style.opacity=rp;$('ro2').style.opacity=rp;
+ }
+};
+
+function render(t){
+  drawBG(t);
+  let cur=SC[0];
+  for(const s of SC){
+    const l=t-s.start;
+    if(l<0||l>=s.dur){s.el.style.display='none';continue}
+    cur=s;s.el.style.display='block';
+    const fin=eOut(clamp(l/.6)),fout=s===LAST?1:eOut(clamp((s.dur-l)/.6));
+    s.el.style.opacity=Math.min(fin,fout);
+    s.el.style.transform=`translateZ(${(1-fout)*220}px) scale(${1+(1-fout)*.05+Math.sin(l*.12)*.012}) rotateY(${Math.sin(l*.15)*1.6}deg) rotateX(${Math.cos(l*.11)*.8}deg)`;
+    for(const it of s.items) fx(it,l);
+    const h=HOOKS[s.hook];if(h)h(l,s.cues,ciOf(l,s.cues),s.el);
+  }
+  $('chn').textContent=String(cur.i).padStart(2,'0');$('chname').textContent=cur.name;
+  $('hud').style.opacity=clamp((t-.8)/1)*(t>TOTAL-1?clamp((TOTAL-t)/1):1);
+  $('prog').style.width=(t/TOTAL*100)+'%';
+  const f=x=>`${Math.floor(x/60)}:${String(Math.floor(x%60)).padStart(2,'0')}`;
+  $('tick').textContent=`${f(t)} / ${f(TOTAL)}`;
+}
+window.render=render;
+render(+(new URLSearchParams(location.search).get('t')||0));
+</script>
+</body>
+</html>
