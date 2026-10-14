@@ -1,0 +1,5 @@
+{
+  "_readme": "Feed for the Legal register page. Each item: id (matches a built-in id to update it, or a new id to add one), jur (EG|EU), area, title_en, title_ar, ref, note_en, note_ar, change_en, change_ar, date (YYYY-MM-DD), url (optional https link). Edit this file and host it next to the platform; devices pick it up when online. It is a pointer list, not legal advice.",
+  "updated": "2026-10-14",
+  "items": []
+}
