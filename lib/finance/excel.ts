@@ -161,7 +161,7 @@ export async function buildWorkbook(x: ExportInput): Promise<Buffer> {
   const cfo = cfs.addRow(["Net cash from operating activities", { formula: `SUM(B${cfRef[0]}:B${cfRef[cfRef.length - 1]})` }]);
   cfo.font = { bold: true };
   const inv1 = cfs.addRow(["Capital expenditure (Δ PP&E at cost)", { formula: `-${d("ppe")}` }]).number;
-  const inv2 = cfs.addRow(["Accumulated depreciation released (derived)", { formula: `-${d("ad")}-'Income Statement'!B${plRef.dep}` }]).number;
+  cfs.addRow(["Accumulated depreciation released (derived)", { formula: `-${d("ad")}-'Income Statement'!B${plRef.dep}` }]);
   const inv3 = cfs.addRow(["Change in other non-current assets", { formula: `-${d("onca")}` }]).number;
   const cfi = cfs.addRow(["Net cash from investing activities", { formula: `SUM(B${inv1}:B${inv3})` }]);
   cfi.font = { bold: true };

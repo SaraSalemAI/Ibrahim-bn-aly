@@ -7,6 +7,20 @@ A bilingual (English / Arabic, RTL) Next.js app for Egyptian finance teams, buil
 
 Try it: **Load complete sample company** on the home page loads a fictional Egyptian trading company with a trial balance, general ledger and every subledger, so each module can be explored immediately.
 
+### AI CFO agent
+
+The **AI CFO agent** page (`/agent`) is a chat assistant that works on the selected company's books. It answers in English or Arabic and gets every figure by calling the app's calculation engines as tools; it never computes figures from memory.
+
+| Tool | What it does |
+|---|---|
+| `get_overview`, `get_statement`, `get_variances`, `get_ratios` | Headline figures, validation, statements, variances, ratios, DuPont, Altman, Beneish |
+| `find_accounts`, `get_subledger` | Account search (EN/AR) with lineage; AR, AP, fixed assets, inventory, payroll, bank, ETA and GL analysis with tie-outs |
+| `get_tax_computation`, `get_budget_vs_actual`, `get_disclosures`, `compare_peers` | Tax schedule, budget vs actual, note status, peer KPIs |
+| `run_forecast`, `run_sensitivity`, `run_valuation`, `run_stress_test` | What-if runs of the 3-statement model, sensitivity grid, DCF and FX/rate stress. Nothing is saved |
+| `propose_adjusting_entry`, `propose_mapping_change` | Drafts only, with an impact preview. Nothing changes until you click **Post entry** / **Apply mapping**, and the approval is written to the audit log |
+
+The server (`/api/agent`) recomputes everything from the submitted company, runs the tool loop through AI Gateway (up to 8 steps) and streams tool activity and text to the page. Conversations are kept per company in the browser.
+
 ### Modules
 
 | # | Module | What it does |
@@ -64,9 +78,12 @@ The workspace is saved in the browser (IndexedDB). Data leaves the browser only 
 
 ### Scripts
 
-- `npm test` — 59 Vitest tests: engines, subledgers, model balancing and solver convergence, tax, valuation, stress, audit chain, Excel formulas, API routes
+- `npm test` — 73 Vitest tests: engines, subledgers, model balancing and solver convergence, tax, valuation, stress, audit chain, Excel formulas, agent tools, API routes
+- `npm run lint` — ESLint with the Next.js core-web-vitals and TypeScript rules
 - `npm run typecheck`
 - `npm run build`
+
+GitHub Actions (`.github/workflows/ci.yml`) runs lint, typecheck, tests and build on every push and pull request.
 
 ### Other files
 

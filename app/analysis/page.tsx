@@ -136,7 +136,7 @@ export default function AnalysisPage() {
                         <tr><td>X4 {L("book equity / total liabilities", "حقوق الملكية / الالتزامات")}</td><td className="num">{computed.altman.x4}</td></tr>
                       </tbody>
                     </table>
-                    <p className="small muted">Z'' = 6.56·X1 + 3.26·X2 + 6.72·X3 + 1.05·X4 · {L("safe > 2.60, distress < 1.10", "آمن > ٢٫٦٠، تعثر < ١٫١٠")}</p>
+                    <p className="small muted">{"Z''"} = 6.56·X1 + 3.26·X2 + 6.72·X3 + 1.05·X4 · {L("safe > 2.60, distress < 1.10", "آمن > ٢٫٦٠، تعثر < ١٫١٠")}</p>
                   </>
                 ) : (
                   <Banner kind="info">{L("Not computable (zero total assets or liabilities).", "غير قابل للحساب (أصول أو التزامات صفرية).")}</Banner>

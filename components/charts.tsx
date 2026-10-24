@@ -4,13 +4,12 @@
 
 export function Waterfall({ items, format, height = 260 }: { items: Array<{ label: string; value: number; total?: boolean }>; format: (n: number) => string; height?: number }) {
   if (!items.length) return null;
-  let run = 0;
-  const bars = items.map((it) => {
+  const bars: Array<(typeof items)[number] & { start: number; end: number }> = [];
+  for (const it of items) {
+    const run = bars.length ? bars[bars.length - 1].end : 0;
     const start = it.total ? 0 : run;
-    const end = it.total ? it.value : run + it.value;
-    run = end;
-    return { ...it, start, end };
-  });
+    bars.push({ ...it, start, end: it.total ? it.value : run + it.value });
+  }
   const vals = bars.flatMap((b) => [b.start, b.end, 0]);
   const max = Math.max(...vals);
   const min = Math.min(...vals);
@@ -162,19 +161,15 @@ export function FootballField({ bars, format }: { bars: Array<{ label: string; l
 export function Gauge({ value, zones, format }: { value: number; zones: Array<{ upTo: number; cls: string; label: string }>; format: (n: number) => string }) {
   const max = zones[zones.length - 1].upTo;
   const pos = Math.max(0, Math.min(1, value / max));
-  let prev = 0;
+  const widths = zones.map((z, i) => ((z.upTo - (i ? zones[i - 1].upTo : 0)) / max) * 100);
   return (
     <div className="gauge">
       <div className="gauge-track">
-        {zones.map((z) => {
-          const width = ((z.upTo - prev) / max) * 100;
-          prev = z.upTo;
-          return (
-            <div key={z.label} className={`gauge-zone ${z.cls}`} style={{ width: `${width}%` }}>
-              {z.label}
-            </div>
-          );
-        })}
+        {zones.map((z, i) => (
+          <div key={z.label} className={`gauge-zone ${z.cls}`} style={{ width: `${widths[i]}%` }}>
+            {z.label}
+          </div>
+        ))}
         <div className="gauge-marker" style={{ insetInlineStart: `${pos * 100}%` }} title={format(value)} />
       </div>
       <div className="gauge-value">{format(value)}</div>

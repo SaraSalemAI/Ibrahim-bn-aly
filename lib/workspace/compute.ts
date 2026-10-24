@@ -91,7 +91,7 @@ export function computeCompany(c: Company) {
   const notes = triggeredNotes({ ...noteCtx, fmt: String });
 
   // ETA differences are an audit finding, not a reconciliation gate, so they do not block the period.
-  const { eta: _eta, ...gatingTies } = tieOuts;
+  const gatingTies = { ar: tieOuts.ar, ap: tieOuts.ap, farCost: tieOuts.farCost, farAccumDep: tieOuts.farAccumDep, inventory: tieOuts.inventory };
   const checks = periodChecks(c, analysis, cashFlow?.tieOutDifference ?? null, gatingTies);
 
   return {

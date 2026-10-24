@@ -3,10 +3,11 @@ export interface NavItem {
   href: string;
   en: string;
   ar: string;
-  group: "setup" | "close" | "plan" | "insight" | "report";
+  group: "agent" | "setup" | "close" | "plan" | "insight" | "report";
 }
 
 export const NAV: NavItem[] = [
+  { n: 0, href: "/agent", en: "AI CFO agent", ar: "وكيل المدير المالي", group: "agent" },
   { n: 1, href: "/company", en: "Workspace & company", ar: "مساحة العمل والشركة", group: "setup" },
   { n: 2, href: "/ingest", en: "Ingestion center", ar: "مركز إدخال البيانات", group: "setup" },
   { n: 3, href: "/mapping", en: "Validation & mapping", ar: "التحقق وربط الحسابات", group: "setup" },
@@ -27,6 +28,7 @@ export const NAV: NavItem[] = [
 ];
 
 export const GROUPS: Record<NavItem["group"], [string, string]> = {
+  agent: ["Agent", "الوكيل"],
   setup: ["Set up", "الإعداد"],
   close: ["Close & report", "الإقفال والتقارير"],
   plan: ["Plan & model", "التخطيط والنمذجة"],

@@ -270,3 +270,17 @@ mark { background: var(--warn-bg); color: var(--warn); padding: 0 3px; border-ra
   .pack-page:last-child { page-break-after: auto; }
   table { font-size: 10pt; }
 }
+
+/* agent */
+.chat { display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; }
+.msg { display: flex; }
+.msg-user { justify-content: flex-end; }
+.msg .bubble { max-width: min(860px, 100%); border-radius: 12px; padding: 10px 14px; border: 1px solid var(--border); background: var(--card); overflow-x: auto; }
+.msg-user .bubble { background: var(--accent-soft); border-color: transparent; white-space: pre-wrap; }
+.tool-trace { display: flex; flex-direction: column; gap: 2px; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px dashed var(--border); font-size: 0.82rem; }
+.tool-json { font-size: 0.75rem; max-height: 260px; overflow: auto; background: var(--bg); padding: 8px; border-radius: 6px; margin: 4px 0; white-space: pre-wrap; word-break: break-word; }
+.proposal { border: 1px solid var(--warn); border-radius: 10px; padding: 10px 12px; margin-top: 10px; background: var(--warn-bg); color: var(--text); }
+.composer { display: flex; gap: 8px; align-items: flex-end; position: sticky; bottom: 0; background: var(--bg); padding: 8px 0; }
+.composer textarea { flex: 1; resize: vertical; min-height: 44px; }
+.suggestions { display: flex; flex-wrap: wrap; gap: 8px; }
+.suggestions .chip { white-space: normal; text-align: start; }

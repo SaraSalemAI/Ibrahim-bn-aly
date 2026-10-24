@@ -144,7 +144,7 @@ function Pack() {
           </tbody>
         </table>
         <p>
-          ROE = {L("net margin", "هامش الربح")} {((computed.dupont.threeStep.netMargin ?? 0) * 100).toFixed(1)}% × {L("asset turnover", "دوران الأصول")} {(computed.dupont.threeStep.assetTurnover ?? 0).toFixed(2)} × {L("equity multiplier", "مضاعف حقوق الملكية")} {(computed.dupont.threeStep.equityMultiplier ?? 0).toFixed(2)} = {((computed.dupont.threeStep.roe ?? 0) * 100).toFixed(1)}% · Altman Z'' {computed.altman.z ?? "—"} ({computed.altman.zone ?? "—"})
+          ROE = {L("net margin", "هامش الربح")} {((computed.dupont.threeStep.netMargin ?? 0) * 100).toFixed(1)}% × {L("asset turnover", "دوران الأصول")} {(computed.dupont.threeStep.assetTurnover ?? 0).toFixed(2)} × {L("equity multiplier", "مضاعف حقوق الملكية")} {(computed.dupont.threeStep.equityMultiplier ?? 0).toFixed(2)} = {((computed.dupont.threeStep.roe ?? 0) * 100).toFixed(1)}% · {"Altman Z''"} {computed.altman.z ?? "—"} ({computed.altman.zone ?? "—"})
         </p>
       </section>
 
