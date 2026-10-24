@@ -81,7 +81,7 @@ function Pack() {
         <p>
           {company.period.currentLabel} · {company.settings.framework} · {ccy}
         </p>
-        <p className="muted">{L("Prepared", "تاريخ الإعداد")}: {new Date().toLocaleDateString(lang === "ar" ? "ar-EG" : "en-GB")} · {L("Period status", "حالة الفترة")}: {company.period.status}</p>
+        <p className="muted">{L("Prepared", "تاريخ الإعداد")}: {new Date().toLocaleDateString(lang === "ar" ? "ar-EG-u-nu-latn" : "en-GB")} · {L("Period status", "حالة الفترة")}: {company.period.status}</p>
       </section>
 
       <section className="pack-page">
@@ -102,7 +102,23 @@ function Pack() {
             </div>
           ))}
         </div>
-        {summary ? <Markdown text={summary} /> : <p className="muted">{L("Key movements:", "أهم التغيرات:")} {a.variances.filter((v) => v.material).map((v) => `${line(v.key)} ${v.changePct === null ? "" : `${v.changePct > 0 ? "+" : ""}${v.changePct}%`}`).join(" · ") || "—"}</p>}
+        {summary ? (
+          <Markdown text={summary} />
+        ) : (
+          <p className="muted">
+            {L("Key movements:", "أهم التغيرات:")}{" "}
+            {a.variances.filter((v) => v.material).length
+              ? a.variances
+                  .filter((v) => v.material)
+                  .map((v, i) => (
+                    <span key={v.key}>
+                      {i > 0 && " · "}
+                      {line(v.key)} {v.changePct !== null && <bdi dir="ltr">{`${v.changePct > 0 ? "+" : ""}${v.changePct}%`}</bdi>}
+                    </span>
+                  ))
+              : "—"}
+          </p>
+        )}
         {summary && <p className="muted small">{L("Commentary drafted by AI from the figures in this pack; reviewed by management.", "تعليق أعده الذكاء الاصطناعي من أرقام هذه الحزمة؛ تتم مراجعته من الإدارة.")}</p>}
       </section>
 
