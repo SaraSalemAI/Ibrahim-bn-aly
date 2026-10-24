@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { AiPanel } from "@/components/AiPanel";
 import { Banner, Card, Field, LockNotice, Page } from "@/components/ui";
 import { sampleCompany } from "@/lib/workspace/sampleCompany";
@@ -11,6 +12,7 @@ const CURRENCIES = ["EGP", "USD", "EUR", "SAR", "AED", "GBP"];
 export default function CompanyPage() {
   const { ws, company, dispatch, update, locked } = useWorkspace();
   const L = useL();
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const set = <K extends keyof CompanySettings>(k: K, v: CompanySettings[K]) =>
     update({ action: "company.settings", entity: "companies", recordId: company?.id }, (c) => ({ ...c, settings: { ...c.settings, [k]: v } }));
   const setPeriod = (k: "start" | "end" | "currentLabel" | "priorLabel", v: string) =>
@@ -71,14 +73,20 @@ export default function CompanyPage() {
                   <button className="link" onClick={() => dispatch({ type: "selectCompany", id: c.id })}>
                     {L("Open", "فتح")}
                   </button>
-                  <button
-                    className="link danger"
-                    onClick={() => {
-                      if (confirm(L(`Delete ${c.settings.tradeNameEn} and all its data?`, `حذف ${c.settings.tradeNameEn} وكل بياناتها؟`))) dispatch({ type: "deleteCompany", id: c.id });
-                    }}
-                  >
-                    {L("Delete", "حذف")}
-                  </button>
+                  {confirmDelete === c.id ? (
+                    <>
+                      <button className="link danger" onClick={() => { dispatch({ type: "deleteCompany", id: c.id }); setConfirmDelete(null); }}>
+                        {L("Delete company and all its data", "حذف الشركة وكل بياناتها")}
+                      </button>
+                      <button className="link" onClick={() => setConfirmDelete(null)}>
+                        {L("Keep", "إبقاء")}
+                      </button>
+                    </>
+                  ) : (
+                    <button className="link danger" onClick={() => setConfirmDelete(c.id)}>
+                      {L("Delete", "حذف")}
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}

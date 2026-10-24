@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { Suspense, useState } from "react";
+import { IS_STATIC } from "@/lib/env";
 import { useSearchParams } from "next/navigation";
 import { FootballField, Waterfall } from "@/components/charts";
 import { Markdown } from "@/components/Markdown";
@@ -68,8 +70,14 @@ function Pack() {
   return (
     <div className="pack" dir={lang === "ar" ? "rtl" : "ltr"} lang={lang}>
       <div className="no-print pack-toolbar">
-        <button onClick={() => window.print()}>{L("Print / Save as PDF", "طباعة / حفظ PDF")}</button>
-        <button className="ghost" disabled={busy} onClick={genSummary}>
+        {IS_STATIC ? (
+          <Link className="button" href="/export">
+            {L("Back to the app", "العودة للتطبيق")}
+          </Link>
+        ) : (
+          <button onClick={() => window.print()}>{L("Print / Save as PDF", "طباعة / حفظ PDF")}</button>
+        )}
+        <button className="ghost" disabled={busy || IS_STATIC} onClick={genSummary}>
           {busy ? L("Writing…", "جارٍ الكتابة…") : L("Add AI executive commentary", "إضافة تعليق تنفيذي بالذكاء الاصطناعي")}
         </button>
         {err && <span className="bad small">{err}</span>}

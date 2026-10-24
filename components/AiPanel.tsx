@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ModuleId } from "@/lib/ai/facts";
+import { IS_STATIC } from "@/lib/env";
 import { useL, useWorkspace } from "@/lib/workspace/store";
 import type { Company } from "@/lib/workspace/types";
 import { Banner, Card } from "./ui";
@@ -9,6 +10,7 @@ import { Markdown } from "./Markdown";
 
 let statusCache: Promise<{ configured: boolean; model: string }> | null = null;
 export function aiStatus() {
+  if (IS_STATIC) return Promise.resolve({ configured: false, model: "" });
   statusCache ??= fetch("/api/explain")
     .then((r) => r.json())
     .catch(() => ({ configured: false, model: "" }));
@@ -83,10 +85,12 @@ export function AiPanel({ module, title }: { module: ModuleId; title?: string })
     <Card title={title ?? L("AI explanation", "الشرح بالذكاء الاصطناعي")} className="ai-card">
       {status && !status.configured && (
         <Banner kind="warning">
-          {L(
-            "AI Gateway is not configured on the server. Set AI_GATEWAY_API_KEY (or deploy on Vercel with OIDC). Every calculation in the app works without it.",
-            "لم يتم إعداد AI Gateway على الخادم. اضبط AI_GATEWAY_API_KEY (أو انشر على Vercel مع OIDC). كل الحسابات تعمل بدونه.",
-          )}
+          {IS_STATIC
+            ? L("AI explanations need the full app with AI Gateway. Every calculation on this page works here.", "الشرح بالذكاء الاصطناعي يتطلب التطبيق الكامل مع AI Gateway. كل الحسابات في هذه الصفحة تعمل هنا.")
+            : L(
+                "AI Gateway is not configured on the server. Set AI_GATEWAY_API_KEY (or deploy on Vercel with OIDC). Every calculation in the app works without it.",
+                "لم يتم إعداد AI Gateway على الخادم. اضبط AI_GATEWAY_API_KEY (أو انشر على Vercel مع OIDC). كل الحسابات تعمل بدونه.",
+              )}
         </Banner>
       )}
       <div className="actions">

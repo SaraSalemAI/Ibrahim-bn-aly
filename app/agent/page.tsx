@@ -5,6 +5,7 @@ import { aiStatus } from "@/components/AiPanel";
 import { Markdown } from "@/components/Markdown";
 import { Banner, Card, Collapsible, NeedsData, Page, Pill } from "@/components/ui";
 import { AGENT_SUGGESTIONS } from "@/lib/agent/prompt";
+import { IS_STATIC } from "@/lib/env";
 import type { AgentEvent } from "@/lib/agent/tools";
 import type { Category } from "@/lib/finance/types";
 import { makeT } from "@/lib/i18n";
@@ -203,7 +204,9 @@ export default function AgentPage() {
       <NeedsData>
         {status && !status.configured && (
           <Banner kind="warning">
-            {L("AI Gateway is not configured on the server. Set AI_GATEWAY_API_KEY (or deploy on Vercel with OIDC) to use the agent.", "لم يتم إعداد AI Gateway على الخادم. اضبط AI_GATEWAY_API_KEY (أو انشر على Vercel مع OIDC) لاستخدام الوكيل.")}
+            {IS_STATIC
+              ? L("The agent runs on the server, so it needs the full app with AI Gateway. Its tools are the same calculations you can use in every module here.", "يعمل الوكيل على الخادم، لذا يتطلب التطبيق الكامل مع AI Gateway. أدواته هي نفس الحسابات المتاحة في كل وحدة هنا.")
+              : L("AI Gateway is not configured on the server. Set AI_GATEWAY_API_KEY (or deploy on Vercel with OIDC) to use the agent.", "لم يتم إعداد AI Gateway على الخادم. اضبط AI_GATEWAY_API_KEY (أو انشر على Vercel مع OIDC) لاستخدام الوكيل.")}
           </Banner>
         )}
         {msgs.length === 0 && (

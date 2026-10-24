@@ -26,7 +26,7 @@
   --heat-hi: 30, 140, 80;
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #11151b;
     --card: #1a2029;
     --text: #e6e9ef;
@@ -50,7 +50,34 @@
     --s0: #3fb39a;
     --s1: #d9ad55;
     --s2: #8ea2ea;
+    color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --bg: #11151b;
+  --card: #1a2029;
+  --text: #e6e9ef;
+  --muted: #97a1b5;
+  --border: #2c3442;
+  --accent: #3fb39a;
+  --accent-ink: #0b1a16;
+  --accent-soft: #173a33;
+  --gold: #d9ad55;
+  --error-bg: #3a1c1f;
+  --error: #ff9b9b;
+  --warn-bg: #352a12;
+  --warn: #f1c46b;
+  --ok-bg: #16301f;
+  --good: #6fd497;
+  --info-bg: #182a44;
+  --info: #9cc2ff;
+  --row-alt: #1e2530;
+  --sidebar: #0b1512;
+  --sidebar-ink: #c9dad4;
+  --s0: #3fb39a;
+  --s1: #d9ad55;
+  --s2: #8ea2ea;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -89,7 +116,7 @@ h4 { margin: 12px 0 6px; }
 .topbar { display: flex; align-items: center; gap: 10px; padding: 10px 20px; border-bottom: 1px solid var(--border); background: var(--card); position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
 .spacer { flex: 1; }
 .menu-btn { display: none; }
-.content { padding: 20px; max-width: 1280px; width: 100%; }
+.content { padding-block: 20px; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); max-width: 1280px; width: 100%; }
 .page-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; margin-bottom: 14px; flex-wrap: wrap; }
 .page-head p { margin: 4px 0 0; }
 
@@ -257,7 +284,7 @@ mark { background: var(--warn-bg); color: var(--warn); padding: 0 3px; border-ra
   [dir="rtl"] .sidebar { transform: translateX(100%); }
   .nav-open .sidebar { transform: none; }
   .menu-btn { display: inline-flex; }
-  .content { padding: 14px 16px; }
+  .content { padding-block: 14px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
   .two-col { grid-template-columns: 1fr; }
   .num-input { width: 100px; }
 }

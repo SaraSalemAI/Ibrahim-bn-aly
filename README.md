@@ -82,6 +82,7 @@ The workspace is saved in the browser (IndexedDB). Data leaves the browser only 
 - `npm run lint` — ESLint with the Next.js core-web-vitals and TypeScript rules
 - `npm run typecheck`
 - `npm run build`
+- `npm run build:html` — single-file `dist/ai-cfo.html` that runs every module in the browser with no server (in-page router, workspace in IndexedDB). AI explanations, the agent, Excel export, .xlsx upload and file downloads need the full app and are disabled there; CSV upload works.
 
 GitHub Actions (`.github/workflows/ci.yml`) runs lint, typecheck, tests and build on every push and pull request.
 

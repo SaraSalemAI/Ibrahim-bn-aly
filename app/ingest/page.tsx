@@ -6,6 +6,7 @@ import { Banner, Card, download, LockNotice, Page, Pill } from "@/components/ui"
 import { csvChunks, GL_SPEC, parseGl, type GlLine } from "@/lib/finance/gl";
 import { sha256Bytes } from "@/lib/finance/hash";
 import { makeT } from "@/lib/i18n";
+import { IS_STATIC } from "@/lib/env";
 import { DOC_LABELS, TIE_LABELS } from "@/lib/labels";
 import { parseCsv, parseTrialBalance, TEMPLATE_HEADER } from "@/lib/finance/parse";
 import * as SL from "@/lib/finance/subledgers";
@@ -44,6 +45,7 @@ interface Staged {
 async function readText(file: File): Promise<{ text: string; bytes: Uint8Array; encoding: string }> {
   const bytes = new Uint8Array(await file.arrayBuffer());
   if (/\.xlsx$/i.test(file.name)) {
+    if (IS_STATIC) throw new Error("Excel files need the full app. In this HTML version, save the sheet as CSV and upload that.");
     const res = await fetch("/api/xlsx", { method: "POST", body: bytes });
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message ?? "Could not read the workbook");
     return { text: await res.text(), bytes, encoding: "xlsx" };
@@ -162,9 +164,11 @@ export default function IngestPage() {
                   {L("Upload", "رفع")}
                   <input type="file" hidden disabled={locked} accept={cat === "ETA_INVOICE" ? ".json,.xml" : ".csv,.txt,.xlsx"} onChange={(e) => onFile(cat, e.target.files?.[0])} />
                 </label>
-                <button className="ghost" onClick={() => download(TEMPLATES[cat].file, "﻿" + TEMPLATES[cat].text, cat === "ETA_INVOICE" ? "application/json" : undefined)}>
-                  {L("Template", "نموذج")}
-                </button>
+                {!IS_STATIC && (
+                  <button className="ghost" onClick={() => download(TEMPLATES[cat].file, "\uFEFF" + TEMPLATES[cat].text, cat === "ETA_INVOICE" ? "application/json" : undefined)}>
+                    {L("Template", "نموذج")}
+                  </button>
+                )}
               </div>
             </Card>
           );

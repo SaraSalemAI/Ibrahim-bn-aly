@@ -19,6 +19,7 @@ export default function AuditPage() {
   const { line, category } = makeT(ws.lang);
   const [lineKey, setLineKey] = useState("receivables");
   const [filter, setFilter] = useState("");
+  const [reopenReason, setReopenReason] = useState("");
   const chain = useMemo(() => verifyAudit(ws.audit), [ws.audit]);
   const entries = ws.audit.filter((e) => !company || e.companyId === company.id || e.companyId === "-").filter((e) => (filter ? `${e.action} ${e.entity} ${e.recordId ?? ""} ${e.reason ?? ""}`.toLowerCase().includes(filter.toLowerCase()) : true));
   const isCfo = ws.profile.role === "CFO";
@@ -60,16 +61,25 @@ export default function AuditPage() {
                   </button>
                 )}
                 {current !== "DRAFT" && (
-                  <button
-                    className="ghost"
-                    disabled={current === "LOCKED" && !isCfo}
-                    onClick={() => {
-                      const reason = prompt(L("Reason for reopening (logged):", "سبب إعادة الفتح (يُسجل):"));
-                      if (reason?.trim()) setStatus("DRAFT", reason);
-                    }}
-                  >
-                    {current === "LOCKED" ? L("Authorised reopening…", "إعادة فتح معتمدة…") : L("Back to draft", "العودة للمسودة")}
-                  </button>
+                  <>
+                    <input
+                      id="reopen-reason"
+                      placeholder={L("Reason for reopening (logged)", "سبب إعادة الفتح (يُسجل)")}
+                      value={reopenReason}
+                      onChange={(e) => setReopenReason(e.target.value)}
+                      disabled={current === "LOCKED" && !isCfo}
+                    />
+                    <button
+                      className="ghost"
+                      disabled={(current === "LOCKED" && !isCfo) || !reopenReason.trim()}
+                      onClick={() => {
+                        setStatus("DRAFT", reopenReason.trim());
+                        setReopenReason("");
+                      }}
+                    >
+                      {current === "LOCKED" ? L("Authorised reopening", "إعادة فتح معتمدة") : L("Back to draft", "العودة للمسودة")}
+                    </button>
+                  </>
                 )}
               </div>
               {next === "LOCKED" && !isCfo && <p className="small muted">{L("Only the CFO role can lock or reopen.", "فقط دور المدير المالي يمكنه الإقفال أو إعادة الفتح.")}</p>}

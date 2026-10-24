@@ -5,6 +5,7 @@ import { useState } from "react";
 import { AiPanel } from "@/components/AiPanel";
 import { exportExcel } from "@/components/exportExcel";
 import { Banner, Card, NeedsData, Page } from "@/components/ui";
+import { IS_STATIC } from "@/lib/env";
 import { useL, useWorkspace } from "@/lib/workspace/store";
 
 export default function ExportPage() {
@@ -26,8 +27,9 @@ export default function ExportPage() {
               <li>{L("Ratios as live formulas", "النسب كمعادلات حية")}</li>
               <li>{L("Fixed asset accounting-vs-tax schedule and Form 41 summary (when loaded)", "جدول الإهلاك المحاسبي مقابل الضريبي وملخص نموذج ٤١ (عند التحميل)")}</li>
             </ul>
+            {IS_STATIC && <Banner kind="info">{L("Excel export needs the full app (it is built on the server).", "تصدير Excel يتطلب التطبيق الكامل (يُعد على الخادم).")}</Banner>}
             <button
-              disabled={busy}
+              disabled={busy || IS_STATIC}
               onClick={async () => {
                 if (!company) return;
                 setBusy(true);
@@ -41,15 +43,15 @@ export default function ExportPage() {
           <Card title={L("Board pack (PDF)", "حزمة مجلس الإدارة (PDF)")}>
             <p className="small">
               {L(
-                "Opens a print-ready pack: cover, executive summary, KPIs, statements, cash-flow bridge, ratios and DuPont, scenarios, valuation football field, tax summary and notes. Use your browser's “Save as PDF”.",
+                "Opens a print-ready pack: cover, executive summary, KPIs, statements, cash-flow bridge, ratios and DuPont, scenarios, valuation football field, tax summary and notes. Use your browser's “Save as PDF” (full app).",
                 "تفتح حزمة جاهزة للطباعة: الغلاف، الملخص التنفيذي، المؤشرات، القوائم، جسر التدفقات، النسب ودوبونت، السيناريوهات، نطاقات التقييم، ملخص الضريبة، والإيضاحات. استخدم “حفظ كـ PDF” في المتصفح.",
               )}
             </p>
             <div className="actions">
-              <Link className="button" href="/board-pack?lang=en" target="_blank">
+              <Link className="button" href="/board-pack?lang=en" target={IS_STATIC ? undefined : "_blank"}>
                 {L("Open English pack", "فتح النسخة الإنجليزية")}
               </Link>
-              <Link className="button ghost" href="/board-pack?lang=ar" target="_blank">
+              <Link className="button ghost" href="/board-pack?lang=ar" target={IS_STATIC ? undefined : "_blank"}>
                 {L("Open Arabic pack", "فتح النسخة العربية")}
               </Link>
             </div>

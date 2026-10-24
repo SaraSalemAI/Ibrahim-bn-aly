@@ -6,6 +6,7 @@ import { exportExcel } from "@/components/exportExcel";
 import { Banner, Card, NeedsData, NumInput, Page, Pill } from "@/components/ui";
 import { ajeBalanced, type Aje, type AjeLine } from "@/lib/finance/adjustments";
 import { categoryClass } from "@/lib/finance/classify";
+import { IS_STATIC } from "@/lib/env";
 import { CATEGORIES, type Category, type TBRow } from "@/lib/finance/types";
 import { makeT } from "@/lib/i18n";
 import { uid } from "@/lib/workspace/defaults";
@@ -36,6 +37,7 @@ export default function TrialBalancePage() {
   const [group, setGroup] = useState("all");
   const [drawer, setDrawer] = useState<TBRow | null>(null);
   const [exportErr, setExportErr] = useState("");
+  const [reversing, setReversing] = useState<{ id: string; reason: string } | null>(null);
   const [draft, setDraft] = useState<{ reason: string; lines: AjeLine[] }>({ reason: "", lines: [] });
 
   const gl = company?.subledgers.gl ?? [];
@@ -83,7 +85,8 @@ export default function TrialBalancePage() {
           onClick={async () => {
             if (company) setExportErr((await exportExcel(company)) ?? "");
           }}
-          disabled={!computed?.analysis}
+          disabled={!computed?.analysis || IS_STATIC}
+          title={IS_STATIC ? "Excel export needs the full app" : undefined}
         >
           {L("Export Excel (live formulas)", "تصدير Excel (معادلات حية)")}
         </button>
@@ -183,15 +186,34 @@ export default function TrialBalancePage() {
                     <td>{a.author}</td>
                     <td className="num">{f.n(a.lines.reduce((s, l) => s + l.debit, 0))}</td>
                     <td>
-                      <button
-                        className="link danger"
-                        onClick={() => {
-                          const reason = prompt(L("Reason for reversing this entry:", "سبب عكس هذا القيد:"));
-                          if (reason) update({ action: "aje.reverse", entity: "adjusting_journal_entries", recordId: a.id, reason }, (c) => ({ ...c, ajes: c.ajes.filter((x) => x.id !== a.id) }), { allowWhenLocked: true });
-                        }}
-                      >
-                        {L("Reverse", "عكس")}
-                      </button>
+                      {reversing?.id === a.id ? (
+                        <span className="actions">
+                          <input
+                            id={`reverse-reason-${a.id}`}
+                            autoFocus
+                            placeholder={L("Reason for reversing", "سبب العكس")}
+                            value={reversing.reason}
+                            onChange={(e) => setReversing({ id: a.id, reason: e.target.value })}
+                          />
+                          <button
+                            className="link danger"
+                            disabled={!reversing.reason.trim()}
+                            onClick={() => {
+                              update({ action: "aje.reverse", entity: "adjusting_journal_entries", recordId: a.id, reason: reversing.reason.trim() }, (c) => ({ ...c, ajes: c.ajes.filter((x) => x.id !== a.id) }), { allowWhenLocked: true });
+                              setReversing(null);
+                            }}
+                          >
+                            {L("Confirm reversal", "تأكيد العكس")}
+                          </button>
+                          <button className="link" onClick={() => setReversing(null)}>
+                            {L("Cancel", "إلغاء")}
+                          </button>
+                        </span>
+                      ) : (
+                        <button className="link danger" onClick={() => setReversing({ id: a.id, reason: "" })}>
+                          {L("Reverse", "عكس")}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

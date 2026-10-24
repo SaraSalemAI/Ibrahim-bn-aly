@@ -46,7 +46,7 @@ export default function MappingPage() {
     setAiErr("");
     try {
       const status = await aiStatus();
-      if (!status.configured) throw new Error(L("AI Gateway is not configured.", "لم يتم إعداد AI Gateway."));
+      if (!status.configured) throw new Error(L("AI mapping needs the full app with AI Gateway configured.", "الربط بالذكاء الاصطناعي يتطلب التطبيق الكامل مع إعداد AI Gateway."));
       const targets = rows.filter((r) => r.category === "" || (r.suggested && (r.confidence ?? 100) <= 90)).slice(0, 200);
       if (!targets.length) throw new Error(L("No unmapped or low-confidence accounts.", "لا توجد حسابات غير مصنفة أو منخفضة الثقة."));
       const res = await fetch("/api/map", {
