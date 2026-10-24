@@ -55,7 +55,36 @@ export interface TBRow {
   priorCredit: number;
   /** 1-based row number in the source file, for lineage. */
   sourceRow: number;
+  /** Source document id (see SourceDoc), for drill-to-source. */
+  sourceDocId?: string;
+  /** Currency the account is denominated in, for FX stress tests. Defaults to the functional currency. */
+  currency?: string;
+  /** How the category was set: from the file, the analyst, a bulk rule, keyword classifier or AI. */
+  mappingRule?: string;
+  /** 0-100 confidence of an automatic suggestion. */
+  confidence?: number;
 }
+
+export interface SourceDoc {
+  id: string;
+  fileName: string;
+  sha256: string;
+  category: DocCategory;
+  rowCount: number;
+  encoding: string;
+  uploadedAt: string;
+}
+
+export type DocCategory =
+  | "TRIAL_BALANCE"
+  | "GENERAL_LEDGER"
+  | "AR_SUBLEDGER"
+  | "AP_SUBLEDGER"
+  | "FIXED_ASSETS"
+  | "INVENTORY"
+  | "PAYROLL"
+  | "BANK_STATEMENT"
+  | "ETA_INVOICE";
 
 export interface Drivers {
   revenueGrowth: number;

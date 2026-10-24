@@ -1,87 +1,44 @@
 import { gateway, streamText } from "ai";
 import { z } from "zod";
-import { analyze } from "@/lib/finance/engine";
-import { CATEGORIES } from "@/lib/finance/types";
-import { buildFacts, buildUserPrompt, SYSTEM_PROMPT } from "@/lib/ai/prompt";
+import { moduleFacts, MODULES } from "@/lib/ai/facts";
+import { buildUserPrompt, SYSTEM_PROMPT } from "@/lib/ai/prompt";
+import { companySchema, errorMessage, gatewayConfigured, modelId, notConfigured, readJson } from "@/lib/ai/payload";
+import { computeCompany } from "@/lib/workspace/compute";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const DEFAULT_MODEL = "anthropic/claude-sonnet-5.5";
-
-const amount = z.number().finite();
-const driversSchema = z.object({
-  revenueGrowth: z.number().min(-1).max(10),
-  grossMargin: z.number().min(-1).max(1),
-  opexPctRevenue: z.number().min(0).max(5),
-  financeCostChange: z.number().min(-1).max(10),
-  taxRate: z.number().min(0).max(1),
-});
-
 const requestSchema = z.object({
-  rows: z
-    .array(
-      z.object({
-        code: z.string().max(64),
-        name: z.string().max(256),
-        category: z.union([z.enum(CATEGORIES), z.literal("")]),
-        suggested: z.boolean(),
-        currentDebit: amount,
-        currentCredit: amount,
-        priorDebit: amount,
-        priorCredit: amount,
-        sourceRow: z.number().int(),
-      }),
-    )
-    .min(1)
-    .max(5000),
-  drivers: z.object({ base: driversSchema, bull: driversSchema, bear: driversSchema }).optional(),
-  companyName: z.string().max(200).default(""),
-  currency: z.string().max(8).default("EGP"),
-  currentLabel: z.string().max(40).default("Current period"),
-  priorLabel: z.string().max(40).default("Prior period"),
-  periodDays: z.number().int().min(1).max(366).default(365),
+  module: z.enum(MODULES).default("overview"),
   language: z.enum(["en", "ar"]).default("en"),
-  focus: z.enum(["all", "variances", "ratios", "forecast"]).default("all"),
+  company: companySchema,
+  peers: z.array(companySchema).max(20).default([]),
+  benchmarks: z.record(z.string(), z.number().nullable()).default({}),
+  audit: z.array(z.any()).max(5000).default([]),
 });
-
-function gatewayConfigured(): boolean {
-  return Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN);
-}
 
 export async function GET() {
-  return Response.json({ configured: gatewayConfigured(), model: process.env.AI_GATEWAY_MODEL || DEFAULT_MODEL });
+  return Response.json({ configured: gatewayConfigured(), model: modelId() });
 }
 
 export async function POST(req: Request) {
-  if (!gatewayConfigured()) {
-    return Response.json(
-      { error: "notConfigured", message: "AI Gateway is not configured. Set AI_GATEWAY_API_KEY (or deploy on Vercel with OIDC)." },
-      { status: 503 },
-    );
-  }
-
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return Response.json({ error: "badRequest", message: "Body must be JSON." }, { status: 400 });
-  }
-  const parsed = requestSchema.safeParse(body);
+  if (!gatewayConfigured()) return notConfigured();
+  const read = await readJson(req);
+  if (!read.ok) return read.response;
+  const parsed = requestSchema.safeParse(read.body);
   if (!parsed.success) {
     return Response.json({ error: "badRequest", message: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
   }
+  const { module, language, company, peers, benchmarks, audit } = parsed.data;
+  if (company.rows.length === 0) return Response.json({ error: "badRequest", message: "Load a trial balance first." }, { status: 400 });
 
-  const input = parsed.data;
   // Recompute on the server so the model only ever sees figures produced by the deterministic engine.
-  const analysis = analyze(input.rows, input.drivers, input.periodDays);
-  const ctx = { ...input };
-  const facts = buildFacts(analysis, input.rows, ctx);
+  const facts = moduleFacts(module, company, computeCompany(company), { companies: [company, ...peers], benchmarks, audit });
 
   const result = streamText({
-    model: gateway(process.env.AI_GATEWAY_MODEL || DEFAULT_MODEL),
+    model: gateway(modelId()),
     system: SYSTEM_PROMPT,
-    prompt: buildUserPrompt(facts, ctx),
+    prompt: buildUserPrompt(module, facts, language),
     maxOutputTokens: 2000,
     abortSignal: req.signal,
   });
@@ -134,8 +91,4 @@ async function nextText(parts: AsyncIterator<{ type: string; text?: string; erro
   } catch (error) {
     return { kind: "error", error };
   }
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
 }

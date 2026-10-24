@@ -96,6 +96,11 @@ const en: Dict = {
   issue_noPrior: "No prior-period figures: variances are not available and base growth defaults to 0%.",
   period_current: "current",
   period_prior: "prior",
+  issue_missingFields: "Missing required columns: {fields}.",
+  issue_badDate: "Row {row}: “{column}” is not a valid date (use YYYY-MM-DD or DD/MM/YYYY).",
+  issue_noDocuments: "No e-invoice documents found in the file.",
+  issue_badJson: "The file is not valid JSON.",
+  issue_unknownFormat: "Unrecognised format: expected ETA JSON or XML.",
 };
 
 const ar: Dict = {
@@ -190,6 +195,11 @@ const ar: Dict = {
   issue_noPrior: "لا توجد أرقام للفترة السابقة: الانحرافات غير متاحة والنمو الأساسي يبدأ من ٠٪.",
   period_current: "الحالية",
   period_prior: "السابقة",
+  issue_missingFields: "أعمدة مطلوبة مفقودة: {fields}.",
+  issue_badDate: "السطر {row}: “{column}” ليس تاريخًا صحيحًا (استخدم YYYY-MM-DD أو DD/MM/YYYY).",
+  issue_noDocuments: "لا توجد فواتير إلكترونية في الملف.",
+  issue_badJson: "الملف ليس JSON صحيحًا.",
+  issue_unknownFormat: "صيغة غير معروفة: المتوقع JSON أو XML من منظومة الفاتورة.",
 };
 
 const CATEGORY_LABELS: Record<Category, [string, string]> = {

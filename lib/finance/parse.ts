@@ -1,5 +1,5 @@
 import { CATEGORIES, type Category, type Issue, type TBRow } from "./types";
-import { suggestCategory } from "./classify";
+import { suggestMapping } from "./classify";
 
 /** RFC 4180-style CSV parser: quoted fields, escaped quotes, CRLF, BOM. */
 export function parseCsv(text: string): string[][] {
@@ -78,6 +78,7 @@ const HEADER_ALIASES: Record<string, string[]> = {
   currentCredit: ["current_credit", "current credit", "credit", "cr", "دائن"],
   priorDebit: ["prior_debit", "prior debit", "previous debit", "مدين سابق"],
   priorCredit: ["prior_credit", "prior credit", "previous credit", "دائن سابق"],
+  currency: ["currency", "ccy", "العملة"],
 };
 
 export const TEMPLATE_HEADER = "code,name,category,current_debit,current_credit,prior_debit,prior_credit";
@@ -124,15 +125,21 @@ export function parseTrialBalance(text: string): ParseResult {
     const rawCategory = (get("category") ?? "").trim().toUpperCase();
     let category: Category | "" = "";
     let suggested = false;
+    let confidence: number | undefined;
+    let mappingRule = "source-file";
     if ((CATEGORIES as readonly string[]).includes(rawCategory)) {
       category = rawCategory as Category;
     } else {
       if (rawCategory !== "") {
         issues.push({ level: "warning", code: "unknownCategory", params: { row: sourceRow, value: rawCategory } });
       }
-      category = suggestCategory(code, name);
+      const s = suggestMapping(code, name);
+      category = s.category;
       suggested = category !== "";
+      confidence = s.confidence;
+      mappingRule = s.rule;
     }
+    const currency = (get("currency") ?? "").trim().toUpperCase() || undefined;
     rows.push({
       code,
       name,
@@ -143,6 +150,9 @@ export function parseTrialBalance(text: string): ParseResult {
       priorDebit: amounts.priorDebit!,
       priorCredit: amounts.priorCredit!,
       sourceRow,
+      mappingRule,
+      ...(confidence !== undefined ? { confidence } : {}),
+      ...(currency ? { currency } : {}),
     });
   });
 
@@ -155,8 +165,11 @@ function csvCell(v: string | number): string {
 }
 
 export function toCsv(rows: TBRow[]): string {
+  const withCcy = rows.some((r) => r.currency);
   const lines = rows.map((r) =>
-    [r.code, r.name, r.category, r.currentDebit, r.currentCredit, r.priorDebit, r.priorCredit].map(csvCell).join(","),
+    [r.code, r.name, r.category, r.currentDebit, r.currentCredit, r.priorDebit, r.priorCredit, ...(withCcy ? [r.currency ?? ""] : [])]
+      .map(csvCell)
+      .join(","),
   );
-  return [TEMPLATE_HEADER, ...lines].join("\n") + "\n";
+  return [TEMPLATE_HEADER + (withCcy ? ",currency" : ""), ...lines].join("\n") + "\n";
 }
