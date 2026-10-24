@@ -35,7 +35,7 @@
     <main>
         <section id="about">
             <h2>About Me</h2>
-            <p>Hello! I'm Ibrahim bn aly, a passionate Egyptian tour guide with over 10 years of experience. I specialize in personalized tours of the pyramids, Nile cruises, and hidden gems of Cairo. Let me show you the real Egypt!</p>
+            <p>Hello! I'm a passionate Egyptian tour guide with over 10 years of experience. I specialize in personalized tours of the pyramids, Nile cruises, and hidden gems of Cairo. Let me show you the real Egypt!</p>
         </section>
         <section id="tours">
             <h2>Tour Highlights</h2>
@@ -49,10 +49,10 @@
         <section id="photos">
             <h2>Photo Gallery</h2>
             <div class="photo-gallery">
-                <img src="https://via.placeholder.com/300x200?text=Pyramids" alt="Pyramids of Giza">
-                <img src="https://via.placeholder.com/300x200?text=Nile" alt="Nile River">
-                <img src="https://via.placeholder.com/300x200?text=Pharaoh" alt="Ancient Pharaoh">
-                <img src="https://via.placeholder.com/300x200?text=Cairo" alt="Cairo Streets">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='200'><rect width='100%25' height='100%25' fill='%23e8dcb5'/><text x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%238b4513' text-anchor='middle' dominant-baseline='middle'>Pyramids</text></svg>" alt="Pyramids of Giza">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='200'><rect width='100%25' height='100%25' fill='%23e8dcb5'/><text x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%238b4513' text-anchor='middle' dominant-baseline='middle'>Nile</text></svg>" alt="Nile River">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='200'><rect width='100%25' height='100%25' fill='%23e8dcb5'/><text x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%238b4513' text-anchor='middle' dominant-baseline='middle'>Pharaoh</text></svg>" alt="Ancient Pharaoh">
+                <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='200'><rect width='100%25' height='100%25' fill='%23e8dcb5'/><text x='50%25' y='50%25' font-family='Arial' font-size='24' fill='%238b4513' text-anchor='middle' dominant-baseline='middle'>Cairo</text></svg>" alt="Cairo Streets">
                 <!-- Add more <img> tags with your actual photo URLs -->
             </div>
         </section>
@@ -60,15 +60,16 @@
             <h2>Contact & Social Media</h2>
             <p>Email: ibrahim@example.com | Phone: +20 123 456 7890</p>
             <div class="social-media">
-                <a href="https://instagram.com/ibrahim_tours" target="_blank">Instagram</a>
-                <a href="https://facebook.com/ibrahim_tours" target="_blank">Facebook</a>
-                <a href="https://twitter.com/ibrahim_tours" target="_blank">Twitter</a>
+                <a href="https://instagram.com/ibrahim_tours" target="_blank" rel="noopener noreferrer">Instagram</a>
+                <a href="https://facebook.com/ibrahim_tours" target="_blank" rel="noopener noreferrer">Facebook</a>
+                <a href="https://twitter.com/ibrahim_tours" target="_blank" rel="noopener noreferrer">Twitter</a>
                 <!-- Add more links as needed -->
             </div>
         </section>
     </main>
     <footer>
-        <p>&copy; 2023 Egyptian Adventures. All rights reserved.</p>
+        <p>&copy; <span id="year">2026</span> Egyptian Adventures. All rights reserved.</p>
     </footer>
+    <script>document.getElementById("year").textContent = new Date().getFullYear();</script>
 </body>
 </html>
