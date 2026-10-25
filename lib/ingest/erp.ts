@@ -203,7 +203,6 @@ export function normaliseTable(text: string, category: CsvCategory, columnMap: R
   const original = table[h0].map((h) => h.replace(/^﻿/, "").trim());
   const body = table.slice(h0 + 1).filter((r) => r.some((c) => c.trim() !== ""));
   const erp = detectErp(original);
-  const aliases = fieldAliases(category);
   const headers = original.map(norm);
   const base = baseAliases(category);
   const present = (field: string) => headers.some((h) => h === field.toLowerCase() || base[field]?.includes(h));

@@ -25,6 +25,10 @@ export const NAV: NavItem[] = [
   { n: 15, href: "/stress", en: "FX & stress tests", ar: "اختبارات الضغط والعملة", group: "insight" },
   { n: 16, href: "/export", en: "Board pack & export", ar: "حزمة مجلس الإدارة والتصدير", group: "report" },
   { n: 17, href: "/audit", en: "Audit trail & lineage", ar: "سجل التدقيق والتتبع", group: "report" },
+  { n: 18, href: "/close-review", en: "Close review", ar: "مراجعة الإقفال", group: "close" },
+  { n: 19, href: "/trends", en: "Monthly trends", ar: "الاتجاهات الشهرية", group: "insight" },
+  { n: 20, href: "/consolidation", en: "Group consolidation", ar: "القوائم المجمعة", group: "close" },
+  { n: 21, href: "/team", en: "Team & sync", ar: "الفريق والمزامنة", group: "setup" },
 ];
 
 export const GROUPS: Record<NavItem["group"], [string, string]> = {

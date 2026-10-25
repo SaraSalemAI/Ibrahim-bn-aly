@@ -22,6 +22,10 @@ import Stress from "../app/stress/page";
 import Export from "../app/export/page";
 import Audit from "../app/audit/page";
 import BoardPack from "../app/board-pack/page";
+import CloseReview from "../app/close-review/page";
+import Trends from "../app/trends/page";
+import Consolidation from "../app/consolidation/page";
+import Team from "../app/team/page";
 
 const ROUTES: Record<string, ComponentType> = {
   "/": Overview,
@@ -44,6 +48,10 @@ const ROUTES: Record<string, ComponentType> = {
   "/export": Export,
   "/audit": Audit,
   "/board-pack": BoardPack,
+  "/close-review": CloseReview,
+  "/trends": Trends,
+  "/consolidation": Consolidation,
+  "/team": Team,
 };
 
 function App() {

@@ -8,7 +8,8 @@ import { stressTest } from "../finance/stress";
 import { CATEGORIES, type Category } from "../finance/types";
 import { dcf, ufcf, wacc, type ValuationInputs } from "../finance/valuation";
 import { computeCompany, type Computed } from "../workspace/compute";
-import type { Company } from "../workspace/types";
+import { consolidateGroup } from "../workspace/group";
+import type { Company, Group } from "../workspace/types";
 
 type Ready = Extract<Computed, { analysis: NonNullable<Computed["analysis"]> }>;
 
@@ -27,7 +28,7 @@ const pct = z.number().min(-1).max(10).describe("A fraction, e.g. 0.05 for 5%");
  * company snapshot the server received. Proposal tools never change data: they return a draft the
  * user must approve in the app.
  */
-export function buildAgentTools(company: Company, peers: Company[] = []) {
+export function buildAgentTools(company: Company, peers: Company[] = [], groups: Group[] = []) {
   const k = computeCompany(company);
   if (!k.analysis) return null;
   const c = k as Ready;
@@ -262,6 +263,126 @@ export function buildAgentTools(company: Company, peers: Company[] = []) {
           commonSizePl: all.map((x) => ({ name: x.p.settings.tradeNameEn, lines: commonSize(x.k.analysis!.current).filter((l) => l.statement === "PL").map((l) => ({ line: l.key, pct: l.pct })) })),
         });
       },
+    }),
+
+    get_close_review: tool({
+      description: "Rule-based close review: anomaly flags (GL journal tests, abnormal and suspense balances, big swings, AR/AP/inventory/payroll/bank exceptions) with example rows, plus readiness gates and missing FX rates.",
+      inputSchema: z.object({ severity: z.enum(["all", "high", "medium", "low"]).default("all") }),
+      execute: async ({ severity }) =>
+        round({
+          anomalies: c.anomalies.filter((x) => severity === "all" || x.severity === severity).map((x) => ({ id: x.id, area: x.area, severity: x.severity, finding: x.title[0], why: x.detail[0], count: x.count, examples: x.examples })),
+          checks: c.checks,
+          tieOuts: c.tieOuts,
+          missingFxRates: c.fx.missing,
+          glLoaded: company.subledgers.gl.length > 0,
+        }),
+    }),
+
+    search_gl: tool({
+      description: "Search the general ledger lines: by text (account, memo, counterparty, journal), account code prefix, date range and amount range. Returns matching lines (max 50) and totals. Use it to answer questions about specific transactions.",
+      inputSchema: z.object({
+        text: z.string().max(100).optional(),
+        accountPrefix: z.string().max(32).optional(),
+        from: z.string().max(10).optional().describe("YYYY-MM-DD"),
+        to: z.string().max(10).optional().describe("YYYY-MM-DD"),
+        minAmount: z.number().optional(),
+        maxAmount: z.number().optional(),
+        limit: z.number().int().min(1).max(50).default(25),
+      }),
+      execute: async ({ text, accountPrefix, from, to, minAmount, maxAmount, limit }) => {
+        const gl = company.subledgers.gl;
+        if (!gl.length) return { error: "General ledger not loaded. Upload it on the dashboard." };
+        const q = text?.toLowerCase();
+        const hits = gl.filter((l) => {
+          const amt = Math.max(l.debit, l.credit);
+          return (
+            (!q || `${l.accountCode} ${l.accountName} ${l.memo} ${l.counterparty} ${l.journalId} ${l.voucher}`.toLowerCase().includes(q)) &&
+            (!accountPrefix || l.accountCode.startsWith(accountPrefix)) &&
+            (!from || l.postingDate >= from) &&
+            (!to || l.postingDate <= to) &&
+            (minAmount === undefined || amt >= minAmount) &&
+            (maxAmount === undefined || amt <= maxAmount)
+          );
+        });
+        return round({
+          matches: hits.length,
+          totalDebit: hits.reduce((x, l) => x + l.debit, 0),
+          totalCredit: hits.reduce((x, l) => x + l.credit, 0),
+          lines: hits.slice(0, limit).map((l) => ({ date: l.postingDate, journal: l.journalId, account: `${l.accountCode} ${l.accountName}`, debit: l.debit, credit: l.credit, counterparty: l.counterparty, memo: l.memo })),
+          truncated: hits.length > limit,
+        });
+      },
+    }),
+
+    get_top_counterparties: tool({
+      description: "Largest customers (open receivables, overdue amount) or suppliers (open payables, withholding tax) from the AR and AP subledgers.",
+      inputSchema: z.object({ side: z.enum(["customers", "suppliers"]), limit: z.number().int().min(1).max(25).default(10) }),
+      execute: async ({ side, limit }) => {
+        const asOf = company.period.end;
+        if (side === "customers") {
+          if (!company.subledgers.ar.length) return { error: "AR aging not loaded." };
+          const m = new Map<string, { customer: string; open: number; overdue: number; invoices: number }>();
+          for (const i of company.subledgers.ar) {
+            const e = m.get(i.customer) ?? { customer: i.customer, open: 0, overdue: 0, invoices: 0 };
+            e.open += i.outstanding;
+            if (i.dueDate < asOf) e.overdue += i.outstanding;
+            e.invoices++;
+            m.set(i.customer, e);
+          }
+          return round([...m.values()].sort((a, b) => b.open - a.open).slice(0, limit));
+        }
+        if (!company.subledgers.ap.length) return { error: "AP ledger not loaded." };
+        const m = new Map<string, { supplier: string; open: number; whtDeducted: number; invoices: number }>();
+        for (const i of company.subledgers.ap) {
+          const e = m.get(i.supplier) ?? { supplier: i.supplier, open: 0, whtDeducted: 0, invoices: 0 };
+          if (!/^(paid|مدفوع|مسدد)/i.test(i.status)) e.open += i.netPayable;
+          e.whtDeducted += i.whtDeducted;
+          e.invoices++;
+          m.set(i.supplier, e);
+        }
+        return round([...m.values()].sort((a, b) => b.open - a.open).slice(0, limit));
+      },
+    }),
+
+    get_trends: tool({
+      description: "Month-by-month figures from monthly trial balances (revenue, gross profit, EBITDA, net profit, cash, receivables, inventory, payables, equity, margins, receivable days) and the latest month-on-month change.",
+      inputSchema: z.object({}),
+      execute: async () => (c.trend.length ? round({ ytdFiles: company.monthlyYtd, months: c.trend, summary: c.trendSummary }) : { error: "No monthly trial balances loaded. Upload one TB per month and choose “One month”." }),
+    }),
+
+    get_consolidation: tool({
+      description: "Consolidated group figures for a group this company belongs to: eliminations, unreconciled intercompany differences, goodwill, non-controlling interests and consolidated statements.",
+      inputSchema: z.object({}),
+      execute: async () => {
+        const g = groups.find((x) => x.members.some((m) => m.companyId === company.id));
+        if (!g) return { error: "This company is not in a group. Set one up on the Group consolidation page." };
+        const r = consolidateGroup([company, ...peers], g);
+        if (!r.analysis) return { error: "Group members have no trial balances." };
+        return round({
+          group: g.name,
+          members: r.entities.map((e) => ({ name: e.name, ownership: e.ownership, parent: e.isParent })),
+          missingMembers: r.missing.length,
+          eliminations: r.eliminations,
+          unreconciled: r.differences,
+          goodwill: r.goodwill,
+          nonControllingInterests: r.nci,
+          figures: { revenue: r.analysis.current.revenue, netProfit: r.analysis.current.netProfit, totalAssets: r.analysis.current.totalAssets, totalEquity: r.analysis.current.totalEquity, balanceCheck: r.analysis.current.balanceCheck },
+        });
+      },
+    }),
+
+    get_period_history: tool({
+      description: "Closed (archived) periods and board packs frozen at period lock, with their headline figures.",
+      inputSchema: z.object({}),
+      execute: async () =>
+        round({
+          closedPeriods: company.history.map((h) => {
+            const x = analyze(h.rows).current;
+            return { period: h.label, start: h.start, end: h.end, lockedBy: h.lockedBy, revenue: x.revenue, netProfit: x.netProfit, cash: x.cash, totalEquity: x.totalEquity };
+          }),
+          boardPacks: company.boardPacks.map((p) => ({ period: p.periodLabel, createdAt: p.createdAt, createdBy: p.createdBy, sha256: p.hash.slice(0, 16) })),
+          sources: company.docs.map((d) => ({ file: d.fileName, type: d.category, role: d.role ?? "current", rows: d.rowCount, erp: d.erp ?? null, format: d.format ?? null })),
+        }),
     }),
 
     propose_adjusting_entry: tool({

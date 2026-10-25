@@ -1,5 +1,5 @@
 // Builds dist/ai-cfo.html: the whole client app in one self-contained file (React 18 from cdnjs).
-// Server features (AI, Excel export, .xlsx conversion) are unavailable there and say so.
+// Server features (AI, OCR, ETA portal pull, Excel export, team sync) are unavailable there and say so.
 import { build } from "esbuild";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -26,7 +26,7 @@ const result = await build({
     "react-dom/client": shim("react-dom-client.js"),
     react: shim("react.js"),
   },
-  define: { "process.env.NODE_ENV": '"production"', "process.env.NEXT_PUBLIC_STATIC_HTML": '"1"' },
+  define: { "process.env.NODE_ENV": '"production"', "process.env.NEXT_PUBLIC_STATIC_HTML": '"1"', "process.env.NEXT_PUBLIC_SUPABASE_URL": '""', "process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY": '""' },
   legalComments: "none",
   logLevel: "warning",
 });
@@ -45,7 +45,7 @@ ${css}
 .offline-note { background: var(--info-bg); color: var(--info); font-size: 0.82rem; padding-block: 6px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .boot { padding: 40px max(16px, env(safe-area-inset-left, 0px)); color: var(--muted); }
 </style>
-<div class="offline-note" id="offline-note">HTML version: all calculations run in your browser and your data stays in it. AI explanations, the AI agent, Excel export and .xlsx upload need the full app with AI Gateway. · نسخة HTML: كل الحسابات تتم في متصفحك. الذكاء الاصطناعي وتصدير Excel ورفع xlsx تتطلب التطبيق الكامل.</div>
+<div class="offline-note" id="offline-note">HTML version: all calculations run in your browser and your data stays in it. Drop CSV, Excel, .zip, MT940/OFX and ETA files on the dashboard. AI explanations, the AI agent, scanned-document reading, the ETA portal pull, Excel export and team sync need the full app. · نسخة HTML: كل الحسابات تتم في متصفحك. الذكاء الاصطناعي وقراءة المستندات الممسوحة وسحب منظومة الفاتورة وتصدير Excel والمزامنة تتطلب التطبيق الكامل.</div>
 <div id="root"><p class="boot">Loading AI CFO…</p></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>

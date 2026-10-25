@@ -6,6 +6,7 @@ import { Markdown } from "@/components/Markdown";
 import { Banner, Card, Collapsible, NeedsData, Page, Pill } from "@/components/ui";
 import { AGENT_SUGGESTIONS } from "@/lib/agent/prompt";
 import { IS_STATIC } from "@/lib/env";
+import { answerOffline } from "@/lib/agent/offline";
 import type { AgentEvent } from "@/lib/agent/tools";
 import type { Category } from "@/lib/finance/types";
 import { makeT } from "@/lib/i18n";
@@ -105,6 +106,12 @@ export default function AgentPage() {
     get_budget_vs_actual: L("Read budget vs actual", "قراءة الموازنة مقابل الفعلي"),
     get_disclosures: L("Read disclosures", "قراءة الإفصاحات"),
     compare_peers: L("Compare peers", "مقارنة الشركات"),
+    get_close_review: L("Close review", "مراجعة الإقفال"),
+    search_gl: L("Search the general ledger", "البحث في دفتر الأستاذ"),
+    get_top_counterparties: L("Top customers / suppliers", "أكبر العملاء / الموردين"),
+    get_trends: L("Monthly trends", "الاتجاهات الشهرية"),
+    get_consolidation: L("Group consolidation", "القوائم المجمعة"),
+    get_period_history: L("Closed periods and board packs", "الفترات المقفلة وحزم المجلس"),
     propose_adjusting_entry: L("Draft adjusting entry", "اقتراح قيد تسوية"),
     propose_mapping_change: L("Draft mapping change", "اقتراح تعديل ربط"),
   };
@@ -118,6 +125,18 @@ export default function AgentPage() {
     const ctrl = new AbortController();
     abort.current = ctrl;
     const patch = (fn: (m: Msg) => Msg) => setMsgs((prev) => [...prev.slice(0, -1), fn(prev[prev.length - 1])]);
+    if (status?.configured === false) {
+      // No model available: answer from the built-in queries instead.
+      try {
+        const r = await answerOffline(text.trim(), company, ws.companies.filter((p) => p.id !== company.id), ws.groups, ws.lang);
+        patch((m) => ({ ...m, content: r.text, tools: r.calls }));
+      } catch (err) {
+        patch((m) => ({ ...m, error: (err as Error).message }));
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
     try {
       const res = await fetch("/api/agent", {
         method: "POST",
@@ -125,7 +144,8 @@ export default function AgentPage() {
         signal: ctrl.signal,
         body: JSON.stringify({
           company: stripForAgent(company),
-          peers: ws.companies.filter((p) => p.id !== company.id).map((p) => ({ ...p, subledgers: { ...p.subledgers, gl: [], bank: [] } })),
+          peers: ws.companies.filter((p) => p.id !== company.id).map((p) => ({ ...p, subledgers: { ...p.subledgers, gl: [], bank: [] }, boardPacks: [], history: [] })),
+          groups: ws.groups,
           messages: history.filter((m) => m.content.trim()).slice(-20).map((m) => ({ role: m.role, content: m.content })),
         }),
       });
@@ -205,15 +225,15 @@ export default function AgentPage() {
         {status && !status.configured && (
           <Banner kind="warning">
             {IS_STATIC
-              ? L("The agent runs on the server, so it needs the full app with AI Gateway. Its tools are the same calculations you can use in every module here.", "يعمل الوكيل على الخادم، لذا يتطلب التطبيق الكامل مع AI Gateway. أدواته هي نفس الحسابات المتاحة في كل وحدة هنا.")
-              : L("AI Gateway is not configured on the server. Set AI_GATEWAY_API_KEY (or deploy on Vercel with OIDC) to use the agent.", "لم يتم إعداد AI Gateway على الخادم. اضبط AI_GATEWAY_API_KEY (أو انشر على Vercel مع OIDC) لاستخدام الوكيل.")}
+              ? L("Offline mode: the AI agent runs on the server, so here your questions are answered by the same built-in queries, shown as tables without AI interpretation. Ask about customers, suppliers, journal entries (put a search term in quotes), the close review, trends, tax, ratios or the group.", "وضع بدون اتصال: الوكيل يعمل على الخادم، لذا تتم الإجابة هنا بنفس الاستعلامات المدمجة كجداول بدون تفسير. اسأل عن العملاء أو الموردين أو القيود (ضع كلمة البحث بين علامتي تنصيص) أو مراجعة الإقفال أو الاتجاهات أو الضريبة أو النسب أو المجموعة.")
+              : L("AI Gateway is not configured on the server, so the agent answers in offline mode from the built-in queries. Set AI_GATEWAY_API_KEY (or deploy on Vercel with OIDC) for full answers.", "لم يتم إعداد AI Gateway، فيجيب الوكيل بوضع بدون اتصال من الاستعلامات المدمجة. اضبط AI_GATEWAY_API_KEY للإجابات الكاملة.")}
           </Banner>
         )}
         {msgs.length === 0 && (
           <Card title={L("Try asking", "جرّب أن تسأل")}>
             <div className="suggestions">
               {AGENT_SUGGESTIONS.map(([en, ar]) => (
-                <button key={en} className="chip" disabled={busy || status?.configured === false} onClick={() => send(L(en, ar))}>
+                <button key={en} className="chip" disabled={busy} onClick={() => send(L(en, ar))}>
                   {L(en, ar)}
                 </button>
               ))}
@@ -321,7 +341,7 @@ export default function AgentPage() {
               {L("Stop", "إيقاف")}
             </button>
           ) : (
-            <button type="submit" disabled={!input.trim() || status?.configured === false}>
+            <button type="submit" disabled={!input.trim()}>
               {L("Send", "إرسال")}
             </button>
           )}

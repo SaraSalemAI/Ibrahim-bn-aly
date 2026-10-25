@@ -19,6 +19,7 @@ describe("agent tools", () => {
     expect(Object.keys(tools).sort()).toEqual(
       [
         "compare_peers", "find_accounts", "get_budget_vs_actual", "get_disclosures", "get_overview", "get_ratios", "get_statement",
+        "get_close_review", "search_gl", "get_top_counterparties", "get_trends", "get_consolidation", "get_period_history",
         "get_subledger", "get_tax_computation", "get_variances", "propose_adjusting_entry", "propose_mapping_change", "run_forecast",
         "run_sensitivity", "run_stress_test", "run_valuation",
       ].sort(),

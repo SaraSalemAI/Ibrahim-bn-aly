@@ -6,6 +6,7 @@ import { Banner, Card, LockNotice, NeedsData, Page, Pill } from "@/components/ui
 import { applyPrefixRule, confidenceBand } from "@/lib/finance/classify";
 import { CATEGORIES, type Category } from "@/lib/finance/types";
 import { makeT } from "@/lib/i18n";
+import { isIntercompany } from "@/lib/finance/consolidation";
 import { useFormat, useL, useWorkspace } from "@/lib/workspace/store";
 
 type AiSuggestion = { code: string; category: Category | "UNMAPPED"; confidence: number; rationale: string };
@@ -119,6 +120,7 @@ export default function MappingPage() {
                   <th>{L("Target line item", "البند المستهدف")}</th>
                   <th>{L("Confidence", "الثقة")}</th>
                   <th>{L("Rule", "القاعدة")}</th>
+                  <th title={L("Balance with another group company, eliminated on consolidation", "رصيد مع شركة أخرى في المجموعة، يستبعد عند التجميع")}>{L("Intercompany", "بين شركات المجموعة")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -157,6 +159,16 @@ export default function MappingPage() {
                         )}
                       </td>
                       <td className="muted small">{r.mappingRule ?? "—"}</td>
+                      <td className="center">
+                        <input
+                          type="checkbox"
+                          aria-label={L("Intercompany", "بين شركات المجموعة")}
+                          checked={isIntercompany(r, company?.intercompanyCodes ?? [])}
+                          disabled={locked || (!company?.intercompanyCodes.includes(r.code) && isIntercompany(r, []))}
+                          title={isIntercompany(r, []) ? L("Recognised from the account name", "تم التعرف عليه من اسم الحساب") : undefined}
+                          onChange={(e) => update({ action: "intercompany.tag", entity: "accounts", recordId: r.code }, (c) => ({ ...c, intercompanyCodes: e.target.checked ? [...new Set([...c.intercompanyCodes, r.code])] : c.intercompanyCodes.filter((x) => x !== r.code) }))}
+                        />
+                      </td>
                     </tr>
                   );
                 })}

@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { computeCompany } from "@/lib/workspace/compute";
 import { IS_STATIC } from "@/lib/env";
 import { useSearchParams } from "next/navigation";
 import { FootballField, Waterfall } from "@/components/charts";
@@ -15,7 +16,11 @@ function Pack() {
   const params = useSearchParams();
   const lang = params.get("lang") === "ar" ? "ar" : "en";
   const L = (en: string, ar: string) => (lang === "ar" ? ar : en);
-  const { company, computed, loaded } = useWorkspace();
+  const { company: live, computed: liveComputed, loaded } = useWorkspace();
+  // ?pack=<id> opens a board pack frozen when the period was locked.
+  const snap = live?.boardPacks.find((p) => p.id === params.get("pack")) ?? null;
+  const company = snap ? snap.company : live;
+  const computed = useMemo(() => (snap ? computeCompany(snap.company) : liveComputed), [snap, liveComputed]);
   const { line } = makeT(lang);
   const [summary, setSummary] = useState("");
   const [busy, setBusy] = useState(false);
@@ -89,7 +94,12 @@ function Pack() {
         <p>
           {company.period.currentLabel} · {company.settings.framework} · {ccy}
         </p>
-        <p className="muted">{L("Prepared", "تاريخ الإعداد")}: {new Date().toLocaleDateString(lang === "ar" ? "ar-EG-u-nu-latn" : "en-GB")} · {L("Period status", "حالة الفترة")}: {company.period.status}</p>
+        <p className="muted">{L("Prepared", "تاريخ الإعداد")}: {(snap ? new Date(snap.createdAt) : new Date()).toLocaleDateString(lang === "ar" ? "ar-EG-u-nu-latn" : "en-GB")} · {L("Period status", "حالة الفترة")}: {company.period.status}</p>
+        {snap && (
+          <p className="muted small">
+            {L("Frozen at period lock by", "مجمدة عند إقفال الفترة بواسطة")} {snap.createdBy} · SHA-256 <span className="mono">{snap.hash.slice(0, 16)}…</span>
+          </p>
+        )}
       </section>
 
       <section className="pack-page">

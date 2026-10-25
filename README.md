@@ -7,6 +7,29 @@ A bilingual (English / Arabic, RTL) Next.js app for Egyptian finance teams, buil
 
 Try it: **Load complete sample company** on the home page loads a fictional Egyptian trading company with a trial balance, general ledger and every subledger, so each module can be explored immediately.
 
+### Upload everything at once
+
+The dashboard has one drop zone for the whole close pack. Drop any mix of files and the app works out what each one is:
+
+- **Formats**: CSV/TSV, Excel `.xlsx` (every sheet becomes its own file, read in the browser), `.zip` archives (folders and one nested zip level), SWIFT **MT940** and **OFX/QFX** bank statements, ETA e-invoice JSON/XML, UTF-8 or Windows-1256 Arabic.
+- **Detection**: each file is scored on its column headers and file name, with a confidence level; months are read from names such as `TB 2025-03.csv` or `ميزان مارس ٢٠٢٥`. You can change the type before importing.
+- **ERP presets**: exports from **Odoo, SAP Business One, QuickBooks and Dynamics 365** are recognised: report titles above the header are skipped, combined `1010 · Cash` account columns are split, a signed balance or amount becomes debit/credit, and dates or entry numbers given only on the first line of a journal are carried down.
+- **Column matching**: when a column is not recognised, you match it once and the match is saved for that company.
+- **Before importing**: duplicate files and duplicate rows, entries outside the period (with a one-click fix when the files agree on another year), files covering different periods, foreign currencies without an exchange rate, and the subledger tie-out the import will produce.
+- **Trial balance roles**: current period, prior period (comparatives merged by account code) or one month for trends.
+- **Scanned PDFs and photos** (full app with AI): read into a bank statement, AR, AP or TB table that you review like any other file.
+- **ETA portal** (full app with `ETA_CLIENT_ID` / `ETA_CLIENT_SECRET`): pulls the company's issued, valid e-invoices for the period, read-only. Signing and submitting still needs the company's e-seal and is not done here. Not yet tested against the live portal.
+
+### Close, group and team
+
+| Page | What it does |
+|---|---|
+| Close review (`/close-review`) | Readiness gates, tie-outs and rule-based anomaly flags with the rows behind them: weekend and out-of-period postings, large round amounts, material period-end entries, entries without a description, revenue debited against unusual accounts, possible duplicate postings, Benford first-digit test, balances on the unusual side, suspense accounts, large swings, AR credit balances and old debts, customer concentration, duplicate supplier invoices, missing supplier tax IDs, negative stock, staff without social insurance, bank differences. AI explains the flags; it adds none. |
+| Monthly trends (`/trends`) | Monthly TBs (year-to-date P&L differenced automatically) as charts and a month-by-month table with margins and receivable days. |
+| Group consolidation (`/consolidation`) | Parent and subsidiaries with ownership %, intercompany balances and income/expense eliminated (recognised by name or tagged on the mapping page), unreconciled differences shown on their own line, investment against subsidiary share capital with goodwill, non-controlling interests; open the result as a company so every module runs on the group. Simplified: share capital stands in for net assets at acquisition. |
+| Period roll-forward (Audit page) | Locking a period freezes a hashed board pack (reopen it later from the Audit page). "Start next period" archives the period and carries closing balances forward (P&L closed to retained earnings at a year end) as opening balances and comparatives; the new TB can then be built from opening balances plus the GL. |
+| Team & sync (`/team`) | Optional: share a workspace through your own Supabase project with email one-time-code sign-in, members with roles (CFO adds members) and versioned saves that refuse to overwrite a newer copy. Run `supabase/migrations/0002_team_sync.sql` first. Not tested against a live Supabase project here. |
+
 ### AI CFO agent
 
 The **AI CFO agent** page (`/agent`) is a chat assistant that works on the selected company's books. It answers in English or Arabic and gets every figure by calling the app's calculation engines as tools; it never computes figures from memory.
@@ -17,7 +40,11 @@ The **AI CFO agent** page (`/agent`) is a chat assistant that works on the selec
 | `find_accounts`, `get_subledger` | Account search (EN/AR) with lineage; AR, AP, fixed assets, inventory, payroll, bank, ETA and GL analysis with tie-outs |
 | `get_tax_computation`, `get_budget_vs_actual`, `get_disclosures`, `compare_peers` | Tax schedule, budget vs actual, note status, peer KPIs |
 | `run_forecast`, `run_sensitivity`, `run_valuation`, `run_stress_test` | What-if runs of the 3-statement model, sensitivity grid, DCF and FX/rate stress. Nothing is saved |
+| `get_close_review`, `search_gl`, `get_top_counterparties` | Ask your data: anomaly flags and readiness, a search over GL lines (text, account, dates, amounts), largest customers and suppliers |
+| `get_trends`, `get_consolidation`, `get_period_history` | Monthly trends, the group this company belongs to, closed periods and frozen board packs |
 | `propose_adjusting_entry`, `propose_mapping_change` | Drafts only, with an impact preview. Nothing changes until you click **Post entry** / **Apply mapping**, and the approval is written to the audit log |
+
+Without AI (the HTML build, or a server with no AI Gateway key) the agent page switches to an offline mode: questions are routed by keywords to the same tools and the results are shown as tables, with no interpretation.
 
 The server (`/api/agent`) recomputes everything from the submitted company, runs the tool loop through AI Gateway (up to 8 steps) and streams tool activity and text to the page. Conversations are kept per company in the browser.
 
@@ -62,6 +89,8 @@ npm run dev                  # http://localhost:3000
 | --- | --- |
 | `AI_GATEWAY_API_KEY` | Vercel AI Gateway key. Not needed on Vercel, where OIDC (`VERCEL_OIDC_TOKEN`) is used automatically. |
 | `AI_GATEWAY_MODEL` | Optional model id, default `anthropic/claude-sonnet-5.5`. |
+| `ETA_CLIENT_ID`, `ETA_CLIENT_SECRET`, `ETA_ENV` | Optional ETA e-invoicing API credentials (`ETA_ENV` = `preprod` or `prod`) for pulling issued invoices. |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Optional defaults for the Team & sync page. |
 
 Without a key everything except the AI panels works, and the panels say so.
 
@@ -71,18 +100,17 @@ The workspace is saved in the browser (IndexedDB). Data leaves the browser only 
 
 ### Not included (needs credentials or infrastructure)
 
-- Direct ETA e-invoicing API submission (needs an e-token / HSM signing adapter and API credentials). Offline ETA JSON/XML exports are supported.
-- MT940 / OFX bank formats (CSV bank exports are supported).
+- ETA e-invoice signing and submission (needs an e-token / HSM signing adapter). Pulling issued invoices and offline JSON/XML exports are supported.
 - Server-side workers for GL files beyond what a browser can hold; very large GLs are parsed in chunks in the browser.
-- Multi-user authentication (see the Supabase migration above).
+- Real-time co-editing: team sync saves and pulls whole workspace versions.
 
 ### Scripts
 
-- `npm test` — 73 Vitest tests: engines, subledgers, model balancing and solver convergence, tax, valuation, stress, audit chain, Excel formulas, agent tools, API routes
+- `npm test` — 101 Vitest tests: engines, subledgers, model balancing and solver convergence, tax, valuation, stress, audit chain, Excel formulas, agent tools and offline mode, API routes, file detection, ERP presets, xlsx/zip/MT940/OFX readers, batch checks, consolidation, roll-forward, trends, anomaly rules, ETA client and team sync (mocked servers)
 - `npm run lint` — ESLint with the Next.js core-web-vitals and TypeScript rules
 - `npm run typecheck`
 - `npm run build`
-- `npm run build:html` — single-file `dist/ai-cfo.html` that runs every module in the browser with no server (in-page router, workspace in IndexedDB). AI explanations, the agent, Excel export, .xlsx upload and file downloads need the full app and are disabled there; CSV upload works.
+- `npm run build:html` — single-file `dist/ai-cfo.html` that runs every module in the browser with no server (in-page router, workspace in IndexedDB). Everything in "Upload everything at once" works there except scanned-document reading and the ETA pull; AI explanations (the agent runs in offline mode), Excel export, file downloads and team sync need the full app.
 
 GitHub Actions (`.github/workflows/ci.yml`) runs lint, typecheck, tests and build on every push and pull request.
 

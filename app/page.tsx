@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AiPanel } from "@/components/AiPanel";
+import { BulkUpload } from "@/components/BulkUpload";
 import { Banner, Card, NeedsData, Page, Pill, Stat } from "@/components/ui";
 import { CHECK_LABELS } from "@/lib/labels";
 import { NAV } from "@/lib/nav";
@@ -39,6 +40,7 @@ export default function Overview() {
           )}
         </Banner>
       )}
+      {company ? <BulkUpload /> : loaded && ws.companies.length > 0 && <Banner kind="info">{L("Select a company to upload its files.", "اختر شركة لرفع ملفاتها.")}</Banner>}
       {company && isSample(company) && <Banner kind="info">{L("Sample company: all figures are fictional and for illustration only.", "شركة نموذجية: كل الأرقام افتراضية للتوضيح فقط.")}</Banner>}
       <NeedsData>
         {computed?.analysis && company && (
@@ -51,6 +53,22 @@ export default function Overview() {
               <Stat label={L("Total equity", "حقوق الملكية")} value={f.money(computed.analysis.current.totalEquity)} />
               <Stat label={L("Altman Z''", "مؤشر ألتمان")} value={computed.altman.z === null ? "—" : String(computed.altman.z)} hint={computed.altman.zone ?? undefined} tone={computed.altman.zone === "distress" ? "bad" : computed.altman.zone === "safe" ? "good" : undefined} />
             </div>
+            {computed.anomalies.length > 0 && (
+              <Card title={L("Close review", "مراجعة الإقفال")} actions={<Link href="/close-review">{L("Open review", "فتح المراجعة")}</Link>}>
+                <p className="small">
+                  <Pill kind="bad">{computed.anomalies.filter((x) => x.severity === "high").length} {L("high", "مرتفع")}</Pill>{" "}
+                  <Pill kind="warn">{computed.anomalies.filter((x) => x.severity === "medium").length} {L("medium", "متوسط")}</Pill>{" "}
+                  <Pill>{computed.anomalies.filter((x) => x.severity === "low").length} {L("low", "منخفض")}</Pill>
+                </p>
+                <ul className="small">
+                  {computed.anomalies.slice(0, 4).map((x) => (
+                    <li key={x.id}>
+                      {L(...x.title)} ({x.count})
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            )}
             <Card title={L("Close checklist", "قائمة الإقفال")}>
               <ul className="checklist">
                 {computed.checks.map((ch) => (

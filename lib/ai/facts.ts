@@ -5,7 +5,7 @@ import type { Company, Workspace } from "../workspace/types";
 
 export const MODULES = [
   "overview", "company", "ingest", "mapping", "trial-balance", "statements", "cash-flow", "budget", "model",
-  "analysis", "scenarios", "tax", "disclosures", "benchmarking", "valuation", "stress", "export", "audit",
+  "analysis", "scenarios", "tax", "disclosures", "benchmarking", "valuation", "stress", "export", "audit", "close", "trends", "consolidation",
 ] as const;
 export type ModuleId = (typeof MODULES)[number];
 
@@ -123,6 +123,19 @@ export function moduleFacts(module: ModuleId, c: Company, k: Computed, ws?: Pick
       return { ...base, inputs: { ...c.valuation, comps: c.valuation.comps.length }, wacc: r.valuation.wacc, unleveredFreeCashFlows: r.valuation.flows, dcf: r.valuation.dcf ?? "market inputs not provided", comps: r.valuation.comps, footballField: r.valuation.footballField, netDebt: r.valuation.netDebt };
     case "stress":
       return { ...base, inputs: c.stress, stress: r.stress };
+    case "close":
+      return {
+        ...base,
+        anomalies: r.anomalies.map((x) => ({ id: x.id, area: x.area, severity: x.severity, finding: x.title[0], why: x.detail[0], count: x.count, examples: x.examples.slice(0, 4) })),
+        tieOuts: r.tieOuts,
+        missingFxRates: r.fx.missing,
+        loadedSources: c.docs.map((d) => d.category),
+        materialVariances: a.variances.filter((v) => v.material).map((v) => ({ line: v.key, ...pickVar(v) })),
+      };
+    case "trends":
+      return { ...base, ytdFiles: c.monthlyYtd, months: r.trend, summary: r.trendSummary ?? "no monthly trial balances loaded" };
+    case "consolidation":
+      return { ...base, note: "Consolidation facts are computed on the consolidation page; this is the parent company only." };
     case "audit": {
       const log = ws?.audit ?? [];
       const byAction: Record<string, number> = {};

@@ -16,6 +16,9 @@ Rules you must follow:
 Structure: a short summary (3 to 5 sentences), then the most important findings as bullet points under short headings, then "Questions for management". Keep it under about 500 words. No tables.`;
 
 const MODULE_FOCUS: Record<string, string> = {
+  close: "Review the close: explain each flagged anomaly in order of severity, say what could cause it and what evidence to ask for, then list what must be cleared before the period can be locked. Do not add findings that are not in the facts.",
+  trends: "Explain the month-by-month trend: direction of revenue, margins, cash and working capital, the biggest month-on-month moves and what to watch next month.",
+  consolidation: "Explain the consolidated group position, the effect of intercompany eliminations, any unreconciled intercompany differences and the non-controlling interests.",
   overview: "Give an overall reading of performance, financial position and data quality.",
   company: "Explain what the company settings imply for the reporting (framework, currency, fiscal year).",
   ingest: "Explain what the loaded sources show: subledger tie-outs, GL vs TB differences, bank reconciliation and ETA e-invoice reconciliation findings.",

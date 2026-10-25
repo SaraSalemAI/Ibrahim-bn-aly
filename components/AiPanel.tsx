@@ -21,8 +21,8 @@ const GL_LIMIT = 20000;
 
 /** Strips bulky raw data the facts for this module do not need, keeping the request small. */
 export function payloadCompany(c: Company, module: ModuleId): Company {
-  const keepGl = module === "ingest" && c.subledgers.gl.length <= GL_LIMIT;
-  return { ...c, subledgers: { ...c.subledgers, gl: keepGl ? c.subledgers.gl : [], bank: module === "ingest" ? c.subledgers.bank : [] } };
+  const keepGl = (module === "ingest" || module === "close") && c.subledgers.gl.length <= GL_LIMIT;
+  return { ...c, subledgers: { ...c.subledgers, gl: keepGl ? c.subledgers.gl : [], bank: module === "ingest" || module === "close" ? c.subledgers.bank : [] } };
 }
 
 export function AiPanel({ module, title }: { module: ModuleId; title?: string }) {

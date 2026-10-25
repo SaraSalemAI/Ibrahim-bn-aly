@@ -176,3 +176,38 @@ export function Gauge({ value, zones, format }: { value: number; zones: Array<{ 
     </div>
   );
 }
+
+/** Multi-series line chart over labelled points (months). Series colours follow the .series-N classes. */
+export function Lines({ labels, series, format, height = 220 }: { labels: string[]; series: Array<{ name: string; values: number[] }>; format: (n: number) => string; height?: number }) {
+  const all = series.flatMap((s) => s.values);
+  const max = Math.max(...all, 0);
+  const min = Math.min(...all, 0);
+  const span = max - min || 1;
+  const w = Math.max(480, labels.length * 70 + 60);
+  const padX = 50;
+  const padY = 18;
+  const x = (i: number) => padX + (labels.length <= 1 ? (w - padX * 2) / 2 : (i * (w - padX - 20)) / (labels.length - 1));
+  const y = (v: number) => padY + ((max - v) / span) * (height - padY * 2);
+  return (
+    <div className="chart-scroll">
+      <svg viewBox={`0 0 ${w} ${height + 26}`} width="100%" style={{ maxWidth: w }} className="chart" role="img">
+        <line x1={padX} x2={w - 20} y1={y(0)} y2={y(0)} className="chart-axis" />
+        <text x={padX - 6} y={y(max) + 4} textAnchor="end" className="chart-label">{format(max)}</text>
+        {min < 0 && <text x={padX - 6} y={y(min) + 4} textAnchor="end" className="chart-label">{format(min)}</text>}
+        {series.map((s, si) => (
+          <g key={s.name} className={`line-series series-${si}`}>
+            <polyline fill="none" strokeWidth={2.5} points={s.values.map((v, i) => `${x(i)},${y(v)}`).join(" ")} />
+            {s.values.map((v, i) => (
+              <circle key={i} cx={x(i)} cy={y(v)} r={3.5}>
+                <title>{`${s.name} ${labels[i]}: ${format(v)}`}</title>
+              </circle>
+            ))}
+          </g>
+        ))}
+        {labels.map((l, i) => (
+          <text key={l} x={x(i)} y={height + 14} textAnchor="middle" className="chart-label">{l}</text>
+        ))}
+      </svg>
+    </div>
+  );
+}

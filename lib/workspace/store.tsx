@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useReducer,
 import { appendAudit, summarise } from "../finance/audit";
 import { computeCompany, type Computed } from "./compute";
 import { migrateCompany, newCompany, newWorkspace } from "./defaults";
-import type { Company, Role, Workspace } from "./types";
+import type { Company, Group, Role, SyncSettings, Workspace } from "./types";
 
 const DB = "ai-cfo";
 const STORE = "workspace";
@@ -56,6 +56,9 @@ type Action =
   | { type: "selectCompany"; id: string }
   | { type: "deleteCompany"; id: string }
   | { type: "setBenchmarks"; benchmarks: Record<string, number | null> }
+  | { type: "setGroups"; groups: Group[] }
+  | { type: "setSync"; sync: SyncSettings | null }
+  | { type: "replaceWorkspace"; ws: Workspace; reason: string }
   | { type: "update"; companyId: string; audit: AuditInfo; recipe: (c: Company) => Company; allowWhenLocked?: boolean }
   | { type: "clearError" };
 
@@ -92,6 +95,15 @@ function reducer(state: State, action: Action): State {
     }
     case "setBenchmarks":
       return { ...state, ws: audit({ ...ws, benchmarks: action.benchmarks }, "-", { action: "benchmarks.update", entity: "benchmarks" }) };
+    case "setGroups":
+      return { ...state, ws: audit({ ...ws, groups: action.groups }, "-", { action: "groups.update", entity: "groups" }) };
+    case "setSync":
+      return { ...state, ws: { ...ws, sync: action.sync } };
+    case "replaceWorkspace": {
+      // Pulled from the shared database: keep this device's sign-in, take everything else from the server copy.
+      const next = { ...newWorkspace(), ...action.ws, companies: action.ws.companies.map(migrateCompany), sync: ws.sync, profile: ws.profile, lang: ws.lang };
+      return { ...state, ws: audit(next, "-", { action: "sync.pull", entity: "workspace", reason: action.reason }) };
+    }
     case "clearError":
       return { ...state, error: null };
     case "update": {

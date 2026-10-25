@@ -10,6 +10,7 @@ export const maxDuration = 120;
 const requestSchema = z.object({
   company: companySchema,
   peers: z.array(companySchema).max(20).default([]),
+  groups: z.array(z.object({ id: z.string(), name: z.string().max(200), parentId: z.string(), members: z.array(z.object({ companyId: z.string(), ownership: z.number().min(0).max(1) })).max(50) })).max(20).default([]),
   messages: z
     .array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().min(1).max(8000) }))
     .min(1)
@@ -23,8 +24,8 @@ export async function POST(req: Request) {
   if (!read.ok) return read.response;
   const parsed = requestSchema.safeParse(read.body);
   if (!parsed.success) return Response.json({ error: "badRequest", message: parsed.error.issues[0]?.message ?? "Invalid input" }, { status: 400 });
-  const { company, peers, messages } = parsed.data;
-  const tools = buildAgentTools(company, peers);
+  const { company, peers, groups, messages } = parsed.data;
+  const tools = buildAgentTools(company, peers, groups);
   if (!tools) return Response.json({ error: "badRequest", message: "Load a trial balance first." }, { status: 400 });
 
   const result = streamText({

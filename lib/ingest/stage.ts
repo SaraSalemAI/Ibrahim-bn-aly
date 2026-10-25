@@ -277,8 +277,8 @@ export function applyStaged(c: Company, s: Staged, docId: string, role: TbRole =
         const entry = { id: docId, label, end: month?.end ?? c.period.end, rows: d.rows.map((r) => ({ ...r, sourceDocId: docId })), docId };
         return { ...c, docs, monthly: [...c.monthly.filter((m) => m.label !== label), entry].sort((a, b) => a.label.localeCompare(b.label)) };
       }
-      const priorDoc = c.docs.find((x) => x.category === "TRIAL_BALANCE" && x.role === "prior");
-      const priorRows = priorDoc ? c.rows.filter((r) => r.priorDebit || r.priorCredit) : [];
+      // Comparatives already held (a prior-period file, or balances carried by a roll-forward).
+      const priorRows = c.rows.filter((r) => r.priorDebit || r.priorCredit);
       let rows: TBRow[] = d.rows.map((r) => ({ ...r, sourceDocId: docId }));
       // Keep separately loaded comparatives when the new file has none of its own.
       if (priorRows.length && !rows.some((r) => r.priorDebit || r.priorCredit)) rows = mergePrior(rows, priorRows.map((r) => ({ ...r, currentDebit: r.priorDebit, currentCredit: r.priorCredit })));

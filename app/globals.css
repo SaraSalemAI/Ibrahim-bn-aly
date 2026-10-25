@@ -311,3 +311,34 @@ mark { background: var(--warn-bg); color: var(--warn); padding: 0 3px; border-ra
 .composer textarea { flex: 1; resize: vertical; min-height: 44px; }
 .suggestions { display: flex; flex-wrap: wrap; gap: 8px; }
 .suggestions .chip { white-space: normal; text-align: start; }
+
+/* Bulk upload */
+.dropzone { display: flex; flex-direction: column; gap: 6px; align-items: center; justify-content: center; text-align: center; padding: 26px 16px; border: 2px dashed var(--border); border-radius: 12px; background: var(--accent-soft); cursor: pointer; margin-bottom: 12px; }
+.dropzone.over, .dropzone:hover, .dropzone:focus-visible { border-color: var(--accent); outline: none; }
+.dropzone.disabled { opacity: 0.55; cursor: not-allowed; }
+.upload-table td { vertical-align: top; }
+.upload-table select { max-width: 210px; }
+.upload-table input[type="month"] { display: block; margin-top: 4px; }
+.mapping-panel { border: 1px solid var(--accent); border-radius: 10px; padding: 12px; margin: 12px 0; }
+.mapping-panel h3, .card h3 { margin: 12px 0 6px; font-size: 1rem; }
+.fx-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 8px 0; }
+.missing-files { margin-top: 12px; }
+.missing-files summary { cursor: pointer; color: var(--accent); }
+button.small { font-size: 0.78rem; padding: 3px 8px; }
+.trend-table td, .trend-table th { white-space: nowrap; }
+.severity-high { border-inline-start: 4px solid var(--error); }
+.severity-medium { border-inline-start: 4px solid var(--warn); }
+.severity-low { border-inline-start: 4px solid var(--border); }
+.anomaly { padding: 8px 12px; margin-bottom: 8px; background: var(--card); border-radius: 8px; border: 1px solid var(--border); }
+.anomaly ul { margin: 6px 0 0; padding-inline-start: 18px; }
+.section-title { font-size: 1rem; margin: 6px 0 10px; }
+.chart-axis { stroke: var(--border); }
+.line-series polyline { stroke: var(--s0); }
+.line-series.series-1 polyline { stroke: var(--s1); }
+.line-series.series-2 polyline { stroke: var(--s2, var(--warn)); }
+.line-series.series-3 polyline { stroke: var(--s3, var(--muted)); }
+.line-series circle { fill: var(--card); stroke-width: 2; stroke: inherit; }
+.line-series.series-0 circle { stroke: var(--s0); }
+.line-series.series-1 circle { stroke: var(--s1); }
+.line-series.series-2 circle { stroke: var(--s2, var(--warn)); }
+.line-series.series-3 circle { stroke: var(--s3, var(--muted)); }
