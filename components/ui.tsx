@@ -176,11 +176,35 @@ export function Collapsible({ title, children, defaultOpen = false }: { title: R
   );
 }
 
-export function download(filename: string, data: BlobPart, type = "text/csv;charset=utf-8") {
-  const url = URL.createObjectURL(new Blob([data], { type }));
+type Downloads = { save: (r: { filename: string; data: Blob }) => Promise<unknown> } | null;
+let downloads: Promise<Downloads> | null = null;
+
+/**
+ * Saves a generated file. Inside the claude.ai artifact viewer plain links cannot download, so the
+ * viewer's own save prompt is used there; everywhere else it is an ordinary download link.
+ */
+export async function saveFile(filename: string, blob: Blob): Promise<void> {
+  const host = (globalThis as { claude?: { use?: (name: string) => Promise<Downloads> } }).claude;
+  if (host?.use) {
+    downloads ??= host.use("downloads").catch(() => null);
+    const d = await downloads;
+    if (d) {
+      try {
+        await d.save({ filename, data: blob });
+      } catch (e) {
+        if ((e as { code?: string }).code !== "declined") console.warn("Save failed:", (e as { message?: string }).message);
+      }
+      return;
+    }
+  }
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export function download(filename: string, data: BlobPart, type = "text/csv;charset=utf-8") {
+  void saveFile(filename, new Blob([data], { type }));
 }
