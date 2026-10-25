@@ -70,7 +70,7 @@ export function parseAmount(raw: string | undefined): number | null {
   return negative ? -n : n;
 }
 
-const HEADER_ALIASES: Record<string, string[]> = {
+export const HEADER_ALIASES: Record<string, string[]> = {
   code: ["code", "account code", "account_code", "acct", "رقم الحساب", "كود"],
   name: ["name", "account name", "account_name", "description", "اسم الحساب", "البيان"],
   category: ["category", "mapping", "class", "التصنيف"],

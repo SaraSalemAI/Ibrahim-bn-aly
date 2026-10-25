@@ -73,6 +73,13 @@ export interface SourceDoc {
   rowCount: number;
   encoding: string;
   uploadedAt: string;
+  /** For trial balances: current period, prior-period comparatives, or one month of a trend. */
+  role?: "current" | "prior" | "monthly";
+  month?: string;
+  sheet?: string;
+  /** ERP the export was recognised as, when a preset was applied. */
+  erp?: string;
+  format?: string;
 }
 
 export type DocCategory =

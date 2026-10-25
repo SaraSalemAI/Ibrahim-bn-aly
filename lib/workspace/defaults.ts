@@ -55,6 +55,14 @@ export function newCompany(name = "New company"): Company {
     disclosures: {},
     valuation: structuredClone(DEFAULT_VALUATION),
     stress: { ...DEFAULT_STRESS },
+    columnMaps: {},
+    fxRates: {},
+    monthly: [],
+    monthlyYtd: true,
+    intercompanyCodes: [],
+    opening: null,
+    history: [],
+    boardPacks: [],
   };
 }
 
@@ -68,6 +76,8 @@ export function newWorkspace(): Workspace {
     activeCompanyId: null,
     benchmarks: {},
     audit: [],
+    groups: [],
+    sync: null,
   };
 }
 

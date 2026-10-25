@@ -9,6 +9,8 @@ import { stressTest } from "../finance/stress";
 import { apAnalysis, arAging, bankReconciliation, etaReconciliation, farSummary, inventorySummary, payrollSummary, tieOut } from "../finance/subledgers";
 import { taxComputation } from "../finance/tax";
 import { compsValuation, dcf, footballField, ufcf, wacc } from "../finance/valuation";
+import { scanAnomalies } from "../finance/anomalies";
+import { monthlyTrend, trendSummary } from "../finance/trends";
 import { budgetStatements, budgetVsActual, revenueVarianceAnalysis } from "../finance/budget";
 import type { Company, PeriodStatus } from "./types";
 
@@ -27,7 +29,20 @@ export function computeCompany(c: Company) {
   const cashFlowDirect = prior ? cashFlowDirectDerived(cur, prior) : null;
 
   const sl = c.subledgers;
-  const ar = sl.ar.length ? arAging(sl.ar, c.period.end, c.eclRates) : null;
+  // Foreign-currency invoices are translated at the analyst's rates so they tie to the functional-currency TB.
+  const fn = c.settings.functionalCurrency;
+  const fxMissing = new Set<string>();
+  const arFn = sl.ar.map((i) => {
+    const ccy = (i.currency || fn).toUpperCase();
+    if (ccy === fn) return i;
+    const rate = c.fxRates[ccy];
+    if (!rate) {
+      fxMissing.add(ccy);
+      return i;
+    }
+    return { ...i, amount: i.amount * rate, outstanding: i.outstanding * rate };
+  });
+  const ar = sl.ar.length ? arAging(arFn, c.period.end, c.eclRates) : null;
   const ap = sl.ap.length ? apAnalysis(sl.ap, c.period.end) : null;
   const far = sl.far.length ? farSummary(sl.far, c.period.start, c.period.end, c.tax.rate) : null;
   const inventory = sl.inventory.length ? inventorySummary(sl.inventory, cur.cogs) : null;
@@ -94,6 +109,9 @@ export function computeCompany(c: Company) {
   const gatingTies = { ar: tieOuts.ar, ap: tieOuts.ap, farCost: tieOuts.farCost, farAccumDep: tieOuts.farAccumDep, inventory: tieOuts.inventory };
   const checks = periodChecks(c, analysis, cashFlow?.tieOutDifference ?? null, gatingTies);
 
+  const anomalies = scanAnomalies({ rows, analysis, period: c.period, gl: sl.gl, ar: arFn, ap: sl.ap, inventory: sl.inventory, payroll: sl.payroll, bankDifference: bank ? bank.difference : null });
+  const trend = c.monthly.length ? monthlyTrend(c.monthly, c.monthlyYtd, c.settings.fiscalYearEnd === "06-30" ? 7 : 1) : [];
+
   return {
     rows,
     analysis,
@@ -117,6 +135,10 @@ export function computeCompany(c: Company) {
     noteCtx,
     notes,
     checks,
+    anomalies,
+    trend,
+    trendSummary: trendSummary(trend),
+    fx: { functional: fn, rates: c.fxRates, missing: [...fxMissing] },
   } as const;
 }
 
