@@ -90,3 +90,26 @@ export async function listMembers(s: SyncSettings, f: Fetch = fetch): Promise<Ar
   if (!res.ok) await fail(res, "Could not list members");
   return res.json();
 }
+
+export interface InboxFile {
+  id: string;
+  file_name: string;
+  content_type: string | null;
+  content_base64: string;
+  sender: string | null;
+  subject: string | null;
+  received_at: string;
+}
+
+/** Files mailed to this workspace's intake address that nobody has imported yet. */
+export async function listInbox(s: SyncSettings, f: Fetch = fetch): Promise<InboxFile[]> {
+  const res = await f(`${base(s)}/rest/v1/intake_files?workspace_key=eq.${encodeURIComponent(s.workspaceKey)}&imported_at=is.null&order=received_at.asc&limit=50&select=id,file_name,content_type,content_base64,sender,subject,received_at`, { headers: headers(s) });
+  if (!res.ok) await fail(res, "Could not read the email inbox");
+  return (await res.json()) as InboxFile[];
+}
+
+export async function markImported(s: SyncSettings, ids: string[], f: Fetch = fetch) {
+  if (!ids.length) return;
+  const res = await f(`${base(s)}/rest/v1/intake_files?id=in.(${ids.map(encodeURIComponent).join(",")})`, { method: "PATCH", headers: headers(s), body: JSON.stringify({ imported_at: new Date().toISOString() }) });
+  if (!res.ok) await fail(res, "Could not mark the inbox files as imported");
+}

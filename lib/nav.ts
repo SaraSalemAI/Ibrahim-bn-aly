@@ -28,6 +28,7 @@ export const NAV: NavItem[] = [
   { n: 18, href: "/close-review", en: "Close review", ar: "مراجعة الإقفال", group: "close" },
   { n: 19, href: "/trends", en: "Monthly trends", ar: "الاتجاهات الشهرية", group: "insight" },
   { n: 20, href: "/consolidation", en: "Group consolidation", ar: "القوائم المجمعة", group: "close" },
+  { n: 22, href: "/cash-forecast", en: "13-week cash forecast", ar: "توقع النقدية ١٣ أسبوعًا", group: "plan" },
   { n: 21, href: "/team", en: "Team & sync", ar: "الفريق والمزامنة", group: "setup" },
 ];
 

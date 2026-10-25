@@ -44,6 +44,9 @@ export function routeQuestion(question: string, periodEnd: string): Call[] {
   if (has(q, /why|varian|chang|moved|compare|vs|versus|لماذا|تغير|مقارنة/)) calls.push({ name: "get_variances", input: { statement: "both", materialOnly: true } });
   if (has(q, /cash ?flow|تدفق/)) calls.push({ name: "get_statement", input: { statement: "cashflow" } });
   if (has(q, /budget|موازنة/)) calls.push({ name: "get_budget_vs_actual", input: {} });
+  if (has(q, /upload|file|import|ملف|ملفات|رفع|استيراد/)) calls.push({ name: "get_upload_report", input: { runs: 3 } });
+  if (has(q, /validat|check|rule|error|تحقق|فحص|أخطاء|خطأ/)) calls.push({ name: "get_validation_report", input: { failedOnly: true } });
+  if (has(q, /13.?week|forecast|runway|cash (position|forecast)|liquidity plan|توقع|تنبؤ|١٣ أسبوع|السيولة/)) calls.push({ name: "get_cash_forecast", input: {} });
   if (has(q, /history|closed period|board pack|أرشيف|الفترات المقفلة|حزم/)) calls.push({ name: "get_period_history", input: {} });
   if (!calls.length || has(q, /health|overview|summary|ملخص|صحة|نظرة/)) calls.unshift({ name: "get_overview", input: {} });
   return calls.slice(0, 4);
@@ -91,6 +94,9 @@ const TITLES: Partial<Record<ToolName, [string, string]>> = {
   get_statement: ["Statement", "القائمة"],
   get_budget_vs_actual: ["Budget vs actual", "الموازنة مقابل الفعلي"],
   get_period_history: ["History", "السجل"],
+  get_upload_report: ["Uploaded files", "الملفات المرفوعة"],
+  get_validation_report: ["Validation", "التحقق"],
+  get_cash_forecast: ["13-week cash forecast", "توقع النقدية لـ ١٣ أسبوعًا"],
 };
 
 export async function answerOffline(question: string, company: Company, peers: Company[], groups: Group[], lang: "en" | "ar") {

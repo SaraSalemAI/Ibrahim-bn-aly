@@ -1,16 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { IS_STATIC } from "@/lib/env";
 import { makeT } from "@/lib/i18n";
 import { DOC_LABELS, TIE_LABELS } from "@/lib/labels";
+import { autoAdvance, autoEligible, remembered, runPipeline } from "@/lib/ingest/auto";
 import { ALL_CATEGORIES, batchChecks, UNLOCKS, type BatchItem } from "@/lib/ingest/checks";
 import { allFields, requiredFields, type CsvCategory } from "@/lib/ingest/erp";
 import { applyStaged, expandFiles, stageUnit, type Staged, type TbRole, type Unit } from "@/lib/ingest/stage";
 import type { DocCategory } from "@/lib/finance/types";
+import { toRun, validateCompany } from "@/lib/ingest/validate";
+import { computeCompany } from "@/lib/workspace/compute";
 import { uid } from "@/lib/workspace/defaults";
-import { useFormat, useL, useWorkspace } from "@/lib/workspace/store";
+import { newCompany, useFormat, useL, useWorkspace } from "@/lib/workspace/store";
+import type { Automation, Company, ImportRun } from "@/lib/workspace/types";
 import { aiStatus } from "./AiPanel";
 import { Banner, Card, Pill } from "./ui";
 
@@ -40,6 +44,40 @@ function defaultRoles(rows: Row[], hasCurrentTb: boolean): Row[] {
   });
 }
 
+type Phase = "reading" | "detecting" | "importing" | "mapping" | "validating" | "done";
+const PHASES: Array<[Phase, string, string]> = [
+  ["reading", "Reading files", "قراءة الملفات"],
+  ["detecting", "Recognising and extracting", "التعرف والاستخراج"],
+  ["importing", "Importing", "الاستيراد"],
+  ["mapping", "Mapping accounts", "ربط الحسابات"],
+  ["validating", "Validating", "التحقق"],
+];
+
+/** Applies the AI's account suggestions: confident ones are accepted, the rest wait for review. Never overrides a confirmed mapping. */
+function applyAiMappings(c: Company, mappings: Array<{ code: string; category: string; confidence: number }>, threshold: number, runId: string) {
+  let accepted = 0;
+  let suggested = 0;
+  const byCode = new Map(mappings.filter((m) => m.category !== "UNMAPPED").map((m) => [m.code, m]));
+  const rows = c.rows.map((r) => {
+    const m = byCode.get(r.code);
+    if (!m || (r.category && !r.suggested)) return r;
+    if (r.suggested && r.category && (r.confidence ?? 0) >= m.confidence) return r;
+    if (m.confidence >= threshold) {
+      accepted++;
+      return { ...r, category: m.category as typeof r.category, suggested: false, confidence: m.confidence, mappingRule: `ai · auto-accepted ≥${threshold}%` };
+    }
+    suggested++;
+    return { ...r, category: m.category as typeof r.category, suggested: true, confidence: m.confidence, mappingRule: "ai suggestion" };
+  });
+  let next: Company = { ...c, rows };
+  if (next.automation.autoAdvance) next = autoAdvance(next);
+  const k = computeCompany(next);
+  const vrun = toRun(validateCompany(next, k), "import + AI mapping", next.tolerance, `${runId}-v`);
+  const importRuns = next.importRuns.map((r) => (r.id === runId ? { ...r, autoMapped: r.autoMapped + accepted, aiSuggested: suggested, stillToMap: next.rows.filter((x) => x.suggested || !x.category).length, statusAfter: next.period.status } : r));
+  const validationRuns = next.validationRuns.some((v) => v.id === vrun.id) ? next.validationRuns.map((v) => (v.id === vrun.id ? vrun : v)) : [...next.validationRuns, vrun].slice(-30);
+  return { company: { ...next, importRuns, validationRuns }, accepted, suggested };
+}
+
 const name = (u: Unit) => (u.sheet ? `${u.fileName} › ${u.sheet}` : u.fileName);
 const toBase64 = (b: Uint8Array) => {
   let s = "";
@@ -52,8 +90,66 @@ const toBase64 = (b: Uint8Array) => {
  * MT940/OFX bank statements, ETA JSON/XML) is recognised, previewed and checked together, then
  * imported in one step.
  */
-export function BulkUpload({ compact = false }: { compact?: boolean }) {
-  const { ws, company, update, locked } = useWorkspace();
+interface Props {
+  compact?: boolean;
+  /** Files handed in from outside (the agent's attach button); read once each time the array changes. */
+  incoming?: File[] | null;
+  onIncomingDone?: () => void;
+  onPipeline?: (run: ImportRun) => void;
+}
+
+export function BulkUpload(props: Props) {
+  const { company, dispatch } = useWorkspace();
+  const L = useL();
+  const [first, setFirst] = useState<File[] | null>(null);
+  const [drag, setDrag] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  if (!company) {
+    const start = (files: FileList | null) => {
+      if (!files?.length) return;
+      setFirst([...files]);
+      dispatch({ type: "addCompany", company: newCompany(L("My company", "شركتي")) });
+    };
+    return (
+      <Card title={L("Upload all files", "رفع كل الملفات")}>
+        <div
+          className={`dropzone ${drag ? "over" : ""}`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDrag(true);
+          }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDrag(false);
+            start(e.dataTransfer.files);
+          }}
+          onClick={() => input.current?.click()}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && input.current?.click()}
+        >
+          <strong>{L("Drop your files to start: a company is created and everything is read, mapped and checked", "اسحب ملفاتك للبدء: تُنشأ شركة وتتم قراءة كل شيء وربطه وفحصه")}</strong>
+          <input ref={input} type="file" multiple hidden onChange={(e) => { start(e.target.files); e.target.value = ""; }} />
+        </div>
+      </Card>
+    );
+  }
+  return (
+    <BulkUploadInner
+      {...props}
+      incoming={first ?? props.incoming}
+      onIncomingDone={() => {
+        if (first) setFirst(null);
+        else props.onIncomingDone?.();
+      }}
+    />
+  );
+}
+
+function BulkUploadInner({ compact = false, incoming = null, onIncomingDone, onPipeline }: Props) {
+  const { ws, company: current, update, locked } = useWorkspace();
+  const company = current!;
   const L = useL();
   const f = useFormat();
   const { issue } = makeT(ws.lang);
@@ -64,41 +160,134 @@ export function BulkUpload({ compact = false }: { compact?: boolean }) {
   const [draftMap, setDraftMap] = useState<Record<string, string>>({});
   const [done, setDone] = useState<string[] | null>(null);
   const [ocr, setOcr] = useState<{ configured: boolean } | null>(null);
+  const [phase, setPhase] = useState<Phase | null>(null);
+  const [lastRun, setLastRun] = useState<ImportRun | null>(null);
+  const [aiNote, setAiNote] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
   const input = useRef<HTMLInputElement>(null);
+  const handled = useRef<File[] | null>(null);
 
   const included = useMemo(() => rows.filter((r) => r.include && r.staged && r.category), [rows]);
   const items: BatchItem[] = useMemo(() => included.map((r) => ({ id: r.unit.id, staged: r.staged!, role: r.role, month: r.month })), [included]);
   const report = useMemo(() => (company && items.length ? batchChecks(company, items) : null), [company, items]);
 
-  if (!company) return null;
+  const auto = company.automation.autoImport;
+  const setAutomation = (p: Partial<Automation>) => update({ action: "automation.update", entity: "settings", reason: JSON.stringify(p) }, (c) => ({ ...c, automation: { ...c.automation, ...p } }), { allowWhenLocked: true });
 
   const patch = (id: string, p: Partial<Row>) => setRows((rs) => rs.map((r) => (r.unit.id === id ? { ...r, ...p } : r)));
 
-  const stage = async (row: Row, category: DocCategory | null, columnMap?: Record<string, string>) => {
-    if (!category) return patch(row.unit.id, { category: null, staged: null, include: false });
+  const stage = async (row: Row, category: DocCategory | null, columnMap?: Record<string, string>): Promise<Staged | null> => {
+    if (!category) {
+      patch(row.unit.id, { category: null, staged: null, include: false });
+      return null;
+    }
     patch(row.unit.id, { category, busy: true, error: "", progress: category === "GENERAL_LEDGER" ? 0 : null });
     try {
       const staged = await stageUnit(row.unit, category, { columnMap: columnMap ?? company.columnMaps[category], onProgress: (p) => patch(row.unit.id, { progress: p }) });
       patch(row.unit.id, { staged, include: !staged.issues.some((i) => i.level === "error"), busy: false, progress: null });
+      return staged;
     } catch (e) {
       patch(row.unit.id, { staged: null, include: false, busy: false, progress: null, error: (e as Error).message });
+      return null;
     }
   };
 
-  const addFiles = async (list: FileList | null) => {
+  /** The automatic path: import what is certain, map, ask the AI about the rest, validate, report. */
+  const runAuto = async (results: Array<{ row: Row; staged: Staged | null }>, extraHeld: Array<{ name: string; reason: string }>) => {
+    setPhase("importing");
+    const eligible: Array<{ row: Row; staged: Staged }> = [];
+    const held = [...extraHeld];
+    for (const { row, staged } of results) {
+      const e = autoEligible(company, row.unit, staged);
+      if (e.ok && staged) eligible.push({ row, staged });
+      else held.push({ name: name(row.unit), reason: e.reason });
+    }
+    // Only one current and one prior trial balance can be used: keep the largest, hold the others.
+    for (const role of ["current", "prior"] as const) {
+      const tbs = eligible.filter((x) => x.staged.category === "TRIAL_BALANCE" && x.row.role === role).sort((p, q) => q.staged.rowCount - p.staged.rowCount);
+      for (const extra of tbs.slice(1)) {
+        eligible.splice(eligible.indexOf(extra), 1);
+        held.push({ name: name(extra.row.unit), reason: `another ${role}-period trial balance (${name(tbs[0].row.unit)}) was used; choose which one to import` });
+      }
+    }
+    if (!eligible.length) {
+      setPhase(null);
+      return;
+    }
+    const runId = uid("run");
+    const at = new Date().toISOString();
+    const ids = eligible.map(() => uid("doc"));
+    const items = eligible.map(({ row, staged }) => ({ id: row.unit.id, staged, role: row.role, month: row.month, unit: row.unit }));
+    const opts = { by: ws.profile.name, ids, runId, at };
+    const local = runPipeline(company, items, held, opts);
+    update({ action: "source.autoImport", entity: "source_documents", recordId: ids.join(","), reason: `${eligible.length} file(s) imported automatically, ${held.length} held` }, (c) => runPipeline(c, items, held, opts).company);
+    setRows((rs) => rs.filter((r) => !eligible.some((x) => x.row.unit.id === r.unit.id)));
+    let run = local.run;
+    setPhase("mapping");
+    const a = company.automation;
+    const targets = local.company.rows.filter((r) => !r.category || r.suggested).slice(0, 200);
+    if (a.aiMapping && targets.length && !IS_STATIC) {
+      try {
+        const st = await aiStatus();
+        if (st.configured) {
+          const res = await fetch("/api/map", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ accounts: targets.map((r) => ({ code: r.code, name: r.name, balance: r.currentDebit - r.currentCredit })) }) });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message ?? `HTTP ${res.status}`);
+          const threshold = a.autoMapThreshold;
+          const after = applyAiMappings(local.company, data.mappings, threshold, runId);
+          update({ action: "mapping.aiAuto", entity: "trial_balance_records", recordId: runId, reason: `AI mapping: ${after.accepted} accepted at ≥${threshold}%, ${after.suggested} left for review` }, (c) => applyAiMappings(c, data.mappings, threshold, runId).company);
+          run = after.company.importRuns.find((r) => r.id === runId) ?? run;
+        }
+      } catch (e) {
+        setAiNote((e as Error).message);
+      }
+    }
+    setPhase("validating");
+    setLastRun(run);
+    setDone(run.files.map((x) => x.name));
+    setPhase("done");
+    onPipeline?.(run);
+  };
+
+  const addFiles = async (list: FileList | File[] | null) => {
     if (!list?.length) return;
     setDone(null);
+    setLastRun(null);
+    setAiNote("");
+    setPhase("reading");
     const files = await Promise.all([...list].map(async (file) => ({ name: file.name, bytes: new Uint8Array(await file.arrayBuffer()) })));
-    const { units, errors: errs } = expandFiles(files);
+    const { units, errors: errs } = await expandFiles(files);
     setErrors(errs);
+    setPhase("detecting");
     const fresh: Row[] = defaultRoles(
-      units.map((u) => ({ unit: u, category: u.detection.category, role: "current", month: u.month, staged: null, error: "", include: false, busy: !!u.detection.category, progress: null })),
+      units.map((u) => {
+        // A file seen in an earlier month keeps the type and role it had then.
+        const mem = remembered(company, u);
+        return { unit: u, category: mem?.category ?? u.detection.category, role: mem?.role ?? "current", month: u.month, staged: null, error: "", include: false, busy: !!(mem?.category ?? u.detection.category), progress: null };
+      }),
       company.rows.length > 0,
-    );
+    ).map((r, i) => {
+      const mem = remembered(company, units[i]);
+      return mem?.role ? { ...r, role: mem.role, month: mem.role === "monthly" ? (r.month ?? units[i].month) : r.month } : r;
+    });
     setRows((rs) => [...rs, ...fresh]);
     if (fresh.some((r) => r.unit.detection.format === "pdf" || r.unit.detection.format === "image")) aiStatus().then(setOcr);
-    for (const r of fresh) if (r.category) await stage(r, r.category);
+    const results: Array<{ row: Row; staged: Staged | null }> = [];
+    for (const r of fresh) if (r.category) results.push({ row: r, staged: await stage(r, r.category) });
+    const unknown = fresh.filter((r) => !r.category).map((r) => ({ name: name(r.unit), reason: r.unit.detection.format === "pdf" || r.unit.detection.format === "image" ? "scanned document: choose what to read it as" : r.unit.detection.reason }));
+    if (auto && !locked) await runAuto(results, unknown);
+    else setPhase(null);
   };
+
+  useEffect(() => {
+    if (!incoming?.length || incoming === handled.current) return;
+    handled.current = incoming;
+    void Promise.resolve().then(async () => {
+      await addFiles(incoming);
+      onIncomingDone?.();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incoming]);
 
   const runOcr = async (row: Row, target: DocCategory) => {
     patch(row.unit.id, { busy: true, error: "" });
@@ -110,7 +299,7 @@ export function BulkUpload({ compact = false }: { compact?: boolean }) {
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(body.message ?? `HTTP ${res.status}`);
-      const { units } = expandFiles([{ name: `${row.unit.fileName.replace(/\.[a-z0-9]+$/i, "")} (OCR).csv`, bytes: new TextEncoder().encode(body.csv as string) }]);
+      const { units } = await expandFiles([{ name: `${row.unit.fileName.replace(/\.[a-z0-9]+$/i, "")} (OCR).csv`, bytes: new TextEncoder().encode(body.csv as string) }]);
       const u = units[0];
       const next: Row = { ...row, unit: { ...u, detection: { ...u.detection, category: target, reason: "Read from the document by AI text recognition: check every figure" } }, category: target, busy: false };
       setRows((rs) => rs.map((r) => (r.unit.id === row.unit.id ? next : r)));
@@ -140,6 +329,7 @@ export function BulkUpload({ compact = false }: { compact?: boolean }) {
     const ids = ok.map(() => uid("doc"));
     update({ action: "source.bulkUpload", entity: "source_documents", recordId: ids.join(",") }, (c) => ok.reduce((acc, r, i) => applyStaged(acc, r.staged!, ids[i], r.role, r.month), c));
     setDone(ok.map((r) => name(r.unit)));
+    setLastRun(null);
     setRows((rs) => rs.filter((r) => !ok.includes(r)));
   };
 
@@ -185,17 +375,79 @@ export function BulkUpload({ compact = false }: { compact?: boolean }) {
         <strong>{L("Drop your whole close pack here, or click to choose files", "اسحب ملفات الإقفال كلها هنا، أو اضغط لاختيار الملفات")}</strong>
         <span className="muted small">
           {L(
-            "CSV, Excel (every sheet), .zip, MT940 / OFX bank statements, ETA JSON/XML. Exports from Odoo, SAP Business One, QuickBooks and Dynamics 365 are recognised. UTF-8 or Windows-1256 Arabic.",
-            "CSV أو Excel (كل الأوراق) أو ملف ‎.zip‎ أو كشوف بنكية MT940 / OFX أو ملفات منظومة الفاتورة. يتم التعرف على تصدير أودو وSAP Business One وكويك بوكس وداينامكس ٣٦٥.",
+            "CSV, Excel .xlsx / .xls (every sheet, several tables per sheet), OpenDocument, Excel XML, HTML exports, Word tables, dBase, JSON, fixed-width text, PDF reports, .zip, MT940 / OFX bank statements, ETA JSON/XML. Arabic headers and exports from Odoo, SAP Business One, QuickBooks, Dynamics 365, ERPNext, Zoho, Sage and Oracle are recognised. UTF-8 or Windows-1256 Arabic.",
+            "CSV وExcel ‎.xlsx / .xls‎ (كل الأوراق وأكثر من جدول في الورقة) وOpenDocument وجداول HTML وWord وdBase وJSON والنصوص ثابتة العرض وتقارير PDF وملفات ‎.zip‎ وكشوف MT940 / OFX وملفات منظومة الفاتورة. يتم التعرف على العناوين العربية وتصدير أودو وSAP وكويك بوكس وداينامكس وERPNext وZoho وSage وOracle.",
           )}
         </span>
         <input ref={input} type="file" multiple hidden onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }} />
       </div>
+      <div className="auto-bar small">
+        <label>
+          <input type="checkbox" checked={auto} onChange={(e) => setAutomation({ autoImport: e.target.checked })} /> {L("Automatic: read, import, map and validate on drop", "تلقائي: قراءة واستيراد وربط وتحقق عند الرفع")}
+        </label>
+        {auto && <span className="muted">· {L("accept mappings at", "قبول الربط عند")} ≥{company.automation.autoMapThreshold}%</span>}
+        <button className="link small" onClick={() => setShowSettings((v) => !v)}>{L("Settings", "الإعدادات")}</button>
+      </div>
+      {showSettings && (
+        <div className="mapping-panel grid">
+          <label className="field">
+            <span>{L("Auto-accept mappings at or above (%)", "قبول الربط تلقائيًا عند أو فوق (٪)")}</span>
+            <input type="number" min={50} max={101} defaultValue={company.automation.autoMapThreshold} onBlur={(e) => setAutomation({ autoMapThreshold: Math.min(101, Math.max(50, Number(e.target.value) || 85)) })} />
+            <span className="muted small">{L("101 = never accept automatically", "١٠١ = لا قبول تلقائي")}</span>
+          </label>
+          <label className="field">
+            <span>{L("Minimum recognition confidence to import a file (%)", "أدنى ثقة تعرف لاستيراد ملف (٪)")}</span>
+            <input type="number" min={0} max={100} defaultValue={company.automation.minConfidence} onBlur={(e) => setAutomation({ minConfidence: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })} />
+          </label>
+          <label className="field">
+            <span>
+              <input type="checkbox" checked={company.automation.aiMapping} onChange={(e) => setAutomation({ aiMapping: e.target.checked })} /> {L("Ask the AI to map the remaining accounts", "اطلب من الذكاء الاصطناعي ربط الحسابات المتبقية")}
+            </span>
+            {IS_STATIC && <span className="muted small">{L("Needs the full app with AI configured.", "يحتاج التطبيق الكامل مع إعداد الذكاء الاصطناعي.")}</span>}
+          </label>
+          <label className="field">
+            <span>
+              <input type="checkbox" checked={company.automation.autoAdvance} onChange={(e) => setAutomation({ autoAdvance: e.target.checked })} /> {L("Move the period to Mapped / Reconciled when every gate passes (never locks)", "نقل الفترة إلى مربوطة / مطابقة عند نجاح كل البوابات (بدون إقفال)")}
+            </span>
+          </label>
+        </div>
+      )}
+      {phase && phase !== "done" && (
+        <ol className="phases small">
+          {PHASES.map(([p, en, ar], i) => {
+            const at = PHASES.findIndex((x) => x[0] === phase);
+            return (
+              <li key={p} className={i < at ? "ok" : i === at ? "now" : "todo"}>
+                {i < at ? "✓" : i === at ? "…" : "○"} {L(en, ar)}
+              </li>
+            );
+          })}
+        </ol>
+      )}
+      {lastRun && (
+        <Banner kind={lastRun.held.length || lastRun.stillToMap ? "warning" : "ok"}>
+          <strong>{L("Done", "تم")}:</strong> {L(`${lastRun.files.length} file(s) imported`, `استيراد ${lastRun.files.length} ملف`)}
+          {lastRun.autoMapped > 0 && <> · {L(`${lastRun.autoMapped} mapping(s) accepted automatically`, `قبول ${lastRun.autoMapped} ربط تلقائيًا`)}</>}
+          {lastRun.aiSuggested > 0 && <> · {L(`${lastRun.aiSuggested} AI suggestion(s) to review`, `${lastRun.aiSuggested} اقتراح ذكاء اصطناعي للمراجعة`)}</>}
+          {lastRun.stillToMap > 0 && <> · <Link href="/mapping">{L(`${lastRun.stillToMap} account(s) still to map`, `${lastRun.stillToMap} حساب يحتاج ربط`)}</Link></>}
+          {" "}· {L("period", "الفترة")} <Pill>{lastRun.statusAfter}</Pill>
+          {lastRun.held.length > 0 && (
+            <ul className="small">
+              {lastRun.held.map((h) => (
+                <li key={h.name}>
+                  {L("Held for you", "بانتظارك")}: <strong>{h.name}</strong> — {h.reason}
+                </li>
+              ))}
+            </ul>
+          )}
+          {aiNote && <div className="muted small">{L("AI mapping was skipped:", "تم تخطي الربط بالذكاء الاصطناعي:")} {aiNote}</div>}
+        </Banner>
+      )}
       {locked && <Banner kind="info">{L("The period is locked; reopen it to load new files.", "الفترة مقفلة؛ أعد فتحها لتحميل ملفات جديدة.")}</Banner>}
       {errors.map((e) => (
         <Banner key={e} kind="error">{e}</Banner>
       ))}
-      {done && (
+      {done && !lastRun && (
         <Banner kind="ok">
           {L("Imported", "تم استيراد")}: {done.join(", ")}. <Link href="/mapping">{L("Review mapping", "مراجعة الربط")}</Link> · <Link href="/close-review">{L("Close review", "مراجعة الإقفال")}</Link>
         </Banner>

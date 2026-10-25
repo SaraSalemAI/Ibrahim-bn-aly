@@ -119,6 +119,63 @@ export interface Company {
   opening: TBRow[] | null;
   history: PeriodArchive[];
   boardPacks: BoardPackSnapshot[];
+  /** Differences up to this amount count as agreed in validations and tie-outs. */
+  tolerance: number;
+  automation: Automation;
+  /** What each recurring file turned out to be, keyed by its name without dates or numbers. */
+  fileMemory: Record<string, { category: DocCategory; role?: "current" | "prior" | "monthly" }>;
+  importRuns: ImportRun[];
+  validationRuns: ValidationRun[];
+  cashForecast: CashForecastInputs;
+}
+
+export interface Automation {
+  /** Import recognised files without waiting for a click. */
+  autoImport: boolean;
+  /** Accept suggested mappings at or above this confidence (0-100); 101 turns it off. */
+  autoMapThreshold: number;
+  /** Ask AI for the accounts still unmapped (full app with AI configured). */
+  aiMapping: boolean;
+  /** Move the period to Mapped / Reconciled when every gate passes. Locking stays manual. */
+  autoAdvance: boolean;
+  /** Minimum detection confidence for a file to be imported automatically. */
+  minConfidence: number;
+}
+
+export interface ImportRun {
+  id: string;
+  at: string;
+  by: string;
+  files: Array<{ name: string; category: DocCategory; role?: string; rows: number; erp?: string | null; via: string; confidence: number }>;
+  held: Array<{ name: string; reason: string }>;
+  autoMapped: number;
+  aiSuggested: number;
+  stillToMap: number;
+  statusAfter: PeriodStatus;
+}
+
+export interface ValidationRun {
+  id: string;
+  at: string;
+  trigger: string;
+  tolerance: number;
+  /** Rule id -> outcome, compact so history can be compared. */
+  results: Record<string, { level: "error" | "warning" | "info"; ok: boolean; count: number }>;
+}
+
+export interface CashForecastInputs {
+  weeks: number;
+  /** Share of overdue receivables expected to be collected, spread over overdueWeeks. */
+  overdueCollectionRate: number;
+  overdueWeeks: number;
+  /** Days customers pay after the due date on average. */
+  collectionLagDays: number;
+  /** Overdue payables are paid over this many weeks. */
+  overduePayableWeeks: number;
+  includePayroll: boolean;
+  minimumCash: number | null;
+  openingCash: number | null;
+  items: Array<{ id: string; name: string; amount: number; every: "once" | "week" | "month"; week: number }>;
 }
 
 export interface GroupMember {

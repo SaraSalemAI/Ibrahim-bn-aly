@@ -33,7 +33,10 @@ function colIndex(ref: string): number {
   return n - 1;
 }
 
-const BUILTIN_DATE_FORMATS = new Set([14, 15, 16, 17, 22, 27, 30, 36, 45, 46, 47, 50, 57]);
+export const BUILTIN_DATE_FORMATS = new Set([14, 15, 16, 17, 22, 27, 30, 36, 45, 46, 47, 50, 57]);
+
+/** A number format is a date when it has day/month/year tokens outside quoted text and no digit placeholders. */
+export const isDateFormatCode = (code: string) => /[dmy]/i.test(code.replace(/"[^"]*"|\[[^\]]*\]/g, "")) && !/0\.0|#/.test(code);
 
 function dateStyles(stylesXml: string | undefined): Set<number> {
   const out = new Set<number>();
@@ -48,7 +51,7 @@ function dateStyles(stylesXml: string | undefined): Set<number> {
     const id = Number(attr(m[0], "numFmtId") ?? 0);
     const code = custom.get(id);
     // A custom format is a date when it has day/month/year tokens outside quoted text.
-    const isDate = BUILTIN_DATE_FORMATS.has(id) || (code !== undefined && /[dmy]/i.test(code.replace(/"[^"]*"|\[[^\]]*\]/g, "")) && !/0\.0|#/.test(code));
+    const isDate = BUILTIN_DATE_FORMATS.has(id) || (code !== undefined && isDateFormatCode(code));
     if (isDate) out.add(i);
   });
   return out;
@@ -60,8 +63,23 @@ export function serialToIso(serial: number): string {
   return new Date(ms).toISOString().slice(0, 10);
 }
 
-function csvCell(v: string): string {
+export function csvCell(v: string): string {
   return /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+}
+
+/**
+ * Grid to CSV. Blank rows are kept as empty lines so that several tables on one sheet can be told
+ * apart later; the CSV parser ignores them otherwise.
+ */
+export function gridToSheet(name: string, grid: Array<string[] | undefined>): Sheet {
+  const width = Math.max(0, ...grid.filter((r): r is string[] => !!r).map((r) => r.length));
+  let last = grid.length - 1;
+  while (last >= 0 && !(grid[last] ?? []).some((x) => (x ?? "").trim() !== "")) last--;
+  const lines = Array.from({ length: last + 1 }, (_, i) => {
+    const r = grid[i] ?? [];
+    return r.some((x) => (x ?? "").trim() !== "") ? Array.from({ length: width }, (_, j) => csvCell(r[j] ?? "")).join(",") : "";
+  });
+  return { name, csv: lines.join("\n") + "\n", rows: lines.filter(Boolean).length };
 }
 
 export function readXlsx(bytes: Uint8Array): Sheet[] {
@@ -117,11 +135,7 @@ export function readXlsx(bytes: Uint8Array): Sheet[] {
       }
       grid[r] = Array.from(cells, (x) => x ?? "");
     }
-    const width = Math.max(0, ...grid.filter(Boolean).map((r) => r.length));
-    const lines = grid
-      .filter((r) => r && r.some((x) => x.trim() !== ""))
-      .map((r) => Array.from({ length: width }, (_, i) => csvCell(r[i] ?? "")).join(","));
-    sheets.push({ name, csv: lines.join("\n") + "\n", rows: lines.length });
+    sheets.push(gridToSheet(name, grid));
   }
   return sheets.filter((s) => s.rows > 0);
 }

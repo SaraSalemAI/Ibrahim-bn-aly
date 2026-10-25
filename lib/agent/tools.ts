@@ -9,6 +9,7 @@ import { CATEGORIES, type Category } from "../finance/types";
 import { dcf, ufcf, wacc, type ValuationInputs } from "../finance/valuation";
 import { computeCompany, type Computed } from "../workspace/compute";
 import { consolidateGroup } from "../workspace/group";
+import { compareRuns, summarise as summariseChecks, toRun, validateCompany } from "../ingest/validate";
 import type { Company, Group } from "../workspace/types";
 
 type Ready = Extract<Computed, { analysis: NonNullable<Computed["analysis"]> }>;
@@ -383,6 +384,39 @@ export function buildAgentTools(company: Company, peers: Company[] = [], groups:
           boardPacks: company.boardPacks.map((p) => ({ period: p.periodLabel, createdAt: p.createdAt, createdBy: p.createdBy, sha256: p.hash.slice(0, 16) })),
           sources: company.docs.map((d) => ({ file: d.fileName, type: d.category, role: d.role ?? "current", rows: d.rowCount, erp: d.erp ?? null, format: d.format ?? null })),
         }),
+    }),
+
+    get_upload_report: tool({
+      description: "What the latest file uploads did: each import run with the files read (type, rows, ERP, how it was read, recognition confidence), files held back for review and why, mappings accepted automatically, AI mapping suggestions, accounts still to map and the period status afterwards. Use it when the user asks about files they uploaded.",
+      inputSchema: z.object({ runs: z.number().int().min(1).max(10).default(3) }),
+      execute: async ({ runs }) =>
+        round({
+          automation: company.automation,
+          runs: company.importRuns.slice(-runs).reverse(),
+          sources: company.docs.slice(-30).map((d) => ({ file: d.fileName, type: d.category, role: d.role ?? "current", rows: d.rowCount, erp: d.erp ?? null })),
+        }),
+    }),
+
+    get_validation_report: tool({
+      description: "Every validation rule run on the loaded data (trial balance, opening balances, GL, AR, AP, fixed assets, inventory, payroll, bank, ETA, tie-outs, FX) with pass/fail, severity, counts and example items, plus what changed since the previous saved validation run.",
+      inputSchema: z.object({ failedOnly: z.boolean().default(true) }),
+      execute: async ({ failedOnly }) => {
+        const checks = validateCompany(company, k);
+        const prev = company.validationRuns.at(-1);
+        const cur = toRun(checks, "agent", company.tolerance, "agent-check");
+        return round({
+          tolerance: company.tolerance,
+          summary: summariseChecks(checks),
+          checks: checks.filter((x) => !failedOnly || !x.ok).map((x) => ({ id: x.id, area: x.area, level: x.level, ok: x.ok, rule: x.title[0], problem: x.ok ? null : (x.detail?.[0] ?? null), count: x.count, examples: x.items.slice(0, 8), fixIn: x.fix ?? null })),
+          sinceLastRun: prev ? { lastRunAt: prev.at, ...compareRuns(prev, cur) } : null,
+        });
+      },
+    }),
+
+    get_cash_forecast: tool({
+      description: "13-week direct cash forecast built from open customer and supplier invoices by due date, payroll and the analyst's recurring items: weekly opening, collections, payments, payroll, closing cash, the lowest week and weeks below the minimum cash level.",
+      inputSchema: z.object({}),
+      execute: async () => round({ assumptions: { ...company.cashForecast, items: company.cashForecast.items.length }, ...c.cashForecast }),
     }),
 
     propose_adjusting_entry: tool({

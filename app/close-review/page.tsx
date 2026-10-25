@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { AiPanel } from "@/components/AiPanel";
 import { Banner, Card, NeedsData, Page, Pill, Stat } from "@/components/ui";
+import { ValidationReport } from "@/components/ValidationReport";
 import type { Anomaly } from "@/lib/finance/anomalies";
 import { CHECK_LABELS, TIE_LABELS } from "@/lib/labels";
 import { useFormat, useL, useWorkspace } from "@/lib/workspace/store";
@@ -75,6 +76,8 @@ export default function CloseReviewPage() {
                 </table>
               </Card>
             </div>
+
+            <ValidationReport />
 
             <Card
               title={L("Anomaly flags", "المؤشرات غير المعتادة")}

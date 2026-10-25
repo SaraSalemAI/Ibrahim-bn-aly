@@ -1,7 +1,7 @@
 import { parseCsv } from "../finance/parse";
 import type { DocCategory } from "../finance/types";
 import { isMt940, isOfx } from "./bankFormats";
-import { fieldAliases, findHeaderRow, requiredFields, type CsvCategory } from "./erp";
+import { fieldAliases, headerKey, requiredFields, resolveHeader, type CsvCategory } from "./erp";
 
 export interface Detection {
   category: DocCategory | null;
@@ -36,7 +36,7 @@ const DISCRIMINATORS: Partial<Record<CsvCategory, { needs?: string[]; penalisedB
 function headerScore(headers: string[], category: CsvCategory): number {
   const aliases = fieldAliases(category);
   const set = new Set(headers);
-  const has = (field: string) => (aliases[field] ?? [field.toLowerCase()]).some((a) => set.has(a));
+  const has = (field: string) => (aliases[field] ?? [field.toLowerCase()]).some((a) => set.has(headerKey(a)));
   const req = requiredFields(category);
   const optional = Object.keys(aliases).filter((k) => !req.includes(k) && !k.startsWith("__"));
   const reqHit = req.filter(has).length / Math.max(1, req.length);
@@ -46,7 +46,7 @@ function headerScore(headers: string[], category: CsvCategory): number {
   if (d?.needs && !d.needs.every(has)) score *= 0.5;
   if (d?.penalisedBy) {
     const all = CSV_CATEGORIES.flatMap((c) => Object.entries(fieldAliases(c)));
-    const other = (field: string) => all.filter(([k]) => k === field).some(([, al]) => al.some((a) => set.has(a)));
+    const other = (field: string) => all.filter(([k]) => k === field).some(([, al]) => al.some((a) => set.has(headerKey(a))));
     if (d.penalisedBy.some(other)) score *= 0.6;
   }
   return score;
@@ -58,8 +58,8 @@ function headerScore(headers: string[], category: CsvCategory): number {
  */
 export function detectFile(fileName: string, text: string | null): Detection {
   const lower = fileName.toLowerCase();
-  if (/\.pdf$/.test(lower)) return { category: null, confidence: 0, reason: "PDF: needs text recognition (OCR)", alternatives: [], format: "pdf" };
-  if (/\.(png|jpe?g|webp|gif|heic)$/.test(lower)) return { category: null, confidence: 0, reason: "Image: needs text recognition (OCR)", alternatives: [], format: "image" };
+  if (text === null && /\.pdf$/.test(lower)) return { category: null, confidence: 0, reason: "PDF: needs text recognition (OCR)", alternatives: [], format: "pdf" };
+  if (text === null && /\.(png|jpe?g|webp|gif|heic)$/.test(lower)) return { category: null, confidence: 0, reason: "Image: needs text recognition (OCR)", alternatives: [], format: "image" };
   if (text === null) return { category: null, confidence: 0, reason: "Unsupported file type", alternatives: [], format: "unknown" };
   const src = text.replace(/^﻿/, "").trimStart();
   if (isMt940(src)) return { category: "BANK_STATEMENT", confidence: 98, reason: "SWIFT MT940 statement", alternatives: [], format: "mt940" };
@@ -72,7 +72,7 @@ export function detectFile(fileName: string, text: string | null): Detection {
   const table = parseCsv(src.split(/\r?\n/).slice(0, 40).join("\n"));
   if (!table.length) return { category: null, confidence: 0, reason: "Empty file", alternatives: [], format: "csv" };
   const scored = CSV_CATEGORIES.map((c) => {
-    const headers = table[findHeaderRow(table, c)].map((h) => h.replace(/^﻿/, "").trim().toLowerCase());
+    const headers = resolveHeader(table, c).header;
     const name = NAME_HINTS[c].test(lower.replace(/\.[a-z0-9]+$/, "")) ? 0.2 : 0;
     return { category: c as DocCategory, raw: headerScore(headers, c) + name };
   }).sort((a, b) => b.raw - a.raw);

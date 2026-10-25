@@ -10,6 +10,7 @@ import { apAnalysis, arAging, bankReconciliation, etaReconciliation, farSummary,
 import { taxComputation } from "../finance/tax";
 import { compsValuation, dcf, footballField, ufcf, wacc } from "../finance/valuation";
 import { scanAnomalies } from "../finance/anomalies";
+import { cashForecast } from "../finance/cashforecast";
 import { monthlyTrend, trendSummary } from "../finance/trends";
 import { budgetStatements, budgetVsActual, revenueVarianceAnalysis } from "../finance/budget";
 import type { Company, PeriodStatus } from "./types";
@@ -110,6 +111,16 @@ export function computeCompany(c: Company) {
   const checks = periodChecks(c, analysis, cashFlow?.tieOutDifference ?? null, gatingTies);
 
   const anomalies = scanAnomalies({ rows, analysis, period: c.period, gl: sl.gl, ar: arFn, ap: sl.ap, inventory: sl.inventory, payroll: sl.payroll, bankDifference: bank ? bank.difference : null });
+  const cf = c.cashForecast;
+  const forecast = cashForecast({
+    ...cf,
+    startDate: new Date(Date.parse(`${c.period.end}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10),
+    openingCash: cf.openingCash ?? cur.cash,
+    ar: arFn,
+    ap: sl.ap,
+    payroll: sl.payroll,
+    payrollPeriodsPerYear: c.payrollPeriodsPerYear,
+  });
   const trend = c.monthly.length ? monthlyTrend(c.monthly, c.monthlyYtd, c.settings.fiscalYearEnd === "06-30" ? 7 : 1) : [];
 
   return {
@@ -138,6 +149,7 @@ export function computeCompany(c: Company) {
     anomalies,
     trend,
     trendSummary: trendSummary(trend),
+    cashForecast: forecast,
     fx: { functional: fn, rates: c.fxRates, missing: [...fxMissing] },
   } as const;
 }
@@ -149,15 +161,17 @@ export interface PeriodCheck {
 }
 
 /** Gates for the period state machine: MAPPED needs confirmed mapping; RECONCILED needs balanced statements and tie-outs. */
-export function periodChecks(c: Company, a: Analysis, cfDiff: number | null, ties: Record<string, { ties: boolean } | null>): PeriodCheck[] {
+export function periodChecks(c: Company, a: Analysis, cfDiff: number | null, ties: Record<string, { ties: boolean; difference?: number } | null>): PeriodCheck[] {
   const balanced = !a.issues.some((i) => i.code === "unbalanced");
+  const tol = Math.max(0.01, c.tolerance ?? 0.01);
+  const tied = (t: { ties: boolean; difference?: number } | null) => t === null || t.ties || (t.difference !== undefined && Math.abs(t.difference) <= tol);
   return [
     { key: "tbBalanced", ok: balanced, requiredFor: "MAPPED" },
     { key: "allMapped", ok: c.rows.every((r) => r.category !== ""), requiredFor: "MAPPED" },
     { key: "mappingConfirmed", ok: c.period.mappingConfirmed && !c.rows.some((r) => r.suggested), requiredFor: "MAPPED" },
-    { key: "bsTies", ok: Math.abs(a.current.balanceCheck) < 0.01, requiredFor: "RECONCILED" },
-    { key: "cashFlowTies", ok: cfDiff === null || Math.abs(cfDiff) < 0.01, requiredFor: "RECONCILED" },
-    { key: "subledgersTie", ok: Object.values(ties).every((t) => t === null || t.ties), requiredFor: "RECONCILED" },
+    { key: "bsTies", ok: Math.abs(a.current.balanceCheck) <= tol, requiredFor: "RECONCILED" },
+    { key: "cashFlowTies", ok: cfDiff === null || Math.abs(cfDiff) <= tol, requiredFor: "RECONCILED" },
+    { key: "subledgersTie", ok: Object.values(ties).every(tied), requiredFor: "RECONCILED" },
   ];
 }
 

@@ -10,7 +10,7 @@ import type { DocCategory } from "../finance/types";
  * instead of debit/credit. This module finds the header row, renames columns to the importer's names
  * and derives the missing columns, so the same parsers read every export.
  */
-export type Erp = "Odoo" | "SAP Business One" | "QuickBooks" | "Dynamics 365";
+export type Erp = "Odoo" | "SAP Business One" | "QuickBooks" | "Dynamics 365" | "ERPNext" | "Zoho Books" | "Sage" | "Oracle" | "Arabic ERP export";
 export type CsvCategory = Exclude<DocCategory, "ETA_INVOICE">;
 
 const TB_CANON: Record<string, string> = {
@@ -107,7 +107,111 @@ const SYNONYMS: Record<CsvCategory, Record<string, string[]>> = {
   },
 };
 
+/** Arabic headers used by Egyptian ERPs (Al-Ameen, Dynamics GP Arabic, local packages) and more English ERP names. */
+const MORE: Record<CsvCategory, Record<string, string[]>> = {
+  TRIAL_BALANCE: {
+    code: ["account reference", "nominal code", "n/c", "account id", "account#", "acct no", "رقم", "كود", "الكود", "رقم الحساب", "كود الحساب", "رمز الحساب", "م"],
+    name: ["account title", "title", "nominal name", "اسم الحساب", "بيان الحساب", "الاسم", "البيان"],
+    current_debit: ["closing (dr)", "closing dr", "net debit", "ending balance dr", "balance dr", "debit closing", "الرصيد الختامي مدين", "رصيد آخر المدة مدين", "رصيد مدين", "مدين ختامي"],
+    current_credit: ["closing (cr)", "closing cr", "net credit", "ending balance cr", "balance cr", "credit closing", "الرصيد الختامي دائن", "رصيد آخر المدة دائن", "رصيد دائن", "دائن ختامي"],
+    __balance: ["closing", "ending balance", "net balance", "رصيد", "الرصيد", "الرصيد الختامي", "صافي الرصيد", "رصيد آخر المدة"],
+  },
+  GENERAL_LEDGER: {
+    postingDate: ["تاريخ القيد", "تاريخ السند", "تاريخ", "التاريخ", "date posted", "gl date", "trx date", "voucher date"],
+    journalId: ["رقم القيد", "رقم السند", "رقم المستند", "سند", "je number", "je no", "entry no", "document no", "jv no", "jv", "transaction id"],
+    accountCode: ["رقم الحساب", "كود الحساب", "account no.", "gl code"],
+    accountName: ["اسم الحساب", "account description"],
+    debit: ["مدين", "debit egp", "dr amount"],
+    credit: ["دائن", "credit egp", "cr amount"],
+    memo: ["البيان", "الشرح", "الوصف", "narrative", "explanation", "line memo"],
+    counterparty: ["الطرف", "اسم العميل/المورد", "partner name", "party", "customer/supplier", "اسم الطرف"],
+    costCenter: ["مركز التكلفة", "مركز تكلفة", "cost centre code", "department code"],
+  },
+  AR_SUBLEDGER: {
+    customer: ["اسم العميل", "العميل", "عميل", "party name"],
+    customerId: ["كود العميل", "رقم العميل", "customer no"],
+    invoice: ["رقم الفاتورة", "فاتورة", "inv no", "invoice #", "bill no"],
+    invoiceDate: ["تاريخ الفاتورة", "التاريخ", "inv date"],
+    dueDate: ["تاريخ الاستحقاق", "الاستحقاق"],
+    amount: ["قيمة الفاتورة", "القيمة", "الإجمالي", "اجمالي الفاتورة", "invoice total", "gross amount"],
+    outstanding: ["المتبقي", "الرصيد", "المستحق", "رصيد الفاتورة", "unpaid", "open"],
+  },
+  AP_SUBLEDGER: {
+    supplier: ["اسم المورد", "المورد", "مورد", "vendor name"],
+    supplierId: ["كود المورد", "رقم المورد", "vendor no"],
+    taxId: ["رقم التسجيل الضريبي", "الرقم الضريبي", "رقم ضريبي", "tax registration", "trn"],
+    invoice: ["رقم الفاتورة", "فاتورة", "bill #", "invoice #"],
+    invoiceDate: ["تاريخ الفاتورة", "التاريخ"],
+    dueDate: ["تاريخ الاستحقاق", "الاستحقاق"],
+    amount: ["قيمة الفاتورة", "القيمة", "الإجمالي", "gross amount"],
+    whtDeducted: ["ضريبة الخصم", "خصم من المنبع", "الخصم والتحصيل", "wht amount", "withholding"],
+    netPayable: ["صافي المستحق", "المتبقي", "balance due", "unpaid"],
+    status: ["الحالة", "حالة السداد"],
+  },
+  FIXED_ASSETS: {
+    tag: ["رقم الأصل", "كود الأصل", "asset #"],
+    name: ["اسم الأصل", "البيان", "وصف الأصل"],
+    category: ["الفئة", "نوع الأصل", "المجموعة", "class"],
+    acquisitionDate: ["تاريخ الشراء", "تاريخ الاقتناء", "تاريخ الإضافة"],
+    cost: ["التكلفة", "تكلفة الشراء", "التكلفة التاريخية"],
+    usefulLifeYears: ["العمر الإنتاجي", "العمر", "عمر الأصل"],
+    accumulatedDepreciation: ["مجمع الإهلاك", "مجمع الاهلاك", "الإهلاك المجمع"],
+    currentYearDepreciation: ["إهلاك العام", "إهلاك الفترة", "depreciation for the year"],
+  },
+  INVENTORY: {
+    sku: ["كود الصنف", "رقم الصنف", "الكود"],
+    description: ["اسم الصنف", "الصنف", "البيان"],
+    openingQty: ["رصيد أول المدة", "كمية أول المدة"],
+    openingUnitCost: ["تكلفة الوحدة أول المدة", "سعر أول المدة"],
+    receiptsQty: ["الوارد", "كمية الوارد", "المشتريات"],
+    receiptsCost: ["تكلفة الوارد", "قيمة الوارد"],
+    issuesQty: ["المنصرف", "كمية المنصرف", "المبيعات"],
+    endingQty: ["الجرد الفعلي", "رصيد آخر المدة", "الكمية الفعلية"],
+  },
+  PAYROLL: {
+    employeeId: ["الرقم الوظيفي", "كود الموظف", "رقم الموظف", "كود العامل"],
+    department: ["الإدارة", "القسم"],
+    basic: ["الأساسي", "المرتب الأساسي", "الراتب الأساسي"],
+    allowances: ["البدلات", "الحوافز"],
+    gross: ["الإجمالي", "إجمالي الاستحقاقات", "إجمالي المرتب"],
+    employeeSocialInsurance: ["تأمينات العامل", "حصة العامل في التأمينات"],
+    companySocialInsurance: ["حصة الشركة", "تأمينات الشركة", "حصة صاحب العمل"],
+    incomeTax: ["ضريبة كسب العمل", "الضريبة", "ضريبة المرتبات"],
+    net: ["الصافي", "صافي المرتب", "صافي الراتب"],
+  },
+  BANK_STATEMENT: {
+    date: ["التاريخ", "تاريخ العملية", "تاريخ القيمة", "تاريخ الحركة"],
+    description: ["البيان", "الوصف", "تفاصيل", "details", "narration"],
+    debit: ["سحب", "مسحوبات", "مدين", "withdrawal amount"],
+    credit: ["إيداع", "إيداعات", "دائن", "deposit amount"],
+    balance: ["الرصيد", "رصيد"],
+  },
+};
+for (const [cat, fields] of Object.entries(MORE) as Array<[CsvCategory, Record<string, string[]>]>)
+  for (const [f, list] of Object.entries(fields)) SYNONYMS[cat][f] = [...(SYNONYMS[cat][f] ?? []), ...list];
+
+/**
+ * Header comparison key: lower case, Arabic letter variants folded (أ/إ/آ→ا, ى→ي, ة→ه), tatweel and
+ * diacritics removed, and punctuation such as _ . / ( ) treated as spaces.
+ */
+export function headerKey(h: string): string {
+  return h
+    .replace(/^\uFEFF/, "")
+    .toLowerCase()
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, "")
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/[_\-./()#:]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 const SIGNATURES: Array<[Erp, RegExp, number]> = [
+  ["ERPNext", /(opening \(dr\)|closing \(dr\)|opening \(cr\)|closing \(cr\)|party type|against account)/g, 1],
+  ["Zoho Books", /(net debit|net credit|account group|transaction details)/g, 2],
+  ["Sage", /(nominal code|account reference|\bn\/c\b|nominal name)/g, 1],
+  ["Oracle", /(ending balance dr|ending balance cr|period net dr|period net cr|gl date|je category)/g, 1],
   ["Odoo", /\b(journal entry|analytic account|amount residual|invoice date due|initial balance|end balance|internal reference|label)\b/g, 1],
   ["SAP Business One", /(acct code|bp code|bp name|trans\. no\.|doc\. no\.|g\/l acct|series)/g, 1],
   ["QuickBooks", /(transaction type|memo\/description|\bsplit\b|open balance|\bnum\b)/g, 1],
@@ -124,6 +228,10 @@ export function detectErp(headers: string[]): Erp | null {
       best = erp;
       bestHits = hits;
     }
+  }
+  if (!best) {
+    const ar = headers.filter((h) => /[\u0600-\u06FF]/.test(h)).length;
+    if (headers.length && ar / headers.length >= 0.5) return "Arabic ERP export";
   }
   return best;
 }
@@ -160,21 +268,59 @@ export function allFields(category: CsvCategory): string[] {
   return Object.keys(SPECS[category]);
 }
 
-const norm = (h: string) => h.replace(/^﻿/, "").trim().toLowerCase();
 
 /** Index of the header row: the row in the first 15 that names the most known columns. Report titles above it are dropped. */
 export function findHeaderRow(table: string[][], category: CsvCategory): number {
-  const known = new Set(Object.values(fieldAliases(category)).flat());
+  const known = new Set(Object.values(fieldAliases(category)).flat().map(headerKey));
   let best = 0;
   let bestScore = -1;
   table.slice(0, 15).forEach((row, i) => {
-    const score = row.filter((c) => known.has(norm(c))).length;
+    const score = row.filter((c) => known.has(headerKey(c))).length;
     if (score > bestScore) {
       best = i;
       bestScore = score;
     }
   });
   return best;
+}
+
+/** The header name the parser reads for a field. */
+function canonical(category: CsvCategory, field: string): string {
+  return category === "TRIAL_BALANCE" ? (TB_CANON[field] ?? field) : field.toLowerCase();
+}
+
+const SIDE = /^(debit|credit|dr|cr|مدين|دائن)$/;
+const GROUP: Array<[string, RegExp]> = [
+  ["opening", /(اول المده|افتتاحي|opening|beginning|initial|start|brought forward)/],
+  ["period", /(الحركه|حركه|خلال|movement|activity|period|transactions|turnover)/],
+  ["closing", /(ختامي|اخر المده|نهايه|closing|ending|end|balance|الرصيد|رصيد)/],
+];
+
+/**
+ * The header for a table, merging a two-row header such as "Closing balance" over "Debit | Credit"
+ * (common in Egyptian trial balance exports) into "closing debit" / "closing credit".
+ */
+export function resolveHeader(table: string[][], category: CsvCategory): { header: string[]; start: number; headerRow: number } {
+  const r = findHeaderRow(table, category);
+  const sideRow = (row?: string[]) => !!row && row.filter((c) => SIDE.test(headerKey(c))).length >= 2 && row.every((c) => !c.trim() || SIDE.test(headerKey(c)));
+  let top = r;
+  let sub = -1;
+  if (sideRow(table[r]) && r > 0 && table[r - 1].some((c) => c.trim())) {
+    top = r - 1;
+    sub = r;
+  } else if (sideRow(table[r + 1])) sub = r + 1;
+  if (sub < 0) return { header: table[r].map(headerKey), start: r + 1, headerRow: r };
+  let group = "";
+  const header = table[sub].map((c, i) => {
+    const g = headerKey(table[top][i] ?? "");
+    if (g) group = g;
+    const side = headerKey(c);
+    if (!SIDE.test(side)) return g || side;
+    const canon = GROUP.find(([, re]) => re.test(group))?.[0] ?? group;
+    const s = /^(debit|dr|مدين)$/.test(side) ? "debit" : "credit";
+    return `${canon} ${s}`.trim();
+  });
+  return { header, start: sub + 1, headerRow: top };
 }
 
 export interface Normalised {
@@ -199,30 +345,45 @@ const splitAccount = (v: string): [string, string] => {
 export function normaliseTable(text: string, category: CsvCategory, columnMap: Record<string, string> = {}): Normalised {
   const table = parseCsv(text);
   if (!table.length) return { text, headers: [], originalHeaders: [], erp: null, skippedTitleRows: 0, derived: [] };
-  const h0 = findHeaderRow(table, category);
-  const original = table[h0].map((h) => h.replace(/^﻿/, "").trim());
-  const body = table.slice(h0 + 1).filter((r) => r.some((c) => c.trim() !== ""));
-  const erp = detectErp(original);
-  const headers = original.map(norm);
-  const base = baseAliases(category);
-  const present = (field: string) => headers.some((h) => h === field.toLowerCase() || base[field]?.includes(h));
+  const { header: merged, start, headerRow: h0 } = resolveHeader(table, category);
+  const original = table[h0].map((h, i) => (merged[i] !== headerKey(h) ? merged[i] : h.replace(/^\uFEFF/, "").trim()));
+  const body = table.slice(start).filter((r) => r.some((c) => c.trim() !== ""));
+  const erp = detectErp(table[h0]);
+  const headers = merged.slice();
+  const assigned = new Set<number>();
 
   // 1. Analyst's saved matches: field -> source header.
   for (const [field, source] of Object.entries(columnMap)) {
-    const i = headers.indexOf(norm(source));
-    if (i >= 0 && source) headers[i] = field.toLowerCase();
+    const i = headers.findIndex((h, j) => !assigned.has(j) && (h === headerKey(source) || headerKey(original[j]) === headerKey(source)));
+    if (i >= 0 && source) {
+      headers[i] = canonical(category, field);
+      assigned.add(i);
+    }
   }
-  // 2. ERP synonyms, only where the parser would not already find the field.
-  for (const [field, syns] of Object.entries(SYNONYMS[category])) {
-    if (!field.startsWith("__") && present(field)) continue;
-    for (const s of syns) {
-      const i = headers.indexOf(s);
+  // A plain "Account" column holding "1200 · Accounts receivable" is code and name together.
+  headers.forEach((h, j) => {
+    if (assigned.has(j) || !["account", "الحساب", "account name"].includes(h) || category === "AR_SUBLEDGER" || category === "AP_SUBLEDGER") return;
+    const vals = body.map((r) => (r[j] ?? "").trim()).filter(Boolean).slice(0, 50);
+    if (vals.length && vals.filter((v) => /^\d[\d.\-/]*\s*[·:\-–—]?\s+\S/.test(v)).length / vals.length >= 0.6) {
+      headers[j] = "__account";
+      assigned.add(j);
+    }
+  });
+  // 2. Every recognised header gets the importer's own name: parser aliases first, then ERP synonyms.
+  const base = baseAliases(category);
+  const fields = [...new Set([...Object.keys(base), ...Object.keys(SYNONYMS[category])])];
+  for (const pass of ["base", "syn"] as const) {
+    for (const field of fields) {
+      if (!field.startsWith("__") && headers.some((h, j) => assigned.has(j) && h === canonical(category, field))) continue;
+      const list = (pass === "base" ? [field, ...(base[field] ?? [])] : (SYNONYMS[category][field] ?? [])).map(headerKey);
+      const i = headers.findIndex((h, j) => !assigned.has(j) && list.includes(h));
       if (i >= 0) {
-        headers[i] = field.toLowerCase();
-        break;
+        headers[i] = canonical(category, field);
+        assigned.add(i);
       }
     }
   }
+  for (let j = 0; j < headers.length; j++) if (!assigned.has(j)) headers[j] = `x_${headers[j] || j}`;
 
   const derived: string[] = [];
   let rows = body.map((r) => headers.map((_, i) => (r[i] ?? "").trim()));
@@ -234,7 +395,8 @@ export function normaliseTable(text: string, category: CsvCategory, columnMap: R
   };
 
   // QuickBooks journals put the customer or supplier in "Name" next to a separate "Account" column.
-  if (category === "GENERAL_LEDGER" && erp === "QuickBooks" && idx("name") >= 0 && idx("__account") >= 0 && idx("counterparty") < 0) headers[idx("name")] = "counterparty";
+  const qbName = original.findIndex((h) => headerKey(h) === "name");
+  if (category === "GENERAL_LEDGER" && erp === "QuickBooks" && qbName >= 0 && idx("__account") >= 0 && idx("counterparty") < 0) headers[qbName] = "counterparty";
 
   // Combined "1010 · Cash at bank" account column.
   const acc = idx("__account");
@@ -254,7 +416,8 @@ export function normaliseTable(text: string, category: CsvCategory, columnMap: R
 
   // Signed closing balance instead of closing debit/credit (Odoo "End balance", QuickBooks/Dynamics "Balance").
   const bal = idx("__balance");
-  if (category === "TRIAL_BALANCE" && bal >= 0 && !(SYNONYMS.TRIAL_BALANCE.current_debit.some((s) => original.map(norm).includes(s)))) {
+  const explicitClosing = SYNONYMS.TRIAL_BALANCE.current_debit.map(headerKey).some((k) => merged.includes(k));
+  if (category === "TRIAL_BALANCE" && bal >= 0 && !explicitClosing) {
     const dr = colFor("current_debit");
     const cr = colFor("current_credit");
     if (dr >= 0) headers[dr] = "period_debit";
@@ -305,5 +468,6 @@ export function normaliseTable(text: string, category: CsvCategory, columnMap: R
   }
 
   const out = [headers.map(cell).join(","), ...rows.map((r) => r.map(cell).join(","))].join("\n") + "\n";
+  if (start - h0 === 2) derived.unshift("two-row header merged");
   return { text: out, headers, originalHeaders: original, erp, skippedTitleRows: h0, derived };
 }

@@ -134,7 +134,7 @@ describe("workbooks and archives", () => {
     expect(sheets[1].csv).toContain("2025-12-31,Receipt,5000");
 
     const zip = zipSync({ "close/Dec 2025/ar.csv": strToU8(S.SAMPLE_AR_CSV), "close/book.xlsx": bytes, "__MACOSX/._ar.csv": strToU8("x") });
-    const { units, errors } = expandFiles([{ name: "close-pack.zip", bytes: zip }]);
+    const { units, errors } = await expandFiles([{ name: "close-pack.zip", bytes: zip }]);
     expect(errors).toEqual([]);
     expect(units.map((u) => [u.sheet ?? u.fileName, u.detection.category])).toEqual([
       ["ar.csv", "AR_SUBLEDGER"],
@@ -148,15 +148,15 @@ describe("batch import", () => {
   it("loads prior-period comparatives and monthly files into their own slots", async () => {
     const cur = `code,name,current_debit,current_credit\n1010,Cash,700,0\n3000,Capital,0,700\n`;
     const pri = `code,name,current_debit,current_credit\n1010,Cash,500,0\n1200,Receivables,100,0\n3000,Capital,0,600\n`;
-    const unit = (name: string, text: string) => expandFiles([{ name, bytes: enc(text) }]).units[0];
+    const unit = async (name: string, text: string) => (await expandFiles([{ name, bytes: enc(text) }])).units[0];
     let c = newCompany();
-    c = applyStaged(c, await stageUnit(unit("tb.csv", cur), "TRIAL_BALANCE"), "d1", "current");
-    c = applyStaged(c, await stageUnit(unit("tb-prior.csv", pri), "TRIAL_BALANCE"), "d2", "prior");
+    c = applyStaged(c, await stageUnit(await unit("tb.csv", cur), "TRIAL_BALANCE"), "d1", "current");
+    c = applyStaged(c, await stageUnit(await unit("tb-prior.csv", pri), "TRIAL_BALANCE"), "d2", "prior");
     const a = analyze(c.rows);
     expect(a.current.cash).toBe(700);
     expect(a.prior?.cash).toBe(500);
     expect(a.prior?.receivables).toBe(100);
-    const jan = unit("TB 2025-01.csv", cur);
+    const jan = await unit("TB 2025-01.csv", cur);
     c = applyStaged(c, await stageUnit(jan, "TRIAL_BALANCE"), "d3", "monthly", jan.month);
     expect(c.monthly.map((m) => m.label)).toEqual(["2025-01"]);
     expect(c.docs.map((d) => d.role)).toEqual(["current", "prior", "monthly"]);
@@ -165,12 +165,12 @@ describe("batch import", () => {
   it("reports duplicates, out-of-period entries and missing FX rates before import", async () => {
     const base = sampleCompany();
     const bankText = S.SAMPLE_BANK_CSV + "2026-01-03,Late receipt,100,\n";
-    const units = expandFiles([
+    const units = (await expandFiles([
       { name: "ar.csv", bytes: enc(S.SAMPLE_AR_CSV) },
       { name: "ar-copy.csv", bytes: enc(S.SAMPLE_AR_CSV) },
       { name: "bank.csv", bytes: enc(bankText) },
       { name: "usd-ar.csv", bytes: enc("customer,invoice,invoice_date,due_date,amount,outstanding,currency\nGulf Co,X1,2025-12-01,2026-01-01,100,100,USD\n") },
-    ]).units;
+    ])).units;
     const items: BatchItem[] = await Promise.all(units.map(async (u) => ({ id: u.id, staged: await stageUnit(u, u.detection.category!), role: "current" as const, month: null })));
     const r = batchChecks({ ...base, fxRates: {} }, items);
     const codes = r.findings.map((f) => f.code);

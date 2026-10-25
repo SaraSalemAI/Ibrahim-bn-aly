@@ -7,7 +7,9 @@ import type { Company } from "../workspace/types";
 import { bankLinesToCsv, parseMt940, parseOfx } from "./bankFormats";
 import { detectFile, monthFromName, type Detection } from "./detect";
 import { normaliseTable, type CsvCategory, type Erp } from "./erp";
-import { readXlsx } from "./xlsx";
+import { fixedWidthToCsv, isHtmlTable, isSpreadsheetMl, jsonTable, pipeToCsv, readDbf, readDocxTables, readHtmlTables, readOds, readSpreadsheetMl, readXls, splitTables } from "./formats";
+import { extractPdfText } from "./pdf";
+import { readXlsx, type Sheet } from "./xlsx";
 import { unzipArchive } from "./zip";
 
 export type SubKey = "ar" | "ap" | "far" | "inventory" | "payroll" | "bank";
@@ -60,57 +62,97 @@ export function decodeText(bytes: Uint8Array): { text: string; encoding: string 
   return { text: utf8, encoding: "utf-8" };
 }
 
-const TEXT_EXT = /\.(csv|txt|tsv|json|xml|sta|mt940|940|ofx|qfx)$/i;
 let counter = 0;
 const unitId = () => `u${Date.now().toString(36)}${(counter++).toString(36)}`;
 
-/** Expands dropped files into importable units: .zip archives are unpacked and every workbook sheet becomes its own unit. */
-export function expandFiles(files: Array<{ name: string; bytes: Uint8Array }>): { units: Unit[]; errors: string[] } {
+const isOle = (b: Uint8Array) => b[0] === 0xd0 && b[1] === 0xcf && b[2] === 0x11 && b[3] === 0xe0;
+const BINARY = /\.(xlsx|xlsm|xls|xlsb|ods|docx|dbf|pdf|png|jpe?g|webp|gif|heic|zip)$/i;
+
+/**
+ * Expands dropped files into importable units. Archives are unpacked; every sheet of a workbook
+ * (.xlsx, .xls, .ods, Excel 2003 XML, HTML-table exports), every table of a Word document and
+ * every table stacked on one sheet becomes its own unit; JSON record arrays, pipe-separated and
+ * fixed-width text are turned into tables; digital PDFs have their text layer read. Scanned PDFs
+ * and photos stay as units for AI text recognition.
+ */
+export async function expandFiles(files: Array<{ name: string; bytes: Uint8Array }>): Promise<{ units: Unit[]; errors: string[] }> {
   const units: Unit[] = [];
   const errors: string[] = [];
-  const add = (name: string, bytes: Uint8Array) => {
+
+  const pushSheets = (name: string, bytes: Uint8Array, sheets: Sheet[], via: string) => {
+    if (!sheets.length) errors.push(`${name}: no table with data was found`);
+    const all = sheets.flatMap(splitTables);
+    for (const sh of all) {
+      const sheetName = all.length > 1 ? sh.name : undefined;
+      const label = sheetName ? `${name} › ${sh.name}` : name;
+      units.push({
+        id: unitId(),
+        fileName: name,
+        sheet: sheetName,
+        text: sh.csv,
+        bytes,
+        sha256: sha256Bytes(new TextEncoder().encode(sh.csv)),
+        encoding: via,
+        detection: detectFile(sheetName ? `${sh.name} ${name}` : name, sh.csv),
+        month: monthFromName(label),
+      });
+    }
+  };
+
+  const pushText = (name: string, bytes: Uint8Array, text: string, encoding: string) => {
+    const lower = name.toLowerCase();
+    const head = text.replace(/^\uFEFF/, "").trimStart();
+    if (isSpreadsheetMl(head)) return pushSheets(name, bytes, readSpreadsheetMl(text), "excel-2003-xml");
+    if (/\.(xls|html?)$/.test(lower) && isHtmlTable(head)) return pushSheets(name, bytes, readHtmlTables(text), "html-table");
+    const detection = detectFile(name, text);
+    if (detection.format === "eta" || detection.format === "mt940" || detection.format === "ofx") {
+      units.push({ id: unitId(), fileName: name, text, bytes, sha256: sha256Bytes(bytes), encoding, detection, month: monthFromName(name) });
+      return;
+    }
+    if (head.startsWith("[") || head.startsWith("{")) {
+      const t = jsonTable(text);
+      if (t) return pushSheets(name, bytes, [t], "json");
+    }
+    const converted = pipeToCsv(text) ?? fixedWidthToCsv(text);
+    if (converted) return pushSheets(name, bytes, [{ name: "Report", csv: converted, rows: converted.split("\n").filter(Boolean).length }], "fixed-width text");
+    const parts = splitTables({ name: "Table", csv: text, rows: 0 });
+    if (parts.length > 1) return pushSheets(name, bytes, parts, encoding);
+    units.push({ id: unitId(), fileName: name, text, bytes, sha256: sha256Bytes(bytes), encoding, detection, month: monthFromName(name) });
+  };
+
+  const add = async (name: string, bytes: Uint8Array): Promise<void> => {
+    const lower = name.toLowerCase();
     try {
-      if (/\.zip$/i.test(name)) {
-        for (const e of unzipArchive(bytes)) add(e.name, e.bytes);
-      } else if (/\.xlsx$/i.test(name)) {
-        const sheets = readXlsx(bytes);
-        if (!sheets.length) errors.push(`${name}: the workbook has no data`);
-        for (const sh of sheets) {
-          const sheetName = sheets.length > 1 ? sh.name : undefined;
-          const label = sheetName ? `${name} › ${sh.name}` : name;
-          units.push({
-            id: unitId(),
-            fileName: name,
-            sheet: sheetName,
-            text: sh.csv,
-            bytes,
-            sha256: sha256Bytes(new TextEncoder().encode(sh.csv)),
-            encoding: "xlsx",
-            detection: detectFile(sheetName ? `${sh.name} ${name}` : name, sh.csv),
-            month: monthFromName(label),
-          });
+      if (lower.endsWith(".zip")) {
+        for (const e of unzipArchive(bytes)) await add(e.name, e.bytes);
+      } else if (/\.(xlsx|xlsm)$/.test(lower)) pushSheets(name, bytes, readXlsx(bytes), "xlsx");
+      else if (lower.endsWith(".xlsb")) errors.push(`${name}: binary .xlsb workbooks are not supported; save as .xlsx`);
+      else if (lower.endsWith(".xls")) {
+        if (isOle(bytes)) pushSheets(name, bytes, readXls(bytes), "xls");
+        else pushText(name, bytes, decodeText(bytes).text, "xls (text)");
+      } else if (lower.endsWith(".ods")) pushSheets(name, bytes, readOds(bytes), "ods");
+      else if (lower.endsWith(".docx")) pushSheets(name, bytes, readDocxTables(bytes), "docx");
+      else if (lower.endsWith(".dbf")) pushSheets(name, bytes, readDbf(bytes, name.replace(/\.dbf$/i, "")), "dbf");
+      else if (lower.endsWith(".pdf")) {
+        let pdf: Awaited<ReturnType<typeof extractPdfText>> | null = null;
+        try {
+          pdf = await extractPdfText(bytes);
+        } catch {
+          pdf = null;
         }
-      } else if (/\.xls$/i.test(name)) {
-        errors.push(`${name}: old .xls format; save it as .xlsx or CSV`);
+        if (pdf?.csv) pushSheets(name, bytes, [{ name: "PDF text", csv: pdf.csv, rows: pdf.csv.split("\n").filter(Boolean).length }], "pdf text");
+        else units.push({ id: unitId(), fileName: name, text: null, bytes, sha256: sha256Bytes(bytes), encoding: "binary", detection: { ...detectFile(name, null), reason: pdf?.hasText ? "PDF text found but no table: needs text recognition (OCR)" : "Scanned PDF: needs text recognition (OCR)" }, month: monthFromName(name) });
+      } else if (BINARY.test(lower)) {
+        units.push({ id: unitId(), fileName: name, text: null, bytes, sha256: sha256Bytes(bytes), encoding: "binary", detection: detectFile(name, null), month: monthFromName(name) });
       } else {
-        const textual = TEXT_EXT.test(name) || !/\.[a-z0-9]{2,5}$/i.test(name);
-        const decoded = textual ? decodeText(bytes) : null;
-        units.push({
-          id: unitId(),
-          fileName: name,
-          text: decoded?.text ?? null,
-          bytes,
-          sha256: sha256Bytes(bytes),
-          encoding: decoded?.encoding ?? "binary",
-          detection: detectFile(name, decoded?.text ?? null),
-          month: monthFromName(name),
-        });
+        const { text, encoding } = decodeText(bytes);
+        pushText(name, bytes, text, encoding);
       }
     } catch (e) {
       errors.push(`${name}: ${(e as Error).message}`);
     }
   };
-  for (const f of files) add(f.name, f.bytes);
+  for (const f of files) await add(f.name, f.bytes);
   return { units, errors };
 }
 

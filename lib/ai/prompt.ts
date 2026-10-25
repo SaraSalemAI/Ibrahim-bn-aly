@@ -17,6 +17,7 @@ Structure: a short summary (3 to 5 sentences), then the most important findings 
 
 const MODULE_FOCUS: Record<string, string> = {
   close: "Review the close: explain each flagged anomaly in order of severity, say what could cause it and what evidence to ask for, then list what must be cleared before the period can be locked. Do not add findings that are not in the facts.",
+  "cash-forecast": "Explain the 13-week cash forecast: the tightest week and why, the biggest receipts and payments driving it, how much depends on collecting overdue receivables, and which assumption the analyst should check first. Do not invent receipts or financing.",
   trends: "Explain the month-by-month trend: direction of revenue, margins, cash and working capital, the biggest month-on-month moves and what to watch next month.",
   consolidation: "Explain the consolidated group position, the effect of intercompany eliminations, any unreconciled intercompany differences and the non-controlling interests.",
   overview: "Give an overall reading of performance, financial position and data quality.",

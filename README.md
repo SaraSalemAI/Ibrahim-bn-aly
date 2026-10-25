@@ -9,15 +9,25 @@ Try it: **Load complete sample company** on the home page loads a fictional Egyp
 
 ### Upload everything at once
 
-The dashboard has one drop zone for the whole close pack. Drop any mix of files and the app works out what each one is:
+The **Uploaded files** tab is the first thing on the AI CFO agent page (the same drop zone is on the dashboard and the ingestion center). Drop any mix of files and the app reads, recognises, imports, maps and validates them automatically:
 
-- **Formats**: CSV/TSV, Excel `.xlsx` (every sheet becomes its own file, read in the browser), `.zip` archives (folders and one nested zip level), SWIFT **MT940** and **OFX/QFX** bank statements, ETA e-invoice JSON/XML, UTF-8 or Windows-1256 Arabic.
+1. **Read**: every file is opened in the browser (formats below). Sheets holding several tables separated by blank rows are split into one file per table.
+2. **Recognise**: each table is scored on its headers and file name. Files seen in an earlier month (same name without dates or numbers) keep the type and role they had.
+3. **Import**: files recognised with at least the minimum confidence (60% by default) and with no unreadable rows are imported at once. Everything else is **held** with the reason: unrecognised, low confidence, read errors, a scanned document, or a second current/prior trial balance.
+4. **Map**: suggested account mappings at or above the threshold (85% by default) are accepted; in the full app the AI is asked about the rest, and its confident answers are accepted the same way. Lower ones wait for review on the mapping page.
+5. **Validate and advance**: every validation rule runs and the result is saved; the period moves to Mapped / Reconciled when every gate passes. It is never locked automatically.
+
+The run is recorded (files, held files and why, mappings accepted, accounts still to map, period status) and **Ask the agent about these files** sends the agent to review it. The 📎 button in the chat does all of this for files attached there. Automatic mode, the thresholds, AI mapping and auto-advance are switched under **Settings** next to the drop zone.
+
+- **Formats**: CSV/TSV, Excel `.xlsx` and legacy `.xls` (Excel 97-2003, read in the browser), HTML tables and Excel 2003 XML saved as `.xls` by ERPs, OpenDocument `.ods`, Word `.docx` tables, dBase `.dbf`, JSON record arrays, pipe-separated and fixed-width text reports (`.prn`, printed trial balances), digital **PDF** reports (text layer read in the browser), `.zip` archives (folders and one nested zip level), SWIFT **MT940** and **OFX/QFX** bank statements, ETA e-invoice JSON/XML, UTF-8 or Windows-1256 Arabic. `.xlsb` and Excel 5/95 files are refused with a message to re-save them.
+- **Headers**: Arabic and English synonyms for every field (spelling variants of alef, yaa and taa marbuta are treated as the same), two-row headers (Opening / Movement / Closing over Debit / Credit) merged into one.
 - **Detection**: each file is scored on its column headers and file name, with a confidence level; months are read from names such as `TB 2025-03.csv` or `ميزان مارس ٢٠٢٥`. You can change the type before importing.
-- **ERP presets**: exports from **Odoo, SAP Business One, QuickBooks and Dynamics 365** are recognised: report titles above the header are skipped, combined `1010 · Cash` account columns are split, a signed balance or amount becomes debit/credit, and dates or entry numbers given only on the first line of a journal are carried down.
+- **ERP presets**: exports from **Odoo, SAP Business One, QuickBooks, Dynamics 365, ERPNext, Zoho Books, Sage, Oracle** and Arabic-language ERPs are recognised: report titles above the header are skipped, combined `1010 · Cash` account columns are split, a signed balance or amount becomes debit/credit, and dates or entry numbers given only on the first line of a journal are carried down.
 - **Column matching**: when a column is not recognised, you match it once and the match is saved for that company.
 - **Before importing**: duplicate files and duplicate rows, entries outside the period (with a one-click fix when the files agree on another year), files covering different periods, foreign currencies without an exchange rate, and the subledger tie-out the import will produce.
 - **Trial balance roles**: current period, prior period (comparatives merged by account code) or one month for trends.
 - **Scanned PDFs and photos** (full app with AI): read into a bank statement, AR, AP or TB table that you review like any other file.
+- **Email intake** (full app with Supabase): attachments mailed to `tb+<workspace key>@<your inbound domain>` are stored by the `/api/intake` webhook (Postmark or a generic JSON body; needs `INTAKE_SECRET`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` and `supabase/migrations/0003_email_intake.sql`). **Check email inbox** on the upload tab imports them through the same pipeline. Not tested against a live mail provider or Supabase project.
 - **ETA portal** (full app with `ETA_CLIENT_ID` / `ETA_CLIENT_SECRET`): pulls the company's issued, valid e-invoices for the period, read-only. Signing and submitting still needs the company's e-seal and is not done here. Not yet tested against the live portal.
 
 ### Close, group and team
@@ -25,6 +35,8 @@ The dashboard has one drop zone for the whole close pack. Drop any mix of files 
 | Page | What it does |
 |---|---|
 | Close review (`/close-review`) | Readiness gates, tie-outs and rule-based anomaly flags with the rows behind them: weekend and out-of-period postings, large round amounts, material period-end entries, entries without a description, revenue debited against unusual accounts, possible duplicate postings, Benford first-digit test, balances on the unusual side, suspense accounts, large swings, AR credit balances and old debts, customer concentration, duplicate supplier invoices, missing supplier tax IDs, negative stock, staff without social insurance, bank differences. AI explains the flags; it adds none. |
+| Validation (upload tab and close review) | 50+ rules grouped by area: trial balance (balanced, prior balanced, duplicate or missing codes and names, both sides on one line, unmapped and pending mappings, balances on the unusual side, code format, balance-sheet equation), opening balances (prior column equals the last closed period, accounts carried, opening + GL movement = closing), general ledger (journals balance, GL movement per account equals the TB, accounts exist, in period, no future dates, zero or two-sided lines), AR, AP (net = gross − WHT, WHT rates, tax-ID format, duplicates), fixed assets, inventory roll-forward, payroll arithmetic, bank running balance, ETA (VAT rate, receiver tax ID, duplicate UUIDs), tie-outs and FX rates. A rounding tolerance applies to every rule and to the period gates. Saved runs show what broke and what was fixed since the last one. |
+| 13-week cash forecast (`/cash-forecast`) | Week-by-week receipts from open customer invoices (by due date plus a collection delay), supplier payments by due date, payroll at month end with insurance and salary tax on the 15th, overdue amounts spread over the first weeks at the rate you choose, and your own one-off, weekly or monthly items. Shows the lowest week and weeks below a minimum cash level. |
 | Monthly trends (`/trends`) | Monthly TBs (year-to-date P&L differenced automatically) as charts and a month-by-month table with margins and receivable days. |
 | Group consolidation (`/consolidation`) | Parent and subsidiaries with ownership %, intercompany balances and income/expense eliminated (recognised by name or tagged on the mapping page), unreconciled differences shown on their own line, investment against subsidiary share capital with goodwill, non-controlling interests; open the result as a company so every module runs on the group. Simplified: share capital stands in for net assets at acquisition. |
 | Period roll-forward (Audit page) | Locking a period freezes a hashed board pack (reopen it later from the Audit page). "Start next period" archives the period and carries closing balances forward (P&L closed to retained earnings at a year end) as opening balances and comparatives; the new TB can then be built from opening balances plus the GL. |
@@ -42,6 +54,7 @@ The **AI CFO agent** page (`/agent`) is a chat assistant that works on the selec
 | `run_forecast`, `run_sensitivity`, `run_valuation`, `run_stress_test` | What-if runs of the 3-statement model, sensitivity grid, DCF and FX/rate stress. Nothing is saved |
 | `get_close_review`, `search_gl`, `get_top_counterparties` | Ask your data: anomaly flags and readiness, a search over GL lines (text, account, dates, amounts), largest customers and suppliers |
 | `get_trends`, `get_consolidation`, `get_period_history` | Monthly trends, the group this company belongs to, closed periods and frozen board packs |
+| `get_upload_report`, `get_validation_report`, `get_cash_forecast` | What the last uploads imported and held, every validation rule with changes since the last run, the 13-week cash forecast |
 | `propose_adjusting_entry`, `propose_mapping_change` | Drafts only, with an impact preview. Nothing changes until you click **Post entry** / **Apply mapping**, and the approval is written to the audit log |
 
 Without AI (the HTML build, or a server with no AI Gateway key) the agent page switches to an offline mode: questions are routed by keywords to the same tools and the results are shown as tables, with no interpretation.
@@ -106,7 +119,7 @@ The workspace is saved in the browser (IndexedDB). Data leaves the browser only 
 
 ### Scripts
 
-- `npm test` — 101 Vitest tests: engines, subledgers, model balancing and solver convergence, tax, valuation, stress, audit chain, Excel formulas, agent tools and offline mode, API routes, file detection, ERP presets, xlsx/zip/MT940/OFX readers, batch checks, consolidation, roll-forward, trends, anomaly rules, ETA client and team sync (mocked servers)
+- `npm test` — 129 Vitest tests, including the .xls/.ods/.docx/.dbf/HTML/SpreadsheetML/PDF/fixed-width readers, Arabic and two-row headers, validation rules, the cash forecast, the automatic pipeline and email intake parsing: engines, subledgers, model balancing and solver convergence, tax, valuation, stress, audit chain, Excel formulas, agent tools and offline mode, API routes, file detection, ERP presets, xlsx/zip/MT940/OFX readers, batch checks, consolidation, roll-forward, trends, anomaly rules, ETA client and team sync (mocked servers)
 - `npm run lint` — ESLint with the Next.js core-web-vitals and TypeScript rules
 - `npm run typecheck`
 - `npm run build`

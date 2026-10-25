@@ -24,6 +24,7 @@ import Audit from "../app/audit/page";
 import BoardPack from "../app/board-pack/page";
 import CloseReview from "../app/close-review/page";
 import Trends from "../app/trends/page";
+import CashForecast from "../app/cash-forecast/page";
 import Consolidation from "../app/consolidation/page";
 import Team from "../app/team/page";
 
@@ -50,6 +51,7 @@ const ROUTES: Record<string, ComponentType> = {
   "/board-pack": BoardPack,
   "/close-review": CloseReview,
   "/trends": Trends,
+  "/cash-forecast": CashForecast,
   "/consolidation": Consolidation,
   "/team": Team,
 };

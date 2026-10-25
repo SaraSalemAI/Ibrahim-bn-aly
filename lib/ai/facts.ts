@@ -5,7 +5,7 @@ import type { Company, Workspace } from "../workspace/types";
 
 export const MODULES = [
   "overview", "company", "ingest", "mapping", "trial-balance", "statements", "cash-flow", "budget", "model",
-  "analysis", "scenarios", "tax", "disclosures", "benchmarking", "valuation", "stress", "export", "audit", "close", "trends", "consolidation",
+  "analysis", "scenarios", "tax", "disclosures", "benchmarking", "valuation", "stress", "export", "audit", "close", "trends", "consolidation", "cash-forecast",
 ] as const;
 export type ModuleId = (typeof MODULES)[number];
 
@@ -134,6 +134,8 @@ export function moduleFacts(module: ModuleId, c: Company, k: Computed, ws?: Pick
       };
     case "trends":
       return { ...base, ytdFiles: c.monthlyYtd, months: r.trend, summary: r.trendSummary ?? "no monthly trial balances loaded" };
+    case "cash-forecast":
+      return { ...base, assumptions: { ...c.cashForecast, items: c.cashForecast.items.map((i) => ({ name: i.name, amount: i.amount, every: i.every, fromWeek: i.week })) }, forecast: r.cashForecast, loaded: { receivables: c.subledgers.ar.length, payables: c.subledgers.ap.length, payroll: c.subledgers.payroll.length } };
     case "consolidation":
       return { ...base, note: "Consolidation facts are computed on the consolidation page; this is the parent company only." };
     case "audit": {

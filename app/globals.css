@@ -342,3 +342,15 @@ button.small { font-size: 0.78rem; padding: 3px 8px; }
 .line-series.series-1 circle { stroke: var(--s1); }
 .line-series.series-2 circle { stroke: var(--s2, var(--warn)); }
 .line-series.series-3 circle { stroke: var(--s3, var(--muted)); }
+
+/* Agent tabs, automatic upload and validation */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin: 0 0 14px; flex-wrap: wrap; }
+.tabs .tab { background: transparent; color: var(--muted); border: 1px solid transparent; border-bottom: none; border-radius: 8px 8px 0 0; padding: 8px 14px; font-weight: 600; }
+.tabs .tab.active { color: var(--accent); border-color: var(--border); background: var(--accent-soft); }
+.auto-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 0 4px; }
+.phases { list-style: none; display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 0; margin: 10px 0; }
+.phases li.now { color: var(--accent); font-weight: 600; }
+.phases li.ok { color: var(--good); }
+.phases li.todo { color: var(--muted); }
+.validation-area h4 { margin: 14px 0 4px; }
+.composer > button.ghost[aria-label] { align-self: stretch; padding: 0 12px; font-size: 1.1rem; }
