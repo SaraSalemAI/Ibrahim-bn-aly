@@ -3,6 +3,7 @@
 
 import type { ConsoleSpec } from "./spec";
 import { MORE_TEMPLATES } from "./templates-more";
+import { FIELD_AGENTS } from "./templates-agents";
 
 export interface ConsoleTemplate {
   id: string;
@@ -10,6 +11,8 @@ export interface ConsoleTemplate {
   description: string;
   /** Group shown in the studio: Start, Business, Agents, Tools, Data, Fun. */
   category?: string;
+  /** Field or industry, for agent samples (e.g. Health, Education). */
+  field?: string;
   /** Easy steps: commands to run in order, shown with a Run button each. */
   steps?: string[];
   spec: ConsoleSpec;
@@ -187,4 +190,8 @@ export const TEMPLATES: ConsoleTemplate[] = [
     },
   },
   ...MORE_TEMPLATES,
+  ...FIELD_AGENTS,
 ];
+
+const FIELDS: Record<string, string> = { "support-agent": "Customer service", "sales-agent": "Sales", "hr-agent": "HR", "travel-agent": "Travel", "tutor-agent": "Education", "marketing-agent": "Marketing", "pm-agent": "Projects", "coach-agent": "Health", "budget-agent": "Finance", "recruiter-agent": "HR" };
+for (const t of TEMPLATES) if (!t.field && FIELDS[t.id]) t.field = FIELDS[t.id];

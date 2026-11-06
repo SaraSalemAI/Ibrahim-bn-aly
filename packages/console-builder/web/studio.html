@@ -132,6 +132,15 @@ textarea#editor { height: 470px; font: 12px/1.55 var(--font-code); tab-size: 2; 
 .steps li .n { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font-size: 12px; color: var(--muted); }
 .steps li.done .n { background: var(--accent); border-color: var(--accent); color: var(--bg); }
 .steps li code { flex: 1; overflow-wrap: anywhere; }
+.libsec { display: flex; flex-direction: column; gap: 8px; }
+.liblist { display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto; padding-right: 4px; }
+.libitem { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--raised); display: flex; flex-direction: column; gap: 6px; }
+.libitem .meta { display: flex; justify-content: space-between; gap: 6px; font-size: 11.5px; color: var(--muted); }
+.libitem .cat { color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.libitem pre { margin: 0; white-space: pre-wrap; font: 12px/1.45 var(--font-code); color: var(--muted); max-height: 84px; overflow: hidden; }
+.libitem .acts { display: flex; flex-wrap: wrap; gap: 6px; }
+.steps li .what { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.steps li .what span { font-size: 12.5px; color: var(--muted); }
 .samplefiles { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 @media (max-width: 640px) { .guide { grid-template-columns: 1fr; } }
 .tpl-grid { max-height: 620px; overflow-y: auto; padding-right: 4px; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
@@ -223,7 +232,7 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
   <header class="top">
     <div class="brand">
       <h1>console<span class="caret">_</span>builder studio</h1>
-      <p>Build your own command console in 3 easy steps. No code needed. Copyright © Sara Salem 2026</p>
+      <p>Build your own console or agent in 3 easy steps — 44 templates, 30 agents, a prompt library. No code needed. Copyright © Sara Salem 2026</p>
     </div>
     <div class="top-actions">
       <button class="btn primary" id="runapp" type="button">▶ Run as web app</button>
@@ -254,6 +263,7 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
       <div class="panel-head"><h2 id="build-h">Build</h2></div>
       <div class="tabs" role="tablist" aria-label="Ways to build">
         <button class="tab" role="tab" id="tab-tpl" aria-controls="pane-tpl" aria-selected="true" type="button">Start here</button>
+        <button class="tab" role="tab" id="tab-lib" aria-controls="pane-lib" aria-selected="false" type="button">Library</button>
         <button class="tab" role="tab" id="tab-files" aria-controls="pane-files" aria-selected="false" type="button">Upload files <span id="filecount" class="label"></span></button>
         <button class="tab" role="tab" id="tab-prompt" aria-controls="pane-prompt" aria-selected="false" type="button">Describe</button>
         <button class="tab" role="tab" id="tab-json" aria-controls="pane-json" aria-selected="false" type="button">JSON <span class="dot" id="jsondot" hidden></span></button>
@@ -267,8 +277,22 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
         <div class="panel-head">
           <button class="btn primary" id="generate" type="button">Build with Claude</button>
           <button class="btn" id="stopgen" type="button" hidden>Stop</button>
+          <button class="btn" id="saveprompt" type="button">Save prompt to library</button>
         </div>
         <p id="genstatus" aria-live="polite"></p>
+      </div>
+
+      <div class="tabpanel" role="tabpanel" id="pane-lib" aria-labelledby="tab-lib" hidden>
+        <div class="libsec">
+          <span class="label">Prompt library · ready text prompts to build agents</span>
+          <div class="catbar"><select class="field" id="libfield" aria-label="Field"></select><input class="field" id="libsearch" type="search" placeholder="Search prompts…" aria-label="Search prompts"></div>
+          <div class="liblist" id="promptlist"></div>
+        </div>
+        <div class="libsec">
+          <span class="label">My library · your saved consoles and prompts (kept in this browser)</span>
+          <div class="catbar"><input class="field" id="savename" placeholder="Name for this console" aria-label="Console name"><button class="btn primary small" id="saveconsole" type="button">Save current console</button></div>
+          <div class="liblist" id="mylist"></div>
+        </div>
       </div>
 
       <div class="tabpanel" role="tabpanel" id="pane-files" aria-labelledby="tab-files" hidden>
@@ -414,7 +438,7 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
   }
 
   /* ---------- tabs ---------- */
-  const tabs = ["tpl", "files", "prompt", "json"];
+  const tabs = ["tpl", "lib", "files", "prompt", "json"];
   function showTab(name) {
     for (const t of tabs) {
       $("tab-" + t).setAttribute("aria-selected", String(t === name));
@@ -539,7 +563,7 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
   let cat = "All";
   for (const t of CB.TEMPLATES) {
     const b = el("button", "tpl"); b.type = "button"; b.dataset.id = t.id; b.dataset.cat = t.category || "Other"; b.setAttribute("aria-pressed", "false");
-    const meta = el("span", "meta"); meta.append(el("span", "cat", t.category || "Other"), el("span", undefined, `${(t.steps || []).length} steps`));
+    const meta = el("span", "meta"); meta.append(el("span", "cat", t.field ? `${t.category} · ${t.field}` : t.category || "Other"), el("span", undefined, `${(t.steps || []).length} easy steps`));
     b.append(meta, el("strong", undefined, t.title), el("span", undefined, t.description));
     b.onclick = () => { activeTpl = t.id; editor.value = pretty(t.spec); setNotice(`Loaded ${t.title}. Follow the easy steps next to the console.`); update(true); if (innerWidth < 900) $("stepsbox").scrollIntoView({ behavior: "smooth", block: "start" }); };
     tplButtons.push(b); $("templates").append(b);
@@ -571,9 +595,19 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
       const go = el("button", "btn small", "▶"); go.type = "button"; go.setAttribute("aria-label", `Run step ${i + 1}: ${s}`);
       go.onclick = () => runStep(s);
       const useb = el("button", "btn small", "Edit"); useb.type = "button"; useb.title = "Put it in the console to change the numbers"; useb.onclick = () => mounted.setInput(s);
-      li.append(el("span", "n", String(i + 1)), el("code", undefined, s), go, useb);
+      const what = el("div", "what");
+      what.append(el("strong", undefined, stepLabel(s, i)), el("code", undefined, "Type: " + s));
+      li.append(el("span", "n", String(i + 1)), what, go, useb);
       ol.append(li);
     });
+  }
+  function stepLabel(line, i) {
+    const words = line.trim().split(/\s+/);
+    let best = null;
+    for (const c of cli.commands()) { const p = c.path; if (p.every((w, j) => words[j] === w) && (!best || p.length > best.path.length)) best = c; }
+    if (!best) return `Step ${i + 1}`;
+    const text = String(best.summary || "").replace(/^Step \d+:\s*/i, "");
+    return text ? text[0].toUpperCase() + text.slice(1) : `Step ${i + 1}`;
   }
   async function runStep(s) {
     await mounted.run(s);
@@ -715,6 +749,53 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     loadSpec(built, `Built a data console from ${files.length} file${files.length > 1 ? "s" : ""}.`);
   };
   $("todescribe").onclick = () => { showTab("prompt"); $("prompt").focus(); };
+
+  /* ---------- library ---------- */
+  const LIB = "console-builder-studio.library.v1";
+  const loadLib = () => { try { const v = JSON.parse(store.get(LIB) || "[]"); return Array.isArray(v) ? v : []; } catch { return []; } };
+  const saveLib = (items) => store.set(LIB, JSON.stringify(items));
+  const usePrompt = (text) => { $("prompt").value = text; showTab("prompt"); $("prompt").focus(); setNotice("Prompt ready. Press Build with Claude, or edit it first."); };
+  const fields = ["All fields", ...new Set(CB.PROMPT_LIBRARY.map((p) => p.field))];
+  for (const f of fields) $("libfield").append(new Option(f, f));
+  function libItem(metaLeft, metaRight, title, body, actions) {
+    const box = el("div", "libitem"), meta = el("div", "meta"), acts = el("div", "acts");
+    meta.append(el("span", "cat", metaLeft), el("span", undefined, metaRight));
+    for (const [label, fn, primary] of actions) { const b = el("button", primary ? "btn primary small" : "btn small", label); b.type = "button"; b.onclick = fn; acts.append(b); }
+    box.append(meta, el("strong", undefined, title), el("pre", undefined, body), acts);
+    return box;
+  }
+  function renderPrompts() {
+    const f = $("libfield").value, q = $("libsearch").value.trim().toLowerCase();
+    const list = $("promptlist"); list.replaceChildren();
+    const items = CB.PROMPT_LIBRARY.filter((p) => (f === "All fields" || p.field === f) && (!q || (p.title + p.field + p.prompt).toLowerCase().includes(q)));
+    for (const p of items) list.append(libItem(p.field, "text prompt", p.title, p.prompt, [["Use this prompt", () => usePrompt(p.prompt), true], ["Copy", () => copy(p.prompt, "Prompt copied. Paste it into any AI chat.")]]));
+    if (!items.length) list.append(el("p", "hint", "No prompts match. Clear the search."));
+  }
+  function renderMine() {
+    const list = $("mylist"); list.replaceChildren();
+    const items = loadLib();
+    if (!items.length) return list.append(el("p", "hint", "Nothing saved yet. Save the current console here, or save a prompt from the Describe tab."));
+    items.forEach((it, i) => {
+      const del = () => { const all = loadLib(); all.splice(i, 1); saveLib(all); renderMine(); setNotice(`Removed ${it.name}.`); };
+      if (it.kind === "prompt") list.append(libItem("My prompt", new Date(it.at).toLocaleDateString(), it.name, it.prompt, [["Use", () => usePrompt(it.prompt), true], ["Copy", () => copy(it.prompt, "Prompt copied.")], ["Delete", del]]));
+      else list.append(libItem("My console", `${(it.spec.commands || []).length} commands`, it.name, it.spec.welcome || "", [["Open", () => { loadSpec(it.spec, `Opened ${it.name} from your library.`); }, true], ["Delete", del]]));
+    });
+  }
+  $("libfield").onchange = renderPrompts; $("libsearch").oninput = renderPrompts;
+  $("saveconsole").onclick = () => {
+    if (!current) return setNotice("Fix the console first, then save it.");
+    const name = $("savename").value.trim() || current.name;
+    saveLib([{ kind: "console", name, spec: current, at: Date.now() }, ...loadLib()].slice(0, 60));
+    $("savename").value = ""; renderMine(); setNotice(`Saved ${name} to your library.`);
+  };
+  $("saveprompt").onclick = () => {
+    const text = $("prompt").value.trim();
+    if (!text) return setNotice("Write a prompt first.");
+    const name = text.split(/[.:\n]/)[0].slice(0, 60);
+    saveLib([{ kind: "prompt", name, prompt: text, at: Date.now() }, ...loadLib()].slice(0, 60));
+    renderMine(); setNotice(`Saved the prompt "${name}" to your library.`);
+  };
+  renderPrompts(); renderMine();
 
   /* ---------- build with Claude ---------- */
   for (const idea of IDEAS) { const b = el("button", "chip", idea.split(":")[0]); b.type = "button"; b.title = idea; b.onclick = () => { $("prompt").value = idea; $("prompt").focus(); }; $("ideas").append(b); }

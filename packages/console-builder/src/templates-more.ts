@@ -3,13 +3,13 @@
 
 import type { ConsoleTemplate } from "./templates";
 
-const num = (name: string, description?: string) => ({ name, type: "number" as const, positional: true, required: true, ...(description ? { description } : {}) });
-const text = (name: string, description?: string) => ({ name, type: "string" as const, positional: true, required: true, rest: true, ...(description ? { description } : {}) });
-const pick = (name: string, choices: string[]) => ({ name, type: "enum" as const, choices, positional: true, required: true });
-const say = (t: string, tone: "ok" | "info" | "warn" | "muted" = "info") => ({ type: "print" as const, text: t, tone });
+export const num = (name: string, description?: string) => ({ name, type: "number" as const, positional: true, required: true, ...(description ? { description } : {}) });
+export const text = (name: string, description?: string) => ({ name, type: "string" as const, positional: true, required: true, rest: true, ...(description ? { description } : {}) });
+export const pick = (name: string, choices: string[]) => ({ name, type: "enum" as const, choices, positional: true, required: true });
+export const say = (t: string, tone: "ok" | "info" | "warn" | "muted" = "info") => ({ type: "print" as const, text: t, tone });
 
 /** An agent sample: a `start` command that explains the steps, then one command per step. */
-function agent(id: string, title: string, description: string, intro: string, steps: string[], commands: ConsoleTemplate["spec"]["commands"], vars?: Record<string, string>): ConsoleTemplate {
+export function agent(id: string, title: string, description: string, intro: string, steps: string[], commands: ConsoleTemplate["spec"]["commands"], vars?: Record<string, string>): ConsoleTemplate {
   return {
     id,
     title,

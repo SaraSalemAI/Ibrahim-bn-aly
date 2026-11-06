@@ -9,6 +9,7 @@ export { calc } from "./calc";
 export { buildFromSpec, parseSpec, interpolate, addBuiltins, consoleSpecSchema, actionSchema } from "./spec";
 export type { ConsoleSpec, ConsoleAction, SpecContext, Row } from "./spec";
 export { TEMPLATES } from "./templates";
+export { PROMPT_LIBRARY, type PromptIdea } from "./prompts";
 export { parseDelimited, loadFile, specFromDatasets, buildPrompt, extractJson, summarizeDatasets, datasetName, SPEC_GUIDE } from "./generate";
 export type { LoadedFile, DatasetSummary } from "./generate";
 export type { ConsoleTemplate } from "./templates";
