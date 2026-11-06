@@ -1,0 +1,806 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Claude Skills Video</title>
+<style>
+
+:root{
+  --coral:#D97757; --peach:#F2A47E; --violet:#8B7CF6; --teal:#3CC8B4; --gold:#F5C46B;
+  --cream:#F6F2EC; --muted:#A9A6B8; --ink:#0A0B14;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:var(--ink);
+  font-family:Inter,"DejaVu Sans",sans-serif;color:var(--cream);-webkit-font-smoothing:antialiased}
+#bg{position:absolute;inset:0;width:1920px;height:1080px}
+.scene{position:absolute;inset:0;perspective:1600px;display:none;transform-style:preserve-3d}
+.a{will-change:transform,opacity}
+svg.ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:block}
+
+/* ---------- typography ---------- */
+.kicker{font-size:22px;letter-spacing:.32em;text-transform:uppercase;color:var(--peach);font-weight:600}
+.h1{font-family:"Inter Display",Inter;font-weight:800;font-size:92px;line-height:1.02;letter-spacing:-.02em;margin:0}
+.h2{font-family:"Inter Display",Inter;font-weight:800;font-size:68px;line-height:1.05;letter-spacing:-.015em;margin:0}
+.lead{font-size:30px;line-height:1.45;color:#D9D5E2;font-weight:400}
+.grad{background:linear-gradient(90deg,var(--peach),var(--coral) 45%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.num{font-family:"Inter Display";font-weight:800;color:var(--coral)}
+
+.card{background:linear-gradient(150deg,rgba(255,255,255,.10),rgba(255,255,255,.025));
+  border:1px solid rgba(255,255,255,.14);border-radius:26px;box-shadow:0 30px 80px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.12)}
+.chip{display:inline-flex;align-items:center;gap:12px;padding:12px 24px;border-radius:999px;
+  background:rgba(217,119,87,.14);border:1px solid rgba(217,119,87,.5);color:var(--peach);font-weight:600;font-size:24px}
+.icbox{width:84px;height:84px;border-radius:22px;display:grid;place-items:center;font-size:44px;color:#fff;
+  background:linear-gradient(140deg,var(--coral),#B4543A);box-shadow:0 14px 40px rgba(217,119,87,.45)}
+.icbox.v{background:linear-gradient(140deg,var(--violet),#5B4BD1);box-shadow:0 14px 40px rgba(139,124,246,.45)}
+.icbox.t{background:linear-gradient(140deg,var(--teal),#1F8F80);box-shadow:0 14px 40px rgba(60,200,180,.4)}
+.icbox.g{background:linear-gradient(140deg,var(--gold),#C98A24);box-shadow:0 14px 40px rgba(245,196,107,.4)}
+
+/* ---------- HUD ---------- */
+#hud{position:absolute;inset:0;pointer-events:none}
+#brandTL{position:absolute;left:64px;top:48px;display:flex;align-items:center;gap:14px;font-weight:700;font-size:24px;letter-spacing:.02em}
+#brandTL .star{width:34px;height:34px;color:var(--coral)}
+#chapter{position:absolute;right:64px;top:50px;font-size:20px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600}
+#chapter b{color:var(--peach);margin-right:14px}
+#credit{position:absolute;left:64px;bottom:44px;display:flex;align-items:center;gap:16px;padding:10px 26px 10px 10px;border-radius:999px;
+  background:rgba(10,11,20,.55);border:1px solid rgba(255,255,255,.14)}
+#credit img{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--coral)}
+#credit span{font-size:22px;color:#E9E5F0}
+#credit b{color:var(--peach);font-weight:700}
+#prog{position:absolute;left:0;bottom:0;height:5px;width:0;background:linear-gradient(90deg,var(--coral),var(--violet))}
+#tick{position:absolute;right:64px;bottom:56px;font-size:20px;color:var(--muted);letter-spacing:.12em;font-variant-numeric:tabular-nums}
+
+/* ---------- S1 intro ---------- */
+#s1 .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;transform-style:preserve-3d}
+.cubeWrap{width:220px;height:220px;perspective:1000px;margin-bottom:56px}
+.cube{position:relative;width:220px;height:220px;transform-style:preserve-3d}
+.cube .f{position:absolute;inset:0;display:grid;place-items:center;font-size:96px;color:#fff;border-radius:30px;
+  border:2px solid rgba(255,255,255,.35);background:linear-gradient(140deg,rgba(217,119,87,.92),rgba(139,124,246,.85));
+  box-shadow:inset 0 0 60px rgba(255,255,255,.18)}
+.title3d{font-family:"Inter Display";font-weight:900;font-size:150px;letter-spacing:-.03em;line-height:1;display:flex;transform-style:preserve-3d}
+.title3d span{display:inline-block;transform-origin:50% 100%;
+  text-shadow:0 1px 0 #c9603f,0 2px 0 #b9563a,0 3px 0 #a94d34,0 4px 0 #99442e,0 5px 0 #893b28,0 12px 30px rgba(0,0,0,.6)}
+.title3d .sp{width:42px}
+
+/* ---------- S2 what ---------- */
+.split{position:absolute;left:120px;right:110px;top:150px;bottom:140px;display:grid;grid-template-columns:720px 1fr;gap:70px;align-items:center}
+.bul{display:flex;gap:20px;align-items:flex-start;font-size:28px;line-height:1.4;margin-top:26px;color:#E6E2EE}
+.bul i{flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:24px;background:rgba(217,119,87,.18);color:var(--peach);margin-top:-2px}
+.mock{width:940px;height:600px;border-radius:22px;overflow:hidden;background:#15151F;border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 60px 120px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.4);transform-style:preserve-3d}
+.mbar{height:46px;background:#1D1D29;display:flex;align-items:center;gap:9px;padding:0 18px;border-bottom:1px solid rgba(255,255,255,.07)}
+.mbar i{width:13px;height:13px;border-radius:50%;background:#FF5F57}.mbar i:nth-child(2){background:#FEBC2E}.mbar i:nth-child(3){background:#28C840}
+.mbar span{margin-left:18px;font-size:16px;color:#8D8AA0;background:#14141D;padding:5px 16px;border-radius:8px}
+.mbody{display:grid;grid-template-columns:340px 1fr;height:554px}
+.chat{padding:22px 18px;border-right:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;gap:16px;background:#191923}
+.bub{font-size:17px;line-height:1.45;padding:14px 16px;border-radius:16px}
+.bub.u{background:#2B2A3A;align-self:flex-end;max-width:90%}
+.bub.c{background:transparent;color:#DCD8E6;padding-left:4px}
+.achip{display:flex;align-items:center;gap:12px;background:#22222F;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px 14px;font-size:16px}
+.achip .ib{width:40px;height:40px;border-radius:10px;background:rgba(217,119,87,.2);color:var(--peach);display:grid;place-items:center;font-size:22px}
+.achip small{display:block;color:#8D8AA0;font-size:13px;margin-top:2px}
+.pane{position:relative;background:#101018}
+.tabs{display:flex;gap:6px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.07)}
+.tabs b{font-size:15px;font-weight:600;padding:7px 16px;border-radius:8px;color:#8D8AA0}
+.tabs b.on{background:#262636;color:#fff}
+.tabs .ver{margin-left:auto;font-size:14px;color:#8D8AA0;padding:7px 4px}
+pre#code{margin:0;padding:18px 22px;font:15.5px/1.6 "DejaVu Sans Mono",monospace;color:#CFCBDA;white-space:pre}
+pre#code .k{color:#F2A47E}pre#code .s{color:#7ED6C4}pre#code .c{color:#6E6B80}pre#code .f{color:#A99BFF}
+.cursor{display:inline-block;width:9px;height:18px;background:var(--coral);vertical-align:-3px}
+#prev{position:absolute;left:0;right:0;top:56px;bottom:0;background:linear-gradient(160deg,#FFF8F3,#F4ECFF);color:#1d1b29;padding:30px 36px;opacity:0}
+#prev h4{margin:0 0 6px;font-size:28px;font-weight:800}
+#prev p{margin:0 0 20px;color:#6b6780;font-size:16px}
+.hrow{display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:13px 16px;margin-bottom:11px;box-shadow:0 4px 14px rgba(40,20,60,.08);font-size:18px;font-weight:600}
+.hrow .dots{margin-left:auto;display:flex;gap:7px}
+.hrow .dots i{width:22px;height:22px;border-radius:7px;background:#EEE9F5}
+.hrow .dots i.on{background:var(--coral)}
+.bar2{height:10px;border-radius:9px;background:#EEE9F5;margin-top:16px;overflow:hidden}
+.bar2 i{display:block;height:100%;width:72%;background:linear-gradient(90deg,var(--coral),var(--violet))}
+
+/* ---------- S3 types carousel ---------- */
+.center-head{position:absolute;left:0;right:0;top:120px;text-align:center}
+.stage3d{position:absolute;left:50%;top:600px;width:0;height:0;transform-style:preserve-3d}
+.ring{position:absolute;transform-style:preserve-3d}
+.tcard{position:absolute;left:-210px;top:-230px;width:420px;height:440px;padding:42px 38px;display:flex;flex-direction:column;gap:22px;backface-visibility:hidden}
+.tcard h3{margin:0;font-size:40px;font-weight:800}
+.tcard p{margin:0;font-size:24px;line-height:1.45;color:#D4D0DE}
+.tcard .tag{margin-top:auto;font:17px "DejaVu Sans Mono",monospace;color:var(--peach);background:rgba(217,119,87,.12);padding:8px 14px;border-radius:10px;align-self:flex-start}
+.tcount{position:absolute;left:0;right:0;bottom:120px;text-align:center;font-size:24px;color:var(--muted);letter-spacing:.2em}
+.dotsRow{display:flex;justify-content:center;gap:14px;margin-top:16px}
+.dotsRow i{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.2)}
+.dotsRow i.on{background:var(--coral);width:40px;border-radius:8px}
+
+/* ---------- S4 pipeline ---------- */
+.floor{position:absolute;left:110px;right:110px;top:380px;height:470px;transform-style:preserve-3d}
+.pipe{position:absolute;left:120px;right:120px;top:120px;height:6px;border-radius:6px;background:rgba(255,255,255,.12)}
+.pipe .fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:6px;background:linear-gradient(90deg,var(--coral),var(--violet))}
+.pipe .pulse{position:absolute;top:-12px;width:30px;height:30px;border-radius:50%;background:#fff;box-shadow:0 0 30px 12px rgba(242,164,126,.8);margin-left:-15px}
+.nodes{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,1fr)}
+.node{display:flex;flex-direction:column;align-items:center;text-align:center;transform-style:preserve-3d}
+.node .orb{width:240px;height:240px;border-radius:50%;display:grid;place-items:center;font-size:84px;color:#fff;
+  background:radial-gradient(circle at 35% 30%,#3a3550,#1a1826 70%);border:2px solid rgba(255,255,255,.14);box-shadow:0 30px 60px rgba(0,0,0,.5)}
+.node .orb.on{background:radial-gradient(circle at 35% 30%,#F7B48F,#D97757 55%,#8E3F27);border-color:rgba(255,255,255,.5);box-shadow:0 0 60px rgba(217,119,87,.7),0 30px 60px rgba(0,0,0,.5)}
+.node .step{margin-top:26px;font-size:20px;letter-spacing:.25em;color:var(--peach);font-weight:700}
+.node h4{margin:8px 0 8px;font-size:38px;font-weight:800}
+.node p{margin:0;font-size:22px;line-height:1.4;color:#CFCBDA;max-width:300px}
+
+/* ---------- S5 when ---------- */
+.cols{position:absolute;left:150px;right:150px;top:330px;display:grid;grid-template-columns:1fr 1fr;gap:60px}
+.col{padding:44px 50px}
+.col h3{display:flex;align-items:center;gap:18px;margin:0 0 26px;font-size:40px;font-weight:800}
+.col h3 i{width:62px;height:62px;border-radius:18px;display:grid;place-items:center;font-size:34px}
+.col.yes h3 i{background:rgba(60,200,180,.18);color:var(--teal)}
+.col.no h3 i{background:rgba(255,110,110,.15);color:#FF8A80}
+.li{display:flex;gap:16px;align-items:center;font-size:28px;line-height:1.35;padding:13px 0;border-top:1px solid rgba(255,255,255,.08);color:#E6E2EE}
+.li i{flex:none;font-size:26px}
+.col.yes .li i{color:var(--teal)}.col.no .li i{color:#FF8A80}
+.tipbar{position:absolute;left:0;right:0;bottom:150px;display:flex;justify-content:center}
+
+/* ---------- S6 features ---------- */
+.grid3{position:absolute;left:130px;right:130px;top:300px;display:grid;grid-template-columns:repeat(3,1fr);gap:34px;transform-style:preserve-3d}
+.feat{padding:34px 36px;display:flex;gap:26px;align-items:flex-start;min-height:230px;transform-origin:50% 0}
+.feat h4{margin:0 0 10px;font-size:32px;font-weight:800}
+.feat p{margin:0;font-size:22px;line-height:1.45;color:#CFCBDA}
+.vline{position:absolute;left:0;right:0;bottom:120px;display:flex;justify-content:center;align-items:center;gap:0}
+.vdot{display:flex;flex-direction:column;align-items:center;gap:10px;width:200px;font-size:20px;color:var(--muted);font-weight:600}
+.vdot i{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.15);border:3px solid rgba(255,255,255,.25)}
+.vdot.on i{background:var(--coral);border-color:#fff;box-shadow:0 0 24px var(--coral)}
+.vdot.on{color:#fff}
+.vseg{width:120px;height:4px;background:rgba(255,255,255,.15);margin-top:-36px;position:relative;overflow:hidden;border-radius:4px}
+.vseg b{position:absolute;inset:0;width:0;background:var(--coral)}
+
+/* ---------- S7 AI powered ---------- */
+.hub{position:absolute;left:1340px;top:570px;width:0;height:0;transform-style:preserve-3d}
+.core{position:absolute;left:-120px;top:-120px;width:240px;height:240px;border-radius:50%;display:grid;place-items:center;font-size:100px;color:#fff;
+  background:radial-gradient(circle at 35% 30%,#FFC9A8,#D97757 50%,#6E2E1C);box-shadow:0 0 120px rgba(217,119,87,.75)}
+.orbit{position:absolute;border:2px dashed rgba(255,255,255,.18);border-radius:50%}
+.sat{position:absolute;width:250px;margin-left:-125px;margin-top:-62px;padding:18px 20px;display:flex;align-items:center;gap:16px;font-size:23px;font-weight:700}
+.sat .icbox{width:60px;height:60px;font-size:30px;border-radius:16px;flex:none}
+.sat small{display:block;font-size:16px;color:var(--muted);font-weight:500;margin-top:3px}
+#links{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:visible}
+.left7{position:absolute;left:120px;top:250px;width:740px}
+
+/* ---------- S8 use cases ---------- */
+.tilt{position:absolute;left:50%;top:640px;width:1640px;margin-left:-820px;transform-style:preserve-3d}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:30px;transform-style:preserve-3d}
+.uc{height:250px;padding:30px;display:flex;flex-direction:column;gap:16px}
+.uc h4{margin:0;font-size:30px;font-weight:800}
+.uc p{margin:0;font-size:20px;line-height:1.4;color:#CFCBDA}
+.uc .icbox{width:66px;height:66px;font-size:34px;border-radius:18px}
+
+/* ---------- S9 share ---------- */
+.urlcard{position:absolute;left:50%;top:430px;width:1100px;margin-left:-550px;padding:34px 40px;display:flex;align-items:center;gap:26px}
+.urlbox{flex:1;font:24px "DejaVu Sans Mono",monospace;color:#EDE9F5;background:rgba(0,0,0,.35);padding:22px 26px;border-radius:16px;border:1px solid rgba(255,255,255,.1);white-space:nowrap;overflow:hidden}
+.urlbox b{color:var(--peach);font-weight:400}
+.btn{padding:22px 34px;border-radius:16px;font-size:26px;font-weight:700;background:linear-gradient(140deg,var(--coral),#B4543A);color:#fff;display:flex;gap:12px;align-items:center;box-shadow:0 14px 40px rgba(217,119,87,.45)}
+.ripple{position:absolute;left:50%;top:505px;border-radius:50%;border:3px solid var(--coral)}
+.steps4{position:absolute;left:150px;right:150px;top:680px;display:grid;grid-template-columns:repeat(4,1fr);gap:30px}
+.st{padding:30px 30px;text-align:left}
+.st .n{font-size:22px;color:var(--peach);font-weight:800;letter-spacing:.2em}
+.st h4{margin:10px 0 8px;font-size:30px;font-weight:800}
+.st p{margin:0;font-size:21px;line-height:1.4;color:#CFCBDA}
+
+/* ---------- S10 tips ---------- */
+.tips{position:absolute;left:150px;right:150px;top:300px;display:grid;grid-template-columns:1fr 1fr;gap:26px 50px}
+.tip{display:flex;gap:28px;align-items:center;padding:26px 34px}
+.tip .big{font-family:"Inter Display";font-weight:900;font-size:72px;line-height:1;width:96px;flex:none;text-align:center}
+.tip h4{margin:0 0 6px;font-size:30px;font-weight:800}
+.tip p{margin:0;font-size:22px;line-height:1.4;color:#CFCBDA}
+
+/* ---------- S11 recap ---------- */
+.recap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;transform-style:preserve-3d}
+.extr{font-family:"Inter Display";font-weight:900;font-size:136px;letter-spacing:-.02em;display:flex;gap:48px;transform-style:preserve-3d}
+.extr span{display:inline-block;
+  text-shadow:0 2px 0 #c9603f,0 4px 0 #b9563a,0 6px 0 #a94d34,0 8px 0 #99442e,0 10px 0 #893b28,0 12px 0 #793322,0 26px 40px rgba(0,0,0,.6)}
+.extr em{font-style:normal;color:var(--coral);text-shadow:none}
+.pills{display:flex;gap:18px;margin-top:60px;flex-wrap:wrap;justify-content:center;max-width:1500px}
+.pills .chip{font-size:24px}
+
+/* ---------- S12 outro ---------- */
+.outro{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:0 150px 0 170px;transform-style:preserve-3d}
+.photoStage{position:relative;height:900px;display:grid;place-items:center;transform-style:preserve-3d}
+.photoCard{width:470px;height:840px;border-radius:36px;overflow:hidden;background:#fff;position:relative;
+  box-shadow:0 60px 140px rgba(0,0,0,.65),0 0 0 6px rgba(255,255,255,.08),0 0 90px rgba(217,119,87,.45)}
+.photoCard img{width:100%;height:100%;object-fit:cover;object-position:50% 40%}
+.photoCard .shine{position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.55) 45%,transparent 60%);mix-blend-mode:overlay}
+.ringO{position:absolute;left:50%;top:50%;border-radius:50%;border:2px solid rgba(242,164,126,.45);transform-style:preserve-3d}
+.byline{font-size:28px;letter-spacing:.3em;text-transform:uppercase;color:var(--peach);font-weight:700}
+.name{font-family:"Inter Display";font-weight:900;font-size:128px;line-height:.98;letter-spacing:-.03em;margin:16px 0 26px}
+.thanks{font-size:34px;color:#E2DEEA;line-height:1.5}
+.sig{margin-top:40px;display:flex;gap:16px;flex-wrap:wrap}
+
+/* ---------- skills-specific ---------- */
+.win{border-radius:22px;overflow:hidden;background:#13131C;border:1px solid rgba(255,255,255,.14);box-shadow:0 60px 120px rgba(0,0,0,.6);transform-style:preserve-3d}
+.tree{padding:26px 30px;font-size:26px}
+.frow{display:flex;align-items:center;gap:16px;padding:14px 18px;border-radius:14px;margin-bottom:8px;color:#E6E2EE}
+.frow i{font-size:30px;color:var(--peach);flex:none}
+.frow.d1{margin-left:46px}.frow.d2{margin-left:92px}
+.frow small{margin-left:auto;font-size:17px;color:var(--muted);font-weight:600}
+.frow.hl{background:rgba(217,119,87,.16);border:1px solid rgba(217,119,87,.55)}
+.frow .req{color:#fff;background:var(--coral);padding:4px 12px;border-radius:999px;font-size:15px}
+pre.md{margin:0;padding:24px 30px;font:21px/1.62 "DejaVu Sans Mono",monospace;color:#CFCBDA;white-space:pre;position:relative}
+pre.md .k{color:#F2A47E}pre.md .s{color:#7ED6C4}pre.md .c{color:#6E6B80}pre.md .f{color:#A99BFF}pre.md .h{color:#fff;font-weight:700}
+.hlbar{position:absolute;left:0;right:0;border-radius:8px;background:rgba(217,119,87,.16);border-left:4px solid var(--coral)}
+.callouts{display:flex;flex-direction:column;gap:20px}
+.co{display:flex;gap:20px;align-items:flex-start;padding:22px 26px}
+.co .n{flex:none;width:52px;height:52px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:24px;background:rgba(255,255,255,.08);color:var(--muted);border:2px solid rgba(255,255,255,.15)}
+.co.on .n{background:var(--coral);color:#fff;border-color:#fff;box-shadow:0 0 24px rgba(217,119,87,.7)}
+.co h4{margin:0 0 6px;font-size:28px;font-weight:800}
+.co p{margin:0;font-size:21px;line-height:1.4;color:#CFCBDA}
+/* layers */
+.layers{position:absolute;left:150px;top:300px;width:760px;height:640px;perspective:1800px}
+.lstack{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d}
+.slab{position:absolute;left:-300px;top:-170px;width:600px;height:340px;border-radius:30px;display:flex;align-items:flex-end;justify-content:flex-end;padding:26px 34px;
+  border:2px solid rgba(255,255,255,.18);background:linear-gradient(140deg,rgba(255,255,255,.10),rgba(255,255,255,.02));font:800 30px "Inter Display";color:rgba(255,255,255,.6)}
+.slab.on{border-color:rgba(255,255,255,.7)}
+.slab.l1.on{background:linear-gradient(140deg,rgba(217,119,87,.85),rgba(150,70,45,.75));box-shadow:0 0 90px rgba(217,119,87,.6)}
+.slab.l2.on{background:linear-gradient(140deg,rgba(139,124,246,.85),rgba(80,60,190,.75));box-shadow:0 0 90px rgba(139,124,246,.6)}
+.slab.l3.on{background:linear-gradient(140deg,rgba(60,200,180,.85),rgba(25,130,115,.75));box-shadow:0 0 90px rgba(60,200,180,.55)}
+.slab.on{color:#fff}
+.lvls{position:absolute;left:990px;right:130px;top:300px;display:flex;flex-direction:column;gap:24px}
+.lv{padding:26px 32px;display:flex;gap:24px;align-items:center}
+.lv .tg{flex:none;font:800 20px Inter;letter-spacing:.2em;padding:10px 16px;border-radius:12px;background:rgba(255,255,255,.08);color:var(--muted)}
+.lv h4{margin:0 0 6px;font-size:30px;font-weight:800}
+.lv p{margin:0;font-size:22px;line-height:1.4;color:#CFCBDA}
+.lv .tok{margin-left:auto;flex:none;font:700 20px "DejaVu Sans Mono",monospace;color:var(--peach);text-align:right}
+/* compare */
+.cmp{position:absolute;left:110px;right:110px;top:300px;display:grid;grid-template-columns:repeat(4,1fr);gap:28px;transform-style:preserve-3d}
+.cm{padding:34px 30px;display:flex;flex-direction:column;gap:16px;min-height:470px}
+.cm.star{border-color:rgba(242,164,126,.85);box-shadow:0 0 70px rgba(217,119,87,.35),0 30px 80px rgba(0,0,0,.45)}
+.cm h3{margin:0;font-size:38px;font-weight:800}
+.cm .q{font-size:24px;font-weight:700;color:var(--peach)}
+.cm .r{font-size:21px;line-height:1.4;color:#CFCBDA;padding-top:14px;border-top:1px solid rgba(255,255,255,.1)}
+.cm .r b{display:block;font-size:15px;letter-spacing:.2em;color:var(--muted);margin-bottom:4px}
+/* terminal */
+.term{position:absolute;left:120px;top:300px;width:900px}
+.term pre{margin:0;padding:26px 30px;font:22px/1.75 "DejaVu Sans Mono",monospace;color:#DAD6E4;white-space:pre;min-height:420px}
+.term .p{color:var(--teal)}.term .cm2{color:#6E6B80}
+.vsteps{position:absolute;left:1080px;right:120px;top:290px;display:flex;flex-direction:column;gap:22px}
+.vs{display:flex;gap:24px;align-items:center;padding:24px 30px}
+.vs .icbox{width:70px;height:70px;font-size:36px;flex:none;border-radius:18px}
+.vs h4{margin:0 0 4px;font-size:28px;font-weight:800}
+.vs p{margin:0;font-size:20px;line-height:1.4;color:#CFCBDA}
+.props{position:absolute;left:120px;right:120px;top:300px;display:grid;grid-template-columns:repeat(4,1fr);gap:30px;transform-style:preserve-3d}
+.pr{padding:40px 34px;min-height:440px;display:flex;flex-direction:column;gap:22px;transform-origin:50% 100%}
+.pr .icbox{width:96px;height:96px;font-size:50px;border-radius:26px}
+.pr h3{margin:0;font-size:40px;font-weight:800}
+.pr p{margin:0;font-size:24px;line-height:1.45;color:#D4D0DE}
+.pr .big{margin-top:auto;font:900 64px "Inter Display";line-height:1}
+</style>
+</head>
+<body>
+<canvas id="bg" width="1920" height="1080"></canvas>
+
+<!-- S1 INTRO -->
+<section class="scene" id="s1" data-start="0" data-dur="9" data-name="Introduction">
+  <div class="wrap">
+    <div class="cubeWrap a" data-fx="zoom" data-d="0.2" data-t="1.4">
+      <div class="cube" id="cube">
+        <div class="f" style="transform:translateZ(110px)"><i data-ic="spark"></i></div>
+        <div class="f" style="transform:rotateY(90deg) translateZ(110px)"><i data-ic="folder"></i></div>
+        <div class="f" style="transform:rotateY(180deg) translateZ(110px)"><i data-ic="layers"></i></div>
+        <div class="f" style="transform:rotateY(-90deg) translateZ(110px)"><i data-ic="doc"></i></div>
+        <div class="f" style="transform:rotateX(90deg) translateZ(110px)"><i data-ic="code"></i></div>
+        <div class="f" style="transform:rotateX(-90deg) translateZ(110px)"><i data-ic="puzzle"></i></div>
+      </div>
+    </div>
+    <div class="kicker a" data-fx="up" data-d="1.0">The Complete Visual Guide</div>
+    <div class="title3d" id="title3d" style="margin:26px 0 34px">Claude Skills</div>
+    <div class="lead a" data-fx="up" data-d="c2" style="text-align:center">Teach Claude your workflows once — and it uses them whenever they're needed</div>
+    <div class="chip a" data-fx="pop" data-d="c1" style="margin-top:44px;font-size:28px;padding:14px 32px"><i data-ic="pen"></i>Prepared by Sara Salem</div>
+  </div>
+</section>
+
+<!-- S2 WHAT -->
+<section class="scene" id="s2" data-start="9" data-dur="12.5" data-name="What are Skills?">
+  <div class="split" style="grid-template-columns:760px 1fr">
+    <div>
+      <div class="kicker a" data-fx="left">Chapter 01</div>
+      <h2 class="h2 a" data-fx="left" data-d="0.2" style="margin:18px 0 24px">What are <span class="grad">Skills?</span></h2>
+      <div class="lead a" data-fx="left" data-d="c1">A Skill is a <b style="color:#fff">folder of instructions, scripts and resources</b> that Claude can discover and load when a task needs it.</div>
+      <div class="bul a" data-fx="left" data-d="c2"><i data-ic="doc"></i><span>Built around one file: <b style="color:var(--peach)">SKILL.md</b></span></div>
+      <div class="bul a" data-fx="left" data-d="c4"><i data-ic="bulb"></i><span>Packages <b style="color:#fff">procedural know-how</b> — the “how we do it” of a task</span></div>
+      <div class="bul a" data-fx="left" data-d="c4+4"><i data-ic="spark"></i><span>Claude picks the right skill automatically — no need to ask</span></div>
+    </div>
+    <div style="display:grid;place-items:center;transform-style:preserve-3d">
+      <div class="win a" data-fx="rotY" data-d="0.6" data-t="1.4" data-base="rotateY(-16deg) rotateX(6deg)" data-float="2" style="width:820px">
+        <div class="mbar"><i></i><i></i><i></i><span>skills / brand-guidelines</span></div>
+        <div class="tree">
+          <div class="frow a" data-fx="right" data-d="c1+0.3"><i data-ic="folder"></i><b>brand-guidelines/</b><small>the skill</small></div>
+          <div class="frow d1 hl a" data-fx="right" data-d="c2+0.2"><i data-ic="doc"></i><b>SKILL.md</b><small class="req">required</small></div>
+          <div class="frow d1 a" data-fx="right" data-d="c3"><i data-ic="folder"></i>scripts/<small>optional</small></div>
+          <div class="frow d2 a" data-fx="right" data-d="c3+0.4"><i data-ic="code"></i>check_brand.py</div>
+          <div class="frow d1 a" data-fx="right" data-d="c3+0.8"><i data-ic="folder"></i>templates/<small>optional</small></div>
+          <div class="frow d2 a" data-fx="right" data-d="c3+1.2"><i data-ic="layout"></i>report-template.docx</div>
+          <div class="frow d1 a" data-fx="right" data-d="c3+1.6"><i data-ic="doc"></i>reference.md<small>optional</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- S3 ANATOMY -->
+<section class="scene" id="s3" data-start="21.5" data-dur="14" data-name="Anatomy of SKILL.md">
+  <div class="center-head" style="top:110px">
+    <div class="kicker a" data-fx="up">Chapter 02</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">Anatomy of <span class="grad">SKILL.md</span></h2>
+  </div>
+  <div style="position:absolute;left:110px;top:290px;width:1010px;transform-style:preserve-3d">
+    <div class="win a" data-fx="rotY" data-d="0.5" data-t="1.2" data-base="rotateY(8deg)">
+      <div class="mbar"><i></i><i></i><i></i><span>SKILL.md</span></div>
+      <pre class="md" id="md"><div class="hlbar" id="hlb"></div><span id="mdtxt"></span></pre>
+    </div>
+  </div>
+  <div class="callouts" style="position:absolute;left:1170px;right:110px;top:300px">
+    <div class="co card a" data-fx="right" data-d="c1" id="co0"><div class="n">1</div><div><h4>Frontmatter</h4><p>YAML between <b>---</b> lines with a <b>name</b> and a <b>description</b></p></div></div>
+    <div class="co card a" data-fx="right" data-d="c2" id="co1"><div class="n">2</div><div><h4>Description = When</h4><p>Tells Claude what the skill does and <b>when to use it</b></p></div></div>
+    <div class="co card a" data-fx="right" data-d="c3" id="co2"><div class="n">3</div><div><h4>Instructions = How</h4><p>Plain Markdown steps, rules &amp; examples</p></div></div>
+    <div class="co card a" data-fx="right" data-d="c4" id="co3"><div class="n">4</div><div><h4>Linked Resources</h4><p>Point to scripts &amp; files Claude can open or run</p></div></div>
+  </div>
+</section>
+
+<!-- S4 PROGRESSIVE DISCLOSURE -->
+<section class="scene" id="s4" data-start="35.5" data-dur="14" data-name="Progressive Disclosure">
+  <div class="center-head" style="top:110px">
+    <div class="kicker a" data-fx="up">Chapter 03</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">The Secret: <span class="grad">Progressive Disclosure</span></h2>
+  </div>
+  <div class="layers a" data-fx="depth" data-d="0.4" data-t="1.2">
+    <div class="lstack" id="lstack">
+      <div class="slab l3" id="sl3">LEVEL 3</div>
+      <div class="slab l2" id="sl2">LEVEL 2</div>
+      <div class="slab l1" id="sl1">LEVEL 1</div>
+    </div>
+  </div>
+  <div class="lvls">
+    <div class="lv card a" data-fx="right" data-d="c1" id="lv0"><span class="tg">L1</span><div><h4>Metadata</h4><p>Name + description — always loaded</p></div><span class="tok">~100<br>tokens</span></div>
+    <div class="lv card a" data-fx="right" data-d="c2" id="lv1"><span class="tg">L2</span><div><h4>SKILL.md Body</h4><p>Loaded only when the task matches</p></div><span class="tok">&lt;5k<br>tokens</span></div>
+    <div class="lv card a" data-fx="right" data-d="c3" id="lv2"><span class="tg">L3</span><div><h4>Files &amp; Scripts</h4><p>Opened or run only if needed</p></div><span class="tok">as<br>needed</span></div>
+    <div class="chip a" data-fx="pop" data-d="c4" style="align-self:flex-start;margin-top:10px"><i data-ic="bulb"></i>Install many skills — Claude only loads what each task needs</div>
+  </div>
+</section>
+
+<!-- S5 HOW -->
+<section class="scene" id="s5" data-start="49.5" data-dur="13" data-name="How Claude Uses a Skill">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 04</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">How Claude <span class="grad">Uses a Skill</span></h2>
+  </div>
+  <div class="floor a" data-fx="depth" data-d="0.4" data-t="1.2" data-base="rotateX(14deg)">
+    <div class="pipe"><div class="fill" id="pfill"></div><div class="pulse" id="ppulse"></div></div>
+    <div class="nodes">
+      <div class="node"><div class="orb"><i data-ic="msg"></i></div><div class="step">STEP 1</div><h4>Request</h4><p>You ask for a task in plain language</p></div>
+      <div class="node"><div class="orb"><i data-ic="search"></i></div><div class="step">STEP 2</div><h4>Scan</h4><p>Claude checks skill descriptions</p></div>
+      <div class="node"><div class="orb"><i data-ic="folder"></i></div><div class="step">STEP 3</div><h4>Load</h4><p>The matching SKILL.md is read</p></div>
+      <div class="node"><div class="orb"><i data-ic="code"></i></div><div class="step">STEP 4</div><h4>Execute</h4><p>Follows the steps &amp; runs scripts</p></div>
+      <div class="node"><div class="orb"><i data-ic="check"></i></div><div class="step">STEP 5</div><h4>Deliver</h4><p>A consistent, high-quality result</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- S6 PROPERTIES -->
+<section class="scene" id="s6" data-start="62.5" data-dur="11.5" data-name="Why Skills Matter">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 05</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">4 Reasons Skills are <span class="grad">Powerful</span></h2>
+  </div>
+  <div class="props">
+    <div class="pr card a" data-fx="flip" data-d="c1"><div class="icbox"><i data-ic="puzzle"></i></div><h3>Composable</h3><p>Skills stack together — Claude combines several for one task.</p><div class="big grad">01</div></div>
+    <div class="pr card a" data-fx="flip" data-d="c2"><div class="icbox v"><i data-ic="globe"></i></div><h3>Portable</h3><p>One format across Claude apps, Claude Code &amp; the API.</p><div class="big grad">02</div></div>
+    <div class="pr card a" data-fx="flip" data-d="c3"><div class="icbox t"><i data-ic="layers"></i></div><h3>Efficient</h3><p>Only what's needed is loaded — your context stays light.</p><div class="big grad">03</div></div>
+    <div class="pr card a" data-fx="flip" data-d="c4"><div class="icbox g"><i data-ic="code"></i></div><h3>Powerful</h3><p>Can include real code for exact, reliable results.</p><div class="big grad">04</div></div>
+  </div>
+</section>
+
+<!-- S7 BUILT-IN -->
+<section class="scene" id="s7" data-start="74" data-dur="14.5" data-name="Ready-made Skills">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 06</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">Ready-made &amp; <span class="grad">Custom Skills</span></h2>
+  </div>
+  <div class="stage3d"><div class="ring" id="ring">
+    <div class="tcard card"><div class="icbox t"><i data-ic="grid"></i></div><h3>Excel</h3><p>Build spreadsheets with formulas, formatting &amp; charts.</p><span class="tag">Anthropic skill · xlsx</span></div>
+    <div class="tcard card"><div class="icbox v"><i data-ic="doc"></i></div><h3>Word</h3><p>Create &amp; edit documents with styles, tables &amp; tracked changes.</p><span class="tag">Anthropic skill · docx</span></div>
+    <div class="tcard card"><div class="icbox"><i data-ic="slides"></i></div><h3>PowerPoint</h3><p>Generate polished slide decks from your content.</p><span class="tag">Anthropic skill · pptx</span></div>
+    <div class="tcard card"><div class="icbox g"><i data-ic="file"></i></div><h3>PDF</h3><p>Create, fill forms, extract text, merge &amp; split PDFs.</p><span class="tag">Anthropic skill · pdf</span></div>
+    <div class="tcard card"><div class="icbox v"><i data-ic="wand"></i></div><h3>Skill Creator</h3><p>Chat with Claude to design and package a new skill.</p><span class="tag">helper skill</span></div>
+    <div class="tcard card"><div class="icbox t"><i data-ic="pen"></i></div><h3>Your Own</h3><p>Brand rules, team processes, templates — your expertise.</p><span class="tag">custom skill</span></div>
+  </div></div>
+  <div class="tcount a" data-fx="up" data-d="0.6"><span id="tname">01 / 06</span><div class="dotsRow" id="tdots"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+</section>
+
+<!-- S8 WHERE -->
+<section class="scene" id="s8" data-start="88.5" data-dur="12.5" data-name="Where Skills Work">
+  <div class="left7">
+    <div class="kicker a" data-fx="left">Chapter 07</div>
+    <h2 class="h2 a" data-fx="left" data-d="0.2" style="margin:16px 0 26px;font-size:56px;white-space:nowrap">Build Once, <span class="grad">Use Everywhere</span></h2>
+    <div class="lead a" data-fx="left" data-d="0.5">The same skill folder works across the whole Claude ecosystem.</div>
+    <div class="bul a" data-fx="left" data-d="c1"><i data-ic="settings"></i><span>Claude apps: turn Skills on in <b style="color:#fff">Settings → Capabilities</b></span></div>
+    <div class="bul a" data-fx="left" data-d="c2"><i data-ic="code"></i><span>Claude Code: place skills in <b style="color:var(--peach)">.claude/skills/</b> or install plugins</span></div>
+    <div class="bul a" data-fx="left" data-d="c3"><i data-ic="plug"></i><span>Claude API &amp; Agent SDK: add skills to your own agents</span></div>
+    <div class="bul a" data-fx="left" data-d="c4"><i data-ic="users"></i><span>Team &amp; Enterprise admins can share skills with everyone</span></div>
+  </div>
+  <svg id="links"></svg>
+  <div class="hub a" data-fx="zoom" data-d="0.8" data-t="1.2">
+    <div class="orbit" id="orb1" style="left:-330px;top:-330px;width:660px;height:660px"></div>
+    <div class="core" id="core"><i data-ic="folder"></i></div>
+    <div class="sat card" id="sat0"><div class="icbox"><i data-ic="msg"></i></div><div>Claude Apps<small>Web &amp; desktop</small></div></div>
+    <div class="sat card" id="sat1"><div class="icbox v"><i data-ic="code"></i></div><div>Claude Code<small>Terminal &amp; IDE</small></div></div>
+    <div class="sat card" id="sat2"><div class="icbox t"><i data-ic="plug"></i></div><div>Claude API<small>Developer Platform</small></div></div>
+    <div class="sat card" id="sat3"><div class="icbox g"><i data-ic="spark"></i></div><div>Agent SDK<small>Custom agents</small></div></div>
+  </div>
+</section>
+
+<!-- S9 COMPARE -->
+<section class="scene" id="s9" data-start="101" data-dur="13" data-name="Skills vs. Other Tools">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 08</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">Skills vs. <span class="grad">Other Features</span></h2>
+  </div>
+  <div class="cmp">
+    <div class="cm card star a" data-fx="rotY" data-d="c1"><div class="icbox"><i data-ic="folder"></i></div><h3>Skills</h3><div class="q">“How to do it”</div><div class="r"><b>LOADS</b>On demand, when relevant</div><div class="r"><b>BEST FOR</b>Repeatable workflows &amp; expertise</div></div>
+    <div class="cm card a" data-fx="rotY" data-d="c2"><div class="icbox v"><i data-ic="book"></i></div><h3>Projects</h3><div class="q">“What to know”</div><div class="r"><b>LOADS</b>Always, inside that project</div><div class="r"><b>BEST FOR</b>Background files &amp; context</div></div>
+    <div class="cm card a" data-fx="rotY" data-d="c3"><div class="icbox t"><i data-ic="plug"></i></div><h3>MCP</h3><div class="q">“What to reach”</div><div class="r"><b>LOADS</b>Live connections to tools</div><div class="r"><b>BEST FOR</b>External apps &amp; data</div></div>
+    <div class="cm card a" data-fx="rotY" data-d="c4"><div class="icbox g"><i data-ic="msg"></i></div><h3>Prompts</h3><div class="q">“Just this once”</div><div class="r"><b>LOADS</b>In a single conversation</div><div class="r"><b>BEST FOR</b>One-off requests</div></div>
+  </div>
+  <div class="tipbar" style="bottom:120px"><div class="chip a" data-fx="pop" data-d="c5"><i data-ic="bulb"></i>Better together: MCP gives access — Skills teach the procedure</div></div>
+</section>
+
+<!-- S10 BUILD -->
+<section class="scene" id="s10" data-start="114" data-dur="13.5" data-name="Create Your Own Skill">
+  <div class="center-head" style="top:110px">
+    <div class="kicker a" data-fx="up">Chapter 09</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">Create Your <span class="grad">Own Skill</span></h2>
+  </div>
+  <div class="term">
+    <div class="win a" data-fx="rotY" data-d="0.5" data-t="1.2" data-base="rotateY(10deg)">
+      <div class="mbar"><i></i><i></i><i></i><span>terminal — Claude Code</span></div>
+      <pre id="term"></pre>
+    </div>
+  </div>
+  <div class="vsteps">
+    <div class="vs card a" data-fx="right" data-d="c1" id="vs0"><div class="icbox"><i data-ic="bulb"></i></div><div><h4>1 · Pick a Workflow</h4><p>Something you repeat — or ask the Skill Creator</p></div></div>
+    <div class="vs card a" data-fx="right" data-d="c2" id="vs1"><div class="icbox v"><i data-ic="doc"></i></div><div><h4>2 · Write SKILL.md</h4><p>Name, clear description, then instructions</p></div></div>
+    <div class="vs card a" data-fx="right" data-d="c3" id="vs2"><div class="icbox t"><i data-ic="upload"></i></div><div><h4>3 · Add &amp; Upload</h4><p>Zip it for Claude apps, or drop it in .claude/skills</p></div></div>
+    <div class="vs card a" data-fx="right" data-d="c4" id="vs3"><div class="icbox g"><i data-ic="check"></i></div><div><h4>4 · Test &amp; Refine</h4><p>Try real tasks, sharpen the description</p></div></div>
+  </div>
+</section>
+
+<!-- S11 USE CASES -->
+<section class="scene" id="s11" data-start="127.5" data-dur="11.5" data-name="Use Cases">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 10</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">Skills You Could <span class="grad">Build Today</span></h2>
+  </div>
+  <div class="tilt" id="tilt">
+    <div class="grid4" style="transform:translateY(-50%)">
+      <div class="uc card a" data-fx="depth" data-d="c1"><div class="icbox"><i data-ic="pen"></i></div><h4>Brand Guidelines</h4><p>On-brand colours, fonts &amp; tone</p></div>
+      <div class="uc card a" data-fx="depth" data-d="c1+0.5"><div class="icbox v"><i data-ic="doc"></i></div><h4>Report Templates</h4><p>Same structure, every time</p></div>
+      <div class="uc card a" data-fx="depth" data-d="c1+1"><div class="icbox t"><i data-ic="chart"></i></div><h4>Data Analysis</h4><p>Your team's method, step by step</p></div>
+      <div class="uc card a" data-fx="depth" data-d="c2"><div class="icbox g"><i data-ic="code"></i></div><h4>Code Review</h4><p>Checklists &amp; coding standards</p></div>
+      <div class="uc card a" data-fx="depth" data-d="c2+0.5"><div class="icbox v"><i data-ic="grid"></i></div><h4>Financial Models</h4><p>Consistent spreadsheet logic</p></div>
+      <div class="uc card a" data-fx="depth" data-d="c2+1"><div class="icbox"><i data-ic="msg"></i></div><h4>Meeting Notes</h4><p>Summaries &amp; action items</p></div>
+      <div class="uc card a" data-fx="depth" data-d="c3"><div class="icbox g"><i data-ic="users"></i></div><h4>Onboarding</h4><p>Guides for new team members</p></div>
+      <div class="uc card a" data-fx="depth" data-d="c3+0.5"><div class="icbox t"><i data-ic="book"></i></div><h4>Research Papers</h4><p>Academic structure &amp; citations</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- S12 TIPS -->
+<section class="scene" id="s12" data-start="139" data-dur="12.5" data-name="Best Practices">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 11</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">6 Best Practices for <span class="grad">Great Skills</span></h2>
+  </div>
+  <div class="tips">
+    <div class="tip card a" data-fx="left" data-d="c1"><div class="big grad">1</div><div><h4>Write a Precise Description</h4><p>Say what it does <b>and</b> when to use it</p></div></div>
+    <div class="tip card a" data-fx="right" data-d="c2"><div class="big grad">2</div><div><h4>Keep It Focused</h4><p>One skill, one job — combine many</p></div></div>
+    <div class="tip card a" data-fx="left" data-d="c3"><div class="big grad">3</div><div><h4>Show Examples</h4><p>Include samples of great output</p></div></div>
+    <div class="tip card a" data-fx="right" data-d="c4"><div class="big grad">4</div><div><h4>Use Scripts for Precision</h4><p>Code for exact, repeatable steps</p></div></div>
+    <div class="tip card a" data-fx="left" data-d="c5"><div class="big grad">5</div><div><h4>Install Trusted Skills Only</h4><p>Skills can run code — check the source</p></div></div>
+    <div class="tip card a" data-fx="right" data-d="c6"><div class="big grad">6</div><div><h4>Test &amp; Iterate</h4><p>Refine with real tasks over time</p></div></div>
+  </div>
+</section>
+
+<!-- S13 RECAP -->
+<section class="scene" id="s13" data-start="151.5" data-dur="9" data-name="Recap">
+  <div class="recap">
+    <div class="kicker a" data-fx="up">In One Line</div>
+    <div class="extr" id="extr" style="margin:34px 0 10px"><span>Package</span><span><em>·</em></span><span>Load</span><span><em>·</em></span><span>Reuse</span></div>
+    <div class="lead a" data-fx="up" data-d="c1" style="text-align:center;max-width:1350px">Claude Skills turn your expertise into reusable know-how that Claude loads exactly when it's needed.</div>
+    <div class="pills">
+      <span class="chip a" data-fx="pop" data-d="c1+1.5"><i data-ic="doc"></i>SKILL.md</span>
+      <span class="chip a" data-fx="pop" data-d="c1+1.65"><i data-ic="layers"></i>Progressive Disclosure</span>
+      <span class="chip a" data-fx="pop" data-d="c1+1.8"><i data-ic="puzzle"></i>Composable</span>
+      <span class="chip a" data-fx="pop" data-d="c1+1.95"><i data-ic="globe"></i>Portable</span>
+      <span class="chip a" data-fx="pop" data-d="c1+2.1"><i data-ic="grid"></i>Excel · Word · PPT · PDF</span>
+      <span class="chip a" data-fx="pop" data-d="c1+2.25"><i data-ic="code"></i>Claude Code &amp; API</span>
+    </div>
+  </div>
+</section>
+
+<!-- S14 OUTRO -->
+<section class="scene" id="s14" data-start="160.5" data-dur="12.5" data-name="Thank You">
+  <div class="outro">
+    <div class="photoStage">
+      <div class="ringO" id="ro1" style="width:760px;height:760px;margin:-380px 0 0 -380px"></div>
+      <div class="ringO" id="ro2" style="width:900px;height:900px;margin:-450px 0 0 -450px;border-color:rgba(139,124,246,.35)"></div>
+      <div class="photoCard a" id="photo" data-fx="rotYin" data-d="0.3" data-t="1.6">
+        <img src="assets/sara-portrait.png" alt="Sara Salem">
+        <div class="shine" id="shine"></div>
+      </div>
+    </div>
+    <div>
+      <div class="byline a" data-fx="right" data-d="1.2">Prepared by</div>
+      <div class="name a" data-fx="right" data-d="1.5"><span class="grad">Sara<br>Salem</span></div>
+      <div class="thanks a" data-fx="right" data-d="2.2">Thank you for watching!<br><span style="color:var(--muted)">Claude Skills — The Complete Visual Guide</span></div>
+      <div class="sig">
+        <span class="chip a" data-fx="pop" data-d="3.0"><i data-ic="folder"></i>Package</span>
+        <span class="chip a" data-fx="pop" data-d="3.2"><i data-ic="layers"></i>Load</span>
+        <span class="chip a" data-fx="pop" data-d="3.4"><i data-ic="remix"></i>Reuse</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="hud">
+  <div id="brandTL"><span class="star"><i data-ic="spark"></i></span>Claude Skills</div>
+  <div id="chapter"><b id="chn">00</b><span id="chname"></span></div>
+  <div id="credit"><img src="assets/sara-face.png" alt=""><span>Prepared by <b>Sara Salem</b></span></div>
+  <div id="tick"></div>
+  <div id="prog"></div>
+</div>
+
+<script>window.TIMING={"scenes": [{"id": "s1", "start": 0.0, "dur": 15.281, "cues": [1.6, 5.229, 7.193]}, {"id": "s2", "start": 15.281, "dur": 34.977, "cues": [0.9, 3.121, 12.125, 16.927, 23.607]}, {"id": "s3", "start": 50.259, "dur": 40.737, "cues": [0.9, 4.55, 13.043, 20.767, 30.071]}, {"id": "s4", "start": 90.996, "dur": 39.031, "cues": [0.9, 5.702, 14.728, 22.474, 31.308]}, {"id": "s5", "start": 130.027, "dur": 32.867, "cues": [0.9, 5.233, 11.891, 16.181, 20.428, 25.038]}, {"id": "s6", "start": 162.894, "dur": 32.46, "cues": [0.9, 4.507, 11.336, 18.229, 24.417]}, {"id": "s7", "start": 195.354, "dur": 41.915, "cues": [0.9, 5.382, 10.568, 16.309, 20.556, 27.427, 34.491]}, {"id": "s8", "start": 237.269, "dur": 30.903, "cues": [0.9, 5.681, 10.376, 16.778, 23.799]}, {"id": "s9", "start": 268.171, "dur": 36.558, "cues": [0.9, 4.742, 11.763, 18.421, 24.695, 29.39]}, {"id": "s10", "start": 304.729, "dur": 32.887, "cues": [0.9, 4.358, 9.757, 15.541, 24.332]}, {"id": "s11", "start": 337.616, "dur": 35.082, "cues": [0.9, 4.891, 15.816, 23.925]}, {"id": "s12", "start": 372.698, "dur": 36.069, "cues": [0.9, 4.977, 9.843, 14.794, 20.279, 24.355, 29.755]}, {"id": "s13", "start": 408.767, "dur": 12.489, "cues": [0.9, 4.507]}, {"id": "s14", "start": 421.256, "dur": 11.823, "cues": [0.9, 3.59]}], "total": 433.079};</script>
+<script>
+const IC={
+ code:'<path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/>',
+ doc:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/>',
+ file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 15h2a1.5 1.5 0 0 0 0-3H8v6"/>',
+ globe:'<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>',
+ pen:'<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18z"/><circle cx="11" cy="11" r="2"/>',
+ folder:'<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+ layers:'<path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/>',
+ puzzle:'<path d="M10 3h4v3a2 2 0 1 0 4 0V3h3v7h-3a2 2 0 1 0 0 4h3v7h-7v-3a2 2 0 1 0-4 0v3H3v-7h3a2 2 0 1 0 0-4H3V3z"/>',
+ search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
+ grid:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/>',
+ slides:'<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4M7 12l3-3 2 2 4-4"/>',
+ wand:'<path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M17.8 6.2L19 5M3 21l9-9M12.2 6.2L11 5"/>',
+ book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V2H6.5A2.5 2.5 0 0 0 4 4.5v15z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
+ settings:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+ upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>',
+ remix:'<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>',
+ spark:'<path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"/>',
+ plug:'<path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/>',
+ chart:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-6"/>',
+ layout:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
+ msg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+ users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+ check:'<path d="M20 6L9 17l-5-5"/>',
+ bulb:'<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>'
+};
+document.querySelectorAll('i[data-ic]').forEach(el=>{el.innerHTML='<svg class="ic" viewBox="0 0 24 24">'+IC[el.dataset.ic]+'</svg>'});
+
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const eOut=x=>1-Math.pow(1-x,3);
+const eIO=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const eBack=x=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+let seed=11;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};
+const $=id=>document.getElementById(id);
+
+const T=$('title3d');
+T.innerHTML=[...T.textContent].map(c=>c===' '?'<span class="sp"></span>':`<span class="grad">${c}</span>`).join('');
+const letters=[...T.children];
+const EX=[...$('extr').children];
+
+const TM={};(window.TIMING||{scenes:[]}).scenes.forEach(x=>TM[x.id]=x);
+const pd=(v,cues)=>{v=v||'0';if(v[0]!=='c')return +v;const m=v.match(/^c(\d+)([+-][\d.]+)?$/);return cues[+m[1]]+(+(m[2]||0))};
+const SC=[...document.querySelectorAll('.scene')].map((el,i)=>{const tm=TM[el.id];const cues=tm?tm.cues:[0];if(tm){el.dataset.start=tm.start;el.dataset.dur=tm.dur}return {el,i,cues,start:+el.dataset.start,dur:+el.dataset.dur,name:el.dataset.name,
+  items:[...el.querySelectorAll('.a')].map(n=>({n,d:pd(n.dataset.d,cues),t:+(n.dataset.t||0.9),fx:n.dataset.fx||'up',base:n.dataset.base||'',fl:+(n.dataset.float||0)}))}});
+const LAST=SC[SC.length-1];const TOTAL=LAST.start+LAST.dur;const OUT=LAST.start;
+window.TOTAL=TOTAL;
+const itemOf=n=>{for(const s of SC){const f=s.items.find(x=>x.n===n);if(f)return f}};
+
+function fx(it,l){
+  const raw=clamp((l-it.d)/it.t), p=eOut(raw); let tr='',op=p;
+  switch(it.fx){
+    case 'up':tr=`translate3d(0,${(1-p)*70}px,0)`;break;
+    case 'left':tr=`translate3d(${-(1-p)*160}px,0,0)`;break;
+    case 'right':tr=`translate3d(${(1-p)*160}px,0,0)`;break;
+    case 'zoom':tr=`scale(${.4+.6*p})`;break;
+    case 'pop':{const b=raw<=0?0:eBack(raw);tr=`scale(${b})`;op=clamp(raw*3);break}
+    case 'flip':tr=`rotateX(${(1-p)*95}deg)`;break;
+    case 'rotY':tr=`translateZ(${-(1-p)*300}px) rotateY(${(1-p)*-75}deg)`;break;
+    case 'rotYin':tr=`rotateY(${(1-p)*-160}deg) scale(${.7+.3*p})`;op=clamp(raw*2.5);break;
+    case 'depth':tr=`translate3d(0,${(1-p)*60}px,${-(1-p)*700}px)`;break;
+  }
+  if(it.fl) tr+=` rotateY(${Math.sin(l*.55)*it.fl}deg) rotateX(${Math.cos(l*.45)*it.fl*.6}deg)`;
+  it.n.style.transform=(it.base+' '+tr).trim();
+  it.n.style.opacity=op;
+}
+
+/* background */
+const cv=$('bg'),cx=cv.getContext('2d'),W=1920,H=1080;
+const PTS=[];for(let i=0;i<420;i++){const u=rnd()*2-1,th=rnd()*Math.PI*2,r=600+rnd()*900;const s=Math.sqrt(1-u*u);PTS.push([r*s*Math.cos(th),r*u,r*s*Math.sin(th),rnd()])}
+const ph=(1+Math.sqrt(5))/2;const IV=[[-1,ph,0],[1,ph,0],[-1,-ph,0],[1,-ph,0],[0,-1,ph],[0,1,ph],[0,-1,-ph],[0,1,-ph],[ph,0,-1],[ph,0,1],[-ph,0,-1],[-ph,0,1]];
+const IE=[];for(let a=0;a<12;a++)for(let b=a+1;b<12;b++){const d=Math.hypot(IV[a][0]-IV[b][0],IV[a][1]-IV[b][1],IV[a][2]-IV[b][2]);if(Math.abs(d-2)<.01)IE.push([a,b])}
+function rot(p,ay,ax){let [x,y,z]=p;const cy=Math.cos(ay),sy=Math.sin(ay);[x,z]=[x*cy+z*sy,-x*sy+z*cy];const c2=Math.cos(ax),s2=Math.sin(ax);[y,z]=[y*c2-z*s2,y*s2+z*c2];return [x,y,z]}
+function drawBG(t){
+  const g=cx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0B0C18');g.addColorStop(1,'#110F24');cx.fillStyle=g;cx.fillRect(0,0,W,H);
+  const glow=(x,y,r,c)=>{const rg=cx.createRadialGradient(x,y,0,x,y,r);rg.addColorStop(0,c);rg.addColorStop(1,'rgba(0,0,0,0)');cx.fillStyle=rg;cx.fillRect(0,0,W,H)};
+  glow(W*.5+Math.sin(t*.13)*520,H*.35+Math.cos(t*.11)*160,820,'rgba(217,119,87,.26)');
+  glow(W*.5+Math.cos(t*.09)*640,H*.6+Math.sin(t*.12)*200,900,'rgba(139,124,246,.22)');
+  glow(W*.15+Math.sin(t*.07)*200,H*.85,600,'rgba(60,200,180,.09)');
+  const hz=H*.66,vx=W/2;cx.lineWidth=1;
+  for(let i=-24;i<=24;i++){const a=.10*(1-Math.abs(i)/26);cx.strokeStyle=`rgba(242,164,126,${a})`;cx.beginPath();cx.moveTo(vx+i*6,hz);cx.lineTo(vx+i*170,H+260);cx.stroke()}
+  const off=(t*.6)%1;
+  for(let k=0;k<16;k++){const z=k+1-off;const y=hz+380/z-380/16;if(y<hz||y>H)continue;cx.strokeStyle=`rgba(242,164,126,${clamp(.16*(1-z/16))})`;cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);cx.stroke()}
+  const hg=cx.createLinearGradient(0,hz-60,0,hz+160);hg.addColorStop(0,'rgba(14,12,28,0)');hg.addColorStop(.3,'rgba(14,12,28,.85)');hg.addColorStop(1,'rgba(14,12,28,0)');cx.fillStyle=hg;cx.fillRect(0,hz-60,W,220);
+  const ay=t*.06,ax=.25+Math.sin(t*.05)*.1;
+  for(const p of PTS){const [x,y,z]=rot(p,ay,ax);const zz=z+1700;if(zz<50)continue;const f=900/zz;const sx=W/2+x*f,sy=H/2+y*f;if(sx<0||sx>W||sy<0||sy>H)continue;
+    const tw=.5+.5*Math.sin(t*2+p[3]*20);cx.fillStyle=p[3]>.8?`rgba(242,164,126,${.75*f*tw})`:`rgba(220,215,255,${.6*f*tw})`;cx.beginPath();cx.arc(sx,sy,Math.max(.6,2.4*f),0,6.283);cx.fill()}
+  let vis=.10; if(t<9)vis=.10+.35*clamp(t/2)*clamp((9-t)/1.2); if(t>OUT)vis=.10+.25*clamp((t-OUT)/2);
+  const S=t<9?330:(t>OUT?300:260), cxp=t<9?W/2:(t>OUT?W*.27:W*.86), cyp=t<9?H*.43:(t>OUT?H*.5:H*.28);
+  cx.strokeStyle=`rgba(242,164,126,${vis})`;cx.lineWidth=1.5;
+  const PV=IV.map(v=>{const [x,y,z]=rot(v,t*.25,t*.17);const f=4/(z+6);return [cxp+x*S*f,cyp+y*S*f]});
+  cx.beginPath();for(const [a,b] of IE){cx.moveTo(...PV[a]);cx.lineTo(...PV[b])}cx.stroke();
+  cx.fillStyle=`rgba(255,220,200,${vis*1.6})`;for(const p of PV){cx.beginPath();cx.arc(p[0],p[1],3,0,6.283);cx.fill()}
+  const vg=cx.createRadialGradient(W/2,H/2,H*.45,W/2,H/2,H*1.05);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.55)');cx.fillStyle=vg;cx.fillRect(0,0,W,H);
+}
+
+/* typing helper: reveals n visible chars of an array of html lines */
+function typed(lines,n){
+  let out='',left=n;
+  for(const line of lines){ if(left<=0)break;
+    let i=0,res='';
+    while(i<line.length&&left>0){ if(line[i]==='<'){const j=line.indexOf('>',i);res+=line.slice(i,j+1);i=j+1;continue}
+      if(line[i]==='&'){const j=line.indexOf(';',i);res+=line.slice(i,j+1);i=j+1;left--;continue}
+      res+=line[i];i++;left--; }
+    const o=(res.match(/<span/g)||[]).length,c=(res.match(/<\/span>/g)||[]).length;res+='</span>'.repeat(Math.max(0,o-c));
+    out+=res+(left>0?'\n':'');left--; }
+  return out;
+}
+const vlen=lines=>lines.reduce((a,l)=>a+l.replace(/<[^>]+>/g,'').replace(/&[a-z]+;/g,'x').length+1,0);
+const MD=[
+ '<span class="c">---</span>',
+ '<span class="k">name:</span> <span class="s">brand-guidelines</span>',
+ '<span class="k">description:</span> <span class="s">Apply our brand colours, fonts</span>',
+ '  <span class="s">and tone. Use when creating any</span>',
+ '  <span class="s">document, slide or report.</span>',
+ '<span class="c">---</span>',
+ '<span class="h"># Brand Guidelines</span>',
+ '',
+ '<span class="h">## Instructions</span>',
+ '1. Headings use coral <span class="f">#D97757</span>',
+ '2. Body font: Inter, 11pt',
+ '3. Keep the tone friendly &amp; clear',
+ '',
+ '<span class="h">## Resources</span>',
+ '- Run <span class="f">scripts/check_brand.py</span> to verify',
+ '- Template: <span class="f">templates/report.docx</span>'
+];
+const MDN=vlen(MD);
+const TERM=[
+ '<span class="cm2"># Create a personal skill for Claude Code</span>',
+ '<span class="p">$</span> mkdir -p ~/.claude/skills/brand-guidelines',
+ '<span class="p">$</span> cd ~/.claude/skills/brand-guidelines',
+ '<span class="p">$</span> nano SKILL.md      <span class="cm2"># name + description</span>',
+ '<span class="p">$</span> ls',
+ 'SKILL.md  scripts/  templates/',
+ '',
+ '<span class="cm2"># Claude apps: zip the folder, then</span>',
+ '<span class="cm2"># Settings → Capabilities → Skills → Upload</span>',
+ '<span class="p">✓</span> Skill ready — Claude will use it when relevant'
+];
+const TERMN=vlen(TERM);
+// line height of pre.md = 21*1.62
+const LH=21*1.62, MDPAD=24;
+const HLR=[[0,5],[2,4],[6,11],[13,15]];
+
+const ciOf=(l,c)=>{let k=-1;for(let i=0;i<c.length;i++)if(l>=c[i])k=i;return k};
+const steps=(l,c,from)=>{let f=0;for(let i=from;i<c.length;i++)f+=eIO(clamp((l-c[i])/.8));return f};
+function pipeline(l,c){
+  const p=steps(l,c,2)/4,sel='#s5';const nodes=document.querySelectorAll(sel+' .orb');
+  $('pfill').style.width=(p*100)+'%';$('ppulse').style.left=(p*100)+'%';$('ppulse').style.opacity=l>=c[1]&&p<1?1:0;
+  nodes.forEach((o,i)=>{const on=l>=c[i+1];o.className='orb'+(on?' on':'');
+    const b=on?clamp((l-c[i+1])/.5):0;o.style.transform=`translateZ(${on?Math.sin(b*Math.PI)*60+20:0}px) rotateY(${on?(1-eOut(b))*180:0}deg)`});
+}
+function carousel(l,c){
+  const ang=-(1-eOut(clamp(l/1.3)))*120-steps(l,c,2)*60;
+  const ring=$('ring');ring.style.transform=`translateZ(-560px) rotateX(-6deg) rotateY(${ang}deg)`;
+  const cards=ring.children;let front=0,best=-9;
+  for(let i=0;i<6;i++){const c=Math.cos((i*60+ang)*Math.PI/180);if(c>best){best=c;front=i}
+    cards[i].style.transform=`rotateY(${i*60}deg) translateZ(560px)`;cards[i].style.opacity=(.18+.82*clamp(c));
+    cards[i].style.borderColor=c>.95?'rgba(242,164,126,.8)':'rgba(255,255,255,.14)';}
+  $('tname').textContent=`0${front+1} / 06`;[...$('tdots').children].forEach((d,i)=>d.className=i===front?'on':'');
+}
+function hub(l){
+  const R=310,RY=290,HX=1340,HY=570,base=l*.35;const pts=[];
+  for(let i=0;i<4;i++){const a=base+i*Math.PI/2;const x=Math.cos(a)*R,y=Math.sin(a)*RY,z=Math.sin(a);
+    const s=$('sat'+i);const p=eOut(clamp((l-1.6-i*.3)/.8));
+    s.style.transform=`translate3d(${x*p}px,${y*p}px,${z*80}px) scale(${(.85+.15*(z+1)/2)*p})`;s.style.opacity=p;pts.push([HX+x*p,HY+y*p,p])}
+  $('orb1').style.transform=`rotateX(52deg) rotateZ(${l*20}deg)`;
+  $('core').style.transform=`scale(${1+Math.sin(l*2.4)*.04}) rotateY(${l*40}deg)`;
+  const hp=eOut(clamp((l-.8)/1.2));
+  $('links').innerHTML=pts.map(([x,y,p],i)=>`<line x1="${HX}" y1="${HY}" x2="${x}" y2="${y}" stroke="rgba(242,164,126,${.5*p*hp})" stroke-width="2" stroke-dasharray="6 8" stroke-dashoffset="${-l*40}"/>`+
+    `<circle cx="${HX+(x-HX)*((l*.6+i*.25)%1)}" cy="${HY+(y-HY)*((l*.6+i*.25)%1)}" r="5" fill="rgba(255,220,200,${p*hp})"/>`).join('');
+}
+
+const HOOKS={
+ s1(l){
+   $('cube').style.transform=`rotateX(${-20+Math.sin(l*.7)*10}deg) rotateY(${l*48}deg)`;
+   letters.forEach((s,i)=>{const p=clamp((l-1.4-i*.08)/.8);const e=eBack(p);s.style.opacity=clamp(p*3);
+     s.style.transform=`translateY(${(1-eOut(p))*-120}px) rotateX(${(1-e)*-90}deg) translateZ(${Math.sin(l*1.6+i*.5)*10}px)`});
+ },
+ s3(l,c,ci){
+   const n=Math.floor(clamp((l-1.0)/(c[2]-1.5))*MDN);
+   $('mdtxt').innerHTML=typed(MD,n)+(n<MDN&&Math.floor(l*3)%2?'<span class="cursor"></span>':'');
+   // callout focus cycles after typing
+   const k=ci-1;
+   for(let i=0;i<4;i++)$('co'+i).classList.toggle('on',i===k);
+   const hb=$('hlb');
+   if(k>=0){const [a,b]=HLR[k];hb.style.top=(MDPAD+a*LH-3)+'px';hb.style.height=((b-a+1)*LH+6)+'px';hb.style.opacity=1}else hb.style.opacity=0;
+ },
+ s4(l,c,ci){
+   const k=Math.min(ci-1,2),cur=ci-1;
+   const spread=eOut(clamp((l-1)/1.5));
+   $('lstack').style.transform=`rotateX(58deg) rotateZ(${-34+Math.sin(l*.4)*6}deg)`;
+   const ids=['sl1','sl2','sl3'];
+   ids.forEach((id,i)=>{const on=i<=k;const el=$(id);el.classList.toggle('on',on);
+     const lift=(on&&i===cur)?Math.sin(clamp((l-c[i+1])/.6)*Math.PI)*40:0;
+     el.style.transform=`translateZ(${(2-i)*0+(-i*130*spread)+170*spread+lift}px)`});
+   for(let i=0;i<3;i++){const c=$('lv'+i);c.style.borderColor=i===cur?'rgba(242,164,126,.85)':'rgba(255,255,255,.14)';
+     c.querySelector('.tg').style.background=i<=k?['#D97757','#8B7CF6','#3CC8B4'][i]:'rgba(255,255,255,.08)';c.querySelector('.tg').style.color=i<=k?'#fff':''}
+ },
+ s5(l,c){pipeline(l,c)},
+ s7(l,c){carousel(l,c)},
+ s8(l){hub(l)},
+ s9(l,c,ci){
+   document.querySelectorAll('#s9 .cm').forEach((e,i)=>{e.style.transform+=` translateY(${Math.sin(l*1.4-i*.8)*8}px)`;e.classList.toggle('star',i===ci-1||(ci<1&&i===0)||(ci>=5&&i===0))});
+ },
+ s10(l,c,ci){
+   const n=Math.floor(clamp((l-c[1])/(c[4]-c[1]))*TERMN);
+   $('term').innerHTML=typed(TERM,n)+(n<TERMN&&Math.floor(l*3)%2?'<span class="cursor"></span>':'');
+   const k=ci-1;
+   for(let i=0;i<4;i++)$('vs'+i).style.borderColor=i===k?'rgba(242,164,126,.85)':'rgba(255,255,255,.14)';
+ },
+ s11(l){
+   $('tilt').style.transform=`rotateX(${22-eOut(clamp(l/3))*10}deg) rotateY(${Math.sin(l*.4)*7}deg) rotateZ(${Math.sin(l*.3)*-1.5}deg)`;
+   document.querySelectorAll('#s11 .uc').forEach((c,i)=>{c.style.transform+=` translateZ(${Math.sin(l*1.8-i*.7)*26}px)`});
+ },
+ s13(l){
+   EX.forEach((s,i)=>{const p=clamp((l-.5-i*.25)/.9);s.style.opacity=clamp(p*3);
+     s.style.transform=`translateZ(${(1-eOut(p))*-900}px) rotateY(${(1-eOut(p))*60}deg) rotateX(${Math.sin(l*1.2+i)*6}deg)`});
+   $('extr').style.transform=`rotateY(${Math.sin(l*.5)*8}deg)`;
+ },
+ s14(l){
+   if(l>1.9)$('photo').style.transform+=` rotateY(${Math.sin((l-1.9)*.7)*9}deg) rotateX(${Math.cos((l-1.9)*.6)*3}deg) translateY(${Math.sin(l*1.1)*10}px)`;
+   const sh=((l-1.5)*.35)%1.6;$('shine').style.transform=`translateX(${-120+sh*160}%)`;
+   $('ro1').style.transform=`rotateX(70deg) rotateZ(${l*25}deg)`;$('ro2').style.transform=`rotateX(64deg) rotateY(18deg) rotateZ(${-l*18}deg)`;
+   const rp=eOut(clamp((l-.6)/1.4));$('ro1').style.opacity=rp;$('ro2').style.opacity=rp;
+ }
+};
+
+function render(t){
+  drawBG(t);
+  let cur=SC[0];
+  for(const s of SC){
+    const l=t-s.start;
+    if(l<0||l>=s.dur){s.el.style.display='none';continue}
+    cur=s;s.el.style.display='block';
+    const fin=eOut(clamp(l/.6)),fout=s===LAST?1:eOut(clamp((s.dur-l)/.6));
+    s.el.style.opacity=Math.min(fin,fout);
+    s.el.style.transform=`translateZ(${(1-fout)*220}px) scale(${1+(1-fout)*.05+Math.sin(l*.12)*.012}) rotateY(${Math.sin(l*.15)*1.6}deg) rotateX(${Math.cos(l*.11)*.8}deg)`;
+    for(const it of s.items) fx(it,l);
+    const h=HOOKS[s.el.id];if(h)h(l,s.cues,ciOf(l,s.cues));
+  }
+  $('chn').textContent=String(cur.i).padStart(2,'0');$('chname').textContent=cur.name;
+  $('hud').style.opacity=clamp((t-.8)/1)*(t>TOTAL-1?clamp((TOTAL-t)/1):1);
+  $('prog').style.width=(t/TOTAL*100)+'%';
+  const f=x=>`${Math.floor(x/60)}:${String(Math.floor(x%60)).padStart(2,'0')}`;
+  $('tick').textContent=`${f(t)} / ${f(TOTAL)}`;
+}
+window.render=render;
+render(+(new URLSearchParams(location.search).get('t')||0));
+</script>
+</body>
+</html>

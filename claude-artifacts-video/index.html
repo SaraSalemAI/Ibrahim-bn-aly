@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Claude Artifacts Video</title>
+<style>
+:root{
+  --coral:#D97757; --peach:#F2A47E; --violet:#8B7CF6; --teal:#3CC8B4; --gold:#F5C46B;
+  --cream:#F6F2EC; --muted:#A9A6B8; --ink:#0A0B14;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:var(--ink);
+  font-family:Inter,"DejaVu Sans",sans-serif;color:var(--cream);-webkit-font-smoothing:antialiased}
+#bg{position:absolute;inset:0;width:1920px;height:1080px}
+.scene{position:absolute;inset:0;perspective:1600px;display:none;transform-style:preserve-3d}
+.a{will-change:transform,opacity}
+svg.ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;display:block}
+
+/* ---------- typography ---------- */
+.kicker{font-size:22px;letter-spacing:.32em;text-transform:uppercase;color:var(--peach);font-weight:600}
+.h1{font-family:"Inter Display",Inter;font-weight:800;font-size:92px;line-height:1.02;letter-spacing:-.02em;margin:0}
+.h2{font-family:"Inter Display",Inter;font-weight:800;font-size:68px;line-height:1.05;letter-spacing:-.015em;margin:0}
+.lead{font-size:30px;line-height:1.45;color:#D9D5E2;font-weight:400}
+.grad{background:linear-gradient(90deg,var(--peach),var(--coral) 45%,var(--violet));-webkit-background-clip:text;background-clip:text;color:transparent}
+.num{font-family:"Inter Display";font-weight:800;color:var(--coral)}
+
+.card{background:linear-gradient(150deg,rgba(255,255,255,.10),rgba(255,255,255,.025));
+  border:1px solid rgba(255,255,255,.14);border-radius:26px;box-shadow:0 30px 80px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.12)}
+.chip{display:inline-flex;align-items:center;gap:12px;padding:12px 24px;border-radius:999px;
+  background:rgba(217,119,87,.14);border:1px solid rgba(217,119,87,.5);color:var(--peach);font-weight:600;font-size:24px}
+.icbox{width:84px;height:84px;border-radius:22px;display:grid;place-items:center;font-size:44px;color:#fff;
+  background:linear-gradient(140deg,var(--coral),#B4543A);box-shadow:0 14px 40px rgba(217,119,87,.45)}
+.icbox.v{background:linear-gradient(140deg,var(--violet),#5B4BD1);box-shadow:0 14px 40px rgba(139,124,246,.45)}
+.icbox.t{background:linear-gradient(140deg,var(--teal),#1F8F80);box-shadow:0 14px 40px rgba(60,200,180,.4)}
+.icbox.g{background:linear-gradient(140deg,var(--gold),#C98A24);box-shadow:0 14px 40px rgba(245,196,107,.4)}
+
+/* ---------- HUD ---------- */
+#hud{position:absolute;inset:0;pointer-events:none}
+#brandTL{position:absolute;left:64px;top:48px;display:flex;align-items:center;gap:14px;font-weight:700;font-size:24px;letter-spacing:.02em}
+#brandTL .star{width:34px;height:34px;color:var(--coral)}
+#chapter{position:absolute;right:64px;top:50px;font-size:20px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600}
+#chapter b{color:var(--peach);margin-right:14px}
+#credit{position:absolute;left:64px;bottom:44px;display:flex;align-items:center;gap:16px;padding:10px 26px 10px 10px;border-radius:999px;
+  background:rgba(10,11,20,.55);border:1px solid rgba(255,255,255,.14)}
+#credit img{width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--coral)}
+#credit span{font-size:22px;color:#E9E5F0}
+#credit b{color:var(--peach);font-weight:700}
+#prog{position:absolute;left:0;bottom:0;height:5px;width:0;background:linear-gradient(90deg,var(--coral),var(--violet))}
+#tick{position:absolute;right:64px;bottom:56px;font-size:20px;color:var(--muted);letter-spacing:.12em;font-variant-numeric:tabular-nums}
+
+/* ---------- S1 intro ---------- */
+#s1 .wrap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;transform-style:preserve-3d}
+.cubeWrap{width:220px;height:220px;perspective:1000px;margin-bottom:56px}
+.cube{position:relative;width:220px;height:220px;transform-style:preserve-3d}
+.cube .f{position:absolute;inset:0;display:grid;place-items:center;font-size:96px;color:#fff;border-radius:30px;
+  border:2px solid rgba(255,255,255,.35);background:linear-gradient(140deg,rgba(217,119,87,.92),rgba(139,124,246,.85));
+  box-shadow:inset 0 0 60px rgba(255,255,255,.18)}
+.title3d{font-family:"Inter Display";font-weight:900;font-size:150px;letter-spacing:-.03em;line-height:1;display:flex;transform-style:preserve-3d}
+.title3d span{display:inline-block;transform-origin:50% 100%;
+  text-shadow:0 1px 0 #c9603f,0 2px 0 #b9563a,0 3px 0 #a94d34,0 4px 0 #99442e,0 5px 0 #893b28,0 12px 30px rgba(0,0,0,.6)}
+.title3d .sp{width:42px}
+
+/* ---------- S2 what ---------- */
+.split{position:absolute;left:120px;right:110px;top:150px;bottom:140px;display:grid;grid-template-columns:720px 1fr;gap:70px;align-items:center}
+.bul{display:flex;gap:20px;align-items:flex-start;font-size:28px;line-height:1.4;margin-top:26px;color:#E6E2EE}
+.bul i{flex:none;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:24px;background:rgba(217,119,87,.18);color:var(--peach);margin-top:-2px}
+.mock{width:940px;height:600px;border-radius:22px;overflow:hidden;background:#15151F;border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 60px 120px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.4);transform-style:preserve-3d}
+.mbar{height:46px;background:#1D1D29;display:flex;align-items:center;gap:9px;padding:0 18px;border-bottom:1px solid rgba(255,255,255,.07)}
+.mbar i{width:13px;height:13px;border-radius:50%;background:#FF5F57}.mbar i:nth-child(2){background:#FEBC2E}.mbar i:nth-child(3){background:#28C840}
+.mbar span{margin-left:18px;font-size:16px;color:#8D8AA0;background:#14141D;padding:5px 16px;border-radius:8px}
+.mbody{display:grid;grid-template-columns:340px 1fr;height:554px}
+.chat{padding:22px 18px;border-right:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;gap:16px;background:#191923}
+.bub{font-size:17px;line-height:1.45;padding:14px 16px;border-radius:16px}
+.bub.u{background:#2B2A3A;align-self:flex-end;max-width:90%}
+.bub.c{background:transparent;color:#DCD8E6;padding-left:4px}
+.achip{display:flex;align-items:center;gap:12px;background:#22222F;border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px 14px;font-size:16px}
+.achip .ib{width:40px;height:40px;border-radius:10px;background:rgba(217,119,87,.2);color:var(--peach);display:grid;place-items:center;font-size:22px}
+.achip small{display:block;color:#8D8AA0;font-size:13px;margin-top:2px}
+.pane{position:relative;background:#101018}
+.tabs{display:flex;gap:6px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.07)}
+.tabs b{font-size:15px;font-weight:600;padding:7px 16px;border-radius:8px;color:#8D8AA0}
+.tabs b.on{background:#262636;color:#fff}
+.tabs .ver{margin-left:auto;font-size:14px;color:#8D8AA0;padding:7px 4px}
+pre#code{margin:0;padding:18px 22px;font:15.5px/1.6 "DejaVu Sans Mono",monospace;color:#CFCBDA;white-space:pre}
+pre#code .k{color:#F2A47E}pre#code .s{color:#7ED6C4}pre#code .c{color:#6E6B80}pre#code .f{color:#A99BFF}
+.cursor{display:inline-block;width:9px;height:18px;background:var(--coral);vertical-align:-3px}
+#prev{position:absolute;left:0;right:0;top:56px;bottom:0;background:linear-gradient(160deg,#FFF8F3,#F4ECFF);color:#1d1b29;padding:30px 36px;opacity:0}
+#prev h4{margin:0 0 6px;font-size:28px;font-weight:800}
+#prev p{margin:0 0 20px;color:#6b6780;font-size:16px}
+.hrow{display:flex;align-items:center;gap:14px;background:#fff;border-radius:14px;padding:13px 16px;margin-bottom:11px;box-shadow:0 4px 14px rgba(40,20,60,.08);font-size:18px;font-weight:600}
+.hrow .dots{margin-left:auto;display:flex;gap:7px}
+.hrow .dots i{width:22px;height:22px;border-radius:7px;background:#EEE9F5}
+.hrow .dots i.on{background:var(--coral)}
+.bar2{height:10px;border-radius:9px;background:#EEE9F5;margin-top:16px;overflow:hidden}
+.bar2 i{display:block;height:100%;width:72%;background:linear-gradient(90deg,var(--coral),var(--violet))}
+
+/* ---------- S3 types carousel ---------- */
+.center-head{position:absolute;left:0;right:0;top:120px;text-align:center}
+.stage3d{position:absolute;left:50%;top:600px;width:0;height:0;transform-style:preserve-3d}
+.ring{position:absolute;transform-style:preserve-3d}
+.tcard{position:absolute;left:-210px;top:-230px;width:420px;height:440px;padding:42px 38px;display:flex;flex-direction:column;gap:22px;backface-visibility:hidden}
+.tcard h3{margin:0;font-size:40px;font-weight:800}
+.tcard p{margin:0;font-size:24px;line-height:1.45;color:#D4D0DE}
+.tcard .tag{margin-top:auto;font:17px "DejaVu Sans Mono",monospace;color:var(--peach);background:rgba(217,119,87,.12);padding:8px 14px;border-radius:10px;align-self:flex-start}
+.tcount{position:absolute;left:0;right:0;bottom:120px;text-align:center;font-size:24px;color:var(--muted);letter-spacing:.2em}
+.dotsRow{display:flex;justify-content:center;gap:14px;margin-top:16px}
+.dotsRow i{width:12px;height:12px;border-radius:50%;background:rgba(255,255,255,.2)}
+.dotsRow i.on{background:var(--coral);width:40px;border-radius:8px}
+
+/* ---------- S4 pipeline ---------- */
+.floor{position:absolute;left:110px;right:110px;top:380px;height:470px;transform-style:preserve-3d}
+.pipe{position:absolute;left:120px;right:120px;top:120px;height:6px;border-radius:6px;background:rgba(255,255,255,.12)}
+.pipe .fill{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:6px;background:linear-gradient(90deg,var(--coral),var(--violet))}
+.pipe .pulse{position:absolute;top:-12px;width:30px;height:30px;border-radius:50%;background:#fff;box-shadow:0 0 30px 12px rgba(242,164,126,.8);margin-left:-15px}
+.nodes{position:absolute;inset:0;display:grid;grid-template-columns:repeat(5,1fr)}
+.node{display:flex;flex-direction:column;align-items:center;text-align:center;transform-style:preserve-3d}
+.node .orb{width:240px;height:240px;border-radius:50%;display:grid;place-items:center;font-size:84px;color:#fff;
+  background:radial-gradient(circle at 35% 30%,#3a3550,#1a1826 70%);border:2px solid rgba(255,255,255,.14);box-shadow:0 30px 60px rgba(0,0,0,.5)}
+.node .orb.on{background:radial-gradient(circle at 35% 30%,#F7B48F,#D97757 55%,#8E3F27);border-color:rgba(255,255,255,.5);box-shadow:0 0 60px rgba(217,119,87,.7),0 30px 60px rgba(0,0,0,.5)}
+.node .step{margin-top:26px;font-size:20px;letter-spacing:.25em;color:var(--peach);font-weight:700}
+.node h4{margin:8px 0 8px;font-size:38px;font-weight:800}
+.node p{margin:0;font-size:22px;line-height:1.4;color:#CFCBDA;max-width:300px}
+
+/* ---------- S5 when ---------- */
+.cols{position:absolute;left:150px;right:150px;top:330px;display:grid;grid-template-columns:1fr 1fr;gap:60px}
+.col{padding:44px 50px}
+.col h3{display:flex;align-items:center;gap:18px;margin:0 0 26px;font-size:40px;font-weight:800}
+.col h3 i{width:62px;height:62px;border-radius:18px;display:grid;place-items:center;font-size:34px}
+.col.yes h3 i{background:rgba(60,200,180,.18);color:var(--teal)}
+.col.no h3 i{background:rgba(255,110,110,.15);color:#FF8A80}
+.li{display:flex;gap:16px;align-items:center;font-size:28px;line-height:1.35;padding:13px 0;border-top:1px solid rgba(255,255,255,.08);color:#E6E2EE}
+.li i{flex:none;font-size:26px}
+.col.yes .li i{color:var(--teal)}.col.no .li i{color:#FF8A80}
+.tipbar{position:absolute;left:0;right:0;bottom:150px;display:flex;justify-content:center}
+
+/* ---------- S6 features ---------- */
+.grid3{position:absolute;left:130px;right:130px;top:300px;display:grid;grid-template-columns:repeat(3,1fr);gap:34px;transform-style:preserve-3d}
+.feat{padding:34px 36px;display:flex;gap:26px;align-items:flex-start;min-height:230px;transform-origin:50% 0}
+.feat h4{margin:0 0 10px;font-size:32px;font-weight:800}
+.feat p{margin:0;font-size:22px;line-height:1.45;color:#CFCBDA}
+.vline{position:absolute;left:0;right:0;bottom:120px;display:flex;justify-content:center;align-items:center;gap:0}
+.vdot{display:flex;flex-direction:column;align-items:center;gap:10px;width:200px;font-size:20px;color:var(--muted);font-weight:600}
+.vdot i{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.15);border:3px solid rgba(255,255,255,.25)}
+.vdot.on i{background:var(--coral);border-color:#fff;box-shadow:0 0 24px var(--coral)}
+.vdot.on{color:#fff}
+.vseg{width:120px;height:4px;background:rgba(255,255,255,.15);margin-top:-36px;position:relative;overflow:hidden;border-radius:4px}
+.vseg b{position:absolute;inset:0;width:0;background:var(--coral)}
+
+/* ---------- S7 AI powered ---------- */
+.hub{position:absolute;left:1340px;top:570px;width:0;height:0;transform-style:preserve-3d}
+.core{position:absolute;left:-120px;top:-120px;width:240px;height:240px;border-radius:50%;display:grid;place-items:center;font-size:100px;color:#fff;
+  background:radial-gradient(circle at 35% 30%,#FFC9A8,#D97757 50%,#6E2E1C);box-shadow:0 0 120px rgba(217,119,87,.75)}
+.orbit{position:absolute;border:2px dashed rgba(255,255,255,.18);border-radius:50%}
+.sat{position:absolute;width:250px;margin-left:-125px;margin-top:-62px;padding:18px 20px;display:flex;align-items:center;gap:16px;font-size:23px;font-weight:700}
+.sat .icbox{width:60px;height:60px;font-size:30px;border-radius:16px;flex:none}
+.sat small{display:block;font-size:16px;color:var(--muted);font-weight:500;margin-top:3px}
+#links{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:visible}
+.left7{position:absolute;left:120px;top:250px;width:740px}
+
+/* ---------- S8 use cases ---------- */
+.tilt{position:absolute;left:50%;top:640px;width:1640px;margin-left:-820px;transform-style:preserve-3d}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:30px;transform-style:preserve-3d}
+.uc{height:250px;padding:30px;display:flex;flex-direction:column;gap:16px}
+.uc h4{margin:0;font-size:30px;font-weight:800}
+.uc p{margin:0;font-size:20px;line-height:1.4;color:#CFCBDA}
+.uc .icbox{width:66px;height:66px;font-size:34px;border-radius:18px}
+
+/* ---------- S9 share ---------- */
+.urlcard{position:absolute;left:50%;top:430px;width:1100px;margin-left:-550px;padding:34px 40px;display:flex;align-items:center;gap:26px}
+.urlbox{flex:1;font:24px "DejaVu Sans Mono",monospace;color:#EDE9F5;background:rgba(0,0,0,.35);padding:22px 26px;border-radius:16px;border:1px solid rgba(255,255,255,.1);white-space:nowrap;overflow:hidden}
+.urlbox b{color:var(--peach);font-weight:400}
+.btn{padding:22px 34px;border-radius:16px;font-size:26px;font-weight:700;background:linear-gradient(140deg,var(--coral),#B4543A);color:#fff;display:flex;gap:12px;align-items:center;box-shadow:0 14px 40px rgba(217,119,87,.45)}
+.ripple{position:absolute;left:50%;top:505px;border-radius:50%;border:3px solid var(--coral)}
+.steps4{position:absolute;left:150px;right:150px;top:680px;display:grid;grid-template-columns:repeat(4,1fr);gap:30px}
+.st{padding:30px 30px;text-align:left}
+.st .n{font-size:22px;color:var(--peach);font-weight:800;letter-spacing:.2em}
+.st h4{margin:10px 0 8px;font-size:30px;font-weight:800}
+.st p{margin:0;font-size:21px;line-height:1.4;color:#CFCBDA}
+
+/* ---------- S10 tips ---------- */
+.tips{position:absolute;left:150px;right:150px;top:300px;display:grid;grid-template-columns:1fr 1fr;gap:26px 50px}
+.tip{display:flex;gap:28px;align-items:center;padding:26px 34px}
+.tip .big{font-family:"Inter Display";font-weight:900;font-size:72px;line-height:1;width:96px;flex:none;text-align:center}
+.tip h4{margin:0 0 6px;font-size:30px;font-weight:800}
+.tip p{margin:0;font-size:22px;line-height:1.4;color:#CFCBDA}
+
+/* ---------- S11 recap ---------- */
+.recap{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;transform-style:preserve-3d}
+.extr{font-family:"Inter Display";font-weight:900;font-size:136px;letter-spacing:-.02em;display:flex;gap:48px;transform-style:preserve-3d}
+.extr span{display:inline-block;
+  text-shadow:0 2px 0 #c9603f,0 4px 0 #b9563a,0 6px 0 #a94d34,0 8px 0 #99442e,0 10px 0 #893b28,0 12px 0 #793322,0 26px 40px rgba(0,0,0,.6)}
+.extr em{font-style:normal;color:var(--coral);text-shadow:none}
+.pills{display:flex;gap:18px;margin-top:60px;flex-wrap:wrap;justify-content:center;max-width:1500px}
+.pills .chip{font-size:24px}
+
+/* ---------- S12 outro ---------- */
+.outro{position:absolute;inset:0;display:grid;grid-template-columns:1fr 1fr;align-items:center;padding:0 150px 0 170px;transform-style:preserve-3d}
+.photoStage{position:relative;height:900px;display:grid;place-items:center;transform-style:preserve-3d}
+.photoCard{width:470px;height:840px;border-radius:36px;overflow:hidden;background:#fff;position:relative;
+  box-shadow:0 60px 140px rgba(0,0,0,.65),0 0 0 6px rgba(255,255,255,.08),0 0 90px rgba(217,119,87,.45)}
+.photoCard img{width:100%;height:100%;object-fit:cover;object-position:50% 40%}
+.photoCard .shine{position:absolute;inset:0;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.55) 45%,transparent 60%);mix-blend-mode:overlay}
+.ringO{position:absolute;left:50%;top:50%;border-radius:50%;border:2px solid rgba(242,164,126,.45);transform-style:preserve-3d}
+.byline{font-size:28px;letter-spacing:.3em;text-transform:uppercase;color:var(--peach);font-weight:700}
+.name{font-family:"Inter Display";font-weight:900;font-size:128px;line-height:.98;letter-spacing:-.03em;margin:16px 0 26px}
+.thanks{font-size:34px;color:#E2DEEA;line-height:1.5}
+.sig{margin-top:40px;display:flex;gap:16px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<canvas id="bg" width="1920" height="1080"></canvas>
+
+<!-- ===================== S1 INTRO ===================== -->
+<section class="scene" id="s1" data-start="0" data-dur="9" data-name="Introduction">
+  <div class="wrap">
+    <div class="cubeWrap a" data-fx="zoom" data-d="0.2" data-t="1.4">
+      <div class="cube" id="cube">
+        <div class="f" style="transform:translateZ(110px)"><i data-ic="spark"></i></div>
+        <div class="f" style="transform:rotateY(90deg) translateZ(110px)"><i data-ic="code"></i></div>
+        <div class="f" style="transform:rotateY(180deg) translateZ(110px)"><i data-ic="globe"></i></div>
+        <div class="f" style="transform:rotateY(-90deg) translateZ(110px)"><i data-ic="atom"></i></div>
+        <div class="f" style="transform:rotateX(90deg) translateZ(110px)"><i data-ic="doc"></i></div>
+        <div class="f" style="transform:rotateX(-90deg) translateZ(110px)"><i data-ic="diagram"></i></div>
+      </div>
+    </div>
+    <div class="kicker a" data-fx="up" data-d="1.0">The Complete Visual Guide</div>
+    <div class="title3d" id="title3d" style="margin:26px 0 34px">Claude Artifacts</div>
+    <div class="lead a" data-fx="up" data-d="3.4" style="text-align:center">Turn a conversation into real, interactive work — apps, sites, documents &amp; diagrams</div>
+    <div class="chip a" data-fx="pop" data-d="4.4" style="margin-top:44px;font-size:28px;padding:14px 32px"><i data-ic="pen"></i>Prepared by Sara Salem</div>
+  </div>
+</section>
+
+<!-- ===================== S2 WHAT ===================== -->
+<section class="scene" id="s2" data-start="9" data-dur="13" data-name="What are Artifacts?">
+  <div class="split">
+    <div>
+      <div class="kicker a" data-fx="left">Chapter 01</div>
+      <h2 class="h2 a" data-fx="left" data-d="0.2" style="margin:18px 0 24px">What are <span class="grad">Artifacts?</span></h2>
+      <div class="lead a" data-fx="left" data-d="0.5">Artifacts are standalone pieces of content Claude creates in a <b style="color:#fff">dedicated window</b> beside your chat — so you can see, use and refine them instantly.</div>
+      <div class="bul a" data-fx="left" data-d="1.4"><i data-ic="layout"></i><span>A separate panel that lives next to the conversation</span></div>
+      <div class="bul a" data-fx="left" data-d="1.8"><i data-ic="eye"></i><span>Rendered live — run code, view pages, click buttons</span></div>
+      <div class="bul a" data-fx="left" data-d="2.2"><i data-ic="history"></i><span>Editable, versioned, downloadable &amp; shareable</span></div>
+    </div>
+    <div style="display:grid;place-items:center;transform-style:preserve-3d">
+      <div class="mock a" data-fx="rotY" data-d="0.6" data-t="1.4" data-base="rotateY(-14deg) rotateX(5deg)" data-float="2">
+        <div class="mbar"><i></i><i></i><i></i><span>claude.ai</span></div>
+        <div class="mbody">
+          <div class="chat">
+            <div class="bub u">Build me an interactive habit tracker app 🌱</div>
+            <div class="bub c">Here's an interactive habit tracker. Tap a day to mark it complete:</div>
+            <div class="achip"><div class="ib"><i data-ic="atom"></i></div><div>Habit Tracker<small>Interactive artifact · React</small></div></div>
+            <div class="bub u" id="s2q" style="opacity:0">Make the progress bar purple ✨</div>
+          </div>
+          <div class="pane">
+            <div class="tabs"><b id="tPrev">Preview</b><b id="tCode" class="on">Code</b><span class="ver" id="verLbl">Version 1</span></div>
+            <pre id="code"></pre>
+            <div id="prev">
+              <h4>My Habits</h4><p>Week of October 6 · keep the streak going!</p>
+              <div class="hrow">💧 Drink water<div class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div></div>
+              <div class="hrow">📚 Read 20 pages<div class="dots"><i class="on"></i><i class="on"></i><i></i><i class="on"></i><i></i><i></i><i></i></div></div>
+              <div class="hrow">🏃 Morning walk<div class="dots"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i><i></i></div></div>
+              <div class="hrow">🧘 Meditate<div class="dots"><i class="on"></i><i></i><i class="on"></i><i class="on"></i><i></i><i></i><i></i></div></div>
+              <div class="bar2"><i id="pbar"></i></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== S3 TYPES ===================== -->
+<section class="scene" id="s3" data-start="22" data-dur="14.5" data-name="Artifact Types">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 02</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">6 Core <span class="grad">Artifact Types</span></h2>
+  </div>
+  <div class="stage3d"><div class="ring" id="ring">
+    <div class="tcard card"><div class="icbox"><i data-ic="code"></i></div><h3>Code</h3><p>Snippets, scripts &amp; full programs in any language — with syntax highlighting.</p><span class="tag">Python · JS · SQL</span></div>
+    <div class="tcard card"><div class="icbox v"><i data-ic="doc"></i></div><h3>Documents</h3><p>Markdown reports, guides, articles, plans &amp; study notes you can copy or download.</p><span class="tag">text/markdown</span></div>
+    <div class="tcard card"><div class="icbox t"><i data-ic="globe"></i></div><h3>Web Pages</h3><p>Single-file HTML, CSS &amp; JavaScript sites — landing pages, forms &amp; mini-tools.</p><span class="tag">text/html</span></div>
+    <div class="tcard card"><div class="icbox g"><i data-ic="pen"></i></div><h3>SVG Graphics</h3><p>Crisp, scalable vector images — logos, icons, illustrations &amp; infographics.</p><span class="tag">image/svg+xml</span></div>
+    <div class="tcard card"><div class="icbox v"><i data-ic="diagram"></i></div><h3>Diagrams</h3><p>Mermaid flowcharts, sequence diagrams, timelines &amp; mind maps.</p><span class="tag">mermaid</span></div>
+    <div class="tcard card"><div class="icbox"><i data-ic="atom"></i></div><h3>React Apps</h3><p>Interactive components with state, charts &amp; Tailwind styling — real mini apps.</p><span class="tag">application/react</span></div>
+  </div></div>
+  <div class="tcount a" data-fx="up" data-d="0.6"><span id="tname">01 / 06</span><div class="dotsRow" id="tdots"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
+</section>
+
+<!-- ===================== S4 HOW ===================== -->
+<section class="scene" id="s4" data-start="36.5" data-dur="13" data-name="How It Works">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 03</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">How Artifacts <span class="grad">Work</span></h2>
+  </div>
+  <div class="floor a" data-fx="depth" data-d="0.4" data-t="1.2" data-base="rotateX(14deg)">
+    <div class="pipe"><div class="fill" id="pfill"></div><div class="pulse" id="ppulse"></div></div>
+    <div class="nodes">
+      <div class="node"><div class="orb"><i data-ic="msg"></i></div><div class="step">STEP 1</div><h4>Prompt</h4><p>Describe what you want to build</p></div>
+      <div class="node"><div class="orb"><i data-ic="spark"></i></div><div class="step">STEP 2</div><h4>Generate</h4><p>Claude writes the content or code</p></div>
+      <div class="node"><div class="orb"><i data-ic="eye"></i></div><div class="step">STEP 3</div><h4>Render</h4><p>It appears live in the artifact panel</p></div>
+      <div class="node"><div class="orb"><i data-ic="edit"></i></div><div class="step">STEP 4</div><h4>Iterate</h4><p>Ask for changes — a new version is saved</p></div>
+      <div class="node"><div class="orb"><i data-ic="share"></i></div><div class="step">STEP 5</div><h4>Share</h4><p>Download, copy or publish a link</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== S5 WHEN ===================== -->
+<section class="scene" id="s5" data-start="49.5" data-dur="11.5" data-name="When Are They Created?">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 04</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">When Does Claude Create <span class="grad">an Artifact?</span></h2>
+  </div>
+  <div class="cols">
+    <div class="col yes card a" data-fx="rotY" data-d="0.6" data-t="1.1">
+      <h3><i data-ic="check"></i>Becomes an Artifact</h3>
+      <div class="li a" data-fx="up" data-d="1.4"><i data-ic="check"></i>Substantial content (roughly 15+ lines)</div>
+      <div class="li a" data-fx="up" data-d="1.8"><i data-ic="check"></i>Self-contained &amp; makes sense on its own</div>
+      <div class="li a" data-fx="up" data-d="2.2"><i data-ic="check"></i>Something you'll edit, iterate or reuse</div>
+      <div class="li a" data-fx="up" data-d="2.6"><i data-ic="check"></i>Meant to be used outside the chat</div>
+    </div>
+    <div class="col no card a" data-fx="rotYr" data-d="1.0" data-t="1.1">
+      <h3><i data-ic="x"></i>Stays in the Chat</h3>
+      <div class="li a" data-fx="up" data-d="3.2"><i data-ic="x"></i>Short answers &amp; quick facts</div>
+      <div class="li a" data-fx="up" data-d="3.6"><i data-ic="x"></i>Explanations &amp; conversation</div>
+      <div class="li a" data-fx="up" data-d="4.0"><i data-ic="x"></i>Tiny code snippets &amp; examples</div>
+      <div class="li a" data-fx="up" data-d="4.4"><i data-ic="x"></i>Content that depends on the chat context</div>
+    </div>
+  </div>
+  <div class="tipbar"><div class="chip a" data-fx="pop" data-d="5.4"><i data-ic="bulb"></i>Pro tip: just ask — “Put this in an artifact”</div></div>
+</section>
+
+<!-- ===================== S6 FEATURES ===================== -->
+<section class="scene" id="s6" data-start="61" data-dur="13.5" data-name="Key Features">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 05</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">Powerful <span class="grad">Built-in Features</span></h2>
+  </div>
+  <div class="grid3">
+    <div class="feat card a" data-fx="flip" data-d="0.6"><div class="icbox"><i data-ic="eye"></i></div><div><h4>Preview &amp; Code</h4><p>Toggle between the live result and its source code.</p></div></div>
+    <div class="feat card a" data-fx="flip" data-d="0.9"><div class="icbox v"><i data-ic="history"></i></div><div><h4>Version History</h4><p>Every change is a new version — compare or go back.</p></div></div>
+    <div class="feat card a" data-fx="flip" data-d="1.2"><div class="icbox t"><i data-ic="edit"></i></div><div><h4>Targeted Edits</h4><p>Select any part and ask Claude to improve just that.</p></div></div>
+    <div class="feat card a" data-fx="flip" data-d="1.5"><div class="icbox g"><i data-ic="download"></i></div><div><h4>Copy &amp; Download</h4><p>Export as a file in one click — code, docs, images.</p></div></div>
+    <div class="feat card a" data-fx="flip" data-d="1.8"><div class="icbox"><i data-ic="share"></i></div><div><h4>Publish &amp; Share</h4><p>Turn any artifact into a public link anyone can open.</p></div></div>
+    <div class="feat card a" data-fx="flip" data-d="2.1"><div class="icbox v"><i data-ic="remix"></i></div><div><h4>Remix</h4><p>Others can customise a shared artifact in their own chat.</p></div></div>
+  </div>
+  <div class="vline a" data-fx="up" data-d="3.0">
+    <div class="vdot" id="v1"><i></i>Version 1</div><div class="vseg"><b id="vs1"></b></div>
+    <div class="vdot" id="v2"><i></i>Version 2</div><div class="vseg"><b id="vs2"></b></div>
+    <div class="vdot" id="v3"><i></i>Version 3</div><div class="vseg"><b id="vs3"></b></div>
+    <div class="vdot" id="v4"><i></i>Final ✓</div>
+  </div>
+</section>
+
+<!-- ===================== S7 AI POWERED ===================== -->
+<section class="scene" id="s7" data-start="74.5" data-dur="13" data-name="AI-Powered Artifacts">
+  <div class="left7">
+    <div class="kicker a" data-fx="left">Chapter 06</div>
+    <h2 class="h2 a" data-fx="left" data-d="0.2" style="margin:16px 0 26px">Artifacts that <span class="grad">Think</span></h2>
+    <div class="lead a" data-fx="left" data-d="0.5">Artifacts can call Claude from <b style="color:#fff">inside the app itself</b> — turning a simple page into a real AI-powered tool.</div>
+    <div class="bul a" data-fx="left" data-d="1.4"><i data-ic="spark"></i><span>Build AI apps: tutors, writing helpers, chatbots, games</span></div>
+    <div class="bul a" data-fx="left" data-d="1.8"><i data-ic="users"></i><span>Shared users sign in with their own Claude account — no API keys</span></div>
+    <div class="bul a" data-fx="left" data-d="2.2"><i data-ic="db"></i><span>Save data between sessions with persistent storage</span></div>
+    <div class="bul a" data-fx="left" data-d="2.6"><i data-ic="plug"></i><span>Connect to your everyday tools through MCP connectors</span></div>
+  </div>
+  <svg id="links"></svg>
+  <div class="hub a" data-fx="zoom" data-d="0.8" data-t="1.2">
+    <div class="orbit" id="orb1" style="left:-330px;top:-330px;width:660px;height:660px"></div>
+    <div class="core" id="core"><i data-ic="spark"></i></div>
+    <div class="sat card" id="sat0"><div class="icbox"><i data-ic="spark"></i></div><div>Claude AI<small>Reasoning &amp; text</small></div></div>
+    <div class="sat card" id="sat1"><div class="icbox v"><i data-ic="db"></i></div><div>Storage<small>Remembers data</small></div></div>
+    <div class="sat card" id="sat2"><div class="icbox t"><i data-ic="plug"></i></div><div>Connectors<small>Your tools via MCP</small></div></div>
+    <div class="sat card" id="sat3"><div class="icbox g"><i data-ic="users"></i></div><div>Your Users<small>Share &amp; use</small></div></div>
+  </div>
+</section>
+
+<!-- ===================== S8 USE CASES ===================== -->
+<section class="scene" id="s8" data-start="87.5" data-dur="12" data-name="Use Cases">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 07</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">What Can You <span class="grad">Build?</span></h2>
+  </div>
+  <div class="tilt" id="tilt">
+    <div class="grid4" style="transform:translateY(-50%)">
+      <div class="uc card a" data-fx="depth" data-d="0.6"><div class="icbox"><i data-ic="chart"></i></div><h4>Dashboards</h4><p>KPIs &amp; charts from your own data</p></div>
+      <div class="uc card a" data-fx="depth" data-d="0.75"><div class="icbox v"><i data-ic="game"></i></div><h4>Games</h4><p>Puzzles, quizzes &amp; arcade classics</p></div>
+      <div class="uc card a" data-fx="depth" data-d="0.9"><div class="icbox t"><i data-ic="layout"></i></div><h4>Landing Pages</h4><p>Responsive sites for any idea</p></div>
+      <div class="uc card a" data-fx="depth" data-d="1.05"><div class="icbox g"><i data-ic="pie"></i></div><h4>Data Viz</h4><p>Turn CSV &amp; Excel into insights</p></div>
+      <div class="uc card a" data-fx="depth" data-d="1.2"><div class="icbox v"><i data-ic="cards"></i></div><h4>Flashcards</h4><p>Study tools &amp; interactive lessons</p></div>
+      <div class="uc card a" data-fx="depth" data-d="1.35"><div class="icbox"><i data-ic="calc"></i></div><h4>Calculators</h4><p>Budgets, loans, grades &amp; more</p></div>
+      <div class="uc card a" data-fx="depth" data-d="1.5"><div class="icbox g"><i data-ic="diagram"></i></div><h4>Flowcharts</h4><p>Processes &amp; org charts in seconds</p></div>
+      <div class="uc card a" data-fx="depth" data-d="1.65"><div class="icbox t"><i data-ic="cal"></i></div><h4>Planners</h4><p>Schedules, trackers &amp; to-do apps</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== S9 SHARE ===================== -->
+<section class="scene" id="s9" data-start="99.5" data-dur="11.5" data-name="Publish & Share">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 08</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">Publish &amp; <span class="grad">Share</span></h2>
+  </div>
+  <div class="ripple" id="rp1"></div><div class="ripple" id="rp2"></div><div class="ripple" id="rp3"></div>
+  <div class="urlcard card a" data-fx="zoom" data-d="0.5" data-t="1">
+    <div class="icbox"><i data-ic="link"></i></div>
+    <div class="urlbox" id="url"></div>
+    <div class="btn" id="pubBtn"><i data-ic="share"></i>Publish</div>
+  </div>
+  <div class="steps4">
+    <div class="st card a" data-fx="up" data-d="2.0"><div class="n">01</div><h4>Click Publish</h4><p>From the artifact panel</p></div>
+    <div class="st card a" data-fx="up" data-d="2.4"><div class="n">02</div><h4>Get a Link</h4><p>A public URL is created</p></div>
+    <div class="st card a" data-fx="up" data-d="2.8"><div class="n">03</div><h4>Anyone Opens It</h4><p>View &amp; interact — no setup</p></div>
+    <div class="st card a" data-fx="up" data-d="3.2"><div class="n">04</div><h4>They Remix</h4><p>Customise it in their own Claude</p></div>
+  </div>
+</section>
+
+<!-- ===================== S10 TIPS ===================== -->
+<section class="scene" id="s10" data-start="111" data-dur="12.5" data-name="Pro Tips">
+  <div class="center-head">
+    <div class="kicker a" data-fx="up">Chapter 09</div>
+    <h2 class="h2 a" data-fx="up" data-d="0.2" style="margin-top:14px">6 Pro Tips for <span class="grad">Better Artifacts</span></h2>
+  </div>
+  <div class="tips">
+    <div class="tip card a" data-fx="left" data-d="0.6"><div class="big grad">1</div><div><h4>Be Specific</h4><p>Describe layout, colours, data &amp; behaviour</p></div></div>
+    <div class="tip card a" data-fx="right" data-d="0.9"><div class="big grad">2</div><div><h4>Name the Type</h4><p>“Create a React artifact…” or “an SVG logo…”</p></div></div>
+    <div class="tip card a" data-fx="left" data-d="1.2"><div class="big grad">3</div><div><h4>Iterate in Small Steps</h4><p>One clear change per message works best</p></div></div>
+    <div class="tip card a" data-fx="right" data-d="1.5"><div class="big grad">4</div><div><h4>Use Version History</h4><p>Compare versions &amp; restore the best one</p></div></div>
+    <div class="tip card a" data-fx="left" data-d="1.8"><div class="big grad">5</div><div><h4>Bring Your Data</h4><p>Upload files or paste content as input</p></div></div>
+    <div class="tip card a" data-fx="right" data-d="2.1"><div class="big grad">6</div><div><h4>Let Claude Fix Errors</h4><p>Hit “Try fixing” when something breaks</p></div></div>
+  </div>
+</section>
+
+<!-- ===================== S11 RECAP ===================== -->
+<section class="scene" id="s11" data-start="123.5" data-dur="9" data-name="Recap">
+  <div class="recap">
+    <div class="kicker a" data-fx="up">In One Line</div>
+    <div class="extr" id="extr" style="margin:34px 0 10px"><span>Create</span><span><em>·</em></span><span>Iterate</span><span><em>·</em></span><span>Share</span></div>
+    <div class="lead a" data-fx="up" data-d="2.4" style="text-align:center;max-width:1300px">Claude Artifacts turn your ideas into working apps, pages, documents and visuals — right inside the conversation.</div>
+    <div class="pills">
+      <span class="chip a" data-fx="pop" data-d="3.2"><i data-ic="code"></i>Code</span>
+      <span class="chip a" data-fx="pop" data-d="3.35"><i data-ic="doc"></i>Documents</span>
+      <span class="chip a" data-fx="pop" data-d="3.5"><i data-ic="globe"></i>Web Pages</span>
+      <span class="chip a" data-fx="pop" data-d="3.65"><i data-ic="pen"></i>SVG</span>
+      <span class="chip a" data-fx="pop" data-d="3.8"><i data-ic="diagram"></i>Diagrams</span>
+      <span class="chip a" data-fx="pop" data-d="3.95"><i data-ic="atom"></i>React</span>
+      <span class="chip a" data-fx="pop" data-d="4.1"><i data-ic="spark"></i>AI-Powered</span>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== S12 OUTRO ===================== -->
+<section class="scene" id="s12" data-start="132.5" data-dur="12.5" data-name="Thank You">
+  <div class="outro">
+    <div class="photoStage">
+      <div class="ringO" id="ro1" style="width:760px;height:760px;margin:-380px 0 0 -380px"></div>
+      <div class="ringO" id="ro2" style="width:900px;height:900px;margin:-450px 0 0 -450px;border-color:rgba(139,124,246,.35)"></div>
+      <div class="photoCard a" id="photo" data-fx="rotYin" data-d="0.3" data-t="1.6">
+        <img src="assets/sara-portrait.png" alt="Sara Salem">
+        <div class="shine" id="shine"></div>
+      </div>
+    </div>
+    <div>
+      <div class="byline a" data-fx="right" data-d="1.2">Prepared by</div>
+      <div class="name a" data-fx="right" data-d="1.5"><span class="grad">Sara<br>Salem</span></div>
+      <div class="thanks a" data-fx="right" data-d="2.2">Thank you for watching!<br><span style="color:var(--muted)">Claude Artifacts — The Complete Visual Guide</span></div>
+      <div class="sig">
+        <span class="chip a" data-fx="pop" data-d="3.0"><i data-ic="spark"></i>Create</span>
+        <span class="chip a" data-fx="pop" data-d="3.2"><i data-ic="edit"></i>Iterate</span>
+        <span class="chip a" data-fx="pop" data-d="3.4"><i data-ic="share"></i>Share</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== HUD ===================== -->
+<div id="hud">
+  <div id="brandTL"><span class="star"><i data-ic="spark"></i></span>Claude Artifacts</div>
+  <div id="chapter"><b id="chn">00</b><span id="chname"></span></div>
+  <div id="credit"><img src="assets/sara-face.png" alt=""><span>Prepared by <b>Sara Salem</b></span></div>
+  <div id="tick"></div>
+  <div id="prog"></div>
+</div>
+
+<script>
+/* ---------------- icons ---------------- */
+const IC={
+ code:'<path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/>',
+ doc:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/>',
+ globe:'<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/>',
+ pen:'<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18z"/><circle cx="11" cy="11" r="2"/>',
+ diagram:'<rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/><rect x="15" y="3" width="6" height="6" rx="1"/><path d="M9 6h6M18 9v6"/>',
+ atom:'<circle cx="12" cy="12" r="1.6"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/>',
+ eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>',
+ history:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 3"/>',
+ edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+ download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>',
+ share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/>',
+ remix:'<path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>',
+ spark:'<path d="M12 2l2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"/>',
+ db:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/>',
+ plug:'<path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/>',
+ chart:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 6-6"/>',
+ game:'<rect x="2" y="6" width="20" height="12" rx="4"/><path d="M6 12h4M8 10v4"/><circle cx="16" cy="11" r="1"/><circle cx="18" cy="13" r="1"/>',
+ layout:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>',
+ pie:'<path d="M21 15.9A10 10 0 1 1 8 2.8"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
+ cards:'<rect x="2" y="6" width="14" height="14" rx="2"/><path d="M6 2h14a2 2 0 0 1 2 2v14"/>',
+ calc:'<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h8"/>',
+ cal:'<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+ msg:'<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+ link:'<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+ users:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+ check:'<path d="M20 6L9 17l-5-5"/>',
+ x:'<path d="M18 6L6 18M6 6l12 12"/>',
+ bulb:'<path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>'
+};
+document.querySelectorAll('i[data-ic]').forEach(el=>{el.innerHTML='<svg class="ic" viewBox="0 0 24 24">'+IC[el.dataset.ic]+'</svg>'});
+
+/* ---------------- helpers ---------------- */
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));
+const eOut=x=>1-Math.pow(1-x,3);
+const eIO=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const eBack=x=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2)};
+let seed=7;const rnd=()=>{seed=(seed*16807)%2147483647;return (seed-1)/2147483646};
+
+/* title letters */
+const T=document.getElementById('title3d');
+T.innerHTML=[...T.textContent].map(c=>c===' '?'<span class="sp"></span>':`<span class="grad" style="background-size:900px 100%">${c}</span>`).join('');
+const letters=[...T.children];
+letters.forEach((s,i)=>{s.style.backgroundPosition=`${-i*60}px 0`});
+const EX=[...document.getElementById('extr').children];
+
+/* scenes */
+const SC=[...document.querySelectorAll('.scene')].map((el,i)=>({el,i,start:+el.dataset.start,dur:+el.dataset.dur,name:el.dataset.name,
+  items:[...el.querySelectorAll('.a')].map(n=>({n,d:+(n.dataset.d||0),t:+(n.dataset.t||0.9),fx:n.dataset.fx||'up',base:n.dataset.base||'',fl:+(n.dataset.float||0)}))}));
+const TOTAL=SC[SC.length-1].start+SC[SC.length-1].dur;
+window.TOTAL=TOTAL;
+
+function fx(it,l){
+  const raw=clamp((l-it.d)/it.t), p=eOut(raw); let tr='',op=p,filt='';
+  switch(it.fx){
+    case 'up':tr=`translate3d(0,${(1-p)*70}px,0)`;break;
+    case 'down':tr=`translate3d(0,${-(1-p)*70}px,0)`;break;
+    case 'left':tr=`translate3d(${-(1-p)*160}px,0,0)`;break;
+    case 'right':tr=`translate3d(${(1-p)*160}px,0,0)`;break;
+    case 'zoom':tr=`scale(${.4+.6*p})`;break;
+    case 'pop':{const b=raw<=0?0:eBack(raw);tr=`scale(${b})`;op=clamp(raw*3);break}
+    case 'flip':tr=`rotateX(${(1-p)*-95}deg)`;break;
+    case 'rotY':tr=`translateZ(${-(1-p)*300}px) rotateY(${(1-p)*-75}deg)`;break;
+    case 'rotYr':tr=`translateZ(${-(1-p)*300}px) rotateY(${(1-p)*75}deg)`;break;
+    case 'rotYin':tr=`rotateY(${(1-p)*-160}deg) scale(${.7+.3*p})`;op=clamp(raw*2.5);break;
+    case 'depth':tr=`translate3d(0,${(1-p)*60}px,${-(1-p)*700}px)`;break;
+  }
+  if(it.fl) tr+=` rotateY(${Math.sin(l*.55)*it.fl}deg) rotateX(${Math.cos(l*.45)*it.fl*.6}deg)`;
+  it.n.style.transform=(it.base+' '+tr).trim();
+  it.n.style.opacity=op;
+}
+
+/* ---------------- background (canvas 3D) ---------------- */
+const cv=document.getElementById('bg'),cx=cv.getContext('2d'),W=1920,H=1080;
+const PTS=[];for(let i=0;i<420;i++){const u=rnd()*2-1,th=rnd()*Math.PI*2,r=600+rnd()*900;const s=Math.sqrt(1-u*u);PTS.push([r*s*Math.cos(th),r*u,r*s*Math.sin(th),rnd()])}
+// icosahedron
+const ph=(1+Math.sqrt(5))/2;const IV=[[-1,ph,0],[1,ph,0],[-1,-ph,0],[1,-ph,0],[0,-1,ph],[0,1,ph],[0,-1,-ph],[0,1,-ph],[ph,0,-1],[ph,0,1],[-ph,0,-1],[-ph,0,1]];
+const IE=[];for(let a=0;a<12;a++)for(let b=a+1;b<12;b++){const d=Math.hypot(IV[a][0]-IV[b][0],IV[a][1]-IV[b][1],IV[a][2]-IV[b][2]);if(Math.abs(d-2)<.01)IE.push([a,b])}
+function rot(p,ay,ax){let [x,y,z]=p;const cy=Math.cos(ay),sy=Math.sin(ay);[x,z]=[x*cy+z*sy,-x*sy+z*cy];const cxx=Math.cos(ax),sx=Math.sin(ax);[y,z]=[y*cxx-z*sx,y*sx+z*cxx];return [x,y,z]}
+function drawBG(t){
+  const g=cx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0B0C18');g.addColorStop(1,'#120E22');cx.fillStyle=g;cx.fillRect(0,0,W,H);
+  // glows
+  const glow=(x,y,r,c)=>{const rg=cx.createRadialGradient(x,y,0,x,y,r);rg.addColorStop(0,c);rg.addColorStop(1,'rgba(0,0,0,0)');cx.fillStyle=rg;cx.fillRect(0,0,W,H)};
+  glow(W*.5+Math.sin(t*.13)*520,H*.35+Math.cos(t*.11)*160,820,'rgba(217,119,87,.26)');
+  glow(W*.5+Math.cos(t*.09)*640,H*.6+Math.sin(t*.12)*200,900,'rgba(139,124,246,.22)');
+  glow(W*.15+Math.sin(t*.07)*200,H*.85,600,'rgba(60,200,180,.08)');
+  // perspective grid floor
+  const hz=H*.66,vx=W/2;cx.lineWidth=1;
+  for(let i=-24;i<=24;i++){const x2=vx+i*170;const a=.10*(1-Math.abs(i)/26);cx.strokeStyle=`rgba(242,164,126,${a})`;cx.beginPath();cx.moveTo(vx+i*6,hz);cx.lineTo(x2,H+260);cx.stroke()}
+  const off=(t*.6)%1;
+  for(let k=0;k<16;k++){const z=k+1-off;const y=hz+380/z*1.0-380/16;if(y<hz||y>H)continue;const a=clamp(.16*(1-z/16));cx.strokeStyle=`rgba(242,164,126,${a})`;cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);cx.stroke()}
+  // fade horizon
+  const hg=cx.createLinearGradient(0,hz-60,0,hz+160);hg.addColorStop(0,'rgba(14,12,28,0)');hg.addColorStop(.3,'rgba(14,12,28,.85)');hg.addColorStop(1,'rgba(14,12,28,0)');cx.fillStyle=hg;cx.fillRect(0,hz-60,W,220);
+  // particles
+  const ay=t*.06,ax=.25+Math.sin(t*.05)*.1;
+  for(const p of PTS){const [x,y,z]=rot(p,ay,ax);const zz=z+1700;if(zz<50)continue;const f=900/zz;const sx=W/2+x*f,sy=H/2+y*f;if(sx<0||sx>W||sy<0||sy>H)continue;
+    const tw=.5+.5*Math.sin(t*2+p[3]*20);cx.fillStyle=p[3]>.8?`rgba(242,164,126,${.75*f*tw})`:`rgba(220,215,255,${.6*f*tw})`;cx.beginPath();cx.arc(sx,sy,Math.max(.6,2.4*f),0,6.283);cx.fill()}
+  // wireframe icosahedron (strong in intro/outro, faint elsewhere)
+  let vis=.10; if(t<9)vis=.10+.35*clamp(t/2)*clamp((9-t)/1.2); if(t>132.5)vis=.10+.25*clamp((t-132.5)/2);
+  const S=t<9?330:(t>132.5?300:260), cxp=t<9?W/2:(t>132.5?W*.27:W*.86), cyp=t<9?H*.43:(t>132.5?H*.5:H*.28);
+  cx.strokeStyle=`rgba(242,164,126,${vis})`;cx.lineWidth=1.5;
+  const PV=IV.map(v=>{const [x,y,z]=rot(v,t*.25,t*.17);const f=4/(z+6);return [cxp+x*S*f,cyp+y*S*f]});
+  cx.beginPath();for(const [a,b] of IE){cx.moveTo(...PV[a]);cx.lineTo(...PV[b])}cx.stroke();
+  cx.fillStyle=`rgba(255,220,200,${vis*1.6})`;for(const p of PV){cx.beginPath();cx.arc(p[0],p[1],3,0,6.283);cx.fill()}
+  // vignette
+  const vg=cx.createRadialGradient(W/2,H/2,H*.45,W/2,H/2,H*1.05);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.55)');cx.fillStyle=vg;cx.fillRect(0,0,W,H);
+}
+
+/* ---------------- scene hooks ---------------- */
+const CODE=[
+ ['<span class="k">import</span> { useState } <span class="k">from</span> <span class="s">"react"</span>;',''],
+ ['',''],
+ ['<span class="k">export default function</span> <span class="f">HabitTracker</span>() {',''],
+ ['  <span class="k">const</span> [habits, setHabits] = <span class="f">useState</span>([',''],
+ ['    { name: <span class="s">"Drink water"</span>, days: [1,1,1,1,0,0,0] },',''],
+ ['    { name: <span class="s">"Read 20 pages"</span>, days: [1,1,0,1,0,0,0] },',''],
+ ['  ]);',''],
+ ['  <span class="c">// toggle a day when it is tapped</span>',''],
+ ['  <span class="k">const</span> <span class="f">toggle</span> = (h, d) =&gt; { <span class="c">/* ... */</span> };',''],
+ ['  <span class="k">return</span> (',''],
+ ['    &lt;<span class="f">div</span> className=<span class="s">"p-6 rounded-2xl"</span>&gt;',''],
+ ['      &lt;<span class="f">h1</span>&gt;My Habits&lt;/<span class="f">h1</span>&gt;',''],
+ ['      {habits.<span class="f">map</span>(h =&gt; &lt;<span class="f">Row</span> {...h} /&gt;)}',''],
+ ['    &lt;/<span class="f">div</span>&gt;',''],
+ ['  );','}']
+];
+// prepare plain lengths for typing
+const CODEP=CODE.map(([h])=>h);
+function typed(n){ // reveal n "visible characters" of the html lines
+  let out='',left=n;
+  for(const line of CODEP){ if(left<=0)break;
+    let vis=0,i=0,res='';
+    while(i<line.length&&left>0){ if(line[i]==='<'){const j=line.indexOf('>',i);res+=line.slice(i,j+1);i=j+1;continue}
+      if(line[i]==='&'){const j=line.indexOf(';',i);res+=line.slice(i,j+1);i=j+1;left--;continue}
+      res+=line[i];i++;left--; }
+    // close open spans
+    const opens=(res.match(/<span/g)||[]).length,closes=(res.match(/<\/span>/g)||[]).length;res+='</span>'.repeat(Math.max(0,opens-closes));
+    out+=res+(left>0?'\n':'');left--; }
+  return out;
+}
+const TOTALCH=CODEP.reduce((a,l)=>a+l.replace(/<[^>]+>/g,'').replace(/&[a-z]+;/g,'x').length+1,0);
+const $=id=>document.getElementById(id);
+
+const HOOKS={
+ s1(l){
+   $('cube').style.transform=`rotateX(${-20+Math.sin(l*.7)*10}deg) rotateY(${l*48}deg)`;
+   letters.forEach((s,i)=>{const p=clamp((l-1.4-i*.07)/.8);const e=eBack(p);s.style.opacity=clamp(p*3);
+     s.style.transform=`translateY(${(1-eOut(p))*-120}px) rotateX(${(1-e)*-90}deg) translateZ(${Math.sin(l*1.6+i*.5)*10}px)`});
+ },
+ s2(l){
+   const n=Math.floor(clamp((l-2)/4.2)*TOTALCH);
+   const showPrev=l>6.8;
+   $('code').innerHTML=showPrev?typed(TOTALCH):typed(n)+((Math.floor(l*3)%2)?'<span class="cursor"></span>':'');
+   const pp=eOut(clamp((l-6.8)/.7));$('prev').style.opacity=pp;$('prev').style.transform=`translateY(${(1-pp)*20}px)`;
+   $('tPrev').className=showPrev?'on':'';$('tCode').className=showPrev?'':'on';
+   const q=eOut(clamp((l-8.6)/.6));$('s2q').style.opacity=q;$('s2q').style.transform=`translateY(${(1-q)*14}px)`;
+   const v2=l>10.2;$('verLbl').textContent=v2?'Version 2':'Version 1';
+   $('pbar').style.background=v2?'linear-gradient(90deg,#8B7CF6,#5B4BD1)':'';
+   $('pbar').style.width=(v2?72+eOut(clamp((l-10.2)/.8))*14:72)+'%';
+ },
+ s3(l){
+   const step=1.95,s0=1.3;const k=clamp(Math.floor((l-s0)/step),0,5);const fr=clamp(((l-s0)-k*step)/.75);
+   let pos=k+(k<5&&l>s0?0:0);let ang;
+   if(l<s0) ang=-(1-eOut(clamp(l/s0)))*120; else {const nxt=(l-s0)>=(k+1)*step-.75&&k<5?eIO(clamp(((l-s0)-((k+1)*step-.75))/.75)):0;ang=-(k+nxt)*60}
+   const ring=$('ring');ring.style.transform=`translateZ(-560px) rotateX(-6deg) rotateY(${ang}deg)`;
+   const cards=ring.children;let front=0,best=-9;
+   for(let i=0;i<6;i++){const a=(i*60+ang)*Math.PI/180;const c=Math.cos(a);if(c>best){best=c;front=i}
+     cards[i].style.transform=`rotateY(${i*60}deg) translateZ(560px)`;cards[i].style.opacity=(.18+.82*clamp(c));
+     cards[i].style.borderColor=c>.95?'rgba(242,164,126,.8)':'rgba(255,255,255,.14)';}
+   $('tname').textContent=`0${front+1} / 06`;
+   [...$('tdots').children].forEach((d,i)=>d.className=i===front?'on':'');
+ },
+ s4(l){
+   const p=clamp((l-1.6)/9);const nodes=document.querySelectorAll('#s4 .orb');
+   $('pfill').style.width=(p*100)+'%';$('ppulse').style.left=(p*100)+'%';$('ppulse').style.opacity=p>0&&p<1?1:0;
+   nodes.forEach((o,i)=>{const on=p>=i/4-0.001&&l>1.6;o.className='orb'+(on?' on':'');
+     const b=clamp((l-1.6-i*2.25)/.5);o.style.transform=`translateZ(${on?Math.sin(clamp(b)*Math.PI)*60+20:0}px) rotateY(${on?(1-eOut(b))*180:0}deg)`});
+ },
+ s6(l){
+   const v=clamp((l-3.8)/6);const segs=[$('vs1'),$('vs2'),$('vs3')];const dots=[$('v1'),$('v2'),$('v3'),$('v4')];
+   dots.forEach((d,i)=>d.className='vdot'+(v>=i/3-0.001&&l>3.8?' on':''));
+   segs.forEach((s,i)=>s.style.width=clamp((v-i/3)*3)*100+'%');
+ },
+ s7(l){
+   const R=310,RY=290,HX=1340,HY=570,base=l*.35;const pts=[];
+   for(let i=0;i<4;i++){const a=base+i*Math.PI/2;const x=Math.cos(a)*R,y=Math.sin(a)*RY;const z=Math.sin(a);
+     const s=$('sat'+i);const p=eOut(clamp((l-1.6-i*.3)/.8));
+     s.style.transform=`translate3d(${x*p}px,${y*p}px,${z*80}px) scale(${(.85+.15*(z+1)/2)*p})`;s.style.opacity=p;s.style.zIndex=Math.round(z*10)+10;pts.push([HX+x*p,HY+y*p,p])}
+   $('orb1').style.transform=`rotateX(52deg) rotateZ(${l*20}deg)`;
+   $('core').style.transform=`scale(${1+Math.sin(l*2.4)*.04}) rotateY(${l*40}deg)`;
+   const hp=eOut(clamp((l-.8)/1.2));
+   $('links').innerHTML=pts.map(([x,y,p],i)=>`<line x1="${HX}" y1="${HY}" x2="${x}" y2="${y}" stroke="rgba(242,164,126,${.5*p*hp})" stroke-width="2" stroke-dasharray="6 8" stroke-dashoffset="${-l*40}"/>`+
+     `<circle cx="${HX+(x-HX)*((l*.6+i*.25)%1)}" cy="${HY+(y-HY)*((l*.6+i*.25)%1)}" r="5" fill="rgba(255,220,200,${p*hp})"/>`).join('');
+ },
+ s8(l){
+   $('tilt').style.transform=`rotateX(${22-eOut(clamp(l/3))*10}deg) rotateY(${Math.sin(l*.4)*7}deg) rotateZ(${Math.sin(l*.3)*-1.5}deg)`;
+   document.querySelectorAll('#s8 .uc').forEach((c,i)=>{const it=SC[7].items.find(x=>x.n===c);fx(it,l);
+     c.style.transform+=` translateZ(${Math.sin(l*1.8-i*.7)*26}px)`});
+ },
+ s9(l){
+   const full='claude.ai/public/artifacts/habit-tracker';const n=Math.floor(clamp((l-1.4)/2.4)*full.length);
+   const s=full.slice(0,n),B=27;$('url').innerHTML='https://'+s.slice(0,B)+(n>B?'<b>'+s.slice(B)+'</b>':'')+(n<full.length&&Math.floor(l*3)%2?'▍':'');
+   const press=l>1.1&&l<1.35;$('pubBtn').style.transform=press?'scale(.92)':'scale(1)';
+   [1,2,3].forEach(i=>{const ph=((l-1.2)*.55+i/3)%1;const r=l<1.2?0:200+ph*1300;const el=$('rp'+i);
+     el.style.width=el.style.height=r+'px';el.style.marginLeft=el.style.marginTop=(-r/2)+'px';el.style.opacity=l<1.2?0:(1-ph)*.45});
+ },
+ s11(l){
+   EX.forEach((s,i)=>{const p=clamp((l-.5-i*.25)/.9);s.style.opacity=clamp(p*3);
+     s.style.transform=`translateZ(${(1-eOut(p))*-900}px) rotateY(${(1-eOut(p))*60}deg) rotateX(${Math.sin(l*1.2+i)*6}deg)`});
+   $('extr').style.transform=`rotateY(${Math.sin(l*.5)*8}deg)`;
+ },
+ s12(l){
+   const it=SC[11].items.find(x=>x.n.id==='photo');fx(it,l);
+   if(l>1.9)$('photo').style.transform+=` rotateY(${Math.sin((l-1.9)*.7)*9}deg) rotateX(${Math.cos((l-1.9)*.6)*3}deg) translateY(${Math.sin(l*1.1)*10}px)`;
+   const sh=((l-1.5)*.35)%1.6;$('shine').style.transform=`translateX(${-120+sh*160}%)`;
+   $('ro1').style.transform=`rotateX(70deg) rotateZ(${l*25}deg)`;$('ro2').style.transform=`rotateX(64deg) rotateY(18deg) rotateZ(${-l*18}deg)`;
+   const rp=eOut(clamp((l-.6)/1.4));$('ro1').style.opacity=rp;$('ro2').style.opacity=rp;
+ }
+};
+
+/* ---------------- main render ---------------- */
+function render(t){
+  drawBG(t);
+  let cur=SC[0];
+  for(const s of SC){
+    const l=t-s.start;
+    if(l<0||l>=s.dur){s.el.style.display='none';continue}
+    cur=s;s.el.style.display='block';
+    const isLast=s===SC[SC.length-1];
+    const fin=eOut(clamp(l/.6)),fout=isLast?1:eOut(clamp((s.dur-l)/.6));
+    s.el.style.opacity=Math.min(fin,fout);
+    s.el.style.transform=`translateZ(${(1-fout)*220 - (1-fin)*0}px) scale(${1+(1-fout)*.05})`;
+    for(const it of s.items) fx(it,l);
+    const h=HOOKS[s.el.id];if(h)h(l);
+  }
+  // HUD
+  const i=cur.i;$('chn').textContent=String(i).padStart(2,'0');$('chname').textContent=cur.name;
+  const hf=clamp((t-.8)/1);$('hud').style.opacity=hf*(t>TOTAL-1?clamp((TOTAL-t)/1):1);
+  $('prog').style.width=(t/TOTAL*100)+'%';
+  const mm=Math.floor(t/60),ss=Math.floor(t%60),M2=Math.floor(TOTAL/60),S2=Math.floor(TOTAL%60);
+  $('tick').textContent=`${mm}:${String(ss).padStart(2,'0')} / ${M2}:${String(S2).padStart(2,'0')}`;
+  // final fade to black
+  document.body.style.filter='';
+  cv.style.opacity=1;
+}
+window.render=render;
+render(+(new URLSearchParams(location.search).get('t')||0));
+</script>
+</body>
+</html>
