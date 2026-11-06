@@ -36,12 +36,16 @@ export interface MountOptions {
   /** Overrides how spec consoles open links and make HTTP calls (e.g. inside sandboxed pages). */
   open?: (url: string) => void;
   fetch?: SpecContext["fetch"];
+  /** Called after every command line runs, e.g. to track activity. */
+  onRun?: (line: string, result: { code: number; output: OutputBlock[]; ms: number }) => void;
   /** Only for consoles built in code: supplies the command context. Spec consoles get one automatically. */
   makeCtx?: (api: { clear: () => void; history: () => string[] }) => unknown;
 }
 
 export interface MountedConsole {
   run: (line: string) => Promise<number>;
+  /** Puts text in the input line and focuses it, without running it. */
+  setInput: (text: string) => void;
   clear: () => void;
   destroy: () => void;
   vars: Record<string, string>;
@@ -155,8 +159,14 @@ export function mountConsole(target: HTMLElement, source: ConsoleSpec | BuiltCon
       /* storage blocked */
     }
     input.disabled = true;
+    const t0 = performance.now();
     const res = await cli.execute(line, ctx());
     input.disabled = false;
+    try {
+      opts.onRun?.(line, { code: res.code, output: res.output, ms: performance.now() - t0 });
+    } catch {
+      /* a listener error must not break the terminal */
+    }
     if (!cleared) {
       const entry = el("div", "cb-entry");
       const l = el("div", "cb-line");
@@ -219,5 +229,10 @@ export function mountConsole(target: HTMLElement, source: ConsoleSpec | BuiltCon
   body.addEventListener("click", () => input.focus());
   if (opts.autoFocus !== false) input.focus();
 
-  return { run, clear, destroy: () => root.remove(), vars };
+  const setInput = (text: string) => {
+    input.value = text;
+    input.focus();
+    input.setSelectionRange(text.length, text.length);
+  };
+  return { run, setInput, clear, destroy: () => root.remove(), vars };
 }

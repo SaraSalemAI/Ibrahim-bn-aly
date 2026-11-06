@@ -21,6 +21,18 @@ export const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("run"), commands: z.array(z.string()).min(1) }),
   z.object({ type: z.literal("choice"), options: z.array(z.string()).min(1), saveAs: z.string().optional() }),
   z.object({ type: z.literal("date"), format: z.enum(["iso", "local", "date", "time"]).optional() }),
+  z.object({
+    type: z.literal("query"),
+    dataset: z.string(),
+    search: z.string().optional(),
+    where: z.string().optional(),
+    sortBy: z.string().optional(),
+    desc: z.union([z.boolean(), z.string()]).optional(),
+    limit: z.union([z.number(), z.string()]).optional(),
+    columns: z.array(z.string()).optional(),
+  }),
+  z.object({ type: z.literal("stats"), dataset: z.string(), column: z.string() }),
+  z.object({ type: z.literal("columns"), dataset: z.string() }),
 ]);
 
 const argSchema = z.object({
@@ -53,6 +65,7 @@ export const consoleSpecSchema = z.object({
   prompt: z.string().optional(),
   theme: z.object({ background: z.string().optional(), foreground: z.string().optional(), accent: z.string().optional() }).optional(),
   vars: z.record(z.string(), z.string()).optional(),
+  datasets: z.record(z.string(), z.array(z.record(z.string(), cell))).optional(),
   groups: z.array(z.object({ name: z.string(), summary: z.string() })).optional(),
   commands: z.array(commandSchema),
 });
@@ -98,10 +111,56 @@ function render(io: CommandIO, data: unknown, as: "json" | "text" | "table" | "k
   } else io.print(typeof data === "string" ? data : JSON.stringify(data, null, 2));
 }
 
+export type Row = Record<string, string | number | null>;
+
+const isNum = (v: unknown) => typeof v === "number" || (typeof v === "string" && v.trim() !== "" && Number.isFinite(Number(v.replace(/,/g, ""))));
+const toNum = (v: unknown) => (typeof v === "number" ? v : Number(String(v).replace(/,/g, "")));
+const fmtNum = (n: number) => (Number.isInteger(n) ? n.toLocaleString("en-US") : n.toLocaleString("en-US", { maximumFractionDigits: 2 }));
+
+function columnsOf(rows: Row[]): string[] {
+  return [...new Set(rows.slice(0, 200).flatMap((r) => Object.keys(r)))];
+}
+
+function findColumn(rows: Row[], name: string): string {
+  const cols = columnsOf(rows);
+  const hit = cols.find((c) => c === name) ?? cols.find((c) => c.toLowerCase() === name.toLowerCase());
+  if (!hit) throw new ConsoleError(`No column "${name}". Columns: ${cols.join(", ")}`);
+  return hit;
+}
+
+/** `where` filters: "col=value", "col!=value", "col>n", "col<n", "col>=n", "col<=n", "col~text"; several joined with " and ". */
+function applyWhere(rows: Row[], where: string): Row[] {
+  const parts = where.split(/\s+and\s+/i).map((p) => p.trim()).filter(Boolean);
+  return parts.reduce((acc, part) => {
+    const m = /^(.+?)\s*(>=|<=|!=|=|>|<|~)\s*(.*)$/.exec(part);
+    if (!m) throw new ConsoleError(`Cannot read filter "${part}". Use column=value, column>10 or column~text.`);
+    const col = findColumn(rows, m[1].trim());
+    const [, , op, raw] = m;
+    const val = raw.trim();
+    return acc.filter((r) => {
+      const v = r[col];
+      if (op === "~") return String(v ?? "").toLowerCase().includes(val.toLowerCase());
+      if (op === "=" || op === "!=") {
+        const eq = isNum(v) && isNum(val) ? toNum(v) === toNum(val) : String(v ?? "").toLowerCase() === val.toLowerCase();
+        return op === "=" ? eq : !eq;
+      }
+      if (!isNum(v) || !isNum(val)) return false;
+      const a = toNum(v), b = toNum(val);
+      return op === ">" ? a > b : op === "<" ? a < b : op === ">=" ? a >= b : a <= b;
+    });
+  }, rows);
+}
+
+function getDataset(data: Record<string, Row[]>, name: string): Row[] {
+  const rows = data[name];
+  if (!rows) throw new ConsoleError(`No dataset "${name}". Datasets: ${Object.keys(data).join(", ") || "none"}`);
+  return rows;
+}
+
 const scalar = (v: unknown): string | number | null => (v === null || v === undefined ? null : typeof v === "number" ? v : typeof v === "object" ? JSON.stringify(v) : String(v));
 const MAX_DEPTH = 5;
 
-async function runAction(a: ConsoleAction, args: ParsedArgs, ctx: SpecContext, io: CommandIO, self: () => BuiltConsole<SpecContext>): Promise<void> {
+async function runAction(a: ConsoleAction, args: ParsedArgs, ctx: SpecContext, io: CommandIO, self: () => BuiltConsole<SpecContext>, data: Record<string, Row[]>): Promise<void> {
   const t = (s: string) => interpolate(s, args, ctx.vars);
   switch (a.type) {
     case "print":
@@ -158,6 +217,57 @@ async function runAction(a: ConsoleAction, args: ParsedArgs, ctx: SpecContext, i
       if (a.saveAs) ctx.setVar(a.saveAs, t(pick));
       return io.print(t(pick));
     }
+    case "query": {
+      let rows = getDataset(data, t(a.dataset));
+      const total = rows.length;
+      const where = a.where ? t(a.where).trim() : "";
+      if (where) rows = applyWhere(rows, where);
+      const q = a.search ? t(a.search).trim().toLowerCase() : "";
+      if (q) rows = rows.filter((r) => Object.values(r).some((v) => String(v ?? "").toLowerCase().includes(q)));
+      const sortBy = a.sortBy ? t(a.sortBy).trim() : "";
+      const desc = typeof a.desc === "string" ? /^(true|1|yes)$/i.test(t(a.desc)) : !!a.desc;
+      if (sortBy) {
+        const col = findColumn(rows.length ? rows : getDataset(data, t(a.dataset)), sortBy);
+        rows = [...rows].sort((x, y) => {
+          const u = x[col], v = y[col];
+          const c = isNum(u) && isNum(v) ? toNum(u) - toNum(v) : String(u ?? "").localeCompare(String(v ?? ""));
+          return desc ? -c : c;
+        });
+      }
+      const lim = Math.max(1, Math.min(500, Number(typeof a.limit === "string" ? t(a.limit) : (a.limit ?? 20)) || 20));
+      const cols = a.columns?.length ? a.columns.map(t) : columnsOf(rows.length ? rows : getDataset(data, t(a.dataset))).slice(0, 8);
+      if (!rows.length) return io.print(`No matching rows (of ${total}).`, "muted");
+      io.table(cols, rows.slice(0, lim).map((r) => cols.map((c) => scalar(r[c]))));
+      return io.print(`${Math.min(lim, rows.length)} of ${rows.length} matching rows · ${total} total`, "muted");
+    }
+    case "stats": {
+      const rows = getDataset(data, t(a.dataset));
+      const col = findColumn(rows, t(a.column));
+      const vals = rows.map((r) => r[col]).filter((v) => v !== null && v !== undefined && String(v).trim() !== "");
+      const nums = vals.filter(isNum).map(toNum);
+      const pairs: Array<[string, string | number | null]> = [["Column", col], ["Rows", rows.length], ["Filled", vals.length], ["Distinct", new Set(vals.map(String)).size]];
+      if (nums.length && nums.length >= vals.length * 0.8) {
+        const sum = nums.reduce((x, y) => x + y, 0);
+        const sorted = [...nums].sort((x, y) => x - y);
+        const mid = sorted.length >> 1;
+        pairs.push(["Sum", fmtNum(sum)], ["Average", fmtNum(sum / nums.length)], ["Median", fmtNum(sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2)], ["Min", fmtNum(sorted[0])], ["Max", fmtNum(sorted[sorted.length - 1])]);
+        return io.kv(pairs);
+      }
+      io.kv(pairs);
+      const counts = new Map<string, number>();
+      for (const v of vals) counts.set(String(v), (counts.get(String(v)) ?? 0) + 1);
+      return io.table(["Value", "Count"], [...counts].sort((x, y) => y[1] - x[1]).slice(0, 10).map(([v, n]) => [v, n]));
+    }
+    case "columns": {
+      const rows = getDataset(data, t(a.dataset));
+      return io.table(
+        ["Column", "Type", "Example"],
+        columnsOf(rows).map((c) => {
+          const vals = rows.map((r) => r[c]).filter((v) => v !== null && v !== undefined && String(v) !== "");
+          return [c, vals.length && vals.every(isNum) ? "number" : "text", scalar(vals[0] ?? null)];
+        }),
+      );
+    }
     case "date": {
       const d = new Date();
       const f = a.format ?? "local";
@@ -211,6 +321,7 @@ export function buildFromSpec(input: ConsoleSpec): BuiltConsole<SpecContext> {
   const spec = parsed.spec;
   const b = new ConsoleBuilder<SpecContext>(spec.name);
   let built: BuiltConsole<SpecContext> | null = null;
+  const data = (spec.datasets ?? {}) as Record<string, Row[]>;
   const self = () => built!;
   const own = new Set(spec.commands.map((c) => c.name.trim().toLowerCase().split(/\s+/)[0]));
   for (const g of spec.groups ?? []) b.group(g.name, g.summary, () => {});
@@ -224,7 +335,7 @@ export function buildFromSpec(input: ConsoleSpec): BuiltConsole<SpecContext> {
       examples: c.examples,
       args: c.args as ArgSpec<SpecContext>[] | undefined,
       run: async (args, ctx, io) => {
-        for (const a of actions) await runAction(a, args, ctx, io, self);
+        for (const a of actions) await runAction(a, args, ctx, io, self, data);
       },
     });
   }

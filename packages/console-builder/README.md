@@ -94,6 +94,26 @@ In a web page (no framework):
 <script>ConsoleBuilder.mountConsole(document.getElementById("term"), spec);</script>
 ```
 
+## Build from a prompt or from files
+
+The studio (`npm run studio`, or `dist/console-builder-studio.html`) is a dashboard with four ways to build:
+
+- **Describe** – write what the console should do; Claude designs the spec (inside the Claude page only; it asks consent on first use).
+- **Upload files** – drop CSV, TSV, JSON or text files. They become datasets with `rows`, `find`, `where`, `top`, `stats` and `columns` commands, no AI needed. Files can also be sent to Claude as context.
+- **Templates** and **JSON** – start from a template or edit the spec directly.
+
+KPIs, usage bars, a run log and a data preview update as you use the console.
+
+Datasets live in the spec under `datasets` and are read by three actions:
+
+```json
+{"type":"query","dataset":"sales","search":"{text}","where":"amount>100 and region=EU","sortBy":"amount","desc":true,"limit":20}
+{"type":"stats","dataset":"sales","column":"amount"}
+{"type":"columns","dataset":"sales"}
+```
+
+In code: `loadFile(name, text)`, `parseDelimited(text)`, `specFromDatasets(datasets)`, `buildPrompt(request, datasets, notes)` and `extractJson(reply)`.
+
 ## Layout
 
 | Path | Purpose |

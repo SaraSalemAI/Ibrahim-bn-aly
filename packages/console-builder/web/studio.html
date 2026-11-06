@@ -5,20 +5,25 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap">
 <style>
-/* Layout: a workbench — spec on the left, a running terminal on the right, reference below. Prepared by Sara Salem, © Sara Salem 2026. */
+/* Layout: a control-room dashboard. KPI strip on top; builder | live console | activity & data; commands and reference below.
+   Prepared by Sara Salem, © Sara Salem 2026. */
 :root {
-  --bg: #f3f4f1;
+  --bg: #eef1ee;
   --surface: #ffffff;
-  --fg: #1b2420;
-  --muted: #5f6b66;
-  --line: #dde2dd;
-  --accent: #116b57;
+  --raised: #f7f9f7;
+  --fg: #19221e;
+  --muted: #5d6a64;
+  --line: #d9dfda;
+  --accent: #0f6b55;
   --accent-ink: #ffffff;
-  --accent-soft: #e2efe9;
-  --bad: #b3261e;
+  --accent-soft: #dfeee7;
+  --bar: #2f8f73;
   --good: #1d7a43;
-  --field: #f8f9f7;
-  --term-bg: #0e1513;
+  --good-soft: #e1f2e6;
+  --bad: #b3261e;
+  --bad-soft: #fbe5e3;
+  --warn: #8a5a00;
+  --term-bg: #0d1412;
   --term-fg: #d5e2dc;
   --term-accent: #6fd6b4;
   --font-display: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
@@ -27,74 +32,151 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #101513; --surface: #171e1b; --fg: #e3ebe7; --muted: #95a39d; --line: #29332f;
-    --accent: #5fcaa7; --accent-ink: #08130f; --accent-soft: #1b2c26; --bad: #ff8c82; --good: #79d79a; --field: #121815;
-    --term-bg: #0a0f0d; color-scheme: dark;
+    --bg: #0e1311; --surface: #161d1a; --raised: #1b2420; --fg: #e3ebe7; --muted: #94a29c; --line: #2a3530;
+    --accent: #5fcaa7; --accent-ink: #07130e; --accent-soft: #1b2d26; --bar: #4fb893;
+    --good: #79d79a; --good-soft: #17301f; --bad: #ff8c82; --bad-soft: #3a1c1a; --warn: #e3b341;
+    --term-bg: #090e0c; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #101513; --surface: #171e1b; --fg: #e3ebe7; --muted: #95a39d; --line: #29332f;
-  --accent: #5fcaa7; --accent-ink: #08130f; --accent-soft: #1b2c26; --bad: #ff8c82; --good: #79d79a; --field: #121815;
-  --term-bg: #0a0f0d; color-scheme: dark;
+  --bg: #0e1311; --surface: #161d1a; --raised: #1b2420; --fg: #e3ebe7; --muted: #94a29c; --line: #2a3530;
+  --accent: #5fcaa7; --accent-ink: #07130e; --accent-soft: #1b2d26; --bar: #4fb893;
+  --good: #79d79a; --good-soft: #17301f; --bad: #ff8c82; --bad-soft: #3a1c1a; --warn: #e3b341;
+  --term-bg: #090e0c; color-scheme: dark;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body {
-  background: var(--bg); color: var(--fg); font: 15px/1.55 var(--font-body);
+  background: var(--bg); color: var(--fg); font: 14.5px/1.5 var(--font-body);
   padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 20px 32px;
+  padding-block: 18px 28px;
 }
-.wrap { max-width: 1360px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
-header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
-.brand h1 { font: 700 clamp(22px, 3vw, 30px)/1.15 var(--font-display); margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
-.brand h1 .caret { color: var(--accent); }
-.brand p { margin: 6px 0 0; color: var(--muted); max-width: 68ch; }
-.byline { color: var(--muted); font-size: 13px; }
-.label { font: 600 11px/1 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-.templates { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.chip {
-  font: 500 14px/1 var(--font-body); padding: 9px 14px; border-radius: 999px; cursor: pointer;
-  border: 1px solid var(--line); background: var(--surface); color: var(--fg);
-}
-.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-.chip:hover { border-color: var(--accent); }
-button.btn {
-  font: 600 13px/1 var(--font-body); padding: 9px 13px; border-radius: 8px; cursor: pointer;
-  border: 1px solid var(--line); background: var(--surface); color: var(--fg);
-}
-button.btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-button.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-button.btn.primary:hover:not(:disabled) { color: var(--accent-ink); filter: brightness(1.08); }
-button:disabled { opacity: 0.45; cursor: not-allowed; }
+.wrap { max-width: 1520px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.bench { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 18px; align-items: start; }
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
-.panel-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.panel-head h2 { font: 600 16px/1.2 var(--font-body); margin: 0; flex: 1; min-width: 140px; }
-textarea#editor {
-  width: 100%; height: 520px; resize: vertical; padding: 12px; border-radius: 8px; border: 1px solid var(--line);
-  background: var(--field); color: var(--fg); font: 12.5px/1.55 var(--font-code); tab-size: 2; white-space: pre;
+code, kbd { font-family: var(--font-code); font-size: 12.5px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; }
+.brand { flex: 1; min-width: 260px; }
+.brand h1 { font: 700 clamp(20px, 2.4vw, 26px)/1.15 var(--font-display); margin: 0; letter-spacing: -0.02em; }
+.brand h1 .caret { color: var(--accent); }
+.brand p { margin: 4px 0 0; color: var(--muted); font-size: 13.5px; max-width: 72ch; }
+.top-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.btn {
+  font: 600 13px/1 var(--font-body); padding: 9px 13px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg); white-space: nowrap;
 }
-#status { font-size: 13px; min-height: 1.5em; }
+.btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover:not(:disabled) { color: var(--accent-ink); filter: brightness(1.08); }
+.btn.small { padding: 6px 9px; font-size: 12px; }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+.label { font: 600 11px/1 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+#notice { margin: 0; font-size: 13px; color: var(--muted); min-height: 1.3em; }
+
+/* KPI strip */
+.kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.kpi .v { font: 700 24px/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+.kpi .h { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi.bad .v { color: var(--bad); }
+
+/* Main grid */
+.dash { display: grid; grid-template-columns: minmax(300px, 4fr) minmax(0, 6fr) minmax(270px, 3.4fr); gap: 14px; align-items: start; }
+.col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.panel-head h2 { font: 600 15px/1.2 var(--font-body); margin: 0; flex: 1; min-width: 120px; }
+
+/* Builder tabs */
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tab { font: 600 13px/1 var(--font-body); padding: 10px 12px; border: 0; background: transparent; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; display: flex; align-items: center; gap: 6px; }
+.tab[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+.tab .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--bad); }
+.tabpanel { display: flex; flex-direction: column; gap: 10px; }
+textarea.field, .field {
+  width: 100%; border-radius: 8px; border: 1px solid var(--line); background: var(--raised); color: var(--fg);
+  font: 14px/1.5 var(--font-body); padding: 10px 12px; resize: vertical;
+}
+textarea#prompt { min-height: 132px; }
+textarea#editor { height: 470px; font: 12px/1.55 var(--font-code); tab-size: 2; white-space: pre; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 500 12.5px/1.25 var(--font-body); padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--raised); color: var(--fg); cursor: pointer; text-align: start; }
+.chip:hover { border-color: var(--accent); }
+.hint { margin: 0; font-size: 12.5px; color: var(--muted); }
+#genstatus { font-size: 13px; min-height: 1.3em; margin: 0; }
+#genstatus.err { color: var(--bad); } #genstatus.ok { color: var(--good); }
+.drop {
+  border: 1.5px dashed var(--line); border-radius: 10px; padding: 18px 14px; text-align: center; cursor: pointer;
+  background: var(--raised); display: flex; flex-direction: column; gap: 4px; align-items: center;
+}
+.drop.over, .drop:hover { border-color: var(--accent); background: var(--accent-soft); }
+.drop strong { font-size: 14px; }
+.files { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.files li { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; min-width: 0; }
+.files .fname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.files .meta { color: var(--muted); white-space: nowrap; font-size: 12px; }
+.files button { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 15px; line-height: 1; padding: 2px 4px; }
+.files button:hover { color: var(--bad); }
+.tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.tpl { text-align: start; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--raised); color: var(--fg); cursor: pointer; display: flex; flex-direction: column; gap: 4px; font: inherit; }
+.tpl:hover, .tpl[aria-pressed="true"] { border-color: var(--accent); }
+.tpl[aria-pressed="true"] { background: var(--accent-soft); }
+.tpl strong { font-size: 14px; }
+.tpl span { font-size: 12.5px; color: var(--muted); }
+#status { font-size: 12.5px; min-height: 1.3em; }
 #status.ok { color: var(--good); }
-#status ul { margin: 0; padding-inline-start: 18px; color: var(--bad); font-family: var(--font-code); font-size: 12px; }
-.term-panel { gap: 10px; }
-#preview { height: 560px; }
-#preview .cb-term { --cb-bg: var(--term-bg); --cb-fg: var(--term-fg); --cb-accent: var(--term-accent); font-family: var(--font-code); }
+#status ul { margin: 0; padding-inline-start: 18px; color: var(--bad); font: 12px/1.45 var(--font-code); }
+
+/* Console */
+#preview { height: 520px; }
+#preview .cb-term, #appterm .cb-term { --cb-bg: var(--term-bg); --cb-fg: var(--term-fg); --cb-accent: var(--term-accent); font-family: var(--font-code); }
 .tryline { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .tryline button { font: 12px/1 var(--font-code); padding: 6px 9px; border-radius: 6px; border: 1px dashed var(--line); background: transparent; color: var(--fg); cursor: pointer; }
 .tryline button:hover { border-color: var(--accent); color: var(--accent); }
-#notice { font-size: 13px; color: var(--muted); min-height: 1.4em; margin: 0; }
-.out { display: flex; flex-direction: column; gap: 8px; }
-.out textarea { width: 100%; height: 140px; font: 11.5px/1.45 var(--font-code); padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--field); color: var(--fg); resize: vertical; }
-.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
-.tablebox { overflow-x: auto; }
-table.ref { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.out textarea { width: 100%; height: 130px; font: 11.5px/1.45 var(--font-code); padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--raised); color: var(--fg); resize: vertical; }
+
+/* Activity */
+.bars { display: flex; flex-direction: column; gap: 6px; }
+.barrow { display: grid; grid-template-columns: minmax(70px, 38%) 1fr auto; gap: 8px; align-items: center; font-size: 12.5px; }
+.barrow .k { font-family: var(--font-code); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barrow .track { height: 8px; background: var(--raised); border-radius: 4px; overflow: hidden; }
+.barrow .fill { height: 100%; background: var(--bar); border-radius: 4px; }
+.barrow .n { font-variant-numeric: tabular-nums; color: var(--muted); min-width: 2ch; text-align: end; }
+.log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; max-height: 220px; overflow-y: auto; }
+.log li { display: grid; grid-template-columns: auto auto 1fr auto; gap: 8px; align-items: center; padding: 5px 2px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+.log li:last-child { border-bottom: 0; }
+.log .t { color: var(--muted); font-variant-numeric: tabular-nums; }
+.log .l { font-family: var(--font-code); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.log .l:hover { color: var(--accent); }
+.log .ms { color: var(--muted); font-variant-numeric: tabular-nums; }
+.pill { font: 600 10.5px/1 var(--font-body); letter-spacing: 0.04em; padding: 3px 6px; border-radius: 999px; }
+.pill.ok { background: var(--good-soft); color: var(--good); }
+.pill.err { background: var(--bad-soft); color: var(--bad); }
+.empty { color: var(--muted); font-size: 13px; margin: 0; }
+
+/* Data */
+.tablebox { overflow-x: auto; max-width: 100%; }
+table.grid { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+table.grid th { text-align: start; font: 600 11px/1.2 var(--font-body); letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.grid th button { all: unset; cursor: pointer; }
+table.grid th button:hover { color: var(--accent); }
+table.grid th button:focus-visible { outline: 2px solid var(--accent); }
+table.grid td { padding: 5px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+select.field { padding: 7px 10px; font-size: 13px; width: auto; }
+
+/* Bottom */
+.lower { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 14px; align-items: start; }
+table.ref { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.ref th { text-align: start; font: 600 11px/1 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 8px; border-bottom: 1px solid var(--line); }
-table.ref td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-table.ref code, .ref-list code { font: 12.5px/1.4 var(--font-code); background: var(--accent-soft); color: var(--fg); padding: 1px 5px; border-radius: 4px; white-space: nowrap; }
-.ref-list { margin: 0; padding-inline-start: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
-.ref-list code { white-space: normal; }
+table.ref td { padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+table.ref td:last-child { text-align: end; white-space: nowrap; }
+table.ref code { background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; white-space: nowrap; }
+.ref-list { margin: 0; padding-inline-start: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; }
+.ref-list code { background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+footer { color: var(--muted); font-size: 12.5px; text-align: center; }
+
+/* App mode */
 .appmode {
   position: fixed; inset: 0; z-index: 50; background: var(--term-bg); display: flex; flex-direction: column; gap: 10px;
   padding: calc(env(safe-area-inset-top, 0px) + 12px) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(12px, env(safe-area-inset-left, 0px));
@@ -105,74 +187,147 @@ table.ref code, .ref-list code { font: 12.5px/1.4 var(--font-code); background: 
 .appbar .btn:hover:not(:disabled) { color: var(--term-accent); border-color: var(--term-accent); }
 .appbar .btn.primary { background: var(--term-accent); color: var(--term-bg); border-color: var(--term-accent); }
 #appterm { flex: 1; min-height: 0; }
-#appterm .cb-term { --cb-bg: var(--term-bg); --cb-fg: var(--term-fg); --cb-accent: var(--term-accent); font-family: var(--font-code); font-size: 14px; }
-footer { color: var(--muted); font-size: 12.5px; text-align: center; }
-@media (max-width: 960px) { .bench, .grid2 { grid-template-columns: 1fr; } textarea#editor { height: 360px; } #preview { height: 460px; } }
-@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+#appterm .cb-term { font-size: 14px; }
+
+@media (max-width: 1280px) {
+  .dash { grid-template-columns: minmax(300px, 2fr) minmax(0, 3fr); }
+  .side { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; }
+  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 900px) {
+  .dash, .lower, .side { grid-template-columns: 1fr; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #preview { height: 440px; }
+  textarea#editor { height: 340px; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
 </style>
 
 <div class="wrap">
   <header class="top">
     <div class="brand">
       <h1>console<span class="caret">_</span>builder studio</h1>
-      <p>Describe a command console as JSON: commands, arguments, variables, calculations and macros. It runs live beside you, and you can take it away as a standalone web page.</p>
+      <p>Build a command console from a description, your own files, a template or JSON. Run it, watch how it is used, and take it away as a web app. Prepared by Sara Salem · © Sara Salem 2026</p>
     </div>
-    <span class="byline">Prepared by Sara Salem · © Sara Salem 2026</span>
+    <div class="top-actions">
+      <button class="btn primary" id="runapp" type="button">▶ Run as web app</button>
+      <button class="btn" id="export" type="button">Get web console</button>
+    </div>
   </header>
-
-  <section aria-labelledby="tpl-label" class="templates">
-    <span class="label" id="tpl-label">Start from</span>
-    <span id="templates" class="templates"></span>
-  </section>
 
   <p id="notice" role="status"></p>
 
-  <div class="bench">
-    <section class="panel" aria-labelledby="spec-h">
-      <div class="panel-head">
-        <h2 id="spec-h">Console spec</h2>
-        <button class="btn" id="format" type="button">Format</button>
-        <button class="btn" id="import" type="button">Import JSON</button>
-        <button class="btn" id="copyjson" type="button">Copy JSON</button>
-        <input id="file" type="file" accept=".json,application/json" hidden>
+  <section class="kpis" aria-label="Console summary">
+    <div class="kpi"><span class="label">Commands</span><span class="v" id="k-cmds">0</span><span class="h" id="k-cmds-h">plus 8 built in</span></div>
+    <div class="kpi"><span class="label">Arguments</span><span class="v" id="k-args">0</span><span class="h" id="k-args-h">across all commands</span></div>
+    <div class="kpi"><span class="label">Actions</span><span class="v" id="k-acts">0</span><span class="h" id="k-acts-h">steps commands run</span></div>
+    <div class="kpi"><span class="label">Data rows</span><span class="v" id="k-rows">0</span><span class="h" id="k-rows-h">no datasets</span></div>
+    <div class="kpi"><span class="label">Runs</span><span class="v" id="k-runs">0</span><span class="h" id="k-runs-h">this session</span></div>
+    <div class="kpi" id="k-fail-box"><span class="label">Failed</span><span class="v" id="k-fail">0</span><span class="h" id="k-fail-h">no errors yet</span></div>
+  </section>
+
+  <div class="dash">
+    <!-- Builder -->
+    <section class="panel col" aria-labelledby="build-h">
+      <div class="panel-head"><h2 id="build-h">Build</h2></div>
+      <div class="tabs" role="tablist" aria-label="Ways to build">
+        <button class="tab" role="tab" id="tab-prompt" aria-controls="pane-prompt" aria-selected="true" type="button">Describe</button>
+        <button class="tab" role="tab" id="tab-files" aria-controls="pane-files" aria-selected="false" type="button">Upload files <span id="filecount" class="label"></span></button>
+        <button class="tab" role="tab" id="tab-tpl" aria-controls="pane-tpl" aria-selected="false" type="button">Templates</button>
+        <button class="tab" role="tab" id="tab-json" aria-controls="pane-json" aria-selected="false" type="button">JSON <span class="dot" id="jsondot" hidden></span></button>
       </div>
-      <textarea id="editor" spellcheck="false" aria-label="Console spec JSON"></textarea>
-      <div id="status" aria-live="polite"></div>
+
+      <div class="tabpanel" role="tabpanel" id="pane-prompt" aria-labelledby="tab-prompt">
+        <label class="label" for="prompt">Describe the console you want</label>
+        <textarea class="field" id="prompt" placeholder="A console for a bakery: price a cake order by size and flavour, add 14% VAT, convert to USD at a rate I set, and track today's sales against a target."></textarea>
+        <div class="chips" id="ideas" aria-label="Example descriptions"></div>
+        <p class="hint" id="filehint">Uploaded files are included: data becomes searchable tables, text becomes reference.</p>
+        <div class="panel-head">
+          <button class="btn primary" id="generate" type="button">Build with Claude</button>
+          <button class="btn" id="stopgen" type="button" hidden>Stop</button>
+        </div>
+        <p id="genstatus" aria-live="polite"></p>
+      </div>
+
+      <div class="tabpanel" role="tabpanel" id="pane-files" aria-labelledby="tab-files" hidden>
+        <label class="drop" id="drop" for="file">
+          <strong>Drop files here or choose files</strong>
+          <span class="hint">CSV, TSV, JSON, TXT or Markdown. A console spec JSON loads as is.</span>
+        </label>
+        <input id="file" type="file" multiple accept=".csv,.tsv,.json,.txt,.md,.log,.tab,text/*,application/json" hidden>
+        <ul class="files" id="files"></ul>
+        <div class="panel-head">
+          <button class="btn primary" id="builddata" type="button" disabled>Build data console</button>
+          <button class="btn" id="todescribe" type="button" disabled>Describe it to Claude</button>
+        </div>
+        <p class="hint">A data console gets <code>rows</code>, <code>find</code>, <code>where</code>, <code>top</code>, <code>stats</code> and <code>columns</code> for every file, built instantly in this page. Files stay in your browser.</p>
+      </div>
+
+      <div class="tabpanel" role="tabpanel" id="pane-tpl" aria-labelledby="tab-tpl" hidden>
+        <div class="tpl-grid" id="templates"></div>
+      </div>
+
+      <div class="tabpanel" role="tabpanel" id="pane-json" aria-labelledby="tab-json" hidden>
+        <div class="panel-head">
+          <span class="label" style="flex:1">Console spec</span>
+          <button class="btn small" id="format" type="button">Format</button>
+          <button class="btn small" id="copyjson" type="button">Copy JSON</button>
+        </div>
+        <textarea class="field" id="editor" spellcheck="false" aria-label="Console spec JSON"></textarea>
+        <div id="status" aria-live="polite"></div>
+      </div>
     </section>
 
-    <section class="panel term-panel" aria-labelledby="run-h">
+    <!-- Console -->
+    <section class="panel col" aria-labelledby="run-h">
       <div class="panel-head">
         <h2 id="run-h">Live console</h2>
-        <button class="btn" id="reset" type="button">Restart</button>
-        <button class="btn primary" id="runapp" type="button">▶ Run as web app</button>
-        <button class="btn" id="export" type="button">Get web console</button>
+        <button class="btn small" id="reset" type="button">Restart</button>
       </div>
       <div class="tryline" id="tryline" aria-label="Try a command"></div>
       <div id="preview"></div>
       <div class="out" id="exportbox" hidden>
         <span class="label">Standalone web console</span>
-        <p id="exportnote" style="margin:0;font-size:13px;color:var(--muted)">Save this as a <code>.html</code> file and open it in any browser. It works offline.</p>
+        <p id="exportnote" class="hint">Save this as a .html file and open it in any browser. It works offline.</p>
         <textarea id="exportcode" readonly aria-label="Standalone HTML"></textarea>
-        <div class="tryline"><button class="btn primary" id="copyhtml" type="button">Copy HTML</button><button class="btn" id="dlhtml" type="button">Download file</button></div>
+        <div class="tryline"><button class="btn primary small" id="copyhtml" type="button">Copy HTML</button><button class="btn small" id="dlhtml" type="button">Download file</button></div>
       </div>
     </section>
+
+    <!-- Activity + data -->
+    <div class="col side">
+      <section class="panel" aria-labelledby="act-h">
+        <div class="panel-head"><h2 id="act-h">Activity</h2><button class="btn small" id="clearlog" type="button">Clear</button></div>
+        <span class="label">Most used commands</span>
+        <div class="bars" id="bars"><p class="empty">Run a command to see usage.</p></div>
+        <span class="label">Recent runs</span>
+        <ul class="log" id="log"></ul>
+      </section>
+      <section class="panel" aria-labelledby="data-h">
+        <div class="panel-head">
+          <h2 id="data-h">Data</h2>
+          <select class="field" id="dsselect" aria-label="Dataset" hidden></select>
+        </div>
+        <p class="hint" id="dsmeta">This console has no datasets. Upload a CSV or JSON file to add one.</p>
+        <div class="tablebox"><table class="grid" id="dstable"></table></div>
+      </section>
+    </div>
   </div>
 
-  <div class="grid2">
+  <div class="lower">
     <section class="panel" aria-labelledby="cmd-h">
-      <h2 id="cmd-h" style="margin:0;font-size:16px">Commands in this console</h2>
-      <div class="tablebox"><table class="ref"><thead><tr><th>Usage</th><th>What it does</th></tr></thead><tbody id="cmds"></tbody></table></div>
+      <div class="panel-head"><h2 id="cmd-h">Commands</h2><span class="hint">Run tries the example; Use puts the command in the console.</span></div>
+      <div class="tablebox"><table class="ref"><thead><tr><th>Usage</th><th>What it does</th><th></th></tr></thead><tbody id="cmds"></tbody></table></div>
     </section>
     <section class="panel" aria-labelledby="ref-h">
-      <h2 id="ref-h" style="margin:0;font-size:16px">Spec reference</h2>
+      <h2 id="ref-h" style="margin:0;font-size:15px">Spec reference</h2>
       <ul class="ref-list">
-        <li><code>commands[].name</code> is one or more words, such as <code>deploy app</code>.</li>
-        <li><code>args</code>: <code>{ name, type: string | number | boolean | enum, positional, required, rest, alias, choices, default }</code>.</li>
-        <li>Text fills <code>{arg}</code> from arguments and <code>{$var}</code> from variables; top-level <code>vars</code> sets starting values.</li>
-        <li>Actions: <code>print</code>, <code>table</code>, <code>kv</code>, <code>calc</code>, <code>set</code>, <code>http</code>, <code>open</code>, <code>run</code> (a macro of other commands), <code>choice</code>, <code>date</code>.</li>
-        <li>Every console has <code>help</code>, <code>clear</code>, <code>echo</code>, <code>set</code>, <code>unset</code>, <code>vars</code>, <code>calc</code> and <code>history</code>. Chain with <code>&amp;&amp;</code> (stops on error) or <code>;</code>.</li>
-        <li><code>theme</code> takes <code>{ background, foreground, accent }</code>; <code>welcome</code> and <code>prompt</code> customise the terminal.</li>
-        <li>In the terminal: <kbd>Tab</kbd> completes, <kbd>↑</kbd> <kbd>↓</kbd> recall history, <kbd>Ctrl</kbd>+<kbd>L</kbd> clears.</li>
+        <li><code>commands[].name</code> is one or more words; <code>args</code> take <code>type</code> string, number, boolean or enum.</li>
+        <li><code>{arg}</code> inserts an argument, <code>{$var}</code> a variable.</li>
+        <li>Actions: <code>print</code> <code>table</code> <code>kv</code> <code>calc</code> <code>set</code> <code>http</code> <code>open</code> <code>run</code> <code>choice</code> <code>date</code>, and for data <code>query</code> <code>stats</code> <code>columns</code>.</li>
+        <li><code>datasets</code> holds tables by name; <code>query</code> filters with <code>where</code> such as <code>units&gt;10 and region=cairo</code>.</li>
+        <li>Built in: <code>help</code> <code>clear</code> <code>echo</code> <code>set</code> <code>unset</code> <code>vars</code> <code>calc</code> <code>history</code>. Chain with <code>&amp;&amp;</code> or <code>;</code>.</li>
+        <li>Keys: <kbd>Tab</kbd> completes, <kbd>↑</kbd><kbd>↓</kbd> history, <kbd>Ctrl</kbd>+<kbd>L</kbd> clears.</li>
       </ul>
     </section>
   </div>
@@ -195,36 +350,164 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
 (() => {
   const CB = window.ConsoleBuilder;
   const $ = (id) => document.getElementById(id);
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; };
   const editor = $("editor"), status = $("status"), notice = $("notice");
-  const STORE = "console-builder-studio.spec.v2";
+  const STORE = "console-builder-studio.spec.v3";
   const pretty = (o) => JSON.stringify(o, null, 2);
   const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
-  const DEMOS = { starter: ["hello Sara"], finance: ["loan 500000 0.18 5", "vat 1000", "margin 120 75", "grow 100000 0.12 5", "set usd 48.5 && fx convert 250 usd"], devops: ["env use production", "env show", "runbook deploy", "now"], api: ["help repo", "help get"], game: ["coin", "dice", "lunch"] };
-  // Pages served from a file or a local server can reach the network; a sandboxed embed cannot.
+  const DEMOS = { starter: ["hello Sara"], finance: ["loan 500000 0.18 5", "vat 1000", "margin 120 75", "grow 100000 0.12 5"], devops: ["env use production", "env show", "runbook deploy", "now"], api: ["help repo", "help get"], game: ["coin", "dice", "lunch"] };
+  const IDEAS = [
+    "A bakery console: price a cake by size and flavour, add 14% VAT, convert to USD at a rate I set, and track today's sales against a target.",
+    "A personal trainer console: BMI, daily calorie needs from age, weight, height and activity level, and a random workout picker.",
+    "A freelancer console: quote a project from hours and day rate, add tax, convert currency, and show payment terms.",
+  ];
   const sandboxed = location.protocol !== "file:" && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
-  let current = null, mounted = null, timer = null, activeTpl = null;
+  const sampleReady = window.claude && window.claude.use ? window.claude.use("sample").catch(() => null) : Promise.resolve(null);
 
-  function setNotice(text) { notice.textContent = text; }
+  let current = null, cli = null, mounted = null, timer = null, activeTpl = null;
+  const files = []; // {name, kind, dataset?, rows?, spec?, text}
+  const stats = { runs: 0, failed: 0, usage: new Map(), log: [] };
 
+  const setNotice = (t) => { notice.textContent = t; };
   function copy(text, done, fallbackEl) {
     const fallback = () => { if (fallbackEl) { fallbackEl.focus(); fallbackEl.select(); } setNotice("Copying was blocked here. The text is selected: press Ctrl+C (⌘C on Mac)."); };
     try { navigator.clipboard.writeText(text).then(() => setNotice(done), fallback); } catch { fallback(); }
   }
 
-  const chips = [];
-  for (const t of CB.TEMPLATES) {
-    const b = document.createElement("button");
-    b.type = "button"; b.className = "chip"; b.textContent = t.title; b.title = t.description; b.dataset.id = t.id;
-    b.setAttribute("aria-pressed", "false");
-    b.onclick = () => { activeTpl = t.id; editor.value = pretty(t.spec); setNotice(`${t.title}: ${t.description}`); update(true); };
-    chips.push(b); $("templates").append(b);
+  /* ---------- tabs ---------- */
+  const tabs = ["prompt", "files", "tpl", "json"];
+  function showTab(name) {
+    for (const t of tabs) {
+      $("tab-" + t).setAttribute("aria-selected", String(t === name));
+      $("pane-" + t).hidden = t !== name;
+    }
   }
-  function markChip() {
-    const match = CB.TEMPLATES.find((t) => current && JSON.stringify(t.spec) === JSON.stringify(current));
-    activeTpl = match ? match.id : null;
-    for (const c of chips) c.setAttribute("aria-pressed", String(c.dataset.id === activeTpl));
+  for (const t of tabs) $("tab-" + t).onclick = () => showTab(t);
+  document.querySelector(".tabs").addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+    const i = tabs.findIndex((t) => $("tab-" + t).getAttribute("aria-selected") === "true");
+    const n = tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length];
+    showTab(n); $("tab-" + n).focus();
+  });
+
+  /* ---------- runtime for consoles ---------- */
+  const runtime = {
+    open: (url) => setNotice("Link from the console: " + url),
+    fetch: sandboxed
+      ? () => Promise.reject(new Error("HTTP calls are blocked in this preview. They work in the downloaded web console and the CLI."))
+      : (url, init) => fetch(url, init),
+    onRun: (line, res) => record(line, res),
+  };
+
+  /* ---------- activity ---------- */
+  function commandKey(segment) {
+    try {
+      const toks = CB.tokenize(segment).tokens;
+      if (!toks.length) return null;
+      if (/^(help|\?)$/i.test(toks[0])) return "help";
+      const r = cli.resolve(toks);
+      return r.command ? r.command.path.join(" ") : toks[0].toLowerCase();
+    } catch { return null; }
+  }
+  function record(line, res) {
+    stats.runs++;
+    if (res.code !== 0) stats.failed++;
+    for (const seg of CB.splitChain(line)) { const k = commandKey(seg.text); if (k) stats.usage.set(k, (stats.usage.get(k) || 0) + 1); }
+    stats.log.unshift({ at: new Date(), line, ok: res.code === 0, ms: res.ms });
+    stats.log.length = Math.min(stats.log.length, 60);
+    renderActivity(); renderKpis();
+  }
+  function renderActivity() {
+    const bars = $("bars"); bars.replaceChildren();
+    const top = [...stats.usage].sort((a, b) => b[1] - a[1]).slice(0, 7);
+    if (!top.length) bars.append(el("p", "empty", "Run a command to see usage."));
+    const max = top.length ? top[0][1] : 1;
+    for (const [k, n] of top) {
+      const row = el("div", "barrow"), track = el("div", "track"), fill = el("div", "fill");
+      fill.style.width = `${Math.max(4, (n / max) * 100)}%`; track.append(fill);
+      row.append(el("span", "k", k), track, el("span", "n", String(n)));
+      row.title = `${k}: ${n} run${n === 1 ? "" : "s"}`;
+      bars.append(row);
+    }
+    const log = $("log"); log.replaceChildren();
+    if (!stats.log.length) log.append(el("li", "empty", "No runs yet."));
+    for (const e of stats.log.slice(0, 30)) {
+      const li = el("li");
+      const l = el("span", "l", e.line); l.title = "Put in console"; l.onclick = () => mounted && mounted.setInput(e.line);
+      li.append(el("span", "t", e.at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })), el("span", "pill " + (e.ok ? "ok" : "err"), e.ok ? "OK" : "FAIL"), l, el("span", "ms", `${Math.max(0, Math.round(e.ms))} ms`));
+      log.append(li);
+    }
+  }
+  $("clearlog").onclick = () => { stats.runs = 0; stats.failed = 0; stats.usage.clear(); stats.log = []; renderActivity(); renderKpis(); };
+
+  /* ---------- KPIs ---------- */
+  function renderKpis() {
+    const spec = current || { commands: [] };
+    const cmds = spec.commands || [];
+    const args = cmds.reduce((n, c) => n + (c.args ? c.args.length : 0), 0);
+    const acts = cmds.reduce((n, c) => n + (c.actions ? c.actions.length : c.action ? 1 : 0), 0);
+    const ds = spec.datasets || {};
+    const dsNames = Object.keys(ds);
+    const rows = dsNames.reduce((n, k) => n + ds[k].length, 0);
+    $("k-cmds").textContent = cmds.length;
+    $("k-args").textContent = args;
+    $("k-acts").textContent = acts;
+    $("k-acts-h").textContent = `${Object.keys(spec.vars || {}).length} variable${Object.keys(spec.vars || {}).length === 1 ? "" : "s"}`;
+    $("k-rows").textContent = rows.toLocaleString();
+    $("k-rows-h").textContent = dsNames.length ? `${dsNames.length} dataset${dsNames.length > 1 ? "s" : ""}` : "no datasets";
+    $("k-runs").textContent = stats.runs;
+    $("k-runs-h").textContent = stats.runs ? `${stats.usage.size} different command${stats.usage.size === 1 ? "" : "s"}` : "this session";
+    $("k-fail").textContent = stats.failed;
+    $("k-fail-h").textContent = stats.runs ? `${Math.round((stats.failed / stats.runs) * 100)}% of runs` : "no errors yet";
+    $("k-fail-box").classList.toggle("bad", stats.failed > 0);
   }
 
+  /* ---------- data panel ---------- */
+  function renderData() {
+    const ds = (current && current.datasets) || {};
+    const names = Object.keys(ds);
+    const sel = $("dsselect");
+    const keep = sel.value;
+    sel.replaceChildren(...names.map((n) => { const o = el("option", undefined, n); o.value = n; return o; }));
+    sel.hidden = names.length < 2;
+    const table = $("dstable"); table.replaceChildren();
+    if (!names.length) { $("dsmeta").textContent = "This console has no datasets. Upload a CSV or JSON file to add one."; return; }
+    const name = names.includes(keep) ? keep : names[0];
+    sel.value = name;
+    const rows = ds[name];
+    const cols = [...new Set(rows.slice(0, 200).flatMap((r) => Object.keys(r)))];
+    $("dsmeta").textContent = `${name}: ${rows.length.toLocaleString()} rows · ${cols.length} columns. Click a column for its stats.`;
+    const thead = el("thead"), hr = el("tr");
+    const prefix = names.length > 1 ? name + " " : "";
+    const hasStats = cli && cli.commands().some((c) => c.path.join(" ") === `${prefix}stats`);
+    for (const c of cols.slice(0, 8)) {
+      const th = el("th");
+      if (hasStats) { const b = el("button", undefined, c); b.type = "button"; b.title = `Run: ${prefix}stats ${c}`; b.onclick = () => mounted && mounted.run(`${prefix}stats ${/\s/.test(c) ? `"${c}"` : c}`); th.append(b); }
+      else th.textContent = c;
+      hr.append(th);
+    }
+    thead.append(hr);
+    const tb = el("tbody");
+    for (const r of rows.slice(0, 8)) { const tr = el("tr"); for (const c of cols.slice(0, 8)) { const td = el("td", undefined, r[c] === null || r[c] === undefined ? "—" : String(r[c])); td.title = td.textContent; tr.append(td); } tb.append(tr); }
+    table.append(thead, tb);
+  }
+  $("dsselect").onchange = renderData;
+
+  /* ---------- templates ---------- */
+  const tplButtons = [];
+  for (const t of CB.TEMPLATES) {
+    const b = el("button", "tpl"); b.type = "button"; b.dataset.id = t.id; b.setAttribute("aria-pressed", "false");
+    b.append(el("strong", undefined, t.title), el("span", undefined, t.description));
+    b.onclick = () => { activeTpl = t.id; editor.value = pretty(t.spec); setNotice(`Loaded template: ${t.title}.`); update(true); };
+    tplButtons.push(b); $("templates").append(b);
+  }
+  function markTemplate() {
+    const match = CB.TEMPLATES.find((t) => current && JSON.stringify(t.spec) === JSON.stringify(current));
+    activeTpl = match ? match.id : null;
+    for (const b of tplButtons) b.setAttribute("aria-pressed", String(b.dataset.id === activeTpl));
+  }
+
+  /* ---------- spec handling ---------- */
   function analyse(text) {
     let json;
     try { json = JSON.parse(text); } catch (e) { return { errors: ["JSON: " + e.message] }; }
@@ -233,32 +516,27 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     try { return { spec: json, cli: CB.buildFromSpec(json) }; } catch (e) { return { errors: [e.message] }; }
   }
 
-  const runtime = {
-    open: (url) => { setNotice("Link from the console: " + url); },
-    fetch: sandboxed
-      ? () => Promise.reject(new Error("HTTP calls are blocked in this preview. They work in the downloaded web console and the CLI."))
-      : (url, init) => fetch(url, init),
-  };
-
-  function mount(spec, cli) {
-    mounted?.destroy();
-    mounted = CB.mountConsole($("preview"), spec, { ...runtime, subtitle: "live", autoFocus: false, historyKey: "console-builder-studio.history." + spec.name });
-    const lines = ((activeTpl && DEMOS[activeTpl]) || ["help"]).slice(0, 2);
-    (async () => { for (const l of lines) await mounted.run(l); })();
-    const tl = $("tryline"); tl.replaceChildren();
-    const label = document.createElement("span"); label.className = "label"; label.textContent = "Try"; tl.append(label);
-    const samples = new Set([...((activeTpl && DEMOS[activeTpl]) || []), "help"]);
-    for (const c of spec.commands) for (const ex of c.examples || []) samples.add(ex);
-    for (const c of cli.commands()) if (samples.size < 7 && !(c.args || []).some((a) => a.required)) samples.add(c.path.join(" "));
-    for (const s of [...samples].slice(0, 7)) {
-      const b = document.createElement("button"); b.type = "button"; b.textContent = s;
-      b.onclick = () => mounted.run(s);
-      tl.append(b);
-    }
+  function mount() {
+    mounted && mounted.destroy();
+    mounted = CB.mountConsole($("preview"), current, { ...runtime, subtitle: "live", autoFocus: false, historyKey: "console-builder-studio.history." + current.name });
+    const demo = (activeTpl && DEMOS[activeTpl]) || (current.datasets && Object.keys(current.datasets).length ? [] : ["help"]);
+    const samples = new Set([...demo, "help"]);
+    for (const c of current.commands) for (const ex of c.examples || []) samples.add(ex);
+    for (const c of cli.commands()) if (samples.size < 8 && !(c.args || []).some((a) => a.required)) samples.add(c.path.join(" "));
+    const runFirst = demo.length ? demo.slice(0, 2) : [...samples].filter((s) => s !== "help").slice(0, 2);
+    (async () => { for (const l of runFirst) await mounted.run(l); })();
+    const tl = $("tryline"); tl.replaceChildren(el("span", "label", "Try"));
+    for (const s of [...samples].slice(0, 8)) { const b = el("button", undefined, s); b.type = "button"; b.onclick = () => mounted.run(s); tl.append(b); }
     const tbody = $("cmds"); tbody.replaceChildren();
     for (const c of cli.commands()) {
-      const tr = document.createElement("tr"), a = document.createElement("td"), d = document.createElement("td"), code = document.createElement("code");
-      code.textContent = cli.usage(c); a.append(code); d.textContent = c.summary; tr.append(a, d); tbody.append(tr);
+      const tr = el("tr"), a = el("td"), d = el("td", undefined, c.summary), act = el("td");
+      a.append(el("code", undefined, cli.usage(c)));
+      const ex = (c.examples || [])[0] || (!(c.args || []).some((x) => x.required) ? c.path.join(" ") : null);
+      const run = el("button", "btn small", "Run"); run.type = "button"; run.disabled = !ex; run.title = ex ? `Run: ${ex}` : "Needs arguments: use Use";
+      run.onclick = () => ex && mounted.run(ex);
+      const use = el("button", "btn small", "Use"); use.type = "button"; use.style.marginInlineStart = "6px";
+      use.onclick = () => mounted.setInput(c.path.join(" ") + " ");
+      act.append(run, use); tr.append(a, d, act); tbody.append(tr);
     }
   }
 
@@ -266,35 +544,152 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     store.set(STORE, editor.value);
     const r = analyse(editor.value);
     const valid = !r.errors;
+    $("jsondot").hidden = valid;
     for (const id of ["format", "copyjson", "export", "runapp"]) $(id).disabled = !valid;
     if (!valid) {
       status.className = ""; status.replaceChildren();
-      const ul = document.createElement("ul");
-      for (const e of r.errors.slice(0, 8)) { const li = document.createElement("li"); li.textContent = e; ul.append(li); }
+      const ul = el("ul");
+      for (const e of r.errors.slice(0, 8)) ul.append(el("li", undefined, e));
       status.append(ul);
       return;
     }
-    status.className = "ok"; status.textContent = "✓ Valid. The console on the right is running this spec.";
+    status.className = "ok"; status.textContent = "✓ Valid. The live console is running this spec.";
     if (!force && current && JSON.stringify(current) === JSON.stringify(r.spec)) return;
-    current = r.spec; markChip();
+    current = r.spec; cli = r.cli;
+    markTemplate();
     $("exportbox").hidden = true;
-    mount(r.spec, r.cli);
+    mount(); renderKpis(); renderData();
+  }
+
+  function loadSpec(spec, message) {
+    editor.value = pretty(spec);
+    activeTpl = null;
+    update(true);
+    if (message) setNotice(message);
   }
 
   editor.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => update(false), 300); });
-  editor.addEventListener("keydown", (e) => {
-    if (e.key === "Tab") { e.preventDefault(); const s = editor.selectionStart; editor.setRangeText("  ", s, editor.selectionEnd, "end"); }
-  });
+  editor.addEventListener("keydown", (e) => { if (e.key === "Tab") { e.preventDefault(); editor.setRangeText("  ", editor.selectionStart, editor.selectionEnd, "end"); } });
   $("format").onclick = () => { editor.value = pretty(JSON.parse(editor.value)); update(false); };
   $("copyjson").onclick = () => copy(editor.value, "Spec JSON copied.", editor);
-  $("import").onclick = () => $("file").click();
-  $("file").onchange = async (e) => {
-    const f = e.target.files[0]; if (!f) return;
-    try { editor.value = pretty(JSON.parse(await f.text())); setNotice(`Imported ${f.name}.`); update(true); }
-    catch (err) { setNotice(`Could not import ${f.name}: ${err.message}`); }
-    e.target.value = "";
-  };
   $("reset").onclick = () => update(true);
+
+  /* ---------- files ---------- */
+  function renderFiles() {
+    const ul = $("files"); ul.replaceChildren();
+    for (const [i, f] of files.entries()) {
+      const li = el("li");
+      const meta = f.kind === "spec" ? "console spec" : `${f.rows.length.toLocaleString()} rows · ${Object.keys(f.rows[0] || {}).length} cols → ${f.dataset}`;
+      const rm = el("button", undefined, "✕"); rm.type = "button"; rm.setAttribute("aria-label", `Remove ${f.name}`);
+      rm.onclick = () => { files.splice(i, 1); renderFiles(); };
+      li.append(el("span", "fname", f.name), el("span", "meta", meta), rm);
+      ul.append(li);
+    }
+    $("filecount").textContent = files.length ? `(${files.length})` : "";
+    $("builddata").disabled = !files.length;
+    $("todescribe").disabled = !files.length;
+    $("filehint").textContent = files.length
+      ? `Using ${files.length} uploaded file${files.length > 1 ? "s" : ""}: ${files.map((f) => f.name).join(", ")}.`
+      : "Tip: upload files first and Claude will build the console around your data.";
+  }
+  async function addFiles(list) {
+    for (const f of list) {
+      if (f.size > 8 * 1024 * 1024) { setNotice(`${f.name} is over 8 MB; choose a smaller file.`); continue; }
+      try {
+        const text = await f.text();
+        const loaded = CB.loadFile(f.name, text);
+        const taken = new Set(files.filter((x) => x.dataset).map((x) => x.dataset));
+        if (loaded.kind === "data") { let n = loaded.dataset, i = 2; while (taken.has(n)) n = `${loaded.dataset}_${i++}`; loaded.dataset = n; }
+        const ext = (/\.([^.]+)$/.exec(f.name.toLowerCase()) || [])[1] || "";
+        files.push({ ...loaded, text: ["txt", "md", "log"].includes(ext) ? text : "" });
+        setNotice(loaded.kind === "spec" ? `${f.name} is a console spec. Build to load it.` : `Loaded ${f.name}: ${loaded.rows.length.toLocaleString()} rows.`);
+      } catch (e) { setNotice(e.message); }
+    }
+    renderFiles();
+  }
+  $("file").onchange = (e) => { addFiles([...e.target.files]); e.target.value = ""; };
+  const drop = $("drop");
+  ["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", (e) => addFiles([...(e.dataTransfer?.files || [])]));
+  drop.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); $("file").click(); } });
+  drop.tabIndex = 0;
+
+  const fileDatasets = () => Object.fromEntries(files.filter((f) => f.kind === "data").map((f) => [f.dataset, f.rows]));
+  const fileNotes = () => files.filter((f) => f.text).map((f) => `# ${f.name}\n${f.text}`).join("\n\n");
+
+  $("builddata").onclick = () => {
+    const spec = files.find((f) => f.kind === "spec");
+    const ds = fileDatasets();
+    if (spec && !Object.keys(ds).length) return loadSpec(spec.spec, `Loaded console spec from ${spec.name}.`);
+    if (!Object.keys(ds).length) return setNotice("Add a CSV, JSON or text file first.");
+    const name = Object.keys(ds).length === 1 ? Object.keys(ds)[0].replace(/_/g, "-") : "data";
+    const built = CB.specFromDatasets(ds, name);
+    if (spec) { built.commands = [...(spec.spec.commands || []), ...built.commands.filter((c) => !(spec.spec.commands || []).some((s) => s.name === c.name))]; built.vars = spec.spec.vars; built.name = spec.spec.name; }
+    loadSpec(built, `Built a data console from ${files.length} file${files.length > 1 ? "s" : ""}.`);
+  };
+  $("todescribe").onclick = () => { showTab("prompt"); $("prompt").focus(); };
+
+  /* ---------- build with Claude ---------- */
+  for (const idea of IDEAS) { const b = el("button", "chip", idea.split(":")[0]); b.type = "button"; b.title = idea; b.onclick = () => { $("prompt").value = idea; $("prompt").focus(); }; $("ideas").append(b); }
+  let genCtl = null;
+  const gstatus = (t, cls) => { $("genstatus").textContent = t; $("genstatus").className = cls || ""; };
+  sampleReady.then((s) => {
+    if (!s) {
+      $("generate").disabled = true;
+      gstatus("Building from a description needs this page open in Claude. Upload files, templates and JSON work everywhere.");
+    }
+  });
+  async function ask(sample, prompt, onChars) {
+    genCtl = new AbortController();
+    const r = await sample(prompt, { signal: genCtl.signal, modelTier: "default", onText: ({ text }) => onChars(text.length) });
+    return r.text;
+  }
+  $("generate").onclick = async () => {
+    const request = $("prompt").value.trim();
+    const ds = fileDatasets(), notes = fileNotes();
+    if (!request && !files.length) { gstatus("Describe the console first, or upload files.", "err"); $("prompt").focus(); return; }
+    const sample = await sampleReady;
+    if (!sample) return;
+    $("generate").disabled = true; $("stopgen").hidden = false;
+    gstatus("Thinking…");
+    const progress = (n) => gstatus(`Writing the console… ${n.toLocaleString()} characters`);
+    try {
+      const prompt = CB.buildPrompt(request || "Build a useful console for exploring the uploaded files.", ds, notes);
+      let spec = CB.extractJson(await ask(sample, prompt, progress));
+      if (Object.keys(ds).length) spec.datasets = ds;
+      let check = CB.parseSpec(spec), built = null;
+      try { if (check.ok) built = CB.buildFromSpec(spec); } catch (e) { check = { ok: false, errors: [e.message] }; }
+      if (!check.ok) {
+        gstatus("Fixing a few details…");
+        const { datasets, ...withoutData } = spec;
+        const fix = `This console spec has errors:\n${check.errors.join("\n")}\n\nReturn the corrected spec as JSON only, keeping everything else the same.\n\n${CB.SPEC_GUIDE}\n\nSpec:\n${JSON.stringify(withoutData)}`;
+        spec = CB.extractJson(await ask(sample, fix, progress));
+        if (Object.keys(ds).length) spec.datasets = ds;
+        check = CB.parseSpec(spec);
+        if (!check.ok) throw { code: "invalid", message: check.errors.slice(0, 3).join("; ") };
+        CB.buildFromSpec(spec);
+      }
+      loadSpec(spec, `Built "${spec.name}" with ${spec.commands.length} commands from your description.`);
+      gstatus(`✓ Built ${spec.commands.length} commands. Edit the description and build again to change it.`, "ok");
+    } catch (e) {
+      const code = e && e.code;
+      gstatus(
+        code === "not_granted" ? "Claude was not allowed for this page, so building from a description is off. Files, templates and JSON still work."
+        : code === "rate_limited" ? "Too many requests right now. Wait a minute and try again."
+        : code === "aborted" || (e && e.name === "AbortError") ? "Stopped."
+        : code === "invalid" ? `Claude's console still had errors (${e.message}). Try describing it differently.`
+        : `Could not build the console: ${(e && e.message) || e}`, code === "aborted" ? "" : "err");
+      if (code === "not_granted") $("generate").disabled = true;
+    } finally {
+      genCtl = null; $("stopgen").hidden = true;
+      if ($("genstatus").textContent.indexOf("not allowed") < 0) $("generate").disabled = false;
+    }
+  };
+  $("stopgen").onclick = () => genCtl && genCtl.abort();
+  $("prompt").addEventListener("keydown", (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) $("generate").click(); });
+
+  /* ---------- export ---------- */
   $("export").onclick = () => {
     const html = CB.standaloneHtml(current, $("cb-bundle").textContent);
     $("exportcode").value = html;
@@ -304,23 +699,21 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
   };
   $("copyhtml").onclick = () => copy($("exportcode").value, `Copied. Paste it into a file named ${current.name}.html.`, $("exportcode"));
   $("dlhtml").onclick = () => {
-    try {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob([$("exportcode").value], { type: "text/html" }));
-      a.download = `${current.name}.html`; a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-      setNotice(sandboxed ? "If no file appeared, downloads are blocked here: use Copy HTML instead." : `Downloaded ${current.name}.html.`);
-    } catch { setNotice("Downloads are blocked here: use Copy HTML instead."); }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([$("exportcode").value], { type: "text/html" }));
+    a.download = `${current.name}.html`; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    setNotice(`Downloaded ${current.name}.html.`);
   };
 
-  // Run as web app: the current console fills the screen as its own app. #app opens it directly.
+  /* ---------- run as web app (#app) ---------- */
   let app = null;
   function openApp() {
     if (!current) return;
     $("appmode").hidden = false;
     document.body.style.overflow = "hidden";
     $("appname").textContent = current.name;
-    app?.destroy();
+    app && app.destroy();
     app = CB.mountConsole($("appterm"), current, { ...runtime, subtitle: "web app", historyKey: "console-builder-app.history." + current.name });
     if (location.hash !== "#app") location.hash = "app";
   }
@@ -328,7 +721,7 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     if ($("appmode").hidden) return;
     $("appmode").hidden = true;
     document.body.style.overflow = "";
-    app?.destroy(); app = null;
+    app && app.destroy(); app = null;
     if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
     if (location.hash === "#app") { try { history.replaceState(null, "", location.pathname + location.search); } catch { location.hash = ""; } }
     $("runapp").focus();
@@ -337,21 +730,19 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
   $("appexit").onclick = closeApp;
   $("appmode").addEventListener("keydown", (e) => { if (e.key === "Escape" && !document.fullscreenElement) closeApp(); });
   if (!document.fullscreenEnabled) $("appfull").remove();
-  else $("appfull").onclick = () => {
-    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-    else $("appmode").requestFullscreen().catch(() => setNotice("Full screen is not available here."));
-  };
+  else $("appfull").onclick = () => (document.fullscreenElement ? document.exitFullscreen().catch(() => {}) : $("appmode").requestFullscreen().catch(() => setNotice("Full screen is not available here.")));
   document.addEventListener("fullscreenchange", () => { const b = $("appfull"); if (b) b.textContent = document.fullscreenElement ? "Leave full screen" : "Full screen"; });
-  if (sandboxed) $("apptab").remove();
+  if (sandboxed) { $("apptab").remove(); $("dlhtml").remove(); }
   else $("apptab").onclick = () => {
     const url = URL.createObjectURL(new Blob([CB.standaloneHtml(current, $("cb-bundle").textContent)], { type: "text/html" }));
     if (!window.open(url, "_blank")) setNotice("The browser blocked the new tab. Use Get web console instead.");
   };
   window.addEventListener("hashchange", () => (location.hash === "#app" ? openApp() : closeApp()));
 
-  if (sandboxed) $("dlhtml").remove();
+  /* ---------- start ---------- */
   const saved = store.get(STORE);
   editor.value = saved && analyse(saved).spec ? saved : pretty(CB.TEMPLATES.find((t) => t.id === "finance").spec);
+  renderFiles(); renderActivity();
   update(true);
   if (location.hash === "#app") openApp();
 })();
