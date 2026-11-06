@@ -25,6 +25,7 @@ node dist/cli.mjs run my-console.json            # interactive console
 node dist/cli.mjs exec my-console.json "loan 500000 0.18 5"
 node dist/cli.mjs html my-console.json -o my-console.html   # offline web console
 node dist/cli.mjs studio                         # visual builder → http://localhost:4321
+# or just open dist/console-builder-studio.html in a browser: one self-contained interactive file
 ```
 
 After `npm link` (or installing the package), the command is simply `console-builder`.
@@ -101,5 +102,5 @@ In a web page (no framework):
 | `src/spec.ts`, `calc.ts`, `templates.ts` | JSON specs, safe calculator, templates |
 | `src/render-text.ts`, `cli.ts` | Terminal output and the CLI |
 | `src/web.ts`, `html.ts`, `browser.ts` | Browser terminal, standalone HTML export, browser bundle entry |
-| `web/index.html` | The Studio (plain HTML + JS) |
+| `web/studio.html` | The Studio. The build inlines the browser bundle into `dist/console-builder-studio.html`, one interactive HTML file that runs offline |
 | `test/` | Vitest suites (`npm test`) |

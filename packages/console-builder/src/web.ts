@@ -33,6 +33,9 @@ export interface MountOptions {
   theme?: { background?: string; foreground?: string; accent?: string };
   historyKey?: string;
   autoFocus?: boolean;
+  /** Overrides how spec consoles open links and make HTTP calls (e.g. inside sandboxed pages). */
+  open?: (url: string) => void;
+  fetch?: SpecContext["fetch"];
   /** Only for consoles built in code: supplies the command context. Spec consoles get one automatically. */
   makeCtx?: (api: { clear: () => void; history: () => string[] }) => unknown;
 }
@@ -137,8 +140,8 @@ export function mountConsole(target: HTMLElement, source: ConsoleSpec | BuiltCon
           vars,
           setVar: (n: string, v: string | null) => (v === null ? delete vars[n] : (vars[n] = v)),
           clear,
-          open: (url: string) => window.open(url, "_blank", "noopener,noreferrer"),
-          fetch: (url: string, init?: RequestInit) => fetch(url, init),
+          open: opts.open ?? ((url: string) => window.open(url, "_blank", "noopener,noreferrer")),
+          fetch: opts.fetch ?? ((url: string, init?: RequestInit) => fetch(url, init)),
           history: api.history,
         } satisfies SpecContext)
       : (opts.makeCtx?.(api) ?? {});

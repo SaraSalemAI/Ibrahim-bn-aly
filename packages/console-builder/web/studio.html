@@ -1,0 +1,300 @@
+<title>Console Builder Studio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="author" content="Sara Salem">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap">
+<style>
+/* Layout: a workbench — spec on the left, a running terminal on the right, reference below. Prepared by Sara Salem, © Sara Salem 2026. */
+:root {
+  --bg: #f3f4f1;
+  --surface: #ffffff;
+  --fg: #1b2420;
+  --muted: #5f6b66;
+  --line: #dde2dd;
+  --accent: #116b57;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2efe9;
+  --bad: #b3261e;
+  --good: #1d7a43;
+  --field: #f8f9f7;
+  --term-bg: #0e1513;
+  --term-fg: #d5e2dc;
+  --term-accent: #6fd6b4;
+  --font-display: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-code: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101513; --surface: #171e1b; --fg: #e3ebe7; --muted: #95a39d; --line: #29332f;
+    --accent: #5fcaa7; --accent-ink: #08130f; --accent-soft: #1b2c26; --bad: #ff8c82; --good: #79d79a; --field: #121815;
+    --term-bg: #0a0f0d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101513; --surface: #171e1b; --fg: #e3ebe7; --muted: #95a39d; --line: #29332f;
+  --accent: #5fcaa7; --accent-ink: #08130f; --accent-soft: #1b2c26; --bad: #ff8c82; --good: #79d79a; --field: #121815;
+  --term-bg: #0a0f0d; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--fg); font: 15px/1.55 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 32px;
+}
+.wrap { max-width: 1360px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+.brand h1 { font: 700 clamp(22px, 3vw, 30px)/1.15 var(--font-display); margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+.brand h1 .caret { color: var(--accent); }
+.brand p { margin: 6px 0 0; color: var(--muted); max-width: 68ch; }
+.byline { color: var(--muted); font-size: 13px; }
+.label { font: 600 11px/1 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.templates { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.chip {
+  font: 500 14px/1 var(--font-body); padding: 9px 14px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+}
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.chip:hover { border-color: var(--accent); }
+button.btn {
+  font: 600 13px/1 var(--font-body); padding: 9px 13px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--fg);
+}
+button.btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+button.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+button.btn.primary:hover:not(:disabled) { color: var(--accent-ink); filter: brightness(1.08); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.bench { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 18px; align-items: start; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.panel-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.panel-head h2 { font: 600 16px/1.2 var(--font-body); margin: 0; flex: 1; min-width: 140px; }
+textarea#editor {
+  width: 100%; height: 520px; resize: vertical; padding: 12px; border-radius: 8px; border: 1px solid var(--line);
+  background: var(--field); color: var(--fg); font: 12.5px/1.55 var(--font-code); tab-size: 2; white-space: pre;
+}
+#status { font-size: 13px; min-height: 1.5em; }
+#status.ok { color: var(--good); }
+#status ul { margin: 0; padding-inline-start: 18px; color: var(--bad); font-family: var(--font-code); font-size: 12px; }
+.term-panel { gap: 10px; }
+#preview { height: 560px; }
+#preview .cb-term { --cb-bg: var(--term-bg); --cb-fg: var(--term-fg); --cb-accent: var(--term-accent); font-family: var(--font-code); }
+.tryline { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tryline button { font: 12px/1 var(--font-code); padding: 6px 9px; border-radius: 6px; border: 1px dashed var(--line); background: transparent; color: var(--fg); cursor: pointer; }
+.tryline button:hover { border-color: var(--accent); color: var(--accent); }
+#notice { font-size: 13px; color: var(--muted); min-height: 1.4em; margin: 0; }
+.out { display: flex; flex-direction: column; gap: 8px; }
+.out textarea { width: 100%; height: 140px; font: 11.5px/1.45 var(--font-code); padding: 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--field); color: var(--fg); resize: vertical; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.tablebox { overflow-x: auto; }
+table.ref { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+table.ref th { text-align: start; font: 600 11px/1 var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding: 8px; border-bottom: 1px solid var(--line); }
+table.ref td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.ref code, .ref-list code { font: 12.5px/1.4 var(--font-code); background: var(--accent-soft); color: var(--fg); padding: 1px 5px; border-radius: 4px; white-space: nowrap; }
+.ref-list { margin: 0; padding-inline-start: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.ref-list code { white-space: normal; }
+footer { color: var(--muted); font-size: 12.5px; text-align: center; }
+@media (max-width: 960px) { .bench, .grid2 { grid-template-columns: 1fr; } textarea#editor { height: 360px; } #preview { height: 460px; } }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>console<span class="caret">_</span>builder studio</h1>
+      <p>Describe a command console as JSON: commands, arguments, variables, calculations and macros. It runs live beside you, and you can take it away as a standalone web page.</p>
+    </div>
+    <span class="byline">Prepared by Sara Salem · © Sara Salem 2026</span>
+  </header>
+
+  <section aria-labelledby="tpl-label" class="templates">
+    <span class="label" id="tpl-label">Start from</span>
+    <span id="templates" class="templates"></span>
+  </section>
+
+  <p id="notice" role="status"></p>
+
+  <div class="bench">
+    <section class="panel" aria-labelledby="spec-h">
+      <div class="panel-head">
+        <h2 id="spec-h">Console spec</h2>
+        <button class="btn" id="format" type="button">Format</button>
+        <button class="btn" id="import" type="button">Import JSON</button>
+        <button class="btn" id="copyjson" type="button">Copy JSON</button>
+        <input id="file" type="file" accept=".json,application/json" hidden>
+      </div>
+      <textarea id="editor" spellcheck="false" aria-label="Console spec JSON"></textarea>
+      <div id="status" aria-live="polite"></div>
+    </section>
+
+    <section class="panel term-panel" aria-labelledby="run-h">
+      <div class="panel-head">
+        <h2 id="run-h">Live console</h2>
+        <button class="btn" id="reset" type="button">Restart</button>
+        <button class="btn primary" id="export" type="button">Get web console</button>
+      </div>
+      <div class="tryline" id="tryline" aria-label="Try a command"></div>
+      <div id="preview"></div>
+      <div class="out" id="exportbox" hidden>
+        <span class="label">Standalone web console</span>
+        <p id="exportnote" style="margin:0;font-size:13px;color:var(--muted)">Save this as a <code>.html</code> file and open it in any browser. It works offline.</p>
+        <textarea id="exportcode" readonly aria-label="Standalone HTML"></textarea>
+        <div class="tryline"><button class="btn primary" id="copyhtml" type="button">Copy HTML</button><button class="btn" id="dlhtml" type="button">Download file</button></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="grid2">
+    <section class="panel" aria-labelledby="cmd-h">
+      <h2 id="cmd-h" style="margin:0;font-size:16px">Commands in this console</h2>
+      <div class="tablebox"><table class="ref"><thead><tr><th>Usage</th><th>What it does</th></tr></thead><tbody id="cmds"></tbody></table></div>
+    </section>
+    <section class="panel" aria-labelledby="ref-h">
+      <h2 id="ref-h" style="margin:0;font-size:16px">Spec reference</h2>
+      <ul class="ref-list">
+        <li><code>commands[].name</code> is one or more words, such as <code>deploy app</code>.</li>
+        <li><code>args</code>: <code>{ name, type: string | number | boolean | enum, positional, required, rest, alias, choices, default }</code>.</li>
+        <li>Text fills <code>{arg}</code> from arguments and <code>{$var}</code> from variables; top-level <code>vars</code> sets starting values.</li>
+        <li>Actions: <code>print</code>, <code>table</code>, <code>kv</code>, <code>calc</code>, <code>set</code>, <code>http</code>, <code>open</code>, <code>run</code> (a macro of other commands), <code>choice</code>, <code>date</code>.</li>
+        <li>Every console has <code>help</code>, <code>clear</code>, <code>echo</code>, <code>set</code>, <code>unset</code>, <code>vars</code>, <code>calc</code> and <code>history</code>. Chain with <code>&amp;&amp;</code> (stops on error) or <code>;</code>.</li>
+        <li><code>theme</code> takes <code>{ background, foreground, accent }</code>; <code>welcome</code> and <code>prompt</code> customise the terminal.</li>
+        <li>In the terminal: <kbd>Tab</kbd> completes, <kbd>↑</kbd> <kbd>↓</kbd> recall history, <kbd>Ctrl</kbd>+<kbd>L</kbd> clears.</li>
+      </ul>
+    </section>
+  </div>
+
+  <footer>console-builder · Prepared by Sara Salem · © Sara Salem 2026</footer>
+</div>
+
+<script id="cb-bundle">/*__BUNDLE__*/</script>
+<script>
+(() => {
+  const CB = window.ConsoleBuilder;
+  const $ = (id) => document.getElementById(id);
+  const editor = $("editor"), status = $("status"), notice = $("notice");
+  const STORE = "console-builder-studio.spec.v2";
+  const pretty = (o) => JSON.stringify(o, null, 2);
+  const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+  const DEMOS = { starter: ["hello Sara"], finance: ["loan 500000 0.18 5", "vat 1000", "margin 120 75", "grow 100000 0.12 5", "set usd 48.5 && fx convert 250 usd"], devops: ["env use production", "env show", "runbook deploy", "now"], api: ["help repo", "help get"], game: ["coin", "dice", "lunch"] };
+  // Pages served from a file or a local server can reach the network; a sandboxed embed cannot.
+  const sandboxed = location.protocol !== "file:" && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+  let current = null, mounted = null, timer = null, activeTpl = null;
+
+  function setNotice(text) { notice.textContent = text; }
+
+  function copy(text, done, fallbackEl) {
+    const fallback = () => { if (fallbackEl) { fallbackEl.focus(); fallbackEl.select(); } setNotice("Copying was blocked here. The text is selected: press Ctrl+C (⌘C on Mac)."); };
+    try { navigator.clipboard.writeText(text).then(() => setNotice(done), fallback); } catch { fallback(); }
+  }
+
+  const chips = [];
+  for (const t of CB.TEMPLATES) {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = t.title; b.title = t.description; b.dataset.id = t.id;
+    b.setAttribute("aria-pressed", "false");
+    b.onclick = () => { activeTpl = t.id; editor.value = pretty(t.spec); setNotice(`${t.title}: ${t.description}`); update(true); };
+    chips.push(b); $("templates").append(b);
+  }
+  function markChip() {
+    const match = CB.TEMPLATES.find((t) => current && JSON.stringify(t.spec) === JSON.stringify(current));
+    activeTpl = match ? match.id : null;
+    for (const c of chips) c.setAttribute("aria-pressed", String(c.dataset.id === activeTpl));
+  }
+
+  function analyse(text) {
+    let json;
+    try { json = JSON.parse(text); } catch (e) { return { errors: ["JSON: " + e.message] }; }
+    const r = CB.parseSpec(json);
+    if (!r.ok) return { errors: r.errors };
+    try { return { spec: json, cli: CB.buildFromSpec(json) }; } catch (e) { return { errors: [e.message] }; }
+  }
+
+  function mount(spec, cli) {
+    mounted?.destroy();
+    mounted = CB.mountConsole($("preview"), spec, {
+      subtitle: "live",
+      autoFocus: false,
+      historyKey: "console-builder-studio.history." + spec.name,
+      open: (url) => { setNotice("Link from the console: " + url); },
+      fetch: sandboxed
+        ? () => Promise.reject(new Error("HTTP calls are blocked in this preview. They work in the downloaded web console and the CLI."))
+        : (url, init) => fetch(url, init),
+    });
+    const lines = ((activeTpl && DEMOS[activeTpl]) || ["help"]).slice(0, 2);
+    (async () => { for (const l of lines) await mounted.run(l); })();
+    const tl = $("tryline"); tl.replaceChildren();
+    const label = document.createElement("span"); label.className = "label"; label.textContent = "Try"; tl.append(label);
+    const samples = new Set([...((activeTpl && DEMOS[activeTpl]) || []), "help"]);
+    for (const c of spec.commands) for (const ex of c.examples || []) samples.add(ex);
+    for (const c of cli.commands()) if (samples.size < 7 && !(c.args || []).some((a) => a.required)) samples.add(c.path.join(" "));
+    for (const s of [...samples].slice(0, 7)) {
+      const b = document.createElement("button"); b.type = "button"; b.textContent = s;
+      b.onclick = () => mounted.run(s);
+      tl.append(b);
+    }
+    const tbody = $("cmds"); tbody.replaceChildren();
+    for (const c of cli.commands()) {
+      const tr = document.createElement("tr"), a = document.createElement("td"), d = document.createElement("td"), code = document.createElement("code");
+      code.textContent = cli.usage(c); a.append(code); d.textContent = c.summary; tr.append(a, d); tbody.append(tr);
+    }
+  }
+
+  function update(force) {
+    store.set(STORE, editor.value);
+    const r = analyse(editor.value);
+    const valid = !r.errors;
+    for (const id of ["format", "copyjson", "export"]) $(id).disabled = !valid;
+    if (!valid) {
+      status.className = ""; status.replaceChildren();
+      const ul = document.createElement("ul");
+      for (const e of r.errors.slice(0, 8)) { const li = document.createElement("li"); li.textContent = e; ul.append(li); }
+      status.append(ul);
+      return;
+    }
+    status.className = "ok"; status.textContent = "✓ Valid. The console on the right is running this spec.";
+    if (!force && current && JSON.stringify(current) === JSON.stringify(r.spec)) return;
+    current = r.spec; markChip();
+    $("exportbox").hidden = true;
+    mount(r.spec, r.cli);
+  }
+
+  editor.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => update(false), 300); });
+  editor.addEventListener("keydown", (e) => {
+    if (e.key === "Tab") { e.preventDefault(); const s = editor.selectionStart; editor.setRangeText("  ", s, editor.selectionEnd, "end"); }
+  });
+  $("format").onclick = () => { editor.value = pretty(JSON.parse(editor.value)); update(false); };
+  $("copyjson").onclick = () => copy(editor.value, "Spec JSON copied.", editor);
+  $("import").onclick = () => $("file").click();
+  $("file").onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    try { editor.value = pretty(JSON.parse(await f.text())); setNotice(`Imported ${f.name}.`); update(true); }
+    catch (err) { setNotice(`Could not import ${f.name}: ${err.message}`); }
+    e.target.value = "";
+  };
+  $("reset").onclick = () => update(true);
+  $("export").onclick = () => {
+    const html = CB.standaloneHtml(current, $("cb-bundle").textContent);
+    $("exportcode").value = html;
+    $("exportbox").hidden = false;
+    $("exportnote").textContent = `Save this as ${current.name}.html and open it in any browser. It works offline (${Math.round(html.length / 1024)} KB).`;
+    $("exportcode").scrollIntoView({ block: "nearest" });
+  };
+  $("copyhtml").onclick = () => copy($("exportcode").value, `Copied. Paste it into a file named ${current.name}.html.`, $("exportcode"));
+  $("dlhtml").onclick = () => {
+    try {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([$("exportcode").value], { type: "text/html" }));
+      a.download = `${current.name}.html`; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      setNotice(sandboxed ? "If no file appeared, downloads are blocked here: use Copy HTML instead." : `Downloaded ${current.name}.html.`);
+    } catch { setNotice("Downloads are blocked here: use Copy HTML instead."); }
+  };
+
+  if (sandboxed) $("dlhtml").remove();
+  const saved = store.get(STORE);
+  editor.value = saved && analyse(saved).spec ? saved : pretty(CB.TEMPLATES.find((t) => t.id === "finance").spec);
+  update(true);
+})();
+</script>
