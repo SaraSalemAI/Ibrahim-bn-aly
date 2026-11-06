@@ -87,6 +87,26 @@ describe("spec consoles", () => {
     }
   });
 
+  it("runs every step of every template without errors", async () => {
+    for (const t of TEMPLATES) {
+      expect(t.steps?.length, t.id).toBeGreaterThan(0);
+      const h = harness(t.spec, { "https://api.github.com": {}, "https://api.github.com/repos/vercel/next.js": { name: "next.js" }, "https://api.github.com/repos/vercel/next.js/releases?per_page=5": [] });
+      for (const step of t.steps ?? []) {
+        const r = await h.run(step);
+        expect(r.code, `${t.id}: ${step} → ${JSON.stringify(r.output)}`).toBe(0);
+        expect(JSON.stringify(r.output), `${t.id}: ${step}`).not.toMatch(/NaN|Infinity|undefined/);
+      }
+    }
+  });
+
+  it("agent samples compute real numbers", async () => {
+    const h = harness(TEMPLATES.find((t) => t.id === "budget-agent")!.spec);
+    await h.run("income 20000");
+    expect(await h.text("split")).toMatch(/10000/);
+    const s = harness(TEMPLATES.find((t) => t.id === "sales-agent")!.spec);
+    expect(await s.text("score 8 7 6")).toMatch(/70/);
+  });
+
   it("runs the finance template end to end", async () => {
     const h = harness(TEMPLATES.find((t) => t.id === "finance")!.spec);
     expect(await h.text("loan 500000 0.18 5")).toMatch(/12696\.\d\d/);

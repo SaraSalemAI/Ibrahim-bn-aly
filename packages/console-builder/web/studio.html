@@ -103,6 +103,7 @@ textarea#editor { height: 470px; font: 12px/1.55 var(--font-code); tab-size: 2; 
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { font: 500 12.5px/1.25 var(--font-body); padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--raised); color: var(--fg); cursor: pointer; text-align: start; }
 .chip:hover { border-color: var(--accent); }
+.chip[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
 .hint { margin: 0; font-size: 12.5px; color: var(--muted); }
 #genstatus { font-size: 13px; min-height: 1.3em; margin: 0; }
 #genstatus.err { color: var(--bad); } #genstatus.ok { color: var(--good); }
@@ -118,7 +119,22 @@ textarea#editor { height: 470px; font: 12px/1.55 var(--font-code); tab-size: 2; 
 .files .meta { color: var(--muted); white-space: nowrap; font-size: 12px; }
 .files button { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 15px; line-height: 1; padding: 2px 4px; }
 .files button:hover { color: var(--bad); }
-.tpl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
+.guide { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.guide li { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--raised); display: flex; gap: 10px; align-items: flex-start; font-size: 13px; }
+.guide b { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--bg); display: grid; place-items: center; font-size: 13px; }
+.guide span { color: var(--muted); display: block; font-size: 12px; }
+.catbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.catbar input { flex: 1 1 140px; min-width: 120px; }
+.tpl .meta { display: flex; justify-content: space-between; gap: 6px; font-size: 11.5px; color: var(--muted); }
+.tpl .cat { color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.steps { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.steps li { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.steps li .n { flex: none; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font-size: 12px; color: var(--muted); }
+.steps li.done .n { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.steps li code { flex: 1; overflow-wrap: anywhere; }
+.samplefiles { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+@media (max-width: 640px) { .guide { grid-template-columns: 1fr; } }
+.tpl-grid { max-height: 620px; overflow-y: auto; padding-right: 4px; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
 .tpl { text-align: start; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--raised); color: var(--fg); cursor: pointer; display: flex; flex-direction: column; gap: 4px; font: inherit; }
 .tpl:hover, .tpl[aria-pressed="true"] { border-color: var(--accent); }
 .tpl[aria-pressed="true"] { background: var(--accent-soft); }
@@ -207,13 +223,19 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
   <header class="top">
     <div class="brand">
       <h1>console<span class="caret">_</span>builder studio</h1>
-      <p>Build a command console from a description, your own files, a template or JSON. Run it, watch how it is used, and take it away as a web app. Prepared by Sara Salem · © Sara Salem 2026</p>
+      <p>Build your own command console in 3 easy steps. No code needed. Copyright © Sara Salem 2026</p>
     </div>
     <div class="top-actions">
       <button class="btn primary" id="runapp" type="button">▶ Run as web app</button>
       <button class="btn" id="export" type="button">Get web console</button>
     </div>
   </header>
+
+  <ol class="guide" aria-label="How to build">
+    <li><b>1</b><div>Pick a template or agent<span>Or upload a file, or describe it</span></div></li>
+    <li><b>2</b><div>Follow the easy steps<span>Press ▶ on each step, or Run all</span></div></li>
+    <li><b>3</b><div>Take it with you<span>Run as web app or Get web console</span></div></li>
+  </ol>
 
   <p id="notice" role="status"></p>
 
@@ -231,13 +253,13 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     <section class="panel col" aria-labelledby="build-h">
       <div class="panel-head"><h2 id="build-h">Build</h2></div>
       <div class="tabs" role="tablist" aria-label="Ways to build">
-        <button class="tab" role="tab" id="tab-prompt" aria-controls="pane-prompt" aria-selected="true" type="button">Describe</button>
+        <button class="tab" role="tab" id="tab-tpl" aria-controls="pane-tpl" aria-selected="true" type="button">Start here</button>
         <button class="tab" role="tab" id="tab-files" aria-controls="pane-files" aria-selected="false" type="button">Upload files <span id="filecount" class="label"></span></button>
-        <button class="tab" role="tab" id="tab-tpl" aria-controls="pane-tpl" aria-selected="false" type="button">Templates</button>
+        <button class="tab" role="tab" id="tab-prompt" aria-controls="pane-prompt" aria-selected="false" type="button">Describe</button>
         <button class="tab" role="tab" id="tab-json" aria-controls="pane-json" aria-selected="false" type="button">JSON <span class="dot" id="jsondot" hidden></span></button>
       </div>
 
-      <div class="tabpanel" role="tabpanel" id="pane-prompt" aria-labelledby="tab-prompt">
+      <div class="tabpanel" role="tabpanel" id="pane-prompt" aria-labelledby="tab-prompt" hidden>
         <label class="label" for="prompt">Describe the console you want</label>
         <textarea class="field" id="prompt" placeholder="A console for a bakery: price a cake order by size and flavour, add 14% VAT, convert to USD at a rate I set, and track today's sales against a target."></textarea>
         <div class="chips" id="ideas" aria-label="Example descriptions"></div>
@@ -255,6 +277,7 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
           <span class="hint">CSV, TSV, JSON, TXT or Markdown. A console spec JSON loads as is.</span>
         </label>
         <input id="file" type="file" multiple accept=".csv,.tsv,.json,.txt,.md,.log,.tab,text/*,application/json" hidden>
+        <div class="samplefiles" id="samplefiles"><span class="label">No file? Try a sample:</span></div>
         <ul class="files" id="files"></ul>
         <div class="panel-head">
           <button class="btn primary" id="builddata" type="button" disabled>Build data console</button>
@@ -263,7 +286,9 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
         <p class="hint">A data console gets <code>rows</code>, <code>find</code>, <code>where</code>, <code>top</code>, <code>stats</code> and <code>columns</code> for every file, built instantly in this page. Files stay in your browser.</p>
       </div>
 
-      <div class="tabpanel" role="tabpanel" id="pane-tpl" aria-labelledby="tab-tpl" hidden>
+      <div class="tabpanel" role="tabpanel" id="pane-tpl" aria-labelledby="tab-tpl">
+        <p class="hint">Click a card. It loads at once and shows its easy steps next to the console.</p>
+        <div class="catbar"><div class="chips" id="cats" aria-label="Categories"></div><input class="field" id="tplsearch" type="search" placeholder="Search templates…" aria-label="Search templates"></div>
         <div class="tpl-grid" id="templates"></div>
       </div>
 
@@ -283,6 +308,10 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
       <div class="panel-head">
         <h2 id="run-h">Live console</h2>
         <button class="btn small" id="reset" type="button">Restart</button>
+      </div>
+      <div class="out" id="stepsbox" hidden>
+        <div class="panel-head"><span class="label" style="flex:1" id="stepstitle">Easy steps</span><button class="btn primary small" id="runall" type="button">▶ Run all steps</button></div>
+        <ol class="steps" id="steps"></ol>
       </div>
       <div class="tryline" id="tryline" aria-label="Try a command"></div>
       <div id="preview"></div>
@@ -332,7 +361,7 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     </section>
   </div>
 
-  <footer>console-builder · Prepared by Sara Salem · © Sara Salem 2026</footer>
+  <footer>console-builder · Prepared by Sara Salem · Copyright © Sara Salem 2026</footer>
 </div>
 
 <div class="appmode" id="appmode" hidden role="dialog" aria-modal="true" aria-labelledby="appname">
@@ -355,11 +384,21 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
   const STORE = "console-builder-studio.spec.v3";
   const pretty = (o) => JSON.stringify(o, null, 2);
   const store = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
-  const DEMOS = { starter: ["hello Sara"], finance: ["loan 500000 0.18 5", "vat 1000", "margin 120 75", "grow 100000 0.12 5"], devops: ["env use production", "env show", "runbook deploy", "now"], api: ["help repo", "help get"], game: ["coin", "dice", "lunch"] };
+  const tplById = (id) => CB.TEMPLATES.find((t) => t.id === id);
+  const SAMPLE_FILES = {
+    "products.csv": "product,category,price,stock\nChocolate cake,Cakes,180,12\nCheesecake,Cakes,220,8\nButter cookies,Cookies,35,140\nDate cookies,Cookies,40,90\nBaguette,Bread,12,60\nCroissant,Bread,18,75\n",
+    "employees.csv": "name,department,salary,years,city\nMona Adel,Design,22000,4,Cairo\nOmar Hany,Engineering,35000,6,Giza\nLaila Samir,Sales,30000,8,Alexandria\nKarim Fathy,Engineering,24000,2,Cairo\nNour Ali,Support,15000,3,Cairo\n",
+    "orders.json": JSON.stringify([{ id: 101, customer: "Ahmed", total: 540, status: "paid" }, { id: 102, customer: "Sara", total: 1250, status: "pending" }, { id: 103, customer: "Hassan", total: 320, status: "paid" }, { id: 104, customer: "Dina", total: 890, status: "refunded" }]),
+    "notes.txt": "Meeting notes\nLaunch the new menu on the 1st.\nHire one more baker.\nOpen a branch in Giza next quarter.\nPrices go up 5% in March.\n",
+  };
   const IDEAS = [
     "A bakery console: price a cake by size and flavour, add 14% VAT, convert to USD at a rate I set, and track today's sales against a target.",
     "A personal trainer console: BMI, daily calorie needs from age, weight, height and activity level, and a random workout picker.",
     "A freelancer console: quote a project from hours and day rate, add tax, convert currency, and show payment terms.",
+    "A clinic receptionist agent: step 1 register a patient, step 2 pick a doctor, step 3 compute the visit fee with insurance discount, step 4 print a booking summary.",
+    "A school teacher agent: step 1 set the class, step 2 average three test scores, step 3 pick a homework task, step 4 print a parent message.",
+    "A car rental agent: step 1 choose a car type, step 2 price days with a weekly discount, step 3 add insurance, step 4 show the contract summary.",
+    "An event planner agent: guests count, cost per guest, venue choice, and a checklist for the day.",
   ];
   const sandboxed = location.protocol !== "file:" && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
   const sampleReady = window.claude && window.claude.use ? window.claude.use("sample").catch(() => null) : Promise.resolve(null);
@@ -375,7 +414,7 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
   }
 
   /* ---------- tabs ---------- */
-  const tabs = ["prompt", "files", "tpl", "json"];
+  const tabs = ["tpl", "files", "prompt", "json"];
   function showTab(name) {
     for (const t of tabs) {
       $("tab-" + t).setAttribute("aria-selected", String(t === name));
@@ -495,12 +534,53 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
 
   /* ---------- templates ---------- */
   const tplButtons = [];
+  const ORDER = ["Start", "Agents", "Business", "Data", "Tools", "Fun"];
+  const CATS = ["All", ...[...new Set(CB.TEMPLATES.map((t) => t.category || "Other"))].sort((x, y) => (ORDER.indexOf(x) + 99) % 99 - (ORDER.indexOf(y) + 99) % 99)];
+  let cat = "All";
   for (const t of CB.TEMPLATES) {
-    const b = el("button", "tpl"); b.type = "button"; b.dataset.id = t.id; b.setAttribute("aria-pressed", "false");
-    b.append(el("strong", undefined, t.title), el("span", undefined, t.description));
-    b.onclick = () => { activeTpl = t.id; editor.value = pretty(t.spec); setNotice(`Loaded template: ${t.title}.`); update(true); };
+    const b = el("button", "tpl"); b.type = "button"; b.dataset.id = t.id; b.dataset.cat = t.category || "Other"; b.setAttribute("aria-pressed", "false");
+    const meta = el("span", "meta"); meta.append(el("span", "cat", t.category || "Other"), el("span", undefined, `${(t.steps || []).length} steps`));
+    b.append(meta, el("strong", undefined, t.title), el("span", undefined, t.description));
+    b.onclick = () => { activeTpl = t.id; editor.value = pretty(t.spec); setNotice(`Loaded ${t.title}. Follow the easy steps next to the console.`); update(true); if (innerWidth < 900) $("stepsbox").scrollIntoView({ behavior: "smooth", block: "start" }); };
     tplButtons.push(b); $("templates").append(b);
   }
+  function filterTemplates() {
+    const q = $("tplsearch").value.trim().toLowerCase();
+    for (const b of tplButtons) b.hidden = !((cat === "All" || b.dataset.cat === cat) && (!q || b.textContent.toLowerCase().includes(q)));
+    for (const c of $("cats").children) c.setAttribute("aria-pressed", String(c.textContent.startsWith(cat)));
+  }
+  for (const c of CATS) {
+    const n = c === "All" ? CB.TEMPLATES.length : CB.TEMPLATES.filter((t) => (t.category || "Other") === c).length;
+    const b = el("button", "chip", `${c} (${n})`); b.type = "button"; b.onclick = () => { cat = c; filterTemplates(); }; $("cats").append(b);
+  }
+  $("tplsearch").oninput = filterTemplates;
+  filterTemplates();
+
+  /* ---------- easy steps ---------- */
+  const doneSteps = new Set();
+  function renderSteps() {
+    const t = activeTpl && tplById(activeTpl);
+    const steps = t?.steps || [];
+    $("stepsbox").hidden = !steps.length;
+    if (!steps.length) return;
+    doneSteps.clear();
+    $("stepstitle").textContent = `Easy steps · ${t.title}`;
+    const ol = $("steps"); ol.replaceChildren();
+    steps.forEach((s, i) => {
+      const li = el("li"); li.dataset.step = s;
+      const go = el("button", "btn small", "▶"); go.type = "button"; go.setAttribute("aria-label", `Run step ${i + 1}: ${s}`);
+      go.onclick = () => runStep(s);
+      const useb = el("button", "btn small", "Edit"); useb.type = "button"; useb.title = "Put it in the console to change the numbers"; useb.onclick = () => mounted.setInput(s);
+      li.append(el("span", "n", String(i + 1)), el("code", undefined, s), go, useb);
+      ol.append(li);
+    });
+  }
+  async function runStep(s) {
+    await mounted.run(s);
+    doneSteps.add(s);
+    for (const li of $("steps").children) li.classList.toggle("done", doneSteps.has(li.dataset.step));
+  }
+  $("runall").onclick = async () => { const t = activeTpl && tplById(activeTpl); for (const s of t?.steps || []) await runStep(s); setNotice("All steps done. Next: Run as web app or Get web console."); };
   function markTemplate() {
     const match = CB.TEMPLATES.find((t) => current && JSON.stringify(t.spec) === JSON.stringify(current));
     activeTpl = match ? match.id : null;
@@ -519,7 +599,8 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
   function mount() {
     mounted && mounted.destroy();
     mounted = CB.mountConsole($("preview"), current, { ...runtime, subtitle: "live", autoFocus: false, historyKey: "console-builder-studio.history." + current.name });
-    const demo = (activeTpl && DEMOS[activeTpl]) || (current.datasets && Object.keys(current.datasets).length ? [] : ["help"]);
+    const demo = (activeTpl && tplById(activeTpl)?.steps?.slice(0, 1)) || (current.datasets && Object.keys(current.datasets).length ? [] : ["help"]);
+    renderSteps();
     const samples = new Set([...demo, "help"]);
     for (const c of current.commands) for (const ex of c.examples || []) samples.add(ex);
     for (const c of cli.commands()) if (samples.size < 8 && !(c.args || []).some((a) => a.required)) samples.add(c.path.join(" "));
@@ -606,6 +687,11 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
       } catch (e) { setNotice(e.message); }
     }
     renderFiles();
+  }
+  for (const name of Object.keys(SAMPLE_FILES)) {
+    const b = el("button", "chip", name); b.type = "button";
+    b.onclick = async () => { if (!files.some((f) => f.name === name)) await addFiles([new File([SAMPLE_FILES[name]], name, { type: "text/plain" })]); if (CB.loadFile(name, SAMPLE_FILES[name]).kind === "data") $("builddata").click(); };
+    $("samplefiles").append(b);
   }
   $("file").onchange = (e) => { addFiles([...e.target.files]); e.target.value = ""; };
   const drop = $("drop");
@@ -741,7 +827,7 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
 
   /* ---------- start ---------- */
   const saved = store.get(STORE);
-  editor.value = saved && analyse(saved).spec ? saved : pretty(CB.TEMPLATES.find((t) => t.id === "finance").spec);
+  editor.value = saved && analyse(saved).spec ? saved : pretty(CB.TEMPLATES.find((t) => t.id === "support-agent").spec);
   renderFiles(); renderActivity();
   update(true);
   if (location.hash === "#app") openApp();

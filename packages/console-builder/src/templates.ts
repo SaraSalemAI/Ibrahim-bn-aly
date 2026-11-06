@@ -2,17 +2,24 @@
 // Prepared by Sara Salem. Copyright (c) Sara Salem 2026.
 
 import type { ConsoleSpec } from "./spec";
+import { MORE_TEMPLATES } from "./templates-more";
 
 export interface ConsoleTemplate {
   id: string;
   title: string;
   description: string;
+  /** Group shown in the studio: Start, Business, Agents, Tools, Data, Fun. */
+  category?: string;
+  /** Easy steps: commands to run in order, shown with a Run button each. */
+  steps?: string[];
   spec: ConsoleSpec;
 }
 
 export const TEMPLATES: ConsoleTemplate[] = [
   {
     id: "starter",
+    category: "Start",
+    steps: ["hello", "hello Sara", "help"],
     title: "Starter",
     description: "A minimal console: one greeting command with an argument.",
     spec: {
@@ -32,6 +39,8 @@ export const TEMPLATES: ConsoleTemplate[] = [
   },
   {
     id: "finance",
+    category: "Business",
+    steps: ["loan 500000 0.18 5", "vat 1000", "margin 120 75", "grow 100000 0.12 5"],
     title: "Finance calculator",
     description: "Loan payments, VAT, margins and compound growth with saved variables.",
     spec: {
@@ -92,6 +101,8 @@ export const TEMPLATES: ConsoleTemplate[] = [
   },
   {
     id: "devops",
+    category: "Tools",
+    steps: ["env use production", "env show", "runbook deploy"],
     title: "DevOps toolbox",
     description: "Environment switching, runbooks as macros, quick links and live HTTP health checks.",
     spec: {
@@ -127,6 +138,8 @@ export const TEMPLATES: ConsoleTemplate[] = [
   },
   {
     id: "api",
+    category: "Tools",
+    steps: ["help repo", "repo vercel/next.js", "releases vercel/next.js"],
     title: "API explorer",
     description: "Query any JSON API, pick fields and show results as tables.",
     spec: {
@@ -159,6 +172,8 @@ export const TEMPLATES: ConsoleTemplate[] = [
   },
   {
     id: "game",
+    category: "Fun",
+    steps: ["coin", "dice", "lunch"],
     title: "Decision helper",
     description: "Random picks, coin flips and dice — choice actions and variables.",
     spec: {
@@ -171,4 +186,5 @@ export const TEMPLATES: ConsoleTemplate[] = [
       ],
     },
   },
+  ...MORE_TEMPLATES,
 ];

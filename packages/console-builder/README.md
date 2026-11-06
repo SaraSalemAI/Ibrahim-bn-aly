@@ -100,7 +100,9 @@ The studio (`npm run studio`, or `dist/console-builder-studio.html`) is a dashbo
 
 - **Describe** – write what the console should do; Claude designs the spec (inside the Claude page only; it asks consent on first use).
 - **Upload files** – drop CSV, TSV, JSON or text files. They become datasets with `rows`, `find`, `where`, `top`, `stats` and `columns` commands, no AI needed. Files can also be sent to Claude as context.
-- **Templates** and **JSON** – start from a template or edit the spec directly.
+- **Start here** – 24 templates in 6 groups (Start, Agents, Business, Data, Tools, Fun), including 10 agent samples (support, sales, HR, travel, tutor, marketing, project manager, health coach, budget, recruiter). Each has easy numbered steps with a ▶ button and "Run all steps".
+- **Sample files** – products.csv, employees.csv, orders.json and notes.txt to try uploads without your own file.
+- **JSON** – edit the spec directly.
 
 KPIs, usage bars, a run log and a data preview update as you use the console.
 
