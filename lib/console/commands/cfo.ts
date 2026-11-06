@@ -75,7 +75,7 @@ export function buildCfoConsole(): BuiltConsole<CfoContext> {
         path: ["go"],
         aliases: ["open", "cd"],
         summary: "Open a module by key or number",
-        args: [{ name: "module", type: "string", positional: true, required: true, description: "Key (e.g. tax) or number (1-17)", complete: () => ["home", ...NAV.map((n) => slug(n.href))] }],
+        args: [{ name: "module", type: "string", positional: true, required: true, description: "Key (e.g. tax) or number (1-18)", complete: () => ["home", ...NAV.map((n) => slug(n.href))] }],
         examples: ["go tax", "go 5"],
         run: (a, ctx, io) => {
           const q = String(a.module).toLowerCase();
@@ -200,6 +200,109 @@ export function buildCfoConsole(): BuiltConsole<CfoContext> {
           const ratios = ctx.computed!.analysis!.ratios.filter((r) => !a.group || r.group === a.group);
           io.table(["Ratio", "Group", "Current", "Prior"], ratios.map((r) => [humanize(r.key), r.group, fmt(r.current, r.unit), fmt(r.prior, r.unit)]));
         },
+      })
+
+      .command({
+        path: ["cf"],
+        summary: "Cash flow statement (indirect method)",
+        tags: ["needs:company", "needs:data"],
+        run: (_a, ctx, io) => {
+          const cf = ctx.computed!.cashFlow;
+          if (!cf) return io.fail("Cash flow needs a prior period in the trial balance.");
+          io.table(["Line", "Section", "Amount"], cf.lines.map((l) => [humanize(l.key), l.section, num(l.amount)]));
+          io.kv([["Operating", num(cf.operating)], ["Investing", num(cf.investing)], ["Financing", num(cf.financing)], ["Net change", num(cf.netChange)], ["Free cash flow", num(cf.freeCashFlow)], ["Tie-out difference", num(cf.tieOutDifference)]]);
+          if (Math.abs(cf.tieOutDifference) >= 0.01) io.print("Cash flow does not tie to the balance sheet.", "warn");
+        },
+      })
+
+      .command({
+        path: ["tax"],
+        summary: "Egyptian tax computation summary",
+        tags: ["needs:company", "needs:data"],
+        args: [{ name: "lines", alias: "l", type: "boolean", description: "Show every schedule line" }],
+        run: (a, ctx, io) => {
+          const t = ctx.computed!.tax!;
+          if (a.lines) io.table(["Line", "Amount"], t.lines.map((l: { key?: string; label?: string; amount: number }) => [humanize(String(l.key ?? l.label ?? "")), num(l.amount)]));
+          io.kv([
+            ["Taxable profit", num(t.taxableProfit)],
+            ["Tax", num(t.tax)],
+            ["Payable", num(t.payable)],
+            ["Effective rate", t.effectiveRate === null ? "—" : `${t.effectiveRate}%`],
+            ["Booked tax", num(t.bookedTax)],
+            ["Loss carried forward", num(t.lossCarriedForward)],
+            ["Thin-cap D/E", t.thinCap.ratio ?? "—"],
+            ["Deferred tax", `${num(t.deferredTax.net)} (${t.deferredTax.position})`],
+          ]);
+        },
+      })
+
+      .command({
+        path: ["scenarios"],
+        aliases: ["sc"],
+        summary: "Base / bull / bear model outcomes and covenant breaches",
+        tags: ["needs:company", "needs:data"],
+        run: (_a, ctx, io) => {
+          const s = ctx.computed!.scenarios!;
+          io.table(
+            ["Scenario", "Periods", "Final revenue", "Final net profit", "Final cash", "Covenant breaches"],
+            (["base", "bull", "bear"] as const).map((k) => {
+              const last = s[k].periods.at(-1);
+              const breaches = s[k].covenants.filter((c) => c.leverageBreach || c.coverageBreach).length;
+              return [k, s[k].periods.length, num(last?.revenue), num(last?.netProfit), num(last?.cash), breaches];
+            }),
+          );
+        },
+      })
+
+      .command({
+        path: ["valuation"],
+        aliases: ["dcf"],
+        summary: "WACC and DCF enterprise / equity value",
+        tags: ["needs:company", "needs:data"],
+        run: (_a, ctx, io) => {
+          const v = ctx.computed!.valuation!;
+          if (!v.wacc.available) return io.fail(`WACC needs market inputs: ${v.wacc.missing.join(", ")}. Run: go valuation`);
+          const pct = (x: number) => `${(x * 100).toFixed(2)}%`;
+          io.kv([["Cost of equity", pct(v.wacc.costOfEquity)], ["After-tax cost of debt", pct(v.wacc.afterTaxCostOfDebt)], ["WACC", pct(v.wacc.wacc)], ["Net debt", num(v.netDebt)]]);
+          const d = v.dcf;
+          if (!d) return;
+          const row = (name: string, m: typeof d.gordon) => [name, num(m?.enterpriseValue), num(m?.equityValue), m?.tvShare === null || m?.tvShare === undefined ? "—" : `${m.tvShare}%`];
+          io.table(["Terminal method", "Enterprise value", "Equity value", "TV share"], [row("Gordon growth", d.gordon), row("Exit multiple", d.exit)]);
+          if (d.gordonInvalid) io.print("Gordon growth is invalid: WACC ≤ terminal growth.", "warn");
+        },
+      })
+
+      .command({
+        path: ["stress"],
+        summary: "FX and rate stress test: base vs stressed",
+        tags: ["needs:company", "needs:data"],
+        run: (_a, ctx, io) => {
+          const s = ctx.computed!.stress!;
+          if (!s.fxReady) io.print("FX rates not entered; FX impacts are zero. Run: go stress", "warn");
+          io.table(
+            ["Metric", "Base", "Stressed"],
+            (["netProfit", "ebitda", "debtToEbitda", "interestCoverage", "equity"] as const).map((k) => [humanize(k), num(s.base[k]), num(s.stressed[k])]),
+          );
+          io.kv([["FX move", `${s.move}%`], ["Cash runway (months)", s.stressed.cashRunwayMonths ?? "—"]]);
+        },
+      })
+
+      .command({
+        path: ["notes"],
+        summary: "Disclosure notes triggered by the balances",
+        tags: ["needs:company", "needs:data"],
+        run: (_a, ctx, io) => {
+          const notes = ctx.computed!.notes!;
+          if (!notes.length) return io.print("No notes triggered.", "muted");
+          io.table(["Note", "Standard", "Status"], notes.map((n) => [L(ctx, ...n.title), n.standard, ctx.company!.disclosures[n.id]?.status ?? "DRAFT"]));
+        },
+      })
+
+      .command({
+        path: ["echo"],
+        summary: "Print text (useful in chains)",
+        args: [{ name: "text", type: "string", positional: true, rest: true }],
+        run: (a, _c, io) => io.print(String(a.text ?? "")),
       })
 
       .group("period", "Period state machine", (g) =>

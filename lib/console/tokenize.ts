@@ -117,3 +117,35 @@ export function bindArgs<C>(specs: ArgSpec<C>[], tokens: string[]): ParsedArgs {
   }
   return out;
 }
+
+/**
+ * Splits a line into chained segments on top-level `&&` (stop on failure) and `;` (always continue).
+ * Operators inside quotes are kept as text.
+ */
+export function splitChain(line: string): Array<{ text: string; op: "&&" | ";" | null }> {
+  const out: Array<{ text: string; op: "&&" | ";" | null }> = [];
+  let cur = "";
+  let quote: string | null = null;
+  let pendingOp: "&&" | ";" | null = null;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === "\\" && i + 1 < line.length) {
+      cur += ch + line[++i];
+      continue;
+    }
+    if (quote) {
+      if (ch === quote) quote = null;
+      cur += ch;
+    } else if (ch === '"' || ch === "'") {
+      quote = ch;
+      cur += ch;
+    } else if (ch === ";" || (ch === "&" && line[i + 1] === "&")) {
+      if (cur.trim()) out.push({ text: cur.trim(), op: pendingOp });
+      pendingOp = ch === ";" ? ";" : "&&";
+      if (ch === "&") i++;
+      cur = "";
+    } else cur += ch;
+  }
+  if (cur.trim()) out.push({ text: cur.trim(), op: pendingOp });
+  return out;
+}

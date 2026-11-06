@@ -40,6 +40,8 @@ Try it: **Load complete sample company** on the home page loads a fictional Egyp
 
 Press **Ctrl+`** (or **Ctrl+K**, or the `>_` button) for a keyboard console over the whole workspace: `help`, `go tax`, `company sample`, `status`, `kpi`, `fs bs`, `ratios -g liquidity`, `tb --search cash`, `period advance`, `audit verify`. It is built on `lib/console`, a typed console builder (tokenizer, command tree, middleware, completion, history). See [docs/console-architecture.md](docs/console-architecture.md).
 
+**Console builder (any console):** open **Tools → Console builder** (`/console-builder`) to design your own command console as JSON — commands, arguments, variables, safe calculations, HTTP calls, macros and themes — and try it live. Start from a template (finance calculator, DevOps toolbox, API explorer, decision helper), then export, import or share it by link.
+
 ### Run locally
 
 ```bash

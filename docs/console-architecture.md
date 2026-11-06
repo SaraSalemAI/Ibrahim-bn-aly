@@ -67,3 +67,50 @@ Open with **Ctrl+`** or **Ctrl+K** (or the `>_` button), Tab to complete, ↑/�
 ```
 
 Add a test in `tests/console.test.ts`; `npm test` runs it without a browser.
+
+## General-purpose console builder (any console)
+
+The toolkit is not tied to finance. Any console can be described as a JSON **spec** and built at runtime:
+
+| Piece | File | What it does |
+|---|---|---|
+| Spec engine | `lib/console/spec.ts` | Zod-validated `ConsoleSpec` → `BuiltConsole` (`buildFromSpec`). Precise error paths, `{arg}` / `{$var}` templating, built-in commands. |
+| Safe calculator | `lib/console/calc.ts` | Recursive-descent arithmetic (no `eval`): `+ - * / % ^`, parentheses, variables, `round sqrt min max pow log ln exp abs floor ceil`, `pi`, `e`. |
+| Chaining | `splitChain` in `tokenize.ts` | `a && b` stops on failure, `a ; b` always continues; quotes are respected. |
+| Templates | `lib/console/templates.ts` | Starter, Finance calculator, DevOps toolbox, API explorer, Decision helper. |
+| Terminal UI | `components/Terminal.tsx` | Reusable terminal for **any** `BuiltConsole` (history, Tab completion, hints, themes, Ctrl+L). The AI CFO drawer uses it too. |
+| Builder page | `app/console-builder/page.tsx` | `/console-builder`: pick a template, edit JSON, see errors live, try the console, export/import JSON, copy a share link (`#spec=…`). |
+
+### Spec format
+
+```json
+{
+  "name": "ops",
+  "welcome": "Ops console",
+  "prompt": "$",
+  "theme": { "background": "#0d1117", "foreground": "#d6dde8", "accent": "#7fd1b9" },
+  "vars": { "env": "staging" },
+  "groups": [{ "name": "env", "summary": "Environment" }],
+  "commands": [
+    {
+      "name": "env use",
+      "summary": "Switch environment",
+      "args": [{ "name": "name", "type": "enum", "choices": ["dev", "staging", "production"], "positional": true, "required": true }],
+      "actions": [{ "type": "set", "name": "env", "value": "{name}" }, { "type": "print", "text": "Environment → {name}", "tone": "ok" }]
+    }
+  ]
+}
+```
+
+Actions: `print`, `table`, `kv`, `calc` (`saveAs`, `decimals`, `label`), `set`, `http` (GET/POST, http(s) only, `pick` dot-path, `as: table|kv|json|text`, `saveAs`), `open`, `run` (macro, max depth 5), `choice`, `date`.
+Every console also gets `help`, `clear`, `echo`, `set`, `unset`, `vars`, `calc`, `history`; a spec command with the same name overrides the built-in.
+
+### In code
+
+```ts
+import { buildFromSpec } from "@/lib/console/spec";
+const cli = buildFromSpec(mySpec);
+const { output, code } = await cli.execute("env use production && env show", ctx);
+```
+
+Or build fully custom, typed consoles with `new ConsoleBuilder<MyCtx>("name")` as the AI CFO console does.

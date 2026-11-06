@@ -3,7 +3,7 @@ export interface NavItem {
   href: string;
   en: string;
   ar: string;
-  group: "setup" | "close" | "plan" | "insight" | "report";
+  group: "setup" | "close" | "plan" | "insight" | "report" | "tools";
 }
 
 export const NAV: NavItem[] = [
@@ -24,6 +24,7 @@ export const NAV: NavItem[] = [
   { n: 15, href: "/stress", en: "FX & stress tests", ar: "اختبارات الضغط والعملة", group: "insight" },
   { n: 16, href: "/export", en: "Board pack & export", ar: "حزمة مجلس الإدارة والتصدير", group: "report" },
   { n: 17, href: "/audit", en: "Audit trail & lineage", ar: "سجل التدقيق والتتبع", group: "report" },
+  { n: 18, href: "/console-builder", en: "Console builder", ar: "منشئ وحدات التحكم", group: "tools" },
 ];
 
 export const GROUPS: Record<NavItem["group"], [string, string]> = {
@@ -32,4 +33,5 @@ export const GROUPS: Record<NavItem["group"], [string, string]> = {
   plan: ["Plan & model", "التخطيط والنمذجة"],
   insight: ["Insight", "التحليل"],
   report: ["Governance", "الحوكمة"],
+  tools: ["Tools", "الأدوات"],
 };

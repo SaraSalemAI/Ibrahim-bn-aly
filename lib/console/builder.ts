@@ -1,7 +1,7 @@
 // Console builder — fluent registry, dispatcher, help and completion.
 // Prepared by Sara Salem. Copyright (c) Sara Salem 2026.
 
-import { bindArgs, ConsoleError, tokenize } from "./tokenize";
+import { bindArgs, ConsoleError, splitChain, tokenize } from "./tokenize";
 import type { CommandIO, CommandResult, CommandSpec, Completion, Middleware, OutputBlock } from "./types";
 
 interface Node<C> {
@@ -159,7 +159,22 @@ export class BuiltConsole<C> {
     return [{ kind: "table", columns: ["Command", "Description"], rows }, { kind: "text", text: "Type help <command> for details. Tab completes, ↑/↓ browse history.", tone: "muted" }];
   }
 
+  /** Runs a line that may chain commands with `&&` (stop on failure) or `;` (always continue). */
   async execute(line: string, ctx: C): Promise<CommandResult> {
+    const segments = splitChain(line);
+    if (segments.length <= 1) return this.executeOne(segments[0]?.text ?? "", ctx);
+    const output: OutputBlock[] = [];
+    let code = 0;
+    for (const seg of segments) {
+      if (seg.op === "&&" && code !== 0) break;
+      const r = await this.executeOne(seg.text, ctx);
+      output.push({ kind: "text", text: `❯ ${seg.text}`, tone: "muted" }, ...r.output);
+      code = r.code;
+    }
+    return { output, code };
+  }
+
+  private async executeOne(line: string, ctx: C): Promise<CommandResult> {
     const out: OutputBlock[] = [];
     const state = { code: 0 };
     const io = makeIO(out, state);
