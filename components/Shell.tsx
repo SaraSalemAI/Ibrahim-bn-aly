@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { GROUPS, NAV } from "@/lib/nav";
 import { useL, useWorkspace } from "@/lib/workspace/store";
+import { ConsoleDrawer } from "./Console";
 import { ErrorToast, Pill } from "./ui";
 
 const STATUS_KIND = { DRAFT: "neutral", MAPPED: "info", RECONCILED: "good", LOCKED: "warn" } as const;
@@ -69,6 +70,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <main className="content">{children}</main>
       </div>
       <ErrorToast />
+      <ConsoleDrawer />
     </div>
   );
 }
