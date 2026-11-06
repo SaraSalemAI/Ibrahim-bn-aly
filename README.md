@@ -36,6 +36,10 @@ Try it: **Load complete sample company** on the home page loads a fictional Egyp
 - **Traceability.** Every TB row keeps its source file, hash, row number and mapping rule; adjustments and framework bridge entries are separate, labelled rows.
 - **Rules are parameters.** Tax rates, allowances, the thin-capitalisation ratio, tax depreciation pools, the legal-reserve rule and the employee profit-share percentage follow the specification and are shown as editable parameters to confirm with a tax or legal adviser.
 
+### Command console
+
+Press **Ctrl+`** (or **Ctrl+K**, or the `>_` button) for a keyboard console over the whole workspace: `help`, `go tax`, `company sample`, `status`, `kpi`, `fs bs`, `ratios -g liquidity`, `tb --search cash`, `period advance`, `audit verify`. It is built on `lib/console`, a typed console builder (tokenizer, command tree, middleware, completion, history). See [docs/console-architecture.md](docs/console-architecture.md).
+
 ### Run locally
 
 ```bash
