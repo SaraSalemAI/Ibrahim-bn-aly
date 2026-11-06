@@ -95,6 +95,17 @@ table.ref td { padding: 7px 8px; border-bottom: 1px solid var(--line); vertical-
 table.ref code, .ref-list code { font: 12.5px/1.4 var(--font-code); background: var(--accent-soft); color: var(--fg); padding: 1px 5px; border-radius: 4px; white-space: nowrap; }
 .ref-list { margin: 0; padding-inline-start: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
 .ref-list code { white-space: normal; }
+.appmode {
+  position: fixed; inset: 0; z-index: 50; background: var(--term-bg); display: flex; flex-direction: column; gap: 10px;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(12px, env(safe-area-inset-left, 0px));
+}
+.appbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.appbar .name { font: 700 15px/1.2 var(--font-display); color: var(--term-accent); flex: 1; min-width: 120px; }
+.appbar .btn { background: transparent; color: var(--term-fg); border-color: rgba(213, 226, 220, 0.25); }
+.appbar .btn:hover:not(:disabled) { color: var(--term-accent); border-color: var(--term-accent); }
+.appbar .btn.primary { background: var(--term-accent); color: var(--term-bg); border-color: var(--term-accent); }
+#appterm { flex: 1; min-height: 0; }
+#appterm .cb-term { --cb-bg: var(--term-bg); --cb-fg: var(--term-fg); --cb-accent: var(--term-accent); font-family: var(--font-code); font-size: 14px; }
 footer { color: var(--muted); font-size: 12.5px; text-align: center; }
 @media (max-width: 960px) { .bench, .grid2 { grid-template-columns: 1fr; } textarea#editor { height: 360px; } #preview { height: 460px; } }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
@@ -133,7 +144,8 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
       <div class="panel-head">
         <h2 id="run-h">Live console</h2>
         <button class="btn" id="reset" type="button">Restart</button>
-        <button class="btn primary" id="export" type="button">Get web console</button>
+        <button class="btn primary" id="runapp" type="button">▶ Run as web app</button>
+        <button class="btn" id="export" type="button">Get web console</button>
       </div>
       <div class="tryline" id="tryline" aria-label="Try a command"></div>
       <div id="preview"></div>
@@ -166,6 +178,16 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
   </div>
 
   <footer>console-builder · Prepared by Sara Salem · © Sara Salem 2026</footer>
+</div>
+
+<div class="appmode" id="appmode" hidden role="dialog" aria-modal="true" aria-labelledby="appname">
+  <div class="appbar">
+    <span class="name" id="appname">console</span>
+    <button class="btn" id="appfull" type="button">Full screen</button>
+    <button class="btn" id="apptab" type="button">Open in new tab</button>
+    <button class="btn primary" id="appexit" type="button">Exit app</button>
+  </div>
+  <div id="appterm"></div>
 </div>
 
 <script id="cb-bundle">/*__BUNDLE__*/</script>
@@ -211,17 +233,16 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     try { return { spec: json, cli: CB.buildFromSpec(json) }; } catch (e) { return { errors: [e.message] }; }
   }
 
+  const runtime = {
+    open: (url) => { setNotice("Link from the console: " + url); },
+    fetch: sandboxed
+      ? () => Promise.reject(new Error("HTTP calls are blocked in this preview. They work in the downloaded web console and the CLI."))
+      : (url, init) => fetch(url, init),
+  };
+
   function mount(spec, cli) {
     mounted?.destroy();
-    mounted = CB.mountConsole($("preview"), spec, {
-      subtitle: "live",
-      autoFocus: false,
-      historyKey: "console-builder-studio.history." + spec.name,
-      open: (url) => { setNotice("Link from the console: " + url); },
-      fetch: sandboxed
-        ? () => Promise.reject(new Error("HTTP calls are blocked in this preview. They work in the downloaded web console and the CLI."))
-        : (url, init) => fetch(url, init),
-    });
+    mounted = CB.mountConsole($("preview"), spec, { ...runtime, subtitle: "live", autoFocus: false, historyKey: "console-builder-studio.history." + spec.name });
     const lines = ((activeTpl && DEMOS[activeTpl]) || ["help"]).slice(0, 2);
     (async () => { for (const l of lines) await mounted.run(l); })();
     const tl = $("tryline"); tl.replaceChildren();
@@ -245,7 +266,7 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     store.set(STORE, editor.value);
     const r = analyse(editor.value);
     const valid = !r.errors;
-    for (const id of ["format", "copyjson", "export"]) $(id).disabled = !valid;
+    for (const id of ["format", "copyjson", "export", "runapp"]) $(id).disabled = !valid;
     if (!valid) {
       status.className = ""; status.replaceChildren();
       const ul = document.createElement("ul");
@@ -292,9 +313,46 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     } catch { setNotice("Downloads are blocked here: use Copy HTML instead."); }
   };
 
+  // Run as web app: the current console fills the screen as its own app. #app opens it directly.
+  let app = null;
+  function openApp() {
+    if (!current) return;
+    $("appmode").hidden = false;
+    document.body.style.overflow = "hidden";
+    $("appname").textContent = current.name;
+    app?.destroy();
+    app = CB.mountConsole($("appterm"), current, { ...runtime, subtitle: "web app", historyKey: "console-builder-app.history." + current.name });
+    if (location.hash !== "#app") location.hash = "app";
+  }
+  function closeApp() {
+    if ($("appmode").hidden) return;
+    $("appmode").hidden = true;
+    document.body.style.overflow = "";
+    app?.destroy(); app = null;
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    if (location.hash === "#app") { try { history.replaceState(null, "", location.pathname + location.search); } catch { location.hash = ""; } }
+    $("runapp").focus();
+  }
+  $("runapp").onclick = openApp;
+  $("appexit").onclick = closeApp;
+  $("appmode").addEventListener("keydown", (e) => { if (e.key === "Escape" && !document.fullscreenElement) closeApp(); });
+  if (!document.fullscreenEnabled) $("appfull").remove();
+  else $("appfull").onclick = () => {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else $("appmode").requestFullscreen().catch(() => setNotice("Full screen is not available here."));
+  };
+  document.addEventListener("fullscreenchange", () => { const b = $("appfull"); if (b) b.textContent = document.fullscreenElement ? "Leave full screen" : "Full screen"; });
+  if (sandboxed) $("apptab").remove();
+  else $("apptab").onclick = () => {
+    const url = URL.createObjectURL(new Blob([CB.standaloneHtml(current, $("cb-bundle").textContent)], { type: "text/html" }));
+    if (!window.open(url, "_blank")) setNotice("The browser blocked the new tab. Use Get web console instead.");
+  };
+  window.addEventListener("hashchange", () => (location.hash === "#app" ? openApp() : closeApp()));
+
   if (sandboxed) $("dlhtml").remove();
   const saved = store.get(STORE);
   editor.value = saved && analyse(saved).spec ? saved : pretty(CB.TEMPLATES.find((t) => t.id === "finance").spec);
   update(true);
+  if (location.hash === "#app") openApp();
 })();
 </script>
