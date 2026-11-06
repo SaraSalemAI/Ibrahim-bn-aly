@@ -11,8 +11,8 @@ import { CHECK_LABELS } from "../../labels";
 import { canAdvance, type Computed } from "../../workspace/compute";
 import { sampleCompany } from "../../workspace/sampleCompany";
 import type { Company, PeriodStatus, Workspace } from "../../workspace/types";
-import { ConsoleBuilder, type BuiltConsole } from "../builder";
-import { requireTag, roleGuard } from "../middleware";
+import { ConsoleBuilder, type BuiltConsole } from "console-builder";
+import { requireTag, roleGuard } from "console-builder";
 
 type StoreAction =
   | { type: "setLang"; lang: "en" | "ar" }

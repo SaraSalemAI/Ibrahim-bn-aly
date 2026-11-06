@@ -25,6 +25,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "console-builder": [
+        "./packages/console-builder/src/index.ts"
       ]
     }
   },

@@ -52,7 +52,7 @@ export const TEMPLATES: ConsoleTemplate[] = [
         },
         {
           name: "vat",
-          summary: "Add VAT to a net amount (rate from {$vat})",
+          summary: "Add VAT to a net amount (rate in variable vat)",
           args: [{ name: "net", type: "number", positional: true, required: true }],
           actions: [
             { type: "calc", label: "VAT", expression: "net * vat", decimals: 2 },

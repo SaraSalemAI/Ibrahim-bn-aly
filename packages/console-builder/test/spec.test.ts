@@ -1,9 +1,9 @@
 // Generic console builder tests — prepared by Sara Salem. Copyright (c) Sara Salem 2026.
 import { describe, expect, it } from "vitest";
-import { calc } from "@/lib/console/calc";
-import { buildFromSpec, interpolate, parseSpec, type ConsoleSpec, type SpecContext } from "@/lib/console/spec";
-import { TEMPLATES } from "@/lib/console/templates";
-import { splitChain } from "@/lib/console";
+import { calc } from "../src/index";
+import { buildFromSpec, interpolate, parseSpec, type ConsoleSpec, type SpecContext } from "../src/index";
+import { TEMPLATES } from "../src/index";
+import { splitChain } from "../src/index";
 
 function harness(spec: ConsoleSpec, responses: Record<string, unknown> = {}) {
   const vars: Record<string, string> = { ...(spec.vars ?? {}) };

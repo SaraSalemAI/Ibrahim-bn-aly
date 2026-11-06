@@ -3,7 +3,7 @@
 // Prepared by Sara Salem. Copyright (c) Sara Salem 2026.
 
 import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
-import { applyCompletion, commonPrefix, History, type BuiltConsole, type Completion, type OutputBlock } from "@/lib/console";
+import { applyCompletion, commonPrefix, History, type BuiltConsole, type Completion, type OutputBlock } from "console-builder";
 
 export interface TerminalApi {
   clear: () => void;

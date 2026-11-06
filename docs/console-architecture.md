@@ -2,14 +2,14 @@
 
 *Prepared by Sara Salem. Copyright © Sara Salem 2026.*
 
-`lib/console` is a small, framework-free toolkit for building typed command consoles. The AI CFO
+`packages/console-builder` (imported as `console-builder`) is a small, framework-free toolkit, published as its own package with a CLI, a browser terminal and a Studio — see [its README](../packages/console-builder/README.md) for building typed command consoles. The AI CFO
 console (`lib/console/commands/cfo.ts` + `components/Console.tsx`) is the first console built with it.
 
 ```
  keyboard ──► ConsoleDrawer (React UI)         components/Console.tsx
                 │  history ↑/↓, Tab completion, output rendering
                 ▼
-           BuiltConsole.execute(line, ctx)      lib/console/builder.ts
+           BuiltConsole.execute(line, ctx)      packages/console-builder/src/builder.ts
                 │
    tokenize ─► resolve (command tree) ─► bindArgs (typed) ─► middleware chain ─► command.run(args, ctx, io)
    tokenize.ts   builder.ts               tokenize.ts         middleware.ts        commands/*.ts
@@ -21,11 +21,11 @@ console (`lib/console/commands/cfo.ts` + `components/Console.tsx`) is the first 
 
 | Layer | File | Responsibility |
 |---|---|---|
-| Types | `types.ts` | `CommandSpec<C>`, `ArgSpec<C>`, `OutputBlock`, `Middleware<C>`, `CommandIO`. `C` is the app context type, so commands are typed against the host app without the toolkit knowing about it. |
-| Tokenizer | `tokenize.ts` | Shell-style splitting (quotes, escapes, Unicode/Arabic), then binding tokens to declared args: positionals, `--flag value`, `--flag=value`, `-alias`, `--no-flag`, `--`, defaults, required checks, number/boolean/enum coercion with clear errors. |
-| Builder | `builder.ts` | Fluent `ConsoleBuilder` (`command`, `group`, `use`, `build`) producing a command **tree** (multi-word commands, aliases, case-insensitive). `BuiltConsole` provides `execute`, `help`, `usage`, `complete` and "did you mean" suggestions. |
-| Middleware | `middleware.ts` | Onion-style chain driven by command **tags**: `requireTag` (preconditions), `roleGuard` (`role:REVIEWER\|CFO`), `onExecuted` (telemetry/audit sinks). |
-| History | `history.ts` | Bounded, de-duplicated history with cursor navigation; completion helpers (`commonPrefix`, `applyCompletion`). |
+| Types | `packages/console-builder/src/types.ts` | `CommandSpec<C>`, `ArgSpec<C>`, `OutputBlock`, `Middleware<C>`, `CommandIO`. `C` is the app context type, so commands are typed against the host app without the toolkit knowing about it. |
+| Tokenizer | `packages/console-builder/src/tokenize.ts` | Shell-style splitting (quotes, escapes, Unicode/Arabic), then binding tokens to declared args: positionals, `--flag value`, `--flag=value`, `-alias`, `--no-flag`, `--`, defaults, required checks, number/boolean/enum coercion with clear errors. |
+| Builder | `packages/console-builder/src/builder.ts` | Fluent `ConsoleBuilder` (`command`, `group`, `use`, `build`) producing a command **tree** (multi-word commands, aliases, case-insensitive). `BuiltConsole` provides `execute`, `help`, `usage`, `complete` and "did you mean" suggestions. |
+| Middleware | `packages/console-builder/src/middleware.ts` | Onion-style chain driven by command **tags**: `requireTag` (preconditions), `roleGuard` (`role:REVIEWER\|CFO`), `onExecuted` (telemetry/audit sinks). |
+| History | `packages/console-builder/src/history.ts` | Bounded, de-duplicated history with cursor navigation; completion helpers (`commonPrefix`, `applyCompletion`). |
 | Commands | `commands/cfo.ts` | The AI CFO command set. Pure functions of `CfoContext` — no React — so the whole set is unit-tested. |
 | UI | `components/Console.tsx` | Drawer mounted by `Shell`. Builds `CfoContext` from the workspace store each render, persists history to `localStorage`. |
 
@@ -74,10 +74,10 @@ The toolkit is not tied to finance. Any console can be described as a JSON **spe
 
 | Piece | File | What it does |
 |---|---|---|
-| Spec engine | `lib/console/spec.ts` | Zod-validated `ConsoleSpec` → `BuiltConsole` (`buildFromSpec`). Precise error paths, `{arg}` / `{$var}` templating, built-in commands. |
-| Safe calculator | `lib/console/calc.ts` | Recursive-descent arithmetic (no `eval`): `+ - * / % ^`, parentheses, variables, `round sqrt min max pow log ln exp abs floor ceil`, `pi`, `e`. |
-| Chaining | `splitChain` in `tokenize.ts` | `a && b` stops on failure, `a ; b` always continues; quotes are respected. |
-| Templates | `lib/console/templates.ts` | Starter, Finance calculator, DevOps toolbox, API explorer, Decision helper. |
+| Spec engine | `packages/console-builder/src/spec.ts` | Zod-validated `ConsoleSpec` → `BuiltConsole` (`buildFromSpec`). Precise error paths, `{arg}` / `{$var}` templating, built-in commands. |
+| Safe calculator | `packages/console-builder/src/calc.ts` | Recursive-descent arithmetic (no `eval`): `+ - * / % ^`, parentheses, variables, `round sqrt min max pow log ln exp abs floor ceil`, `pi`, `e`. |
+| Chaining | `splitChain` in `packages/console-builder/src/tokenize.ts` | `a && b` stops on failure, `a ; b` always continues; quotes are respected. |
+| Templates | `packages/console-builder/src/templates.ts` | Starter, Finance calculator, DevOps toolbox, API explorer, Decision helper. |
 | Terminal UI | `components/Terminal.tsx` | Reusable terminal for **any** `BuiltConsole` (history, Tab completion, hints, themes, Ctrl+L). The AI CFO drawer uses it too. |
 | Builder page | `app/console-builder/page.tsx` | `/console-builder`: pick a template, edit JSON, see errors live, try the console, export/import JSON, copy a share link (`#spec=…`). |
 
@@ -108,7 +108,7 @@ Every console also gets `help`, `clear`, `echo`, `set`, `unset`, `vars`, `calc`,
 ### In code
 
 ```ts
-import { buildFromSpec } from "@/lib/console/spec";
+import { buildFromSpec } from "console-builder";
 const cli = buildFromSpec(mySpec);
 const { output, code } = await cli.execute("env use production && env show", ctx);
 ```

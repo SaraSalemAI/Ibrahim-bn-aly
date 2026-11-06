@@ -5,8 +5,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Terminal, type TerminalApi } from "@/components/Terminal";
 import { Banner, Card, Page, download } from "@/components/ui";
-import { buildFromSpec, parseSpec, type ConsoleSpec, type SpecContext } from "@/lib/console/spec";
-import { TEMPLATES } from "@/lib/console/templates";
+import { buildFromSpec, parseSpec, type ConsoleSpec, type SpecContext } from "console-builder";
+import { TEMPLATES } from "console-builder";
 import { useL } from "@/lib/workspace/store";
 
 const STORAGE = "console-builder.spec";

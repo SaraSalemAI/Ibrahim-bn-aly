@@ -9,7 +9,10 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "console:build": "npm --prefix packages/console-builder run build",
+    "console:studio": "npm run console:build && node packages/console-builder/dist/cli.mjs studio",
+    "console": "node packages/console-builder/dist/cli.mjs"
   },
   "dependencies": {
     "ai": "^7.0.153",
@@ -24,7 +27,8 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "rolldown": "^1.2.15"
   },
   "overrides": {
     "uuid": "^11.1.1"

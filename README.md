@@ -42,6 +42,8 @@ Press **Ctrl+`** (or **Ctrl+K**, or the `>_` button) for a keyboard console over
 
 **Console builder (any console):** open **Tools → Console builder** (`/console-builder`) to design your own command console as JSON — commands, arguments, variables, safe calculations, HTTP calls, macros and themes — and try it live. Start from a template (finance calculator, DevOps toolbox, API explorer, decision helper), then export, import or share it by link.
 
+**Standalone console builder:** the engine is also a separate package, [`packages/console-builder`](packages/console-builder/README.md), with its own CLI (`run`, `exec`, `validate`, `init`, `html`, `studio`), a framework-free browser terminal, offline single-file HTML export and a standalone Studio. Build it with `npm run console:build`, then try `npm run console -- run finance` or `npm run console:studio`.
+
 ### Run locally
 
 ```bash

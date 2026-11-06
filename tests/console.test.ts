@@ -1,6 +1,6 @@
 // Console builder tests — prepared by Sara Salem. Copyright (c) Sara Salem 2026.
 import { describe, expect, it } from "vitest";
-import { applyCompletion, bindArgs, commonPrefix, ConsoleBuilder, History, tokenize } from "@/lib/console";
+import { applyCompletion, bindArgs, commonPrefix, ConsoleBuilder, History, tokenize } from "console-builder";
 import { buildCfoConsole, type CfoContext } from "@/lib/console/commands/cfo";
 import { computeCompany } from "@/lib/workspace/compute";
 import { newWorkspace } from "@/lib/workspace/defaults";
