@@ -118,6 +118,18 @@ Datasets live in the spec under `datasets` and are read by three actions:
 
 In code: `loadFile(name, text)`, `parseDelimited(text)`, `specFromDatasets(datasets)`, `buildPrompt(request, datasets, notes)` and `extractJson(reply)`.
 
+## Dashboards, builder, brand and more
+
+- **Dashboard widgets** (inspired by the AI Console Builder app on Base44): `widgets` in a spec draw KPI, bar, line, pie and table widgets from datasets. Uploaded data gets a starter dashboard automatically (`suggestWidgets`); the exported web console shows it above the terminal.
+- **Builder** tab: make an agent with a form, step by step, no JSON.
+- **AI chat**: every agent has `ask <question>` (action `{"type":"ai"}`), answered by Claude inside Claude.
+- **Live data links**: `sources` maps a dataset to a CSV/JSON URL (Google Sheets links are converted) that reloads when the web console opens.
+- **Brand** tab: themes, colours, title, welcome line and prompt symbol.
+- **Report**: save the session's runs as an HTML report or CSV.
+- **Team library**: share consoles with everyone who opens the studio page in Claude.
+- **Arabic / English** switch for the studio.
+- 54 templates including 40 agents (finance, HR and training agents added).
+
 ## Layout
 
 | Path | Purpose |

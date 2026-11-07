@@ -4,6 +4,7 @@
 import { z } from "zod";
 import { ConsoleBuilder, type BuiltConsole } from "./builder";
 import { calc } from "./calc";
+import { widgetSchema } from "./widgets";
 import { ConsoleError } from "./tokenize";
 import type { ArgSpec, CommandIO, ParsedArgs } from "./types";
 
@@ -20,6 +21,7 @@ export const actionSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("open"), url: z.string() }),
   z.object({ type: z.literal("run"), commands: z.array(z.string()).min(1) }),
   z.object({ type: z.literal("choice"), options: z.array(z.string()).min(1), saveAs: z.string().optional() }),
+  z.object({ type: z.literal("ai"), prompt: z.string(), saveAs: z.string().optional() }),
   z.object({ type: z.literal("date"), format: z.enum(["iso", "local", "date", "time"]).optional() }),
   z.object({
     type: z.literal("query"),
@@ -67,6 +69,10 @@ export const consoleSpecSchema = z.object({
   vars: z.record(z.string(), z.string()).optional(),
   datasets: z.record(z.string(), z.array(z.record(z.string(), cell))).optional(),
   groups: z.array(z.object({ name: z.string(), summary: z.string() })).optional(),
+  /** Dashboard widgets (KPI, bar, line, pie, table) drawn from the datasets. */
+  widgets: z.array(widgetSchema).optional(),
+  /** Live data links: dataset name → CSV/JSON URL, re-loaded when the web console opens. */
+  sources: z.record(z.string(), z.string()).optional(),
   commands: z.array(commandSchema),
 });
 
@@ -81,6 +87,8 @@ export interface SpecContext {
   open: (url: string) => void;
   fetch: (url: string, init?: { method?: string; body?: string; headers?: Record<string, string> }) => Promise<{ ok: boolean; status: number; text: () => Promise<string> }>;
   history: () => string[];
+  /** Answers a free-text question with an AI model (e.g. Claude). Optional: without it, ai actions explain how to enable it. */
+  ai?: (prompt: string) => Promise<string>;
   depth?: number;
 }
 
@@ -267,6 +275,13 @@ async function runAction(a: ConsoleAction, args: ParsedArgs, ctx: SpecContext, i
           return [c, vals.length && vals.every(isNum) ? "number" : "text", scalar(vals[0] ?? null)];
         }),
       );
+    }
+    case "ai": {
+      if (!ctx.ai) return io.print("AI answers work when this console runs inside Claude (or with an AI connected). The other commands work everywhere.", "warn");
+      io.print("Thinking…", "muted");
+      const answer = (await ctx.ai(t(a.prompt))).trim();
+      if (a.saveAs) ctx.setVar(a.saveAs, answer);
+      return io.print(answer || "(no answer)", "info");
     }
     case "date": {
       const d = new Date();

@@ -26,16 +26,27 @@ export function standaloneHtml(spec: ConsoleSpec, bundle: string): string {
 <style>
 html,body{height:100%;margin:0;background:${esc(spec.theme?.background ?? "#0d1117")}}
 body{display:flex;flex-direction:column;padding:16px;box-sizing:border-box;font-family:system-ui,sans-serif}
-#app{flex:1;min-height:0}
+#app{flex:1;min-height:420px}
+#dash{margin-bottom:14px;--cbw-bg:#161b22;--cbw-fg:#e6edf3;--cbw-line:#30363d;--cbw-muted:#8b949e}
+body{overflow:auto}
 footer{color:#8b949e;font:12px system-ui,sans-serif;text-align:center;padding-top:8px}
 </style>
 </head>
 <body>
+${spec.widgets?.length ? '<div id="dash"></div>' : ""}
 <div id="app"></div>
 <footer>Built with console-builder · Prepared by Sara Salem · © Sara Salem 2026</footer>
 <script>${scriptSafe(bundle)}</script>
 <script>
-ConsoleBuilder.mountConsole(document.getElementById("app"), ${scriptSafe(JSON.stringify(spec))});
+(async function () {
+  var spec = ${scriptSafe(JSON.stringify(spec))};
+  var src = spec.sources || {};
+  for (var name in src) {
+    try { var res = await fetch(src[name]); var file = ConsoleBuilder.loadFile(src[name].split("?")[0].split("/").pop() || name + ".csv", await res.text()); if (file.kind === "data") { spec.datasets = spec.datasets || {}; spec.datasets[name] = file.rows; } } catch (e) { console.warn("Live data link failed:", name, e); }
+  }
+  if (spec.widgets && spec.widgets.length) ConsoleBuilder.renderWidgets(document.getElementById("dash"), spec.widgets, spec.datasets || {});
+  ConsoleBuilder.mountConsole(document.getElementById("app"), spec);
+})();
 </script>
 </body>
 </html>

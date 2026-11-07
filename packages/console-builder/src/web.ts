@@ -36,6 +36,8 @@ export interface MountOptions {
   /** Overrides how spec consoles open links and make HTTP calls (e.g. inside sandboxed pages). */
   open?: (url: string) => void;
   fetch?: SpecContext["fetch"];
+  /** Lets "ai" actions answer free questions (e.g. through Claude). */
+  ai?: SpecContext["ai"];
   /** Called after every command line runs, e.g. to track activity. */
   onRun?: (line: string, result: { code: number; output: OutputBlock[]; ms: number }) => void;
   /** Only for consoles built in code: supplies the command context. Spec consoles get one automatically. */
@@ -147,6 +149,7 @@ export function mountConsole(target: HTMLElement, source: ConsoleSpec | BuiltCon
           open: opts.open ?? ((url: string) => window.open(url, "_blank", "noopener,noreferrer")),
           fetch: opts.fetch ?? ((url: string, init?: RequestInit) => fetch(url, init)),
           history: api.history,
+          ai: opts.ai,
         } satisfies SpecContext)
       : (opts.makeCtx?.(api) ?? {});
 

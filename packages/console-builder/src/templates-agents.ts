@@ -192,4 +192,96 @@ export const FIELD_AGENTS: ConsoleTemplate[] = [
       { name: "insurance", summary: "Step 3: insurance from days and daily insurance", args: [num("count"), num("daily")], examples: ["insurance 9 150"], action: { type: "calc", expression: "count * daily", label: "Insurance", decimals: 0 } },
       { name: "contract", summary: "Step 4: contract summary", action: { type: "kv", pairs: [["Car", "{$car}"], ["Rent", "{$rent}"], ["Deposit", "5000 (returned)"], ["Fuel", "Return full"]] } },
     ], { car: "small", rent: "0" })),
+  /* ---------- More finance agents ---------- */
+  inField("Finance", agent("cashflow-agent", "Cash flow agent", "Track money in and out, runway in months and a weekly cash plan.", "I check your cash flow in 4 steps.",
+    ["cash 250000", "flow 90000 120000", "runway", "plan"],
+    [
+      { name: "cash", summary: "Step 1: cash in the bank today", args: [num("amount")], examples: ["cash 250000"], actions: setNext("cash", "{amount}", "Cash saved", "flow money-in money-out (per month)") },
+      { name: "flow", summary: "Step 2: monthly net flow from money in and money out", args: [num("moneyin"), num("moneyout")], examples: ["flow 90000 120000"], action: { type: "calc", expression: "moneyin - moneyout", label: "Net per month", saveAs: "net", decimals: 0 } },
+      { name: "runway", summary: "Step 3: months of cash left if the net is negative", action: { type: "calc", expression: "cash / max(1, -net)", label: "Months of runway", decimals: 1 } },
+      { name: "plan", summary: "Step 4: weekly cash plan", action: { type: "table", columns: ["Week", "Action"], rows: [["1", "Chase unpaid invoices"], ["2", "Delay non-urgent purchases"], ["3", "Review subscriptions"], ["4", "Update the forecast"]] } },
+    ], { cash: "0", net: "0" })),
+
+  inField("Finance", agent("loan-agent", "Loan officer agent", "Check a loan request: monthly payment, debt-to-income ratio and a decision.", "I review a loan request in 4 steps.",
+    ["applicant Karim", "payment 300000 0.2 4", "dti 7900 25000", "decision"],
+    [
+      { name: "applicant", summary: "Step 1: applicant's name", args: [text("name")], examples: ["applicant Karim"], actions: setNext("applicant", "{name}", "Applicant: {name}", "payment amount rate years") },
+      { name: "payment", summary: "Step 2: monthly payment from amount, yearly rate and years", args: [num("amount"), num("rate"), num("years")], examples: ["payment 300000 0.2 4"], action: { type: "calc", expression: "amount * (rate/12) / (1 - (1 + rate/12) ^ (-years*12))", label: "Monthly payment", decimals: 0 } },
+      { name: "dti", summary: "Step 3: debt-to-income % (under 40% is usually OK)", args: [num("payment"), num("income")], examples: ["dti 7900 25000"], action: { type: "calc", expression: "payment / income * 100", label: "Debt-to-income %", saveAs: "dti", decimals: 1 } },
+      { name: "decision", summary: "Step 4: decision summary", action: { type: "kv", pairs: [["Applicant", "{$applicant}"], ["Debt-to-income %", "{$dti}"], ["Rule", "under 40% approve · 40-50% review · over 50% decline"]] } },
+    ], { applicant: "(none)", dti: "0" })),
+
+  inField("Finance", agent("invest-agent", "Investment planner agent", "Plan monthly saving, future value, inflation effect and a risk mix.", "I plan an investment in 4 steps.",
+    ["goal 1000000 10", "monthly 1000000 10 0.12", "inflation 1000000 10 0.1", "mix"],
+    [
+      { name: "goal", summary: "Step 1: target amount and years", args: [num("target"), num("years")], examples: ["goal 1000000 10"], actions: setNext("target", "{target}", "Goal: {target} in {years} years", "monthly target years yearly-return") },
+      { name: "monthly", summary: "Step 2: monthly saving needed for the goal", args: [num("target"), num("years"), num("ret")], examples: ["monthly 1000000 10 0.12"], action: { type: "calc", expression: "target * (ret/12) / ((1 + ret/12) ^ (years*12) - 1)", label: "Save per month", decimals: 0 } },
+      { name: "inflation", summary: "Step 3: what the goal is worth in today's money", args: [num("target"), num("years"), num("rate")], examples: ["inflation 1000000 10 0.1"], action: { type: "calc", expression: "target / (1 + rate) ^ years", label: "Today's value", decimals: 0 } },
+      { name: "mix", summary: "Step 4: a simple risk mix (not financial advice)", action: { type: "table", columns: ["Profile", "Stocks", "Bonds", "Cash"], rows: [["Careful", "20%", "60%", "20%"], ["Balanced", "50%", "40%", "10%"], ["Growth", "75%", "20%", "5%"]] } },
+    ], { target: "0" })),
+
+  inField("Finance", agent("payroll-agent", "Payroll agent", "Monthly payroll: gross with overtime, deductions, net pay and the payslip.", "I run one payslip in 4 steps.",
+    ["employee Nour Ali", "gross 15000 10 120", "net 16800 11 15", "payslip"],
+    [
+      { name: "employee", summary: "Step 1: employee name", args: [text("name")], examples: ["employee Nour Ali"], actions: setNext("emp", "{name}", "Employee: {name}", "gross salary overtime-hours hour-rate") },
+      { name: "gross", summary: "Step 2: gross pay with overtime", args: [num("salary"), num("hours"), num("rate")], examples: ["gross 15000 10 120"], action: { type: "calc", expression: "salary + hours * rate", label: "Gross pay", saveAs: "gross", decimals: 0 } },
+      { name: "net", summary: "Step 3: net pay after insurance % and tax %", args: [num("gross"), num("insurance"), num("tax")], examples: ["net 16800 11 15"], action: { type: "calc", expression: "gross * (1 - insurance/100 - tax/100)", label: "Net pay", saveAs: "netpay", decimals: 0 } },
+      { name: "payslip", summary: "Step 4: print the payslip", actions: [{ type: "kv", pairs: [["Employee", "{$emp}"], ["Gross", "{$gross}"], ["Net pay", "{$netpay}"]] }, { type: "date", format: "date" }] },
+    ], { emp: "(none)", gross: "0", netpay: "0" })),
+
+  /* ---------- More HR agents ---------- */
+  inField("HR", agent("review-agent", "Performance review agent", "Score goals, skills and teamwork, rate the result and suggest a raise.", "I run a performance review in 4 steps.",
+    ["staff Omar Hany", "score 4 5 4", "raise 30000 4.3", "feedback"],
+    [
+      { name: "staff", summary: "Step 1: employee being reviewed", args: [text("name")], examples: ["staff Omar Hany"], actions: setNext("staff", "{name}", "Reviewing: {name}", "score goals skills teamwork (1-5 each)") },
+      { name: "score", summary: "Step 2: overall score from goals, skills and teamwork (1-5)", args: [num("goals"), num("skills"), num("team")], examples: ["score 4 5 4"], action: { type: "calc", expression: "goals * 0.5 + skills * 0.3 + team * 0.2", label: "Score / 5", saveAs: "rscore", decimals: 1 } },
+      { name: "raise", summary: "Step 3: raise = 2% per score point above 2", args: [num("salary"), num("score")], examples: ["raise 30000 4.3"], action: { type: "calc", expression: "salary * max(0, score - 2) * 0.02", label: "Monthly raise", decimals: 0 } },
+      { name: "feedback", summary: "Step 4: feedback note", action: say("{$staff}, thank you for this period. Your score is {$rscore} / 5. Keep your strengths and let us agree two goals for next quarter.", "ok") },
+    ], { staff: "(none)", rscore: "0" })),
+
+  inField("HR", agent("leave-agent", "Leave balance agent", "Days left, return date message and an approval summary.", "I handle a leave request in 4 steps.",
+    ["request Mona Adel", "balance 21 9", "days 5", "approve"],
+    [
+      { name: "request", summary: "Step 1: employee asking for leave", args: [text("name")], examples: ["request Mona Adel"], actions: setNext("who", "{name}", "Request from {name}", "balance yearly-days days-taken") },
+      { name: "balance", summary: "Step 2: days left from yearly days and days taken", args: [num("yearly"), num("taken")], examples: ["balance 21 9"], action: { type: "calc", expression: "yearly - taken", label: "Days left", saveAs: "left", decimals: 0 } },
+      { name: "days", summary: "Step 3: days left after this request", args: [num("ask")], examples: ["days 5"], actions: [{ type: "set", name: "ask", value: "{ask}" }, { type: "calc", expression: "left - ask", label: "Left after leave", decimals: 0 }] },
+      { name: "approve", summary: "Step 4: approval summary", action: { type: "kv", pairs: [["Employee", "{$who}"], ["Days asked", "{$ask}"], ["Days left before", "{$left}"], ["Status", "Approved ✓"]] } },
+    ], { who: "(none)", left: "0", ask: "0" })),
+
+  inField("HR", agent("exit-agent", "Exit interview agent", "End of service pay, notice period, checklist and a thank-you letter.", "I close an employee exit in 4 steps.",
+    ["leaver Karim Fathy", "endpay 24000 6", "notice 60 25", "checklist"],
+    [
+      { name: "leaver", summary: "Step 1: employee leaving", args: [text("name")], examples: ["leaver Karim Fathy"], actions: setNext("leaver", "{name}", "Exit for {name}", "endpay salary years") },
+      { name: "endpay", summary: "Step 2: end-of-service pay (half a month per year)", args: [num("salary"), num("years")], examples: ["endpay 24000 6"], action: { type: "calc", expression: "salary * 0.5 * years", label: "End-of-service pay", decimals: 0 } },
+      { name: "notice", summary: "Step 3: notice days left from total and days served", args: [num("total"), num("served")], examples: ["notice 60 25"], action: { type: "calc", expression: "max(0, total - served)", label: "Notice days left", decimals: 0 } },
+      { name: "checklist", summary: "Step 4: exit checklist", action: { type: "table", columns: ["Task", "Owner"], rows: [["Return laptop and badge", "IT"], ["Close accounts", "IT"], ["Final pay", "Finance"], ["Exit interview", "HR"], ["Thank-you letter", "Manager"]] } },
+    ], { leaver: "(none)" })),
+
+  /* ---------- More trainer agents ---------- */
+  inField("Training", agent("course-agent", "Corporate trainer agent", "Plan a course: hours, cost per trainee, an activity and the pass rate.", "I plan a training course in 4 steps.",
+    ["course Excel for managers", "hours 4 3", "cost 20 15000", "passrate 17 20"],
+    [
+      { name: "course", summary: "Step 1: course name", args: [text("name")], examples: ["course Excel for managers"], actions: setNext("course", "{name}", "Course: {name}", "hours days hours-per-day") },
+      { name: "hours", summary: "Step 2: total training hours", args: [num("days"), num("perday")], examples: ["hours 4 3"], action: { type: "calc", expression: "days * perday", label: "Training hours", decimals: 0 } },
+      { name: "cost", summary: "Step 3: cost per trainee from trainees and total cost", args: [num("trainees"), num("total")], examples: ["cost 20 15000"], action: { type: "calc", expression: "total / trainees", label: "Cost per trainee", decimals: 0 } },
+      { name: "passrate", summary: "Step 4: pass rate from passed and total trainees", args: [num("passed"), num("total")], examples: ["passrate 17 20"], action: { type: "calc", expression: "passed / total * 100", label: "Pass rate %", decimals: 0 } },
+    ], { course: "(none)" })),
+
+  inField("Training", agent("pt-agent", "Personal trainer agent", "Client, target heart rate, a workout and progress toward a weight goal.", "I coach a fitness client in 4 steps.",
+    ["client Hassan", "heart 35", "session", "progress 92 86 80"],
+    [
+      { name: "client", summary: "Step 1: client's name", args: [text("name")], examples: ["client Hassan"], actions: setNext("client", "{name}", "Client: {name}", "heart age") },
+      { name: "heart", summary: "Step 2: fat-burn heart rate (60-70% of 220 - age)", args: [num("age")], examples: ["heart 35"], actions: [{ type: "calc", expression: "(220 - age) * 0.6", label: "From bpm", decimals: 0 }, { type: "calc", expression: "(220 - age) * 0.7", label: "To bpm", decimals: 0 }] },
+      { name: "session", summary: "Step 3: today's 45-minute session", action: { type: "table", columns: ["Part", "Minutes"], rows: [["Warm-up", "8"], ["Strength circuit", "20"], ["Cardio intervals", "12"], ["Stretch", "5"]] } },
+      { name: "progress", summary: "Step 4: % of the weight goal reached (start, now, goal)", args: [num("start"), num("now"), num("goal")], examples: ["progress 92 86 80"], action: { type: "calc", expression: "(start - now) / (start - goal) * 100", label: "Goal reached %", decimals: 0 } },
+    ], { client: "(none)" })),
+
+  inField("Training", agent("language-agent", "Language coach agent", "Daily words plan, a practice phrase, quiz score and study streak.", "I coach a language learner in 4 steps.",
+    ["language English", "words 1500 90", "phrase", "streak 18 30"],
+    [
+      { name: "language", summary: "Step 1: language to learn", args: [text("name")], examples: ["language English"], actions: setNext("lang", "{name}", "Learning: {name}", "words target-words days") },
+      { name: "words", summary: "Step 2: new words per day", args: [num("target"), num("days")], examples: ["words 1500 90"], action: { type: "calc", expression: "ceil(target / days)", label: "Words per day", decimals: 0 } },
+      { name: "phrase", summary: "Step 3: a phrase to practise today", action: { type: "choice", options: ["Could you say that again, please?", "How much does this cost?", "I would like to book a table.", "What do you recommend?", "Nice to meet you."] } },
+      { name: "streak", summary: "Step 4: study streak % from days studied and days passed", args: [num("studied"), num("passed")], examples: ["streak 18 30"], action: { type: "calc", expression: "studied / passed * 100", label: "Streak %", decimals: 0 } },
+    ], { lang: "(none)" })),
 ];

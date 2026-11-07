@@ -2,6 +2,7 @@
 // Prepared by Sara Salem. Copyright (c) Sara Salem 2026.
 
 import { parseSpec, type ConsoleSpec, type Row } from "./spec";
+import { suggestWidgets } from "./widgets";
 
 export type { Row };
 
@@ -137,6 +138,7 @@ export function specFromDatasets(datasets: Record<string, Row[]>, name = "data")
     name,
     welcome: `${names.map((n) => `${n}: ${datasets[n].length} rows`).join(" · ")}. Try ${names.length > 1 ? names[0] + " " : ""}rows, find, where, top, stats or columns.`,
     datasets,
+    widgets: suggestWidgets(datasets),
     commands,
   };
 }
@@ -171,9 +173,11 @@ Actions:
 - {"type":"run","commands":["other command {arg}"]}  (macro)
 - {"type":"choice","options":["a","b"],"saveAs":"var"}
 - {"type":"date","format":"iso|local|date|time"}
+- {"type":"ai","prompt":"Answer as a helpful assistant: {question}","saveAs":"var"}  (free AI answer; give it a short role and the user's question)
 - {"type":"query","dataset":"name","search":"{text}","where":"col>10 and other=x","sortBy":"{column}","desc":true,"limit":20,"columns":["a","b"]}
 - {"type":"stats","dataset":"name","column":"{column}"}
 - {"type":"columns","dataset":"name"}
+Optional "widgets" draw a dashboard from datasets: [{"type":"kpi|bar|line|pie|table","title":"text","dataset":"name","metric":"count|sum|avg|min|max","field":"numeric column","groupBy":"column (bar/pie)","dateField":"column (line)","granularity":"month|day","prefix":"$","suffix":"%","size":"half|full"}]. Add 3-6 widgets when datasets exist.
 Built-in commands already exist: help, clear, echo, set, unset, vars, calc, history. Do not redefine them.
 Rules: command and argument names are lowercase words; every command has a summary; prefer 5-12 useful commands; give most commands an example; numbers must be computed with calc, never invented.`;
 

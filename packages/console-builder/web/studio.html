@@ -141,6 +141,21 @@ textarea#editor { height: 470px; font: 12px/1.55 var(--font-code); tab-size: 2; 
 .libitem .acts { display: flex; flex-wrap: wrap; gap: 6px; }
 .steps li .what { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .steps li .what span { font-size: 12.5px; color: var(--muted); }
+.dashpanel #widgets { --cbw-bg: var(--surface); --cbw-fg: var(--fg); --cbw-line: var(--line); --cbw-muted: var(--muted); }
+.wform { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; align-items: end; }
+.wform label, .bform label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.bform { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.stepcard { border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; grid-template-columns: auto 1fr; gap: 8px; background: var(--raised); }
+.stepcard .num { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+.stepcard .fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.stepcard .fields label { display: flex; flex-direction: column; gap: 3px; font-size: 11.5px; color: var(--muted); }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.swatch { border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; font: 600 12px var(--font-body); display: flex; align-items: center; gap: 6px; background: var(--raised); color: var(--fg); }
+.swatch i { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+.reportbox { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: grid; place-items: center; z-index: 50; padding: 16px; }
+.reportbox > div { background: var(--surface); color: var(--fg); border-radius: 14px; max-width: 760px; width: 100%; max-height: 90vh; display: flex; flex-direction: column; gap: 10px; padding: 16px; overflow: hidden; }
+.reportbox iframe { flex: 1; min-height: 50vh; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+[dir="rtl"] .cb-term { direction: ltr; }
 .samplefiles { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 @media (max-width: 640px) { .guide { grid-template-columns: 1fr; } }
 .tpl-grid { max-height: 620px; overflow-y: auto; padding-right: 4px; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px; }
@@ -232,9 +247,10 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
   <header class="top">
     <div class="brand">
       <h1>console<span class="caret">_</span>builder studio</h1>
-      <p>Build your own console or agent in 3 easy steps — 44 templates, 30 agents, a prompt library. No code needed. Copyright © Sara Salem 2026</p>
+      <p>Build your own console, agent or dashboard in 3 easy steps — 54 templates, 40 agents, widgets, Arabic and English. No code needed. Copyright © Sara Salem 2026</p>
     </div>
     <div class="top-actions">
+      <button class="btn" id="langbtn" type="button" lang="ar">العربية</button>
       <button class="btn primary" id="runapp" type="button">▶ Run as web app</button>
       <button class="btn" id="export" type="button">Get web console</button>
     </div>
@@ -264,8 +280,10 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
       <div class="tabs" role="tablist" aria-label="Ways to build">
         <button class="tab" role="tab" id="tab-tpl" aria-controls="pane-tpl" aria-selected="true" type="button">Start here</button>
         <button class="tab" role="tab" id="tab-lib" aria-controls="pane-lib" aria-selected="false" type="button">Library</button>
+        <button class="tab" role="tab" id="tab-make" aria-controls="pane-make" aria-selected="false" type="button">Builder</button>
         <button class="tab" role="tab" id="tab-files" aria-controls="pane-files" aria-selected="false" type="button">Upload files <span id="filecount" class="label"></span></button>
         <button class="tab" role="tab" id="tab-prompt" aria-controls="pane-prompt" aria-selected="false" type="button">Describe</button>
+        <button class="tab" role="tab" id="tab-brand" aria-controls="pane-brand" aria-selected="false" type="button">Brand</button>
         <button class="tab" role="tab" id="tab-json" aria-controls="pane-json" aria-selected="false" type="button">JSON <span class="dot" id="jsondot" hidden></span></button>
       </div>
 
@@ -293,6 +311,11 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
           <div class="catbar"><input class="field" id="savename" placeholder="Name for this console" aria-label="Console name"><button class="btn primary small" id="saveconsole" type="button">Save current console</button></div>
           <div class="liblist" id="mylist"></div>
         </div>
+        <div class="libsec">
+          <span class="label">Team library · shared with everyone who opens this page</span>
+          <div class="catbar"><button class="btn small" id="teamshare" type="button">Share current console with the team</button></div>
+          <div class="liblist" id="teamlist"><p class="hint">Loading…</p></div>
+        </div>
       </div>
 
       <div class="tabpanel" role="tabpanel" id="pane-files" aria-labelledby="tab-files" hidden>
@@ -303,6 +326,9 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
         <input id="file" type="file" multiple accept=".csv,.tsv,.json,.txt,.md,.log,.tab,text/*,application/json" hidden>
         <div class="samplefiles" id="samplefiles"><span class="label">No file? Try a sample:</span></div>
         <ul class="files" id="files"></ul>
+        <span class="label">Live data link</span>
+        <div class="catbar"><input class="field" id="liveurl" type="url" placeholder="https://… a CSV or JSON link, or a published Google Sheet" aria-label="Live data link"><button class="btn small" id="liveadd" type="button">Connect</button></div>
+        <p class="hint" id="livehint">The exported web console reloads linked data every time it opens.</p>
         <div class="panel-head">
           <button class="btn primary" id="builddata" type="button" disabled>Build data console</button>
           <button class="btn" id="todescribe" type="button" disabled>Describe it to Claude</button>
@@ -314,6 +340,32 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
         <p class="hint">Click a card. It loads at once and shows its easy steps next to the console.</p>
         <div class="catbar"><div class="chips" id="cats" aria-label="Categories"></div><input class="field" id="tplsearch" type="search" placeholder="Search templates…" aria-label="Search templates"></div>
         <div class="tpl-grid" id="templates"></div>
+      </div>
+
+      <div class="tabpanel" role="tabpanel" id="pane-make" aria-labelledby="tab-make" hidden>
+        <p class="hint">Make your own agent with a form. Each step becomes a command; the agent gets <code>start</code> (shows the steps) and <code>ask</code> (AI chat) for free.</p>
+        <div class="bform">
+          <label>Agent name<input class="field" id="mk-name" value="My agent"></label>
+          <label>What it does<input class="field" id="mk-desc" value="Helps my customers step by step"></label>
+        </div>
+        <div id="mk-steps" class="libsec"></div>
+        <div class="panel-head"><button class="btn small" id="mk-add" type="button">+ Add step</button><button class="btn primary" id="mk-build" type="button">Create agent</button></div>
+      </div>
+
+      <div class="tabpanel" role="tabpanel" id="pane-brand" aria-labelledby="tab-brand" hidden>
+        <p class="hint">Give the console your name and colours. It goes into the web console you take away.</p>
+        <span class="label">Ready themes</span>
+        <div class="swatches" id="themes"></div>
+        <div class="bform">
+          <label>Company<input class="field" id="br-company" placeholder="Your company"></label>
+          <label>Console title<input class="field" id="br-title" placeholder="my-console"></label>
+          <label>Welcome line<input class="field" id="br-welcome" placeholder="Welcome! Type start."></label>
+          <label>Prompt symbol<input class="field" id="br-prompt" placeholder="❯" maxlength="4"></label>
+          <label>Background<input type="color" id="br-bg" value="#0d1412"></label>
+          <label>Text<input type="color" id="br-fg" value="#d5e2dc"></label>
+          <label>Accent<input type="color" id="br-accent" value="#6fd6b4"></label>
+        </div>
+        <div class="panel-head"><button class="btn primary" id="br-apply" type="button">Apply brand</button><button class="btn small" id="br-reset" type="button">Default colours</button></div>
       </div>
 
       <div class="tabpanel" role="tabpanel" id="pane-json" aria-labelledby="tab-json" hidden>
@@ -331,6 +383,7 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     <section class="panel col" aria-labelledby="run-h">
       <div class="panel-head">
         <h2 id="run-h">Live console</h2>
+        <button class="btn small" id="reportbtn" type="button">Report</button>
         <button class="btn small" id="reset" type="button">Restart</button>
       </div>
       <div class="out" id="stepsbox" hidden>
@@ -367,6 +420,26 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     </div>
   </div>
 
+  <section class="panel dashpanel" aria-labelledby="dash-h">
+    <div class="panel-head">
+      <h2 id="dash-h" style="flex:1">Dashboard</h2>
+      <button class="btn small" id="w-auto" type="button">Auto widgets</button>
+      <button class="btn small" id="w-addbtn" type="button">+ Add widget</button>
+    </div>
+    <div class="wform" id="wform" hidden>
+      <label>Type<select class="field" id="w-type"><option value="kpi">KPI number</option><option value="bar">Bar chart</option><option value="line">Line (over time)</option><option value="pie">Pie</option><option value="table">Table</option></select></label>
+      <label>Title<input class="field" id="w-title" placeholder="Total sales"></label>
+      <label>Dataset<select class="field" id="w-ds"></select></label>
+      <label>Metric<select class="field" id="w-metric"><option>count</option><option>sum</option><option>avg</option><option>min</option><option>max</option></select></label>
+      <label>Number column<select class="field" id="w-field"></select></label>
+      <label>Group by<select class="field" id="w-group"></select></label>
+      <label>Date column<select class="field" id="w-date"></select></label>
+      <label>Prefix / suffix<input class="field" id="w-fix" placeholder="$ or %"></label>
+      <button class="btn primary" id="w-save" type="button">Add to dashboard</button>
+    </div>
+    <div id="widgets"><p class="hint">No widgets yet. Upload data or open a Data template, then press Auto widgets.</p></div>
+  </section>
+
   <div class="lower">
     <section class="panel" aria-labelledby="cmd-h">
       <div class="panel-head"><h2 id="cmd-h">Commands</h2><span class="hint">Run tries the example; Use puts the command in the console.</span></div>
@@ -386,6 +459,14 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
   </div>
 
   <footer>console-builder · Prepared by Sara Salem · Copyright © Sara Salem 2026</footer>
+</div>
+
+<div class="reportbox" id="reportbox" hidden role="dialog" aria-modal="true" aria-labelledby="report-h">
+  <div>
+    <div class="panel-head"><h2 id="report-h" style="flex:1;margin:0;font-size:16px">Run report</h2><button class="btn small" id="rp-close" type="button">Close</button></div>
+    <iframe id="rp-frame" title="Report preview" sandbox=""></iframe>
+    <div class="tryline"><button class="btn primary small" id="rp-html" type="button">Save report (HTML)</button><button class="btn small" id="rp-csv" type="button">Save runs (CSV)</button><button class="btn small" id="rp-copy" type="button">Copy as text</button></div>
+  </div>
 </div>
 
 <div class="appmode" id="appmode" hidden role="dialog" aria-modal="true" aria-labelledby="appname">
@@ -429,6 +510,8 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
 
   let current = null, cli = null, mounted = null, timer = null, activeTpl = null;
   const files = []; // {name, kind, dataset?, rows?, spec?, text}
+  const reportRuns = [];
+  let stickyTpl = null, customSteps = null;
   const stats = { runs: 0, failed: 0, usage: new Map(), log: [] };
 
   const setNotice = (t) => { notice.textContent = t; };
@@ -438,7 +521,7 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
   }
 
   /* ---------- tabs ---------- */
-  const tabs = ["tpl", "lib", "files", "prompt", "json"];
+  const tabs = ["tpl", "lib", "make", "files", "prompt", "brand", "json"];
   function showTab(name) {
     for (const t of tabs) {
       $("tab-" + t).setAttribute("aria-selected", String(t === name));
@@ -460,6 +543,12 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
       ? () => Promise.reject(new Error("HTTP calls are blocked in this preview. They work in the downloaded web console and the CLI."))
       : (url, init) => fetch(url, init),
     onRun: (line, res) => record(line, res),
+    ai: async (prompt) => {
+      const sm = await sampleReady;
+      if (!sm) return "AI answers work when this page is open inside Claude. Everything else works here.";
+      try { const r = await sm(prompt + "\n\nAnswer in under 120 words, plain text, in the language of the question.", { modelTier: "quick", cache: false }); return r.text; }
+      catch (e) { return e && e.code === "not_granted" ? "AI answers were not allowed for this page." : e && e.code === "rate_limited" ? "Too many questions right now. Try again in a minute." : "The AI could not answer: " + (e && e.message || e); }
+    },
   };
 
   /* ---------- activity ---------- */
@@ -478,6 +567,8 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     for (const seg of CB.splitChain(line)) { const k = commandKey(seg.text); if (k) stats.usage.set(k, (stats.usage.get(k) || 0) + 1); }
     stats.log.unshift({ at: new Date(), line, ok: res.code === 0, ms: res.ms });
     stats.log.length = Math.min(stats.log.length, 60);
+    reportRuns.push({ at: new Date(), line, ok: res.code === 0, text: CB.renderText(res.output) });
+    if (reportRuns.length > 300) reportRuns.shift();
     renderActivity(); renderKpis();
   }
   function renderActivity() {
@@ -565,7 +656,7 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     const b = el("button", "tpl"); b.type = "button"; b.dataset.id = t.id; b.dataset.cat = t.category || "Other"; b.setAttribute("aria-pressed", "false");
     const meta = el("span", "meta"); meta.append(el("span", "cat", t.field ? `${t.category} · ${t.field}` : t.category || "Other"), el("span", undefined, `${(t.steps || []).length} easy steps`));
     b.append(meta, el("strong", undefined, t.title), el("span", undefined, t.description));
-    b.onclick = () => { activeTpl = t.id; editor.value = pretty(t.spec); setNotice(`Loaded ${t.title}. Follow the easy steps next to the console.`); update(true); if (innerWidth < 900) $("stepsbox").scrollIntoView({ behavior: "smooth", block: "start" }); };
+    b.onclick = () => { activeTpl = t.id; stickyTpl = { id: t.id, name: t.spec.name }; editor.value = pretty(t.spec); setNotice(`Loaded ${t.title}. Follow the easy steps next to the console.`); update(true); if (innerWidth < 900) $("stepsbox").scrollIntoView({ behavior: "smooth", block: "start" }); };
     tplButtons.push(b); $("templates").append(b);
   }
   function filterTemplates() {
@@ -582,8 +673,9 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
 
   /* ---------- easy steps ---------- */
   const doneSteps = new Set();
+  const currentSteps = () => (activeTpl ? tplById(activeTpl) : customSteps && current && customSteps.name === current.name ? customSteps : null);
   function renderSteps() {
-    const t = activeTpl && tplById(activeTpl);
+    const t = currentSteps();
     const steps = t?.steps || [];
     $("stepsbox").hidden = !steps.length;
     if (!steps.length) return;
@@ -614,10 +706,10 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     doneSteps.add(s);
     for (const li of $("steps").children) li.classList.toggle("done", doneSteps.has(li.dataset.step));
   }
-  $("runall").onclick = async () => { const t = activeTpl && tplById(activeTpl); for (const s of t?.steps || []) await runStep(s); setNotice("All steps done. Next: Run as web app or Get web console."); };
+  $("runall").onclick = async () => { const t = currentSteps(); for (const s of t?.steps || []) await runStep(s); setNotice("All steps done. Next: Run as web app or Get web console."); };
   function markTemplate() {
     const match = CB.TEMPLATES.find((t) => current && JSON.stringify(t.spec) === JSON.stringify(current));
-    activeTpl = match ? match.id : null;
+    activeTpl = match ? match.id : stickyTpl && current && stickyTpl.name === current.name ? stickyTpl.id : null;
     for (const b of tplButtons) b.setAttribute("aria-pressed", String(b.dataset.id === activeTpl));
   }
 
@@ -673,7 +765,7 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     current = r.spec; cli = r.cli;
     markTemplate();
     $("exportbox").hidden = true;
-    mount(); renderKpis(); renderData();
+    mount(); renderKpis(); renderData(); renderDash();
   }
 
   function loadSpec(spec, message) {
@@ -865,7 +957,9 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
     $("exportcode").scrollIntoView({ block: "nearest" });
   };
   $("copyhtml").onclick = () => copy($("exportcode").value, `Copied. Paste it into a file named ${current.name}.html.`, $("exportcode"));
-  $("dlhtml").onclick = () => {
+  $("dlhtml").onclick = () => saveFile(`${current.name}.html`, $("exportcode").value, "text/html");
+  $("dlhtml").dataset.old = "1";
+  const _oldDl = () => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([$("exportcode").value], { type: "text/html" }));
     a.download = `${current.name}.html`; a.click();
@@ -899,18 +993,285 @@ footer { color: var(--muted); font-size: 12.5px; text-align: center; }
   if (!document.fullscreenEnabled) $("appfull").remove();
   else $("appfull").onclick = () => (document.fullscreenElement ? document.exitFullscreen().catch(() => {}) : $("appmode").requestFullscreen().catch(() => setNotice("Full screen is not available here.")));
   document.addEventListener("fullscreenchange", () => { const b = $("appfull"); if (b) b.textContent = document.fullscreenElement ? "Leave full screen" : "Full screen"; });
-  if (sandboxed) { $("apptab").remove(); $("dlhtml").remove(); }
+  if (sandboxed) { $("apptab").remove(); }
   else $("apptab").onclick = () => {
     const url = URL.createObjectURL(new Blob([CB.standaloneHtml(current, $("cb-bundle").textContent)], { type: "text/html" }));
     if (!window.open(url, "_blank")) setNotice("The browser blocked the new tab. Use Get web console instead.");
   };
   window.addEventListener("hashchange", () => (location.hash === "#app" ? openApp() : closeApp()));
 
+
+  /* ---------- files out (downloads capability inside Claude) ---------- */
+  const downloadsReady = window.claude && window.claude.use ? window.claude.use("downloads").catch(() => null) : Promise.resolve(null);
+  async function saveFile(name, data, type) {
+    const dl = await downloadsReady;
+    if (dl) {
+      try { await dl.save({ filename: name, data: new Blob([data], { type }) }); setNotice(`Saved ${name}.`); }
+      catch (e) { setNotice(e && e.code === "declined" ? "Saving was cancelled." : "Could not save the file here. Use Copy instead."); }
+      return;
+    }
+    if (sandboxed) return setNotice("Saving files is not available here. Use Copy instead.");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([data], { type })); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    setNotice(`Saved ${name}.`);
+  }
+
+  /* ---------- dashboard widgets (inspired by AI Console Builder on Base44) ---------- */
+  const specData = () => (current && current.datasets) || {};
+  function renderDash() {
+    const box = $("widgets"), ws = (current && current.widgets) || [];
+    const names = Object.keys(specData());
+    $("w-auto").disabled = !names.length; $("w-addbtn").disabled = !names.length;
+    if (!ws.length) { box.replaceChildren(el("p", "hint", names.length ? "No widgets yet. Press Auto widgets or + Add widget." : "No widgets yet. Upload data or open a Data template, then press Auto widgets.")); return; }
+    CB.renderWidgets(box, ws, specData(), { onRemove: (i) => { const sp = structuredClone(current); sp.widgets.splice(i, 1); keepTemplate(sp, "Widget removed."); } });
+  }
+  function keepTemplate(spec, msg) { if (activeTpl) stickyTpl = { id: activeTpl, name: spec.name }; else if (customSteps) customSteps.name = spec.name; editor.value = pretty(spec); update(true); if (msg) setNotice(msg); }
+  $("w-auto").onclick = () => { const sp = structuredClone(current); sp.widgets = CB.suggestWidgets(specData()); keepTemplate(sp, `Added ${sp.widgets.length} widgets from your data.`); };
+  function fillWidgetForm() {
+    const ds = $("w-ds"), names = Object.keys(specData());
+    const keep = ds.value; ds.replaceChildren(...names.map((n) => new Option(n, n))); if (names.includes(keep)) ds.value = keep;
+    const rows = specData()[ds.value] || [];
+    const cols = [...new Set(rows.slice(0, 50).flatMap((r) => Object.keys(r)))];
+    const nums = cols.filter((c) => rows.some((r) => typeof r[c] === "number"));
+    $("w-field").replaceChildren(new Option("—", ""), ...nums.map((c) => new Option(c, c)));
+    $("w-group").replaceChildren(new Option("—", ""), ...cols.map((c) => new Option(c, c)));
+    $("w-date").replaceChildren(new Option("—", ""), ...cols.map((c) => new Option(c, c)));
+  }
+  $("w-addbtn").onclick = () => { $("wform").hidden = !$("wform").hidden; fillWidgetForm(); };
+  $("w-ds").onchange = fillWidgetForm;
+  $("w-save").onclick = () => {
+    const type = $("w-type").value, fix = $("w-fix").value.trim();
+    const w = { id: "w" + Date.now(), type, title: $("w-title").value.trim() || type.toUpperCase(), dataset: $("w-ds").value, metric: $("w-metric").value };
+    if ($("w-field").value) w.field = $("w-field").value;
+    if ($("w-group").value) w.groupBy = $("w-group").value;
+    if ($("w-date").value) w.dateField = $("w-date").value, w.granularity = "month";
+    if (fix === "%") w.suffix = "%"; else if (fix) w.prefix = fix;
+    if ((type === "bar" || type === "pie") && !w.groupBy) return setNotice("Pick a Group by column for bar and pie charts.");
+    if (type === "line" && !w.dateField) return setNotice("Pick a Date column for a line chart.");
+    const sp = structuredClone(current); sp.widgets = [...(sp.widgets || []), w];
+    $("wform").hidden = true; keepTemplate(sp, `Added widget “${w.title}”.`);
+  };
+
+  /* ---------- live data links ---------- */
+  function sheetCsv(url) {
+    const m = /docs\.google\.com\/spreadsheets\/d\/([^/]+)/.exec(url);
+    return m && !/output=csv|format=csv/.test(url) ? `https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv` : url;
+  }
+  $("liveadd").onclick = async () => {
+    const raw = $("liveurl").value.trim();
+    if (!/^https:\/\//.test(raw)) return setNotice("Paste a link that starts with https://");
+    const url = sheetCsv(raw), name = CB.datasetName((url.split("?")[0].split("/").pop() || "live").replace(/^export$/, "sheet"));
+    const sp = structuredClone(current); sp.sources = { ...(sp.sources || {}), [name]: url };
+    let rows = null;
+    if (!sandboxed) {
+      try { const f = CB.loadFile(name + (/json/.test(url) ? ".json" : ".csv"), await (await fetch(url)).text()); if (f.kind === "data") rows = f.rows; } catch (e) { setNotice("Could not read that link now: " + e.message + ". It is saved and will load in the web console."); }
+    }
+    if (rows) { sp.datasets = { ...(sp.datasets || {}), [name]: rows }; const extra = CB.specFromDatasets({ [name]: rows }, name); sp.commands = [...sp.commands, ...extra.commands.filter((c) => !sp.commands.some((x) => x.name === c.name))]; }
+    keepTemplate(sp, rows ? `Connected ${name}: ${rows.length} rows. It reloads every time the web console opens.` : `Linked ${name}. Inside Claude the page cannot reach other sites, so the data loads when you open the exported web console.`);
+  };
+
+  /* ---------- visual agent builder ---------- */
+  const STEP_TYPES = { calc: "Calculate a number", print: "Show a message", choice: "Pick one at random", save: "Save what the user types", table: "Show a table" };
+  let mkSteps = [
+    { label: "Customer name", type: "save", inputs: "name", content: "", example: "Sara" },
+    { label: "Price with tax", type: "calc", inputs: "price, tax", content: "price * (1 + tax / 100)", example: "1000 14" },
+    { label: "Thank-you message", type: "print", inputs: "", content: "Thank you {$name}! Your order is ready.", example: "" },
+  ];
+  const slug = (t, i) => (t.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().split(" ")[0] || "step") + (i ? "" : "");
+  function renderMk() {
+    const box = $("mk-steps"); box.replaceChildren();
+    mkSteps.forEach((st, i) => {
+      const card = el("div", "stepcard"), f = el("div", "fields");
+      const field = (label, key, kind) => {
+        const l = el("label", undefined, label);
+        let inp;
+        if (kind === "type") { inp = el("select", "field"); for (const [k, v] of Object.entries(STEP_TYPES)) inp.append(new Option(v, k)); }
+        else inp = el("input", "field");
+        inp.value = st[key]; inp.oninput = () => { st[key] = inp.value; if (kind === "type") renderMk(); };
+        l.append(inp); f.append(l);
+      };
+      field("Step title", "label"); field("What it does", "type", "type");
+      if (st.type !== "print" && st.type !== "choice" && st.type !== "table") field(st.type === "save" ? "Name to save as" : "Inputs (comma separated)", "inputs");
+      const hint = { calc: "Formula, e.g. price * 2", print: "Message, use {$name} for saved values", choice: "Options separated by |", save: "", table: "Rows: a,b ; c,d (first row = headers)" }[st.type];
+      if (hint) { const l = el("label", undefined, hint); const inp = el("input", "field"); inp.value = st.content; inp.oninput = () => (st.content = inp.value); l.append(inp); f.append(l); }
+      if (st.type === "calc" || st.type === "save") field("Example values", "example");
+      const rm = el("button", "btn small", "Remove"); rm.type = "button"; rm.onclick = () => { mkSteps.splice(i, 1); renderMk(); };
+      f.append(rm);
+      card.append(el("span", "num", String(i + 1)), f);
+      box.append(card);
+    });
+  }
+  $("mk-add").onclick = () => { mkSteps.push({ label: "New step", type: "print", inputs: "", content: "Hello!", example: "" }); renderMk(); };
+  $("mk-build").onclick = () => {
+    const name = $("mk-name").value.trim() || "My agent", desc = $("mk-desc").value.trim();
+    const used = new Set(["start", "ask", "help", "clear", "echo", "set", "unset", "vars", "calc", "history"]);
+    const cmds = [], steps = [];
+    for (const [i, st] of mkSteps.entries()) {
+      let c = st.label.toLowerCase().replace(/[^a-z0-9 ]+/g, "").trim().split(/\s+/)[0] || "step";
+      if (!/^[a-z]/.test(c)) c = "step" + (i + 1);
+      while (used.has(c)) c += (i + 1);
+      used.add(c);
+      const inputs = st.inputs.split(/[,\s]+/).map((x) => x.trim().toLowerCase().replace(/[^a-z0-9_]/g, "")).filter(Boolean);
+      const cmd = { name: c, summary: `Step ${i + 1}: ${st.label}` };
+      if (st.type === "calc") {
+        cmd.args = inputs.map((n) => ({ name: n, type: "number", positional: true, required: true }));
+        cmd.action = { type: "calc", expression: st.content || "0", label: st.label, saveAs: c, decimals: 2 };
+      } else if (st.type === "save") {
+        const v = inputs[0] || "value";
+        cmd.args = [{ name: v, type: "string", positional: true, required: true, rest: true }];
+        cmd.actions = [{ type: "set", name: v, value: `{${v}}` }, { type: "print", text: `${st.label}: {${v}}`, tone: "ok" }];
+      } else if (st.type === "choice") cmd.action = { type: "choice", options: st.content.split("|").map((x) => x.trim()).filter(Boolean).concat(st.content.trim() ? [] : ["Yes", "No"]) };
+      else if (st.type === "table") {
+        const rows = st.content.split(";").map((r) => r.split(",").map((x) => x.trim())).filter((r) => r.some(Boolean));
+        cmd.action = { type: "table", columns: rows[0] || ["Item"], rows: rows.slice(1) };
+      } else cmd.action = { type: "print", text: st.content || st.label, tone: "info" };
+      const ex = [c, (st.example || "").trim()].filter(Boolean).join(" ");
+      if (cmd.args && cmd.args.length && !st.example.trim()) cmd.examples = []; else cmd.examples = [ex];
+      cmds.push(cmd); steps.push(ex);
+    }
+    const spec = {
+      name: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "my-agent",
+      welcome: `${name} — type start for the steps. Copyright © Sara Salem 2026.`,
+      prompt: "❯",
+      commands: [
+        { name: "start", summary: "Show the steps", actions: [{ type: "print", text: desc || name, tone: "ok" }, { type: "table", columns: ["Step", "Type this"], rows: steps.map((s, i) => [i + 1, s]) }] },
+        ...cmds,
+        { name: "ask", summary: "AI chat: ask this agent any question (works inside Claude)", args: [{ name: "question", type: "string", positional: true, required: true, rest: true }], action: { type: "ai", prompt: `You are ${name}. ${desc} Answer briefly. Question: {question}` } },
+      ],
+    };
+    const check = CB.parseSpec(spec);
+    if (!check.ok) return setNotice("Check the steps: " + check.errors[0]);
+    try { CB.buildFromSpec(spec); } catch (e) { return setNotice("Check the steps: " + e.message); }
+    customSteps = { name: spec.name, title: name, steps: ["start", ...steps] };
+    loadSpec(spec, `Created ${name}. Its steps are next to the console.`);
+  };
+  renderMk();
+
+  /* ---------- brand & themes ---------- */
+  const THEMES = [
+    ["Emerald", "#0d1412", "#d5e2dc", "#6fd6b4"], ["Ocean", "#0b1622", "#d7e6f5", "#5cb3ff"], ["Sunset", "#1c120f", "#f4e3da", "#ff9b5e"],
+    ["Royal", "#140f22", "#e6def7", "#b18cff"], ["Nile gold", "#16130b", "#f1e9d2", "#e3b341"], ["Paper", "#fbfaf7", "#22201c", "#0f6b55"], ["Mono", "#000000", "#e6e6e6", "#ffffff"],
+  ];
+  for (const [n, bg, fg, ac] of THEMES) {
+    const b = el("button", "swatch"); b.type = "button"; const i = el("i"); i.style.background = `linear-gradient(135deg, ${bg} 50%, ${ac} 50%)`; b.append(i, n);
+    b.onclick = () => { $("br-bg").value = bg; $("br-fg").value = fg; $("br-accent").value = ac; $("br-apply").click(); };
+    $("themes").append(b);
+  }
+  $("br-apply").onclick = () => {
+    const sp = structuredClone(current), company = $("br-company").value.trim(), title = $("br-title").value.trim(), welcome = $("br-welcome").value.trim(), pr = $("br-prompt").value.trim();
+    sp.theme = { background: $("br-bg").value, foreground: $("br-fg").value, accent: $("br-accent").value };
+    if (title) sp.name = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || sp.name;
+    if (welcome || company) sp.welcome = [company, welcome || sp.welcome].filter(Boolean).join(" — ");
+    if (pr) sp.prompt = pr;
+    keepTemplate(sp, "Brand applied. It is part of the web console you take away.");
+  };
+  $("br-reset").onclick = () => { const sp = structuredClone(current); delete sp.theme; keepTemplate(sp, "Back to the default colours."); };
+
+  /* ---------- report ---------- */
+  const escH = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  function reportHtml() {
+    const rows = reportRuns.map((r) => `<tr><td>${escH(r.at.toLocaleTimeString())}</td><td><code>${escH(r.line)}</code></td><td>${r.ok ? "OK" : "Failed"}</td><td><pre>${escH(r.text)}</pre></td></tr>`).join("");
+    return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>${escH(current.name)} report</title><style>body{font:14px system-ui,sans-serif;color:#1f2328;margin:24px}h1{font-size:20px;margin:0 0 4px}table{border-collapse:collapse;width:100%;margin-top:12px}td,th{border-bottom:1px solid #d0d7de;padding:6px;text-align:start;vertical-align:top}pre{margin:0;white-space:pre-wrap;font:12px ui-monospace,monospace}footer{margin-top:16px;color:#656d76;font-size:12px}</style></head><body><h1>${escH(current.name)} — run report</h1><div>${escH(new Date().toLocaleString())} · ${reportRuns.length} runs · ${reportRuns.filter((r) => !r.ok).length} failed</div><table><tr><th>Time</th><th>Command</th><th>Result</th><th>Output</th></tr>${rows || '<tr><td colspan="4">No runs yet.</td></tr>'}</table><footer>Made with console-builder · Prepared by Sara Salem · Copyright © Sara Salem 2026</footer></body></html>`;
+  }
+  $("reportbtn").onclick = () => { $("rp-frame").srcdoc = reportHtml(); $("reportbox").hidden = false; $("rp-close").focus(); };
+  $("rp-close").onclick = () => { $("reportbox").hidden = true; $("reportbtn").focus(); };
+  $("reportbox").addEventListener("keydown", (e) => { if (e.key === "Escape") $("rp-close").click(); });
+  $("rp-html").onclick = () => saveFile(`${current.name}-report.html`, reportHtml(), "text/html");
+  $("rp-csv").onclick = () => saveFile(`${current.name}-runs.csv`, "time,command,result,output\n" + reportRuns.map((r) => [r.at.toISOString(), r.line, r.ok ? "OK" : "Failed", r.text].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n"), "text/csv");
+  $("rp-copy").onclick = () => copy(reportRuns.map((r) => `❯ ${r.line}\n${r.text}`).join("\n\n") || "No runs yet.", "Report copied.");
+
+  /* ---------- team library (shared, inside Claude) ---------- */
+  const teamDbReady = window.claude && window.claude.use ? window.claude.use("db").catch(() => null) : Promise.resolve(null);
+  teamDbReady.then((db) => {
+    const list = $("teamlist");
+    if (!db) { list.replaceChildren(el("p", "hint", "The team library works when this page is open in Claude and you are signed in.")); $("teamshare").disabled = true; return; }
+    const col = db.collection("library");
+    let timer = setTimeout(() => list.replaceChildren(el("p", "hint", "The team library is taking long to load. Try again later.")), 10000);
+    col.orderBy("at", "desc").limit(60).onSnapshot((snap) => {
+      clearTimeout(timer); list.replaceChildren();
+      if (snap.empty) return list.append(el("p", "hint", "Nothing shared yet. Share a console and your team will see it here."));
+      for (const d of snap.docs) {
+        const it = d.data() || {}; let spec = null;
+        try { spec = JSON.parse(String(it.spec || "")); } catch {}
+        if (!spec || !CB.parseSpec(spec).ok) continue;
+        list.append(libItem("Team console", new Date(Number(it.at) || 0).toLocaleDateString(), String(it.name || spec.name).slice(0, 80), String(spec.welcome || "").slice(0, 200), [
+          ["Open", () => loadSpec(spec, `Opened ${spec.name} from the team library.`), true],
+          ["Remove", () => col.doc(d.id).delete().then(() => setNotice("Removed from the team library."), (e) => setNotice("Could not remove: " + (e.message || e.code)))],
+        ]));
+      }
+    }, (e) => { clearTimeout(timer); list.replaceChildren(el("p", "hint", "Could not load the team library: " + (e.message || e.code))); });
+    $("teamshare").onclick = async () => {
+      if (!current) return;
+      let text = JSON.stringify(current);
+      if (text.length > 400000) { const sp = structuredClone(current); for (const k of Object.keys(sp.datasets || {})) sp.datasets[k] = sp.datasets[k].slice(0, 200); text = JSON.stringify(sp); }
+      try { await col.add({ name: current.name, spec: text, at: Date.now() }); setNotice(`Shared ${current.name} with your team.`); }
+      catch (e) { setNotice("Could not share: " + (e.message || e.code)); }
+    };
+  });
+
+  /* ---------- Arabic / English ---------- */
+  const AR = {
+    "console_builder studio": "استوديو بناء الكونسول", "Run as web app": "شغّله كتطبيق ويب", "▶ Run as web app": "▶ شغّله كتطبيق ويب", "Get web console": "احصل على الكونسول",
+    "Pick a template or agent": "اختر قالبًا أو وكيلًا", "Or upload a file, or describe it": "أو ارفع ملفًا أو صِفه", "Follow the easy steps": "اتبع الخطوات السهلة",
+    "Press ▶ on each step, or Run all": "اضغط ▶ على كل خطوة أو شغّل الكل", "Take it with you": "خذه معك", "Run as web app or Get web console": "شغّله كتطبيق أو احصل على الكونسول",
+    "Commands": "الأوامر", "Arguments": "المُدخلات", "Actions": "الإجراءات", "Data rows": "صفوف البيانات", "Runs": "مرات التشغيل", "Failed": "فشل",
+    "Build": "البناء", "Start here": "ابدأ هنا", "Library": "المكتبة", "Builder": "المُنشئ", "Upload files": "رفع ملفات", "Describe": "صِف", "Brand": "الهوية", "JSON": "JSON",
+    "Live console": "الكونسول المباشر", "Report": "تقرير", "Restart": "إعادة تشغيل", "▶ Run all steps": "▶ شغّل كل الخطوات", "Edit": "تعديل",
+    "Activity": "النشاط", "Clear": "مسح", "Most used commands": "الأوامر الأكثر استخدامًا", "Recent runs": "آخر التشغيلات", "Data": "البيانات",
+    "Dashboard": "لوحة المؤشرات", "Auto widgets": "مؤشرات تلقائية", "+ Add widget": "+ إضافة مؤشر", "Add to dashboard": "أضف إلى اللوحة",
+    "Type": "النوع", "Title": "العنوان", "Dataset": "مجموعة البيانات", "Metric": "المقياس", "Number column": "عمود رقمي", "Group by": "تجميع حسب", "Date column": "عمود التاريخ", "Prefix / suffix": "بادئة / لاحقة",
+    "Spec reference": "مرجع المواصفات", "Agent name": "اسم الوكيل", "What it does": "ماذا يفعل", "+ Add step": "+ إضافة خطوة", "Create agent": "أنشئ الوكيل",
+    "Step title": "عنوان الخطوة", "Remove": "حذف", "Ready themes": "ثيمات جاهزة", "Company": "الشركة", "Console title": "عنوان الكونسول", "Welcome line": "سطر الترحيب",
+    "Prompt symbol": "رمز الإدخال", "Background": "الخلفية", "Text": "النص", "Accent": "اللون المميز", "Apply brand": "طبّق الهوية", "Default colours": "الألوان الافتراضية",
+    "Build with Claude": "ابنِ مع Claude", "Stop": "إيقاف", "Save prompt to library": "احفظ الوصف في المكتبة", "Describe the console you want": "صِف الكونسول الذي تريده",
+    "Build data console": "ابنِ كونسول بيانات", "Describe it to Claude": "صِفه لـ Claude", "Live data link": "رابط بيانات مباشر", "Connect": "اتصال",
+    "Use this prompt": "استخدم هذا الوصف", "Copy": "نسخ", "Open": "فتح", "Use": "استخدم", "Delete": "حذف", "Run": "تشغيل", "Close": "إغلاق",
+    "Save current console": "احفظ الكونسول الحالي", "Share current console with the team": "شارك الكونسول مع الفريق", "Run report": "تقرير التشغيل",
+    "Save report (HTML)": "احفظ التقرير (HTML)", "Save runs (CSV)": "احفظ التشغيلات (CSV)", "Copy as text": "انسخ كنص", "Format": "تنسيق", "Copy JSON": "نسخ JSON",
+    "Copy HTML": "نسخ HTML", "Download file": "تنزيل الملف", "Standalone web console": "كونسول ويب مستقل", "Full screen": "ملء الشاشة", "Exit app": "خروج",
+    "Usage": "الاستخدام", "No runs yet.": "لا توجد تشغيلات بعد.", "Run a command to see usage.": "شغّل أمرًا لترى الاستخدام.",
+    "Agents": "وكلاء", "Business": "أعمال", "Tools": "أدوات", "Fun": "ترفيه", "Start": "بداية", "All": "الكل",
+    "Prompt library · ready text prompts to build agents": "مكتبة الأوصاف · أوصاف جاهزة لبناء الوكلاء",
+    "My library · your saved consoles and prompts (kept in this browser)": "مكتبتي · الكونسولات والأوصاف المحفوظة (في هذا المتصفح)",
+    "Team library · shared with everyone who opens this page": "مكتبة الفريق · مشتركة مع كل من يفتح الصفحة",
+    "Click a card. It loads at once and shows its easy steps next to the console.": "اضغط على بطاقة لتحميلها فورًا وظهور خطواتها السهلة بجوار الكونسول.",
+    "Give the console your name and colours. It goes into the web console you take away.": "أعطِ الكونسول اسمك وألوانك. سيظهر ذلك في الكونسول الذي تأخذه معك.",
+    "console-builder · Prepared by Sara Salem · Copyright © Sara Salem 2026": "console-builder · إعداد سارة سالم · جميع الحقوق محفوظة © سارة سالم 2026",
+  };
+  const AR_RX = [[/^(\d+) easy steps$/, "$1 خطوات سهلة"], [/^Step (\d+)$/, "الخطوة $1"], [/^(.+) \((\d+)\)$/, null]];
+  let lang = "en";
+  try { lang = localStorage.getItem("console-builder-studio.lang") || "en"; } catch {}
+  const original = new WeakMap();
+  function translateNode(n) {
+    if (n.nodeType !== 3) return;
+    const p = n.parentElement;
+    if (!p || p.closest("#preview, #appterm, #editor, pre, code, #exportcode, script, style, .cbw table")) return;
+    if (!original.has(n)) original.set(n, n.nodeValue);
+    const src = original.get(n), t = src.trim();
+    if (!t) return;
+    let out = null;
+    if (lang === "ar") {
+      if (AR[t]) out = AR[t];
+      else for (const [rx, rp] of AR_RX) { const m = rx.exec(t); if (m) { out = rp ? t.replace(rx, rp) : (AR[m[1]] ? `${AR[m[1]]} (${m[2]})` : null); if (out) break; } }
+    }
+    const next = out ? src.replace(t, out) : src;
+    if (n.nodeValue !== next) n.nodeValue = next;
+  }
+  function applyLang() {
+    document.documentElement.lang = lang; document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    $("langbtn").textContent = lang === "ar" ? "English" : "العربية"; $("langbtn").lang = lang === "ar" ? "en" : "ar";
+    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) if (n.parentElement !== $("langbtn")) translateNode(n);
+  }
+  new MutationObserver((ms) => { if (lang !== "ar") return; for (const m of ms) for (const a of m.addedNodes) { if (a.nodeType === 3) translateNode(a); else if (a.nodeType === 1) { const w = document.createTreeWalker(a, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) translateNode(n); } } }).observe(document.body, { childList: true, subtree: true });
+  $("langbtn").onclick = () => { lang = lang === "ar" ? "en" : "ar"; try { localStorage.setItem("console-builder-studio.lang", lang); } catch {} applyLang(); };
+
   /* ---------- start ---------- */
   const saved = store.get(STORE);
   editor.value = saved && analyse(saved).spec ? saved : pretty(CB.TEMPLATES.find((t) => t.id === "support-agent").spec);
   renderFiles(); renderActivity();
   update(true);
+  if (lang === "ar") applyLang();
   if (location.hash === "#app") openApp();
 })();
 </script>

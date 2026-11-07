@@ -2,6 +2,7 @@
 // Prepared by Sara Salem. Copyright (c) Sara Salem 2026.
 
 import type { ConsoleTemplate } from "./templates";
+import { suggestWidgets } from "./widgets";
 
 export const num = (name: string, description?: string) => ({ name, type: "number" as const, positional: true, required: true, ...(description ? { description } : {}) });
 export const text = (name: string, description?: string) => ({ name, type: "string" as const, positional: true, required: true, rest: true, ...(description ? { description } : {}) });
@@ -28,6 +29,13 @@ export function agent(id: string, title: string, description: string, intro: str
           actions: [say(intro, "ok"), { type: "table", columns: ["Step", "Type this"], rows: steps.map((s, i) => [i + 1, s]) }],
         },
         ...commands,
+        {
+          name: "ask",
+          summary: "AI chat: ask this agent any question (works inside Claude)",
+          args: [{ name: "question", type: "string", positional: true, required: true, rest: true }],
+          examples: ["ask what should I do next?"],
+          action: { type: "ai", prompt: `You are the ${title}. ${description} Answer briefly and practically, in the user's language. Question: {question}` },
+        },
       ],
     },
   };
@@ -314,6 +322,7 @@ export const MORE_TEMPLATES: ConsoleTemplate[] = [
       name: "sales",
       welcome: "Sample sales data — try: rows, find Cake, where units>100, top units, stats price",
       datasets: { sales: sampleSales },
+      widgets: suggestWidgets({ sales: sampleSales }),
       commands: [
         { name: "rows", summary: "Show sales rows", args: [{ name: "limit", alias: "n", type: "number", default: 20 }], action: { type: "query", dataset: "sales", limit: "{limit}" } },
         { name: "find", summary: "Search any column", args: [text("text")], examples: ["find Cake"], action: { type: "query", dataset: "sales", search: "{text}" } },
@@ -333,6 +342,7 @@ export const MORE_TEMPLATES: ConsoleTemplate[] = [
       name: "team",
       welcome: "Team directory — try: people, find Engineer, where team=Product",
       datasets: { team: sampleTeam },
+      widgets: suggestWidgets({ team: sampleTeam }),
       commands: [
         { name: "people", summary: "Everyone in the team", action: { type: "query", dataset: "team" } },
         { name: "find", summary: "Search by any word", args: [text("text")], examples: ["find Engineer"], action: { type: "query", dataset: "team", search: "{text}" } },
